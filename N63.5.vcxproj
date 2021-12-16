@@ -160,6 +160,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="src\MMU.cpp" />
+    <ClCompile Include="src\MIPS4300i.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\BitUtils.h" />
+    <ClInclude Include="src\MMU.h" />
+    <ClInclude Include="src\MIPS4300i.h" />
+    <ClInclude Include="src\NumericalTypes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
