@@ -17,7 +17,7 @@ private:
 		LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD,
 
 		/* Store instructions */
-		SB, SH, SW, SWL, SWR, SC, SDC, SD, SDL, SDR,
+		SB, SH, SW, SWL, SWR, SC, SCD, SD, SDL, SDR,
 
 		/* ALU immediate instructions */
 		ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI, DADDI, DADDIU,
@@ -92,6 +92,9 @@ private:
 	void SYNC(const u32 instr_code);
 	void SYSCALL(const u32 instr_code);
 	void BREAK(const u32 instr_code);
+
+	void CACHE(const u32 instr_code);
+	void ERET(const u32 instr_code);
 
 	void AddressErrorException()
 	{
