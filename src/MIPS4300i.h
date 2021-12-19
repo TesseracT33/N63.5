@@ -75,6 +75,7 @@ private:
 	template<Instr instr> void ALU_ThreeOperand(const u32 instr_code);
 	template<Instr instr> void ALU_Shift(const u32 instr_code);
 	template<Instr instr> void ALU_MulDiv(const u32 instr_code);
+	template<Instr instr> void Jump(const u32 instr_code);
 	template<Instr instr> void Branch(const u32 instr_code);
 	template<Instr instr> void Trap_ThreeOperand(const u32 instr_code);
 	template<Instr instr> void Trap_Immediate(const u32 instr_code);
@@ -83,11 +84,6 @@ private:
 	void MFLO(const u32 instr_code);
 	void MTHI(const u32 instr_code);
 	void MTLO(const u32 instr_code);
-
-	void J(const u32 instr_code);
-	void JAL(const u32 instr_code);
-	void JR(const u32 instr_code);
-	void JALR(const u32 instr_code);
 
 	void SYNC(const u32 instr_code);
 	void SYSCALL(const u32 instr_code);

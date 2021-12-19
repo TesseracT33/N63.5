@@ -67,15 +67,15 @@ void MIPS4300i::ExecuteInstruction()
 		case 0b011000: ALU_MulDiv<Instr::MULT>(instr_code); break;
 		case 0b011001: ALU_MulDiv<Instr::MULTU>(instr_code); break;
 
+		case 0b001001: Jump<Instr::JALR>(instr_code); break;
+		case 0b001000: Jump<Instr::JR>(instr_code); break;
+
 		case 0b110100: Trap_ThreeOperand<Instr::TEQ>(instr_code); break;
 		case 0b110000: Trap_ThreeOperand<Instr::TGE>(instr_code); break;
 		case 0b110001: Trap_ThreeOperand<Instr::TGEU>(instr_code); break;
 		case 0b110010: Trap_ThreeOperand<Instr::TLT>(instr_code); break;
 		case 0b110011: Trap_ThreeOperand<Instr::TLTU>(instr_code); break;
 		case 0b110110: Trap_ThreeOperand<Instr::TNE>(instr_code); break;
-
-		case 0b001001: JALR(instr_code); break;
-		case 0b001000: JR(instr_code); break;
 
 		case 0b010000: MFHI(instr_code); break;
 		case 0b010010: MFLO(instr_code); break;
@@ -149,8 +149,8 @@ void MIPS4300i::ExecuteInstruction()
 	case 0b001011: ALU_Immediate<Instr::SLTIU>(instr_code); break;
 	case 0b001110: ALU_Immediate<Instr::XORI>(instr_code); break;
 
-	case 0b000010: J(instr_code); break;
-	case 0b000011: JAL(instr_code); break;
+	case 0b000010: Jump<Instr::J>(instr_code); break;
+	case 0b000011: Jump<Instr::JAL>(instr_code); break;
 
 	case 0b000100: Branch<Instr::BEQ>(instr_code); break;
 	case 0b010100: Branch<Instr::BEQL>(instr_code); break;
@@ -231,7 +231,7 @@ void MIPS4300i::Load(const u32 instr_code)
 		   the address is at the leftmost position of the word. Sign-extends (in the 64-
 		   bit mode), merges the result of the shift and the contents of register rt, and
 		   loads the result to register rt. */
-		/* TODO */
+		GPR[rt] = mmu->cpu_read_mem<u32>(address);
 	}
 	else if constexpr (instr == Instr::LWR)
 	{
@@ -240,7 +240,7 @@ void MIPS4300i::Load(const u32 instr_code)
 		   the address is at the rightmost position of the word. Sign-extends (in the 64-
 		   bit mode), merges the result of the shift and the contents of register rt, and
 		   loads the result to register rt. */
-		/* TODO */
+		GPR[rt] = mmu->cpu_read_mem<u32, MMU::ReadFromNextBoundary = true>(address);
 	}
 	else if constexpr (instr == Instr::LD)
 	{
@@ -258,7 +258,7 @@ void MIPS4300i::Load(const u32 instr_code)
 		   specified by the address is at the leftmost position of the doubleword.
 		   Merges the result of the shift and the contents of register rt, and loads the
 		   result to register rt. */
-		/* TODO */
+		GPR[rt] = mmu->cpu_read_mem<u64>(address);
 	}
 	else if constexpr (instr == Instr::LDR)
 	{
@@ -267,7 +267,7 @@ void MIPS4300i::Load(const u32 instr_code)
 		   specified by the address is at the rightmost position of the doubleword.
 		   Merges the result of the shift and the contents of register rt, and loads the
 		   result to register rt. */
-		/* TODO */
+		GPR[rt] = mmu->cpu_read_mem<u64, MMU::ReadFromNextBoundary = true>(address);
 	}
 	else if constexpr (instr == Instr::LL)
 	{
@@ -305,19 +305,25 @@ void MIPS4300i::Store(const u32 instr_code)
 	{
 		/* Store Byte;
 		   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-		mmu->cpu_write_mem<u8>(address, GPR[rt]);
+		mmu->cpu_write_mem<u8>(address, u8(GPR[rt]));
 	}
 	else if constexpr (instr == Instr::SH)
 	{
 		/* Store Halfword;
 		   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-		mmu->cpu_write_mem<u16>(address, GPR[rt]);
+		if (address & 1)
+			AddressErrorException();
+		else
+			mmu->cpu_write_mem<u16>(address, u16(GPR[rt]));
 	}
 	else if constexpr (instr == Instr::SW)
 	{
 		/* Store Word;
 		   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-		mmu->cpu_write_mem<u32>(address, GPR[rt]);
+		if (address & 3)
+			AddressErrorException();
+		else
+			mmu->cpu_write_mem<u32>(address, u32(GPR[rt]));
 	}
 	else if constexpr (instr == Instr::SWL)
 	{
@@ -325,8 +331,7 @@ void MIPS4300i::Store(const u32 instr_code)
 		   Shifts the contents of register rt to the right so that the leftmost byte of the
 		   word is at the position of the byte specified by the address. Stores the result
 		   of the shift to the lower portion of the word in memory. */
-		/* TODO */
-		mmu->cpu_write_mem<u8>(address >> 24, GPR[rt]);
+		mmu->cpu_write_mem<u32>(address, u32(GPR[rt])); /* TODO write function should handle this? */
 	}
 	else if constexpr (instr == Instr::SWR)
 	{
@@ -334,14 +339,16 @@ void MIPS4300i::Store(const u32 instr_code)
 		   Shifts the contents of register rt to the left so that the rightmost byte of the
 		   word is at the position of the byte specified by the address. Stores the result
 		   of the shift to the higher portion of the word in memory. */
-		/* TODO */
-		mmu->cpu_write_mem<u32>(address >> 24, GPR[rt] + 3);
+		mmu->cpu_write_mem<u32, MMU::WriteToNextBoundary = true>(address, u32(GPR[rt]));
 	}
 	else if constexpr (instr == Instr::SD)
 	{
 		/* Store Doublword;
 		   Stores the contents of register rt to the memory specified by the address. */
-		mmu->cpu_write_mem<u64>(address, GPR[rt]);
+		if (address & 7)
+			AddressErrorException();
+		else
+			mmu->cpu_write_mem<u64>(address, GPR[rt]);
 	}
 	else if constexpr (instr == Instr::SDL)
 	{
@@ -349,7 +356,6 @@ void MIPS4300i::Store(const u32 instr_code)
 		   Shifts the contents of register rt to the right so that the leftmost byte of a
 		   doubleword is at the position of the byte specified by the address. Stores the
 		   result of the shift to the lower portion of the doubleword in memory. */
-		   /* TODO */
 		mmu->cpu_write_mem<u64>(address, GPR[rt]);
 	}
 	else if constexpr (instr == Instr::SDR)
@@ -358,8 +364,7 @@ void MIPS4300i::Store(const u32 instr_code)
 		   Shifts the contents of register rt to the left so that the rightmost byte of a
 		   doubleword is at the position of the byte specified by the address. Stores the
 		   result of the shift to the higher portion of the doubleword in memory. */
-		   /* TODO */
-		mmu->cpu_write_mem<u64>(address, GPR[rt]);
+		mmu->cpu_write_mem<u64, MMU::WriteToNextBoundary = true>(address, GPR[rt]);
 	}
 	else if constexpr (instr == Instr::SC)
 	{
@@ -481,7 +486,8 @@ void MIPS4300i::ALU_Immediate(const u32 instr_code)
 		   Shifts the 16-bit immediate 16 bits to the left, and clears the low-order 16 bits
 		   of the word to 0.
 		   Stores the result to register rt (by sign-extending the result in the 64-bit mode). */
-		GPR[rt] = s32(immediate) << 16;
+		const s32 result = immediate << 16;
+		GPR[rt] = result;
 	}
 	else if constexpr (instr == Instr::DADDI)
 	{
@@ -679,21 +685,24 @@ void MIPS4300i::ALU_Shift(const u32 instr_code)
 		/* Shift Left Logical;
 		   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 		   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-		GPR[rd] = (s32)(GPR[rt] << sa & 0xFFFFFFFF);
+		const s32 result = s32(GPR[rt]) << sa;
+		GPR[rd] = result;
 	}
 	else if constexpr (instr == Instr::SRL)
 	{
 		/* Shift Right Logical;
 		   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 		   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-		GPR[rd] = (s32)(GPR[rt] >> sa & 0xFFFFFFFF);
+		const s32 result = GPR[rt] >> sa;
+		GPR[rd] = result;
 	}
 	else if constexpr (instr == Instr::SRA)
 	{
 		/* Shift Right Arithmetic;
 		   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 		   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-		GPR[rd] = (s32)GPR[rt] >> sa;
+		const s32 result = (s32)GPR[rt] >> sa;
+		GPR[rd] = result;
 	}
 	else if constexpr (instr == Instr::SLLV)
 	{
@@ -702,7 +711,8 @@ void MIPS4300i::ALU_Shift(const u32 instr_code)
 		   The number of bits by which the register contents are to be shifted is
 		   specified by the low-order 5 bits of register rs.
 		   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
-		GPR[rd] = (s32)(GPR[rt] << (GPR[rs] & 0x1F) & 0xFFFFFFFF);
+		const s32 result = s32(GPR[rt]) << (GPR[rs] & 0x1F);
+		GPR[rd] = result;
 	}
 	else if constexpr (instr == Instr::SRLV)
 	{
@@ -711,7 +721,8 @@ void MIPS4300i::ALU_Shift(const u32 instr_code)
 		   The number of bits by which the register contents are to be shifted is
 		   specified by the low-order 5 bits of register rs.
 		   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-		GPR[rd] = (s32)(GPR[rt] >> (GPR[rs] & 0x1F) & 0xFFFFFFFF);
+		const s32 result = GPR[rt] >> (GPR[rs] & 0x1F);
+		GPR[rd] = result;
 	}
 	else if constexpr (instr == Instr::SRAV)
 	{
@@ -810,7 +821,7 @@ void MIPS4300i::ALU_MulDiv(const u32 instr_code)
 		   Multiplies the contents of register rs by the contents of register rt as a 32-bit
 		   signed integer. Sign-extends (in the 64-bit mode) and stores the 64-bit result
 		   to special registers HI and LO. */
-		const s64 result = (s32)GPR[rs] * (s32)GPR[rt]; /* TODO */
+		const s64 result = s64(GPR[rs] & 0xFFFFFFFF) * s64(GPR[rt] & 0xFFFFFFFF);
 		LO = result & 0xFFFFFFFF;
 		HI = result >> 32;
 	}
@@ -821,8 +832,8 @@ void MIPS4300i::ALU_MulDiv(const u32 instr_code)
 		   unsigned integer. Sign-extends (in the 64-bit mode) and stores the 64-bit
 		   result to special registers HI and LO. */
 		const u64 result = (GPR[rs] & 0xFFFFFFFF) * (GPR[rt] & 0xFFFFFFFF);
-		LO = (s32)(result & 0xFFFFFFFF);
-		HI = (s32)(result >> 32);
+		LO = s32(result & 0xFFFFFFFF);
+		HI = s32(result >> 32);
 	}
 	else if constexpr (instr == Instr::DIV)
 	{
@@ -831,7 +842,10 @@ void MIPS4300i::ALU_MulDiv(const u32 instr_code)
 		   is treated as a 32-bit signed integer. Sign-extends (in the 64-bit mode) and
 		   stores the 32-bit quotient to special register LO and the 32-bit remainder to
 		   special register HI. */
-		/* TODO */
+		const s32 quotient = s32(GPR[rs]) / s32(GPR[rt]);
+		const s32 remainder = s32(GPR[rs]) % s32(GPR[rt]);
+		LO = quotient;
+		HI = remainder;
 	}
 	else if constexpr (instr == Instr::DIVU)
 	{
@@ -840,6 +854,10 @@ void MIPS4300i::ALU_MulDiv(const u32 instr_code)
 		   is treated as a 32-bit unsigned integer. Sign-extends (in the 64-bit mode) and
 		   stores the 32-bit quotient to special register LO and the 32-bit remainder to
 		   special register HI. */
+		const u32 quotient = u32(GPR[rs]) / u32(GPR[rt]);
+		const u32 remainder = u32(GPR[rs]) % u32(GPR[rt]);
+		LO = s32(quotient);
+		HI = s32(remainder);
 	}
 	else if constexpr (instr == Instr::DMULT)
 	{
@@ -896,8 +914,6 @@ void MIPS4300i::ALU_MulDiv(const u32 instr_code)
 		   Divides the contents of register rs by the contents of register rt.
 		   The operand is treated as an unsigned integer.
 		   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-
-		/* TODO how to handle division by zero? */
 		const u64 quotient = GPR[rs] / GPR[rt];
 		const u64 remainder = GPR[rs] % GPR[rt];
 		LO = quotient;
@@ -911,9 +927,65 @@ void MIPS4300i::ALU_MulDiv(const u32 instr_code)
 
 
 template<MIPS4300i::Instr instr>
+void MIPS4300i::Jump(const u32 instr_code)
+{
+	/* J: Jump;
+	   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
+	   coupled with the high-order 4 bits of the PC, delayed by one instruction.
+
+	   JAL: Jump And Link;
+	   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
+	   coupled with the high-order 4 bits of the PC, delayed by one instruction.
+	   Stores the address of the instruction following the delay slot to r31 (link register).
+
+	   JR: Jump Register;
+	   Jumps to the address of register rs, delayed by one instruction.
+
+	   JALR: Jump And Link Register;
+	   Jumps to the address of register rs, delayed by one instruction.
+	   Stores the address of the instruction following the delay slot to register rd. */
+
+	const u64 target = [&] {
+		if constexpr (instr == Instr::J || instr == Instr::JAL)
+		{
+			return PC & 0xFFFF'FFFF'F000'0000 | u64(instr_code & 0x3FFFFFF) << 2;
+		}
+		else if constexpr (instr == Instr::JR || instr == Instr::JALR)
+		{
+			const u8 rs = instr_code >> 21 & 0x1F;
+			return GPR[rs];
+		}
+		else
+		{
+			static_assert(false, "\"Jump\" template function called, but no matching jump instruction was found.");
+		}
+	}();
+
+	addr_to_jump_to = target;
+	jump_next_instruction = true;
+
+	if constexpr (instr == Instr::JAL)
+	{
+		GPR[31] = PC + 4;
+	}
+	else if constexpr (instr == Instr::JALR)
+	{
+		const u8 rd = instr_code >> 11 & 0x1F;
+		GPR[rd] = PC + 4;
+	}
+}
+
+
+template<MIPS4300i::Instr instr>
 void MIPS4300i::Branch(const u32 instr_code)
 {
 	const u8 rs = instr_code >> 21 & 0x1F;
+
+	if constexpr (instr == Instr::BLTZAL || instr == Instr::BGEZAL || instr == Instr::BLTZALL || instr == Instr::BGEZALL)
+	{
+		GPR[31] = PC + 4;
+	}
+
 	const u8 rt = [&] {
 		if constexpr (instr == Instr::BEQ || instr == Instr::BNE || instr == Instr::BEQL || instr == Instr::BNEL)
 			return instr_code >> 16 & 0x1F;
@@ -921,45 +993,37 @@ void MIPS4300i::Branch(const u32 instr_code)
 	}();
 
 	const bool branch_cond = [&] {
-		if constexpr (instr == Instr::BEQ) /* Branch On Equal */
+		if constexpr (instr == Instr::BEQ || instr == Instr::BEQL) /* Branch On Equal (Likely) */
 			return GPR[rs] == GPR[rt];
-		else if constexpr (instr == Instr::BNE) /* Branch On Not Equal */
+		else if constexpr (instr == Instr::BNE || instr == Instr::BNEL) /* Branch On Not Equal (Likely) */
 			return GPR[rs] != GPR[rt];
-		else if constexpr (instr == Instr::BLEZ) /* Branch On Less Than Or Equal To Zero */
+		else if constexpr (instr == Instr::BLEZ || instr == Instr::BLEZL) /* Branch On Less Than Or Equal To Zero (Likely) */
 			return s64(GPR[rs]) <= 0;
-		else if constexpr (instr == Instr::BGTZ) /* Branch On Greater Than Zero */
+		else if constexpr (instr == Instr::BGTZ || instr == Instr::BGTZL) /* Branch On Greater Than Zero (Likely) */
 			return s64(GPR[rs]) > 0;
-		else if constexpr (instr == Instr::BLTZ) /* Branch On Less Than Zero */
+		else if constexpr (instr == Instr::BLTZ || instr == Instr::BLTZL) /* Branch On Less Than Zero (Likely) */
 			return s64(GPR[rs]) < 0;
-		else if constexpr (instr == Instr::BGEZ) /* Branch On Greater Than or Equal To Zero */
+		else if constexpr (instr == Instr::BGEZ || instr == Instr::BGEZL) /* Branch On Greater Than or Equal To Zero (Likely) */
 			return s64(GPR[rs]) >= 0;
-		else if constexpr (instr == Instr::BLTZAL)
-			return true; /* TODO */
-		else if constexpr (instr == Instr::BGEZAL)
-			return true;
-		else if constexpr (instr == Instr::BEQL)
-			return true;
-		else if constexpr (instr == Instr::BNEL)
-			return true;
-		else if constexpr (instr == Instr::BLEZL)
-			return true;
-		else if constexpr (instr == Instr::BGTZL)
-			return true;
-		else if constexpr (instr == Instr::BLTZL)
-			return true;
-		else if constexpr (instr == Instr::BGEZL)
-			return true;
-		else if constexpr (instr == Instr::BLTZALL)
-			return true;
-		else if constexpr (instr == Instr::BGEZALL)
-			return true;
+		else if constexpr (instr == Instr::BLTZAL || instr == Instr::BLTZALL) /* Branch On Less Than Zero and Link (Likely) */
+			return s64(GPR[rs]) < 0;
+		else if constexpr (instr == Instr::BGEZAL || instr == Instr::BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
+			return s64(GPR[rs]) >= 0;
 		else
-			static_assert(false);
+		{
+			static_assert(false, "\"Branch\" template function called, but no matching branch instruction was found.");
+		}
 	}();
 
 	if (branch_cond)
 	{
 		const s32 offset = s32(instr_code & 0xFFFF) << 2;
+		PC += offset;
+	}
+	else if constexpr (instr == Instr::BEQL || instr == Instr::BNEL || instr == Instr::BLEZL || instr == Instr::BGTZL ||
+		instr == Instr::BEQL || instr == Instr::BLTZL || instr == Instr::BGEZL || instr == Instr::BLTZALL || instr == Instr::BGEZALL)
+	{
+		PC += 4; /* TODO no idea if correct or not */
 	}
 }
 
@@ -1025,47 +1089,45 @@ void MIPS4300i::Trap_ThreeOperand(const u32 instr_code)
 template<MIPS4300i::Instr instr>
 void MIPS4300i::Trap_Immediate(const u32 instr_code)
 {
-	using enum MIPS4300i::Instr;
-
 	const s16 immedate = instr_code & 0xFFFF;
 	const u8 rs = instr_code >> 21 & 0x1F;
 
 	const bool trap_cond = [&] {
-		if constexpr (instr == TGEI)
+		if constexpr (instr == Instr::TGEI)
 		{
 			/* Trap If Greater Than Or Equal Immediate;
 			   Compares the contents of register rs with 16-bit sign-extended immediate as a
 			   signed integer. If rs contents are greater than the immediate, generates an exception. */
 			return s64(GPR[rs]) > immedate;
 		}
-		else if constexpr (instr == TGEIU)  
+		else if constexpr (instr == Instr::TGEIU)
 		{
 			/* Trap If Greater Than Or Equal Immediate Unsigned;
 			   Compares the contents of register rs with 16-bit zero-extended immediate as an
 			   unsigned integer. If rs contents are greater than the immediate, generates an exception. */
 			return GPR[rs] > immedate;
 		}
-		else if constexpr (instr == TLTI)
+		else if constexpr (instr == Instr::TLTI)
 		{
 			/* Trap If Less Than Immediate;
 			   Compares the contents of register rs with 16-bit sign-extended immediate as a
 			   signed integer. If rs contents are less than the immediate, generates an exception. */
 			return s64(GPR[rs]) < immedate;
 		}
-		else if constexpr (instr == TLTIU)
+		else if constexpr (instr == Instr::TLTIU)
 		{
 			/* Trap If Less Than Immediate Unsigned;
 			   Compares the contents of register rs with 16-bit zero-extended immediate as an
 			   unsigned integer. If rs contents are less than the immediate, generates an exception. */
 			return GPR[rs] < immedate;
 		}
-		else if constexpr (instr == TEQI)
+		else if constexpr (instr == Instr::TEQI)
 		{
 			/* Trap If Equal Immediate;
 			   Generates an exception if the contents of register rs are equal to immediate. */
 			return s64(GPR[rs]) == immedate; /* TODO: should we really cast to s64? */
 		}
-		else if constexpr (instr == TNEI)
+		else if constexpr (instr == Instr::TNEI)
 		{
 			/* Trap If Not Equal Immediate;
 			   Generates an exception if the contents of register rs are not equal to immediate. */
@@ -1115,36 +1177,6 @@ void MIPS4300i::MTLO(const u32 instr_code)
 	   Transfers the contents of register rs to special register LO. */
 	const u8 rs = instr_code >> 21 & 0x1F;
 	LO = GPR[rs];
-}
-
-
-void MIPS4300i::J(const u32 instr_code)
-{
-	/* TODO */
-	const u32 target = instr_code & 0x3FFFFFF;
-	addr_to_jump_to = PC & 0xFFFF'FFFF'F000'0000 | u64(target) << 2;
-	jump_next_instruction = true;
-}
-
-
-void MIPS4300i::JAL(const u32 instr_code)
-{
-	/* TODO */
-}
-
-
-void MIPS4300i::JR(const u32 instr_code)
-{
-	/* TODO */
-	const u8 rs = instr_code >> 21 & 0x1F;
-	addr_to_jump_to = GPR[rs];
-	jump_next_instruction = true;
-}
-
-
-void MIPS4300i::JALR(const u32 instr_code)
-{
-	/* TODO */
 }
 
 
