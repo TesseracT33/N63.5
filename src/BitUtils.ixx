@@ -1,8 +1,8 @@
-#pragma once
+export module BitUtils;
 
-#include <concepts>
+import <concepts>;
 
-namespace BitUtils
+export namespace BitUtils
 {
 	template<std::integral T> inline constexpr bool CheckBit(T num, unsigned pos)
 	{

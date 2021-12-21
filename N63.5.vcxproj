@@ -159,15 +159,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\BitUtils.ixx" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="src\MMU.cpp" />
-    <ClCompile Include="src\MIPS4300i.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\BitUtils.h" />
-    <ClInclude Include="src\MMU.h" />
-    <ClInclude Include="src\MIPS4300i.h" />
-    <ClInclude Include="src\NumericalTypes.h" />
+    <ClCompile Include="src\MIPS4300i\CPU.cpp" />
+    <ClCompile Include="src\MIPS4300i\MIPS4300i.ixx" />
+    <ClCompile Include="src\memory\MMU.cpp" />
+    <ClCompile Include="src\MIPS4300i\MIPS4300i.cpp" />
+    <ClCompile Include="src\memory\MMU.ixx" />
+    <ClCompile Include="src\NumericalTypes.ixx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
