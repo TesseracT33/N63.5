@@ -161,6 +161,8 @@
   <ItemGroup>
     <ClCompile Include="src\BitUtils.ixx" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="src\MIPS4300i\COP0.cpp" />
+    <ClCompile Include="src\MIPS4300i\COP1.cpp" />
     <ClCompile Include="src\MIPS4300i\CPU.cpp" />
     <ClCompile Include="src\MIPS4300i\MIPS4300i.ixx" />
     <ClCompile Include="src\memory\MMU.cpp" />

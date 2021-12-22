@@ -9,5 +9,7 @@
     <ClCompile Include="src\memory\MMU.ixx" />
     <ClCompile Include="src\NumericalTypes.ixx" />
     <ClCompile Include="src\BitUtils.ixx" />
+    <ClCompile Include="src\MIPS4300i\COP0.cpp" />
+    <ClCompile Include="src\MIPS4300i\COP1.cpp" />
   </ItemGroup>
 </Project>

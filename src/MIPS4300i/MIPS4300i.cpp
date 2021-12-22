@@ -7,6 +7,11 @@ namespace MIPS4300i
 
 	}
 
+	void Reset()
+	{
+
+	}
+
 	void ExecuteInstruction()
 	{
 		const u32 instr_code = MMU::cpu_read_mem<u32>(PC);
@@ -117,19 +122,19 @@ namespace MIPS4300i
 				const u8 sub_op_code = instr_code & 0x3F;
 				switch (sub_op_code)
 				{
-					//case 0b011000: ERET(); break;
-					//case 0b001000: TLBP(); break;
-					//case 0b000001: TLBR(); break;
-					//case 0b000010: TLBWI(); break;
-					//case 0b000110: TLBWR(); break;
+					case 0b011000: ERET(); break;
+					case 0b001000: TLBP(); break;
+					case 0b000001: TLBR(); break;
+					case 0b000010: TLBWI(); break;
+					case 0b000110: TLBWR(); break;
 				}
 				break;
 			}
 
-			//case 0b00001: DMFC0(instr_code); break;
-			//case 0b00101: DMTC0(instr_code); break;
-			//case 0b00000: MFC0(instr_code); break;
-			//case 0b00100: MTC0(instr_code); break;
+			case 0b00001: DMFC0(instr_code); break;
+			case 0b00101: DMTC0(instr_code); break;
+			case 0b00000: MFC0(instr_code); break;
+			case 0b00100: MTC0(instr_code); break;
 			}
 			break;
 		}
