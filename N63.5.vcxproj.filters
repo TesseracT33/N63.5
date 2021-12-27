@@ -11,5 +11,6 @@
     <ClCompile Include="src\BitUtils.ixx" />
     <ClCompile Include="src\MIPS4300i\COP0.cpp" />
     <ClCompile Include="src\MIPS4300i\COP1.cpp" />
+    <ClCompile Include="src\MIPS4300i\Exceptions.cpp" />
   </ItemGroup>
 </Project>

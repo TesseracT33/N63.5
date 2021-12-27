@@ -14,22 +14,22 @@ namespace MIPS4300i
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
 		if constexpr (instr == Instr::LB)
 		{
-			/* Add_Immediate Byte;
-			   Sign-extends the contents of a byte specified by the address and Add_Immediates the result to register rt. */
+			/* Load Byte;
+			   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
 			GPR[rt] = MMU::cpu_read_mem<s8>(address);
 			//GPR.Set(rt, MMU::cpu_read_mem<s8>(address));
 		}
 		else if constexpr (instr == Instr::LBU)
 		{
-			/* Add_Immediate Byte Unsigned;
-			   Zero-extends the contents of a byte specified by the address and Add_Immediates the result to register rt. */
+			/* Load Byte Unsigned;
+			   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
 			GPR[rt] = MMU::cpu_read_mem<u8>(address);
 			//GPR.Set(rt, MMU::cpu_read_mem<u8>(address));
 		}
 		else if constexpr (instr == Instr::LH)
 		{
-			/* Add_Immediate halfword;
-			   Sign-extends the contents of a halfword specified by the address and Add_Immediates the result to register rt. */
+			/* Load halfword;
+			   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
 			if (address & 1)
 				AddressErrorException();
 			else
@@ -37,8 +37,8 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == Instr::LHU)
 		{
-			/* Add_Immediate Halfword Unsigned;
-			   Zero-extends the contents of a halfword specified by the address and Add_Immediates the result to register rt. */
+			/* Load Halfword Unsigned;
+			   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
 			if (address & 1)
 				AddressErrorException();
 			else
@@ -46,8 +46,8 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == Instr::LW)
 		{
-			/* Add_Immediate Word;
-			   Sign-extends the contents of a word specified by the address and Add_Immediates the result to register rt. */
+			/* Load Word;
+			   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
 			if (address & 3)
 				AddressErrorException();
 			else
@@ -55,8 +55,8 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == Instr::LWU)
 		{
-			/* Add_Immediate Word Unsigned;
-			   Zero-extends the contents of a word specified by the address and Add_Immediates the result to register rt. */
+			/* Load Word Unsigned;
+			   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
 			if (address & 3)
 				AddressErrorException();
 			else
@@ -64,26 +64,26 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == Instr::LWL)
 		{
-			/* Add_Immediate Word Left;
+			/* Load Word Left;
 			   Shifts a word specified by the address to the left, so that a byte specified by
 			   the address is at the leftmost position of the word. Sign-extends (in the 64-
 			   bit mode), merges the result of the shift and the contents of register rt, and
-			   Add_Immediates the result to register rt. */
+			   loads the result to register rt. */
 			GPR[rt] = MMU::cpu_read_mem<u32>(address);
 		}
 		else if constexpr (instr == Instr::LWR)
 		{
-			/* Add_Immediate Word Right;
+			/* Load Word Right;
 			   Shifts a word specified by the address to the right, so that a byte specified by
 			   the address is at the rightmost position of the word. Sign-extends (in the 64-
 			   bit mode), merges the result of the shift and the contents of register rt, and
-			   Add_Immediates the result to register rt. */
+			   loads the result to register rt. */
 			GPR[rt] = MMU::cpu_read_mem<u32>(address);
 		}
 		else if constexpr (instr == Instr::LD)
 		{
-			/* Add_Immediate Doubleword;
-			   Add_Immediates the contents of a word specified by the address to register rt. */
+			/* Load Doubleword;
+			   Loads the contents of a word specified by the address to register rt. */
 			if (address & 7)
 				AddressErrorException();
 			else
@@ -91,40 +91,40 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == Instr::LDL)
 		{
-			/* Add_Immediate Doubleword Left;
+			/* Load Doubleword Left;
 			   Shifts the doubleword specified by the address to the left so that the byte
 			   specified by the address is at the leftmost position of the doubleword.
-			   Merges the result of the shift and the contents of register rt, and Add_Immediates the
+			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
 			GPR[rt] = MMU::cpu_read_mem<u64>(address);
 		}
 		else if constexpr (instr == Instr::LDR)
 		{
-			/* Add_Immediate Doubleword Right;
+			/* Load Doubleword Right;
 			   Shifts the doubleword specified by the address to the right so that the byte
 			   specified by the address is at the rightmost position of the doubleword.
-			   Merges the result of the shift and the contents of register rt, and Add_Immediates the
+			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
 			GPR[rt] = MMU::cpu_read_mem<u64, MMU::ReadFromNextBoundary::Yes>(address);
 		}
 		else if constexpr (instr == Instr::LL)
 		{
-			/* Add_Immediate Linked;
-			   Add_Immediates the contents of the word specified by the address to register rt and sets the LL bit to 1. */
+			/* Load Linked;
+			   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
 			GPR[rt] = MMU::cpu_read_mem<s32>(address);
 			LL = 1;
 			/* TODO the specified physical address of the memory is stored to the LLAddr register */
 		}
 		else if constexpr (instr == Instr::LLD)
 		{
-			/* Add_Immediate Linked Doubleword;
-			   Add_Immediates the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
+			/* Load Linked Doubleword;
+			   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
 			GPR[rt] = MMU::cpu_read_mem<u64>(address);
 			LL = 1;
 		}
 		else
 		{
-			static_assert(false, "\"Add_Immediate\" template function called, but no matching Add_Immediate instruction was found.");
+			static_assert(false, "\"Load\" template function called, but no matching load instruction was found.");
 		}
 	}
 
@@ -320,7 +320,7 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == Instr::LUI)
 		{
-			/* Add_Immediate Upper Immediate;
+			/* Load Upper Immediate;
 			   Shifts the 16-bit immediate 16 bits to the left, and clears the low-order 16 bits
 			   of the word to 0.
 			   Stores the result to register rt (by sign-extending the result in the 64-bit mode). */
@@ -1026,8 +1026,8 @@ namespace MIPS4300i
 	void SYNC(const u32 instr_code)
 	{
 		/* Synchronize;
-		   Completes the Add_Immediate/store instruction currently in the pipeline before the new
-		   Add_Immediate/store instruction is executed. */
+		   Completes the Load/store instruction currently in the pipeline before the new
+		   Load/store instruction is executed. */
 
 		   /* TODO */
 	}
@@ -1048,22 +1048,6 @@ namespace MIPS4300i
 		   Generates a breakpoint exception and transfers control to the exception processing program. */
 
 		   /* TODO */
-	}
-
-
-	void AddressErrorException()
-	{
-
-	}
-
-	void IntegerOverflowException()
-	{
-
-	}
-
-	void TrapException()
-	{
-
 	}
 
 	template void Load<Instr::LB>(const u32 instr_code);
