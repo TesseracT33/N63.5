@@ -15,10 +15,9 @@ namespace MIPS4300i
 	void ExecuteInstruction()
 	{
 		const u32 instr_code = MMU::cpu_read_mem<u32>(PC);
-		ALU_ThreeOperand<Instr::ADD>(instr_code);
 		PC += 4;
-
 		const u8 op_code = instr_code >> 26; /* (0-63) */
+
 		switch (op_code)
 		{
 		case 0b000000: /* "SPECIAL" instructions */
@@ -139,6 +138,63 @@ namespace MIPS4300i
 			break;
 		}
 
+		case 0b010001: /* "COP1" instructions */
+		{
+			const u8 sub_op_code = instr_code >> 21 & 0x1F;
+			switch (sub_op_code)
+			{
+			case 0b01000:
+			{
+				const u8 sub_op_code = instr_code >> 16 & 0x1F;
+				switch (sub_op_code) /* Todo possibly put into FPU_Branch instr itself to avoid so many nested switches*/
+				{
+				case 0b00000: FPU_Branch<FPU_Instr::BC1F>(instr_code); break;
+				case 0b00010: FPU_Branch<FPU_Instr::BC1FL>(instr_code); break;
+				case 0b00001: FPU_Branch<FPU_Instr::BC1T>(instr_code); break;
+				case 0b01000: FPU_Branch<FPU_Instr::BC1TL>(instr_code); break;
+				}
+				break;
+			}
+
+			case 0b00010: FPU_Move<FPU_Instr::CFC1>(instr_code); break;
+			case 0b00110: FPU_Move<FPU_Instr::CTC1>(instr_code); break;
+			case 0b00001: FPU_Move<FPU_Instr::DMFC1>(instr_code); break;
+			case 0b00101: FPU_Move<FPU_Instr::DMTC1>(instr_code); break;
+			case 0b00000: FPU_Move<FPU_Instr::MFC1>(instr_code); break;
+			case 0b00100: FPU_Move<FPU_Instr::MTC1>(instr_code); break;
+
+			default:
+			{
+				const u8 sub_op_code = instr_code & 0x3F;
+				switch (sub_op_code)
+				{
+				case 0b000101: FPU_Compute<FPU_Instr::ABS>(instr_code); break;
+				case 0b000000: FPU_Compute<FPU_Instr::ADD>(instr_code); break;
+				case 0b000011: FPU_Compute<FPU_Instr::DIV>(instr_code); break;
+				case 0b000110: FPU_Compute<FPU_Instr::MOV>(instr_code); break;
+				case 0b000010: FPU_Compute<FPU_Instr::MUL>(instr_code); break;
+				case 0b000111: FPU_Compute<FPU_Instr::NEG>(instr_code); break;
+				case 0b000100: FPU_Compute<FPU_Instr::SQRT>(instr_code); break;
+				case 0b000001: FPU_Compute<FPU_Instr::SUB>(instr_code); break;
+
+				case 0b001010: FPU_Convert<FPU_Instr::CEIL_L>(instr_code); break;
+				case 0b001110: FPU_Convert<FPU_Instr::CEIL_W>(instr_code); break;
+				case 0b100001: FPU_Convert<FPU_Instr::CVT_D>(instr_code); break;
+				case 0b100101: FPU_Convert<FPU_Instr::CVT_L>(instr_code); break;
+				case 0b100000: FPU_Convert<FPU_Instr::CVT_S>(instr_code); break;
+				case 0b100100: FPU_Convert<FPU_Instr::CVT_W>(instr_code); break;
+				case 0b001011: FPU_Convert<FPU_Instr::FLOOR_L>(instr_code); break;
+				case 0b001111: FPU_Convert<FPU_Instr::FLOOR_W>(instr_code); break;
+				case 0b001000: FPU_Convert<FPU_Instr::ROUND_L>(instr_code); break;
+				case 0b001100: FPU_Convert<FPU_Instr::ROUND_W>(instr_code); break;
+				case 0b001001: FPU_Convert<FPU_Instr::TRUNC_L>(instr_code); break;
+				case 0b001101: FPU_Convert<FPU_Instr::TRUNC_W>(instr_code); break;
+				}
+			}
+			}
+			/* TODO decoding of C.cond.fmt */
+		}
+
 		case 0b100000: Load<Instr::LB>(instr_code); break;
 		case 0b100100: Load<Instr::LBU>(instr_code); break;
 		case 0b110111: Load<Instr::LD>(instr_code); break;
@@ -188,6 +244,11 @@ namespace MIPS4300i
 		case 0b010101: Branch<Instr::BNEL>(instr_code); break;
 
 		case 0b101111: CACHE(instr_code); break;
+
+		case 0b110101: FPU_Load<FPU_Instr::LDC1>(instr_code); break;
+		case 0b110001: FPU_Load<FPU_Instr::LWC1>(instr_code); break;
+		case 0b111101: FPU_Store<FPU_Instr::SDC1>(instr_code); break;
+		case 0b111001: FPU_Store<FPU_Instr::SWC1>(instr_code); break;
 		}
 	}
 }

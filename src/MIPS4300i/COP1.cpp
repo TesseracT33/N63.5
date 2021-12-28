@@ -112,9 +112,9 @@ namespace MIPS4300i
 
 		/* For ROUND/TRUNC/CEIL/FLOOR instructions; interpret a source operand (as a float), and round it to an integer (s32 or s64).
 		   Also, check for the "validity" of the rounding (check for NaN etc.). */
-		auto Round = [&] <typename Format_Float, typename Output_Int>
+		auto Round = [&] <typename Input_Float, typename Output_Int>
 		{
-			const Format_Float source = FGR.InterpretAs<Format_Float>(fs);
+			const Input_Float source = FGR.InterpretAs<Input_Float>(fs);
 
 			if constexpr (std::is_same<Output_Int, s32>::value)
 			{
@@ -517,4 +517,9 @@ namespace MIPS4300i
 	template void FPU_Compute<FPU_Instr::MOV>(const u32 instr_code);
 	template void FPU_Compute<FPU_Instr::NEG>(const u32 instr_code);
 	template void FPU_Compute<FPU_Instr::SQRT>(const u32 instr_code);
+
+	template void FPU_Branch<FPU_Instr::BC1T>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instr::BC1F>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instr::BC1TL>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instr::BC1FL>(const u32 instr_code);
 }

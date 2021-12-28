@@ -73,7 +73,7 @@ namespace MIPS4300i
 		std::is_same<s32, typename std::remove_cv<T>::type>::value ||
 		std::is_same<s64, typename std::remove_cv<T>::type>::value;
 
-	struct StatusRegister
+	struct
 	{
 		unsigned IE  : 1; /* Specifies and indicates global interrupt enable (0: disable interrupts; 1: enable interrupts) */
 		unsigned EXL : 1; /* Specifies and indiciates exception level (0: normal; 1: exception) */
@@ -88,9 +88,9 @@ namespace MIPS4300i
 		unsigned FR  : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
 		unsigned RP  : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 		unsigned CU  : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
-	} status;
+	} status_reg{};
 
-	struct FCR31
+	struct
 	{
 		unsigned RM : 2;
 
@@ -122,7 +122,7 @@ namespace MIPS4300i
 
 	private:
 		const unsigned padding1 : 7 = 0;
-	};
+	} FCR31{};
 
 	u64 PC;
 
