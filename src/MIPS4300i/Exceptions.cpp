@@ -8,7 +8,19 @@ namespace MIPS4300i
 	}
 
 
+	void DivisionByZeroException()
+	{
+
+	}
+
+
 	void IntegerOverflowException()
+	{
+
+	}
+
+
+	void InexactOperationException()
 	{
 
 	}
@@ -20,7 +32,19 @@ namespace MIPS4300i
 	}
 
 
+	void OverflowException()
+	{
+
+	}
+
+
 	void TrapException()
+	{
+
+	}
+
+
+	void UnderflowException()
 	{
 
 	}

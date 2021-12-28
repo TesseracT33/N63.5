@@ -105,8 +105,8 @@ namespace MIPS4300i
 		/* For CVT instructions; interpret a source operand, "convert" it to a new format, then store the result in another register. */
 		auto Convert = [&] <typename From, typename To>
 		{
-			From source = FGR.InterpretAs<From>(fs);
-			To conv = To(source);
+			const From source = FGR.InterpretAs<From>(fs);
+			const To conv = To(source);
 			FGR.Set<To>(fd, conv);
 		};
 
@@ -116,31 +116,39 @@ namespace MIPS4300i
 		{
 			const Format_Float source = FGR.InterpretAs<Format_Float>(fs);
 
-			if constexpr (sizeof Format_Float == sizeof f32)
+			if constexpr (std::is_same<Output_Int, s32>::value)
 			{
 				if (source < std::numeric_limits<s32>::min() ||
 					source > std::numeric_limits<s32>::max() ||
 					std::isnan(source) || std::isinf(source))
 				{
 					// TODO: if invalid operation exception is disabled, return 2^32 - 1
-					InvalidOperationException();
+					bool exc_enabled = true; /* placeholder */
+					if (exc_enabled)
+						InvalidOperationException();
+					else
+						FGR.Set<s32>(fd, std::numeric_limits<s32>::max());
 					return;
 				}
 			}
-			else if constexpr (sizeof Format_Float == sizeof f64)
+			else if constexpr (std::is_same<Output_Int, s64>::value)
 			{
 				if (source < std::numeric_limits<s64>::min() ||
 					source > std::numeric_limits<s64>::max() ||
 					std::isnan(source) || std::isinf(source))
 				{
-					// TODO: if invalid operation exception is disabled, return 2^64 - 1
-					InvalidOperationException();
+					// TODO: if invalid operation exception is disabled, return 2^32 - 1
+					bool exc_enabled = true; /* placeholder */
+					if (exc_enabled)
+						InvalidOperationException();
+					else
+						FGR.Set<s64>(fd, std::numeric_limits<s64>::max());
 					return;
 				}
 			}
 			else
 			{
-				static_assert(false, "Incorrectly sized float given as an argument to the \"FPU_Convert\" function template.");
+				static_assert(false, "Incorrectly sized integer type given as an argument to the \"FPU_Convert\" function template.");
 			}
 
 			const Output_Int result = [&] {
@@ -311,7 +319,167 @@ namespace MIPS4300i
 	template<FPU_Instr instr>
 	void FPU_Compute(const u32 instr_code)
 	{
+		const u8 fd = instr_code >> 6 & 0x1F;
+		const u8 fs = instr_code >> 11 & 0x1F;
+		const u8 fmt = instr_code >> 21 & 0x1F;
 
+		if constexpr (instr == FPU_Instr::ADD || instr == FPU_Instr::SUB || instr == FPU_Instr::MUL || instr == FPU_Instr::DIV)
+		{
+			const u8 ft = instr_code >> 16 & 0x1F;
+
+			auto Compute = [&] <typename Float>
+			{
+				const Float op1 = FGR.InterpretAs<Float>(fs);
+				const Float op2 = FGR.InterpretAs<Float>(ft);
+
+				if constexpr (instr == FPU_Instr::DIV)
+				{
+					if (op2 == 0.0)
+					{
+						DivisionByZeroException();
+						return;
+					}
+				}
+
+				std::feclearexcept(FE_ALL_EXCEPT);
+
+				const Float result = [&] {
+					if constexpr (instr == FPU_Instr::ADD)
+						return Float(op1 + op2);
+					else if constexpr (instr == FPU_Instr::SUB)
+						return op1 - op2;
+					else if constexpr (instr == FPU_Instr::MUL)
+						return op1 * op2;
+					else if constexpr (instr == FPU_Instr::DIV)
+						return op1 / op2;
+					else
+						static_assert(false);
+				}();
+
+				if (std::fetestexcept(FE_UNDERFLOW))
+					UnderflowException();
+				else if (std::fetestexcept(FE_OVERFLOW))
+					OverflowException();
+				// TODO: check for "inexact operation exception" (flag is FE_INEXACT)?
+
+				FGR.Set<Float>(fd, result);
+			};
+
+			switch (fmt)
+			{
+			case NumericFormat::S:
+				Compute.template operator() <f32> ();
+				break;
+
+			case NumericFormat::D:
+				Compute.template operator() <f64> ();
+				break;
+
+			case NumericFormat::W:
+			case NumericFormat::L:
+				InvalidOperationException();
+				break;
+
+			default:
+				assert(false);
+			}
+		}
+		else if constexpr (instr == FPU_Instr::ABS || instr == FPU_Instr::MOV || instr == FPU_Instr::NEG || instr == FPU_Instr::SQRT)
+		{
+			auto Compute = [&] <typename Float>
+			{
+				const Float op = FGR.InterpretAs<Float>(fs);
+				if constexpr (instr != FPU_Instr::MOV)
+				{
+					if (std::isnan(op))
+					{
+						InvalidOperationException();
+						return;
+					}
+				}
+				if constexpr (instr == FPU_Instr::SQRT)
+				{
+					if (op < 0.0)
+					{
+						InvalidOperationException();
+						return;
+					}
+				}
+
+				const Float result = [&] {
+					if constexpr (instr == FPU_Instr::ABS)
+						return std::abs(op);
+					else if constexpr (instr == FPU_Instr::MOV)
+						return op; /* This unnecessary copy from 'op' to 'result' should be optimized away. */
+					else if constexpr (instr == FPU_Instr::NEG)
+						return -op;
+					else if constexpr (instr == FPU_Instr::SQRT)
+						return std::sqrt(op);
+					else
+						static_assert(false);
+				}();
+
+				FGR.Set<Float>(fd, result);
+			};
+
+			switch (fmt)
+			{
+			case NumericFormat::S:
+				Compute.template operator() < f32 > ();
+				break;
+
+			case NumericFormat::D:
+				Compute.template operator() < f64 > ();
+				break;
+
+			case NumericFormat::W:
+			case NumericFormat::L:
+				InvalidOperationException();
+				break;
+
+			default:
+				assert(false);
+			}
+		}
+		else
+		{
+			static_assert(false, "\"FPU_Compute\" template function called, but no matching compute instruction was found.");
+		}
+	}
+
+
+	template<FPU_Instr instr>
+	void FPU_Branch(const u32 instr_code)
+	{
+
+	}
+
+
+	void FPU_Compare(const u32 instr_code)
+	{
+		const u8 cond = instr_code & 0xF;
+		const u8 fs = instr_code >> 11 & 0x1F;
+		const u8 ft = instr_code >> 16 & 0x1F;
+		const u8 fmt = instr_code >> 21 & 0x1F;
+
+		auto Compare = [&] <typename Float>
+		{
+			const Float op1 = FGR.InterpretAs<Float>(fs);
+			const Float op2 = FGR.InterpretAs<Float>(ft);
+
+			if ((cond & 0x80) && (std::isnan(op1) || std::isnan(op2)))
+			{
+				InvalidOperationException();
+				return;
+			}
+
+			const bool comp_result = [&] {
+				switch (cond)
+				{
+					/* TODO */
+				}
+			}();
+		};
 	}
 
 
@@ -340,4 +508,13 @@ namespace MIPS4300i
 	template void FPU_Convert<FPU_Instr::CEIL_W>(const u32 instr_code);
 	template void FPU_Convert<FPU_Instr::FLOOR_L>(const u32 instr_code);
 	template void FPU_Convert<FPU_Instr::FLOOR_W>(const u32 instr_code);
+
+	template void FPU_Compute<FPU_Instr::ADD>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::SUB>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::MUL>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::DIV>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::ABS>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::MOV>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::NEG>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instr::SQRT>(const u32 instr_code);
 }

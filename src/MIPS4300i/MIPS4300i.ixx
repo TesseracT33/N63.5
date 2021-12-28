@@ -1,8 +1,8 @@
 export module MIPS4300i;
 
-import <any>;
 import <bit>;
 import <cassert>;
+import <cfenv>;
 import <cmath>;
 import <concepts>;
 import <limits>;
@@ -61,8 +61,17 @@ namespace MIPS4300i
 
 		CVT_S, CVT_D, CVT_L, CVT_W, ROUND_L, ROUND_W, TRUNC_L, TRUNC_W, CEIL_L, CEIL_W, FLOOR_L, FLOOR_W,
 
-		ADD, SUB, MUL, DIV, ABS, MOV, NEG, SQRT
+		ADD, SUB, MUL, DIV, ABS, MOV, NEG, SQRT,
+
+		BC1T, BC1F, BC1TL, BC1FL
 	};
+
+	template<typename T>
+	concept FPU_NumericType =
+		std::is_same<f32, typename std::remove_cv<T>::type>::value ||
+		std::is_same<f64, typename std::remove_cv<T>::type>::value ||
+		std::is_same<s32, typename std::remove_cv<T>::type>::value ||
+		std::is_same<s64, typename std::remove_cv<T>::type>::value;
 
 	struct StatusRegister
 	{
@@ -81,22 +90,49 @@ namespace MIPS4300i
 		unsigned CU  : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 	} status;
 
+	struct FCR31
+	{
+		unsigned RM : 2;
+
+		struct
+		{
+			unsigned I : 1;
+			unsigned U : 1;
+			unsigned O : 1;
+			unsigned Z : 1;
+			unsigned V : 1;
+		} flags, enables;
+
+		struct
+		{
+			unsigned I : 1;
+			unsigned U : 1;
+			unsigned O : 1;
+			unsigned Z : 1;
+			unsigned V : 1;
+			unsigned E : 1;
+		} cause;
+
+	private:
+		const unsigned padding0 : 5 = 0;
+
+	public:
+		unsigned C : 1;
+		unsigned FS : 1;
+
+	private:
+		const unsigned padding1 : 7 = 0;
+	};
+
 	u64 PC;
 
 	u64 GPR[32]{};
 	u64 control[32]{};
 
-	template<typename T>
-	concept FPU_NumericType =
-		std::is_same<f32, typename std::remove_cv<T>::type>::value ||
-		std::is_same<f64, typename std::remove_cv<T>::type>::value ||
-		std::is_same<s32, typename std::remove_cv<T>::type>::value ||
-		std::is_same<s64, typename std::remove_cv<T>::type>::value;
-
 	struct FloatingPointGeneralPurposeRegisters
 	{
-		template<typename FPU_NumericType> inline
-			FPU_NumericType InterpretAs(const size_t index) const
+		template<typename FPU_NumericType>
+		inline FPU_NumericType InterpretAs(const size_t index) const
 		{
 			if constexpr (sizeof FPU_NumericType < sizeof s64) /* I.e., 32 bits */
 				return std::bit_cast<FPU_NumericType, s32>(s32(FGR[index]));
@@ -104,8 +140,8 @@ namespace MIPS4300i
 				return std::bit_cast<FPU_NumericType, s64>(FGR[index]);
 		}
 
-		template<typename FPU_NumericType> inline
-			void Set(const size_t index, const FPU_NumericType data)
+		template<typename FPU_NumericType>
+		inline void Set(const size_t index, const FPU_NumericType data)
 		{
 			/* TODO */
 		}
@@ -162,12 +198,18 @@ namespace MIPS4300i
 	template<FPU_Instr instr> void FPU_Move(const u32 instr_code);
 	template<FPU_Instr instr> void FPU_Convert(const u32 instr_code);
 	template<FPU_Instr instr> void FPU_Compute(const u32 instr_code);
+	template<FPU_Instr instr> void FPU_Branch(const u32 instr_code);
+	void FPU_Compare(const u32 instr_code);
 
 	/* Exceptions */
 	void AddressErrorException();
+	void DivisionByZeroException();
 	void IntegerOverflowException();
+	void InexactOperationException();
 	void InvalidOperationException();
+	void OverflowException();
 	void TrapException();
+	void UnderflowException();
 
 	void ExecuteInstruction();
 }
