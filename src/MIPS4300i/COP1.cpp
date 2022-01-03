@@ -30,47 +30,47 @@ namespace MIPS4300i
 
 		void test_and_signal_all()
 		{
-			FCR31.cause.I = std::fetestexcept(FE_INEXACT);
-			FCR31.cause.U = std::fetestexcept(FE_UNDERFLOW);
-			FCR31.cause.O = std::fetestexcept(FE_OVERFLOW);
-			FCR31.cause.Z = std::fetestexcept(FE_DIVBYZERO);
-			FCR31.cause.V = std::fetestexcept(FE_INVALID);
-			FCR31.cause.E = unimplemented_operation;
+			FCR31.cause_I = std::fetestexcept(FE_INEXACT);
+			FCR31.cause_U = std::fetestexcept(FE_UNDERFLOW);
+			FCR31.cause_O = std::fetestexcept(FE_OVERFLOW);
+			FCR31.cause_Z = std::fetestexcept(FE_DIVBYZERO);
+			FCR31.cause_V = std::fetestexcept(FE_INVALID);
+			FCR31.cause_E = unimplemented_operation;
 
-			if (FCR31.enable.I)
+			if (FCR31.enable_I)
 				InexactOperationException();
 			else
-				FCR31.flag.I = true;
+				FCR31.flag_I = true;
 
-			if (FCR31.enable.U)
+			if (FCR31.enable_U)
 				UnderflowException();
 			else
-				FCR31.flag.U = true;
+				FCR31.flag_U = true;
 
-			if (FCR31.enable.O)
+			if (FCR31.enable_O)
 				OverflowException();
 			else
-				FCR31.flag.O = true;
+				FCR31.flag_O = true;
 
-			if (FCR31.enable.Z)
+			if (FCR31.enable_Z)
 				DivisionByZeroException();
 			else
-				FCR31.flag.Z = true;
+				FCR31.flag_Z = true;
 
-			if (FCR31.enable.V)
+			if (FCR31.enable_V)
 				InvalidOperationException();
 			else
-				FCR31.flag.V = true;
+				FCR31.flag_V = true;
 		}
 
 		void test_and_signal_unimplemented_exception()
 		{
-			FCR31.cause.E = unimplemented_operation;
+			FCR31.cause_E = unimplemented_operation;
 		}
 
 		void test_and_signal_invalid_exception()
 		{
-			FCR31.cause.V = std::fetestexcept(FE_INVALID);
+			FCR31.cause_V = std::fetestexcept(FE_INVALID);
 		}
 	} static exception_flags{};
 
@@ -85,6 +85,10 @@ namespace MIPS4300i
 
 		if constexpr (instr == FPU_Instr::LWC1)
 		{
+			/* Load Word To FPU;
+			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
+			   an address. Loads the contents of the word specified by the address to the
+			   FPU general purpose register ft. */
 			if (address & 3)
 				AddressErrorException();
 			else
@@ -92,6 +96,11 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == FPU_Instr::LDC1)
 		{
+			/* Load Doubleword To FPU;
+			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
+			   an address. Loads the contents of the doubleword specified by the address to
+			   the FPU general purpose registers ft and ft+1 when FR = 0, or to the FPU
+			   general purpose register ft when FR = 1. */
 			if (address & 7)
 				AddressErrorException();
 			else
@@ -114,6 +123,10 @@ namespace MIPS4300i
 
 		if constexpr (instr == FPU_Instr::SWC1)
 		{
+			/* Store Word From FPU;
+			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
+			   an address. Stores the contents of the FPU general purpose register ft to the
+			   memory position specified by the address. */
 			if (address & 3)
 				AddressErrorException();
 			else
@@ -121,6 +134,11 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == FPU_Instr::SDC1)
 		{
+			/* Store Doubleword From FPU;
+			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
+			   an address. Stores the contents of the FPU general purpose registers ft and
+			   ft+1 to the memory position specified by the address when FR = 0, and the
+			   contents of the FPU general purpose register ft when FR = 1. */
 			if (address & 7)
 				AddressErrorException();
 			else
@@ -141,27 +159,39 @@ namespace MIPS4300i
 
 		if constexpr (instr == FPU_Instr::MTC1)
 		{
+			/* Move Word To FPU;
+			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
 			FGR.Set<s32>(fs, s32(GPR[rt]));
 		}
 		else if constexpr (instr == FPU_Instr::MFC1)
 		{
+			/* Move Word From FPU;
+			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
 			GPR.Set(rt, u64(FGR.Get<s32>(fs)));
 		}
 		else if constexpr (instr == FPU_Instr::CTC1)
 		{
+			/* Move Control Word To FPU;
+			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
 			FPU_control.Set(fs, GPR[rt]);
 			exception_flags.test_and_signal_all();
 		}
 		else if constexpr (instr == FPU_Instr::CFC1)
 		{
+			/* Move Control Word From FPU;
+			   Transfers the contents of FPU control register fs to CPU general purpose register rt. */
 			GPR.Set(rt, FPU_control.Get(fs));
 		}
 		else if constexpr (instr == FPU_Instr::DMTC1)
 		{
+			/* Doubleword Move To FPU;
+			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
 			FGR.Set<s64>(fs, s64(GPR[rt]));
 		}
 		else if constexpr (instr == FPU_Instr::DMFC1)
 		{
+			/* Doubleword Move From FPU;
+			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
 			GPR.Set(rt, FGR.Get<s64>(fs));
 		}
 		else
@@ -203,6 +233,14 @@ namespace MIPS4300i
 
 		if constexpr (instr == FPU_Instr::CVT_S || instr == FPU_Instr::CVT_D || instr == FPU_Instr::CVT_W || instr == FPU_Instr::CVT_L)
 		{
+			/* CVT.S/CVT.D: Convert To Single/Double Floating-point Format;
+			   Converts the contents of floating-point register fs from the specified format (fmt)
+			   to a single/double-precision floating-point format. Stores the rounded result to floating-point register fd.
+
+			   CVT.W/CVT.L: Convert To Single/Long Fixed-point Format;
+			   Converts the contents of floating-point register fs from the specified format (fmt)
+			   to a 32/64-bit fixed-point format. Stores the rounded result to floating-point register fd. */
+
 			auto Convert = [&] <FPU_NumericType Input_Type>
 			{
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
@@ -252,7 +290,7 @@ namespace MIPS4300i
 				break;
 
 			default:
-				assert(false);
+				exception_flags.unimplemented_operation = true; /* TODO other exception flags are cleared in this case, should they be? */
 			}
 
 			exception_flags.test_and_signal_all();
@@ -260,6 +298,10 @@ namespace MIPS4300i
 		else if constexpr (instr == FPU_Instr::ROUND_W || instr == FPU_Instr::TRUNC_W || instr == FPU_Instr::CEIL_W || instr == FPU_Instr::FLOOR_W ||
 			               instr == FPU_Instr::ROUND_L || instr == FPU_Instr::TRUNC_L || instr == FPU_Instr::CEIL_L || instr == FPU_Instr::FLOOR_L)
 		{
+			/* ROUND.L/ROUND.W/TRUNC.L/TRUNC.W/CEIL.L/CEIL.W/FLOOR.L/FLOOR.W: Round/Truncate/Ceiling/Floor To Single/Long Fixed-point Format;
+			   Rounds the contents of floating-point register fs to a value closest to the 32/64-bit
+			   fixed-point format and converts them from the specified format (fmt). Stores the result to floating-point register fd. */
+
 			/* Interpret the source operand (as a float), and round it to an integer (s32 or s64). */
 			auto Round = [&] <std::floating_point Input_Float, std::signed_integral Output_Int>
 			{
@@ -283,7 +325,7 @@ namespace MIPS4300i
 
 				/* If the invalid operation exception occurs, but the exception is not enabled, return INT_MAX */
 				FGR.Set<Output_Int>(fd, [&] {
-					if (std::fetestexcept(FE_INVALID) && !FCR31.enable.I)
+					if (std::fetestexcept(FE_INVALID) && !FCR31.enable_I)
 						return std::numeric_limits<Output_Int>::max();
 					else return result;
 					}());
@@ -319,7 +361,7 @@ namespace MIPS4300i
 				break;
 
 			default:
-				assert(false);
+				exception_flags.unimplemented_operation = true;
 			}
 
 			exception_flags.test_and_signal_all();
@@ -377,13 +419,8 @@ namespace MIPS4300i
 				exception_flags.unimplemented_operation = false;
 				break;
 
-			case NumericFormatID::int32:
-			case NumericFormatID::int64:
-				exception_flags.unimplemented_operation = true;
-				break;
-
 			default:
-				assert(false);
+				exception_flags.unimplemented_operation = true;
 			}
 
 			exception_flags.test_and_signal_all();
@@ -426,13 +463,8 @@ namespace MIPS4300i
 				exception_flags.unimplemented_operation = false;
 				break;
 
-			case NumericFormatID::int32:
-			case NumericFormatID::int64:
-				exception_flags.unimplemented_operation = true;
-				break;
-
 			default:
-				assert(false);
+				exception_flags.unimplemented_operation = true;
 			}
 
 			if constexpr (instr != FPU_Instr::MOV)
@@ -516,13 +548,8 @@ namespace MIPS4300i
 			exception_flags.unimplemented_operation = false;
 			break;
 
-		case NumericFormatID::int32:
-		case NumericFormatID::int64:
-			exception_flags.unimplemented_operation = true;
-			break;
-
 		default:
-			assert(false);
+			exception_flags.unimplemented_operation = true;
 		}
 
 		exception_flags.test_and_signal_invalid_exception();

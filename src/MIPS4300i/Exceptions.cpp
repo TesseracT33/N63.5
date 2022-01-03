@@ -38,6 +38,12 @@ namespace MIPS4300i
 	}
 
 
+	void ReservedInstructionException()
+	{
+
+	}
+
+
 	void TrapException()
 	{
 
@@ -45,6 +51,12 @@ namespace MIPS4300i
 
 
 	void UnderflowException()
+	{
+
+	}
+
+
+	void UnimplementedOperationException()
 	{
 
 	}

@@ -1,6 +1,6 @@
 module MIPS4300i;
 
-namespace MIPS4300i
+namespace MIPS4300i /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
 	template<Instr instr>
 	void Load(const u32 instr_code)
@@ -8,7 +8,7 @@ namespace MIPS4300i
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 address = GPR.Get(base) + offset;
+		const u64 address = GPR[base] + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
@@ -133,7 +133,7 @@ namespace MIPS4300i
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 address = GPR.Get(base) + offset;
+		const u64 address = GPR[base] + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
@@ -1010,12 +1010,6 @@ namespace MIPS4300i
 		   Transfers the contents of register rs to special register LO. */
 		const u8 rs = instr_code >> 21 & 0x1F;
 		LO = GPR[rs];
-	}
-
-
-	void CACHE(const u32 instr_code)
-	{
-
 	}
 
 

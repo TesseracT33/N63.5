@@ -60,6 +60,12 @@ namespace MIPS4300i
 		SYNC, SYSCALL, BREAK
 	};
 
+	enum class CP0_Instr
+	{
+		/* Move instructions */
+		MTC0, MFC0, DMTC0, DMFC0
+	};
+
 	enum class FPU_Instr
 	{
 		/* Load/store/transfer instructions */
@@ -99,7 +105,7 @@ namespace MIPS4300i
 		unsigned CU  : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 	} status_reg{};
 
-	struct
+	struct FPU_Control_31
 	{
 		void Set(const u32 data)
 		{
@@ -119,26 +125,28 @@ namespace MIPS4300i
 			/* TODO: initial rounding mode? */
 		}
 
+		u32 Get() const { return std::bit_cast<u32, FPU_Control_31>(*this); }
+
 		unsigned RM : 2;
 
-		struct
-		{
-			unsigned I : 1; /* Inexact Operation */
-			unsigned U : 1; /* Underflow */
-			unsigned O : 1; /* Overflow */
-			unsigned Z : 1; /* Division by Zero */
-			unsigned V : 1; /* Invalid Operation */
-		} flag, enable;
+		unsigned flag_I : 1; /* Inexact Operation */
+		unsigned flag_U : 1; /* Underflow */
+		unsigned flag_O : 1; /* Overflow */
+		unsigned flag_Z : 1; /* Division by Zero */
+		unsigned flag_V : 1; /* Invalid Operation */
 
-		struct
-		{
-			unsigned I : 1;
-			unsigned U : 1;
-			unsigned O : 1;
-			unsigned Z : 1;
-			unsigned V : 1;
-			unsigned E : 1; /* Unimplemented Operation */
-		} cause;
+		unsigned enable_I : 1;
+		unsigned enable_U : 1;
+		unsigned enable_O : 1;
+		unsigned enable_Z : 1;
+		unsigned enable_V : 1;
+
+		unsigned cause_I : 1;
+		unsigned cause_U : 1;
+		unsigned cause_O : 1;
+		unsigned cause_Z : 1;
+		unsigned cause_V : 1;
+		unsigned cause_E : 1; /* Unimplemented Operation */
 
 	private:
 		const unsigned padding0 : 5 = 0;
@@ -150,10 +158,6 @@ namespace MIPS4300i
 	private:
 		const unsigned padding1 : 7 = 0;
 	} FCR31{};
-
-	u64 PC;
-
-	u64 CP0_GPR[32]{};
 
 	struct GeneralPurposeRegisters
 	{
@@ -229,7 +233,7 @@ namespace MIPS4300i
 			if (index == 0)
 				return 0;
 			else if (index == 31)
-				return 0;
+				return FCR31.Get();
 			else
 				return 0; /* TODO ??? */
 		}
@@ -239,11 +243,15 @@ namespace MIPS4300i
 			if (index == 0)
 				;
 			else if (index == 31)
-				;
+				FCR31.Set(data);
 			else
 				; /* TODO ??? */
 		}
 	} FPU_control;
+
+	u64 PC;
+
+	u64 CP0_GPR[32]{};
 
 	u64 HI, LO;
 
@@ -270,18 +278,15 @@ namespace MIPS4300i
 	void SYNC(const u32 instr_code);
 	void SYSCALL(const u32 instr_code);
 	void BREAK(const u32 instr_code);
-	void CACHE(const u32 instr_code);
 
 	/* COP0 instructions */
-	void MTC0(const u32 instr_code);
-	void MFC0(const u32 instr_code);
-	void DMTC0(const u32 instr_code);
-	void DMFC0(const u32 instr_code);
+	template<CP0_Instr instr> void CP0_Move(const u32 instr_code);
 	void TLBR();
 	void TLBWI();
 	void TLBWR();
 	void TLBP();
 	void ERET();
+	void CACHE(const u32 instr_code);
 
 	/* COP1/FPU instructions */
 	template<FPU_Instr instr> void FPU_Load(const u32 instr_code);
@@ -299,8 +304,11 @@ namespace MIPS4300i
 	void InexactOperationException();
 	void InvalidOperationException();
 	void OverflowException();
+	void ReservedInstructionException();
 	void TrapException();
 	void UnderflowException();
+	void UnimplementedOperationException();
 
 	void ExecuteInstruction();
+	void DecodeAndExecuteInstruction(const u32 instr_code);
 }
