@@ -1,5 +1,6 @@
 export module MIPS4300i;
 
+import <array>;
 import <bit>;
 import <cassert>;
 import <cfenv>;
@@ -57,12 +58,16 @@ namespace MIPS4300i
 
 	enum class FPU_Instr
 	{
+		/* Load/store/transfer instructions */
 		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1,
 
+		/* Conversion instructions */
 		CVT_S, CVT_D, CVT_L, CVT_W, ROUND_L, ROUND_W, TRUNC_L, TRUNC_W, CEIL_L, CEIL_W, FLOOR_L, FLOOR_W,
 
+		/* Computational instructions */
 		ADD, SUB, MUL, DIV, ABS, MOV, NEG, SQRT,
 
+		/* Branch instructions */
 		BC1T, BC1F, BC1TL, BC1FL
 	};
 
@@ -92,16 +97,34 @@ namespace MIPS4300i
 
 	struct
 	{
+		void Set(const u32 data)
+		{
+			/* TODO */
+			/* after updating RM... */
+			const int new_rounding_mode = [&] {
+				switch (RM)
+				{
+				case 0b00: return FE_TONEAREST;  /* RN */
+				case 0b01: return FE_TOWARDZERO; /* RZ */
+				case 0b10: return FE_UPWARD;     /* RP */
+				case 0b11: return FE_DOWNWARD;   /* RM */
+				default: return 0; /* impossible */
+				}
+			}();
+			std::fesetround(new_rounding_mode);
+			/* TODO: initial rounding mode? */
+		}
+
 		unsigned RM : 2;
 
 		struct
 		{
-			unsigned I : 1;
-			unsigned U : 1;
-			unsigned O : 1;
-			unsigned Z : 1;
-			unsigned V : 1;
-		} flags, enables;
+			unsigned I : 1; /* Inexact Operation */
+			unsigned U : 1; /* Underflow */
+			unsigned O : 1; /* Overflow */
+			unsigned Z : 1; /* Division by Zero */
+			unsigned V : 1; /* Invalid Operation */
+		} flag, enable;
 
 		struct
 		{
@@ -110,7 +133,7 @@ namespace MIPS4300i
 			unsigned O : 1;
 			unsigned Z : 1;
 			unsigned V : 1;
-			unsigned E : 1;
+			unsigned E : 1; /* Unimplemented Operation */
 		} cause;
 
 	private:
@@ -127,32 +150,95 @@ namespace MIPS4300i
 	u64 PC;
 
 	u64 GPR[32]{};
-	u64 control[32]{};
+
+	struct GeneralPurposeRegisters
+	{
+		inline u64 Get(const size_t index) const { return GPR[index]; }
+		inline void Set(const size_t index, const u64 data) { if (index != 0) GPR[index] = data; }
+	private:
+		std::array<u64, 32> GPR{};
+	};
 
 	struct FloatingPointGeneralPurposeRegisters
 	{
 		template<typename FPU_NumericType>
-		inline FPU_NumericType InterpretAs(const size_t index) const
+		inline FPU_NumericType Get(const size_t index) const
 		{
-			if constexpr (sizeof FPU_NumericType < sizeof s64) /* I.e., 32 bits */
-				return std::bit_cast<FPU_NumericType, s32>(s32(FGR[index]));
+			if constexpr (std::is_same<FPU_NumericType, s32>::value)
+				return s32(FGR[index]);
+			else if constexpr (std::is_same<FPU_NumericType, s64>::value)
+				return status_reg.FR ? FGR[index] : FGR[index] & 0xFFFFFFFF | FGR[index + 1] << 32; /* TODO: if index is odd, result is supposed to be undefined. If index == 31, then that is very bad */
+			else if constexpr (std::is_same<FPU_NumericType, f32>::value)
+				return std::bit_cast<f32, s32>(s32(FGR[index]));
+			else if constexpr (std::is_same<FPU_NumericType, f64>::value)
+				return status_reg.FR ? std::bit_cast<f64, s64>(FGR[index])
+				: std::bit_cast<f64, s64>(FGR[index] & 0xFFFFFFFF | FGR[index + 1] << 32);
 			else
-				return std::bit_cast<FPU_NumericType, s64>(FGR[index]);
+				static_assert(false);
 		}
 
 		template<typename FPU_NumericType>
 		inline void Set(const size_t index, const FPU_NumericType data)
 		{
-			/* TODO */
+			if constexpr (std::is_same<FPU_NumericType, s32>::value)
+			{
+				FGR[index] = data;
+			}
+			else if constexpr (std::is_same<FPU_NumericType, s64>::value)
+			{
+				if (FCR31.FS)
+					FGR[index] = data;
+				else
+				{
+					FGR[index] = data & 0xFFFFFFFF;
+					FGR[index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+				}
+			}
+			else if constexpr (std::is_same<FPU_NumericType, f32>::value)
+			{
+				FGR[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
+			}
+			else if constexpr (std::is_same<FPU_NumericType, f64>::value)
+			{
+				if (FCR31.FS)
+					FGR[index] = std::bit_cast<s64, f64>(data);
+				else
+				{
+					const s64 conv = std::bit_cast<s64, f64>(data);
+					FGR[index] = conv & 0xFFFFFFFF;
+					FGR[index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+				}
+			}
+			else
+				static_assert(false);
 		}
 
-		s64& operator[](const size_t index)
-		{
-			return FGR[index];
-		}
 	private:
-		s64 FGR[32]{};
+		std::array<s64, 32> FGR{};
 	} FGR;
+
+	struct FloatingPointControlRegisters
+	{
+		u32 Get(const size_t index) const
+		{
+			if (index == 0)
+				return 0;
+			else if (index == 31)
+				return 0;
+			else
+				return 0; /* TODO ??? */
+		}
+
+		void Set(const size_t index, const u32 data)
+		{
+			if (index == 0)
+				;
+			else if (index == 31)
+				;
+			else
+				; /* TODO ??? */
+		}
+	} FPU_control;
 
 	u64 HI, LO;
 
