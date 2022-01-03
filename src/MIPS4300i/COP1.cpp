@@ -382,6 +382,10 @@ namespace MIPS4300i
 
 		if constexpr (instr == FPU_Instr::ADD || instr == FPU_Instr::SUB || instr == FPU_Instr::MUL || instr == FPU_Instr::DIV)
 		{
+			/* Floating-point Add/Subtract/Multiply/Divide;
+			   Arithmetically adds/subtracts/multiplies/divides the contents of floating-point registers
+			   fs and ft in the specified format (fmt). Stores the rounded result to floating-point register fd. */
+
 			const u8 ft = instr_code >> 16 & 0x1F;
 
 			auto Compute = [&] <std::floating_point Float>
@@ -427,6 +431,22 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == FPU_Instr::ABS || instr == FPU_Instr::MOV || instr == FPU_Instr::NEG || instr == FPU_Instr::SQRT)
 		{
+			/* Floating-point Absolute Value;
+			   Calculates the arithmetic absolute value of the contents of floating-point
+			   register fs in the specified format (fmt). Stores the result to floating-point register fd.
+
+			   Floating-point Move;
+			   Copies the contents of floating-point register fs to floating-point register fd
+			   in the specified format (fmt).
+
+			   Floating-point Negate;
+			   Arithmetically negates the contents of floating-point register fs in the
+			   specified format (fmt). Stores the result to floating-point register fd.
+
+			   Floating-point Square Root;
+			   Calculates arithmetic positive square root of the contents of floating-point
+			   register fs in the specified format. Stores the rounded result to floating-point register fd. */
+
 			auto Compute = [&] <std::floating_point Float>
 			{
 				const Float op = FGR.Get<Float>(fs);
@@ -482,6 +502,23 @@ namespace MIPS4300i
 	template<FPU_Instr instr>
 	void FPU_Branch(const u32 instr_code)
 	{
+		/* For all instructions: Adds the instruction address in the delay slot and a 16-bit offset (shifted 2 bits
+		   to the left and sign-extended) to calculate the branch target address.
+
+		   BC1T: Branch On FPU True;
+		   If the FPU condition line is true, branches to the target address (delay of one instruction).
+
+		   BC1F: Branch On FPU False;
+		   If the FPU condition line is false, branches to the target address (delay of one instruction).
+
+		   BC1TL: Branch On FPU True Likely;
+		   If the FPU condition line is true, branches to the target address (delay of one instruction).
+		   If conditional branch does not take place, the instruction in the delay slot is invalidated.
+
+		   BC1FL: Branch On FPU False Likely;
+		   If the FPU condition line is false, branches to the target address (delay of one instruction).
+		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
+
 		const s16 offset = instr_code & 0xFFFF;
 		const bool cond = true; // TODO: = COC[1]
 		const s64 target = s64(offset) << 2;
@@ -508,6 +545,12 @@ namespace MIPS4300i
 
 	void FPU_Compare(const u32 instr_code)
 	{
+		/* Floating-point Compare;
+		   Interprets and arithmetically compares the contents of FPU registers fs and ft
+		   in the specified format (fmt). The result is identified by comparison and the
+		   specified condition (cond). After a delay of one instruction, the comparison
+		   result can be used by the FPU branch instruction of the CPU. */
+
 		const u8 cond = instr_code & 0xF;
 		const u8 fs = instr_code >> 11 & 0x1F;
 		const u8 ft = instr_code >> 16 & 0x1F;
