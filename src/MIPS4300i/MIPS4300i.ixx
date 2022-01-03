@@ -9,6 +9,10 @@ import <concepts>;
 import <limits>;
 import <type_traits>;
 
+#ifdef _MSC_VER
+import <intrin.h>;
+#endif
+
 import MMU;
 import NumericalTypes;
 
@@ -73,10 +77,10 @@ namespace MIPS4300i
 
 	template<typename T>
 	concept FPU_NumericType =
-		std::is_same<f32, typename std::remove_cv<T>::type>::value ||
-		std::is_same<f64, typename std::remove_cv<T>::type>::value ||
-		std::is_same<s32, typename std::remove_cv<T>::type>::value ||
-		std::is_same<s64, typename std::remove_cv<T>::type>::value;
+		std::is_same_v<f32, typename std::remove_cv<T>::type> ||
+		std::is_same_v<f64, typename std::remove_cv<T>::type> ||
+		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
+		std::is_same_v<s64, typename std::remove_cv<T>::type>;
 
 	struct
 	{
@@ -149,15 +153,16 @@ namespace MIPS4300i
 
 	u64 PC;
 
-	u64 GPR[32]{};
+	u64 CP0_GPR[32]{};
 
 	struct GeneralPurposeRegisters
 	{
 		inline u64 Get(const size_t index) const { return GPR[index]; }
 		inline void Set(const size_t index, const u64 data) { if (index != 0) GPR[index] = data; }
+		u64 operator[](const size_t index) { return GPR[index]; } /* returns by value so that assignments have to made through function "Set". */
 	private:
 		std::array<u64, 32> GPR{};
-	};
+	} GPR;
 
 	struct FloatingPointGeneralPurposeRegisters
 	{

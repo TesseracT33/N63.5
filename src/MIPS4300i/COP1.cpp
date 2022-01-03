@@ -36,6 +36,31 @@ namespace MIPS4300i
 			FCR31.cause.Z = std::fetestexcept(FE_DIVBYZERO);
 			FCR31.cause.V = std::fetestexcept(FE_INVALID);
 			FCR31.cause.E = unimplemented_operation;
+
+			if (FCR31.enable.I)
+				InexactOperationException();
+			else
+				FCR31.flag.I = true;
+
+			if (FCR31.enable.U)
+				UnderflowException();
+			else
+				FCR31.flag.U = true;
+
+			if (FCR31.enable.O)
+				OverflowException();
+			else
+				FCR31.flag.O = true;
+
+			if (FCR31.enable.Z)
+				DivisionByZeroException();
+			else
+				FCR31.flag.Z = true;
+
+			if (FCR31.enable.V)
+				InvalidOperationException();
+			else
+				FCR31.flag.V = true;
 		}
 
 		void test_and_signal_unimplemented_exception()
@@ -48,54 +73,6 @@ namespace MIPS4300i
 			FCR31.cause.V = std::fetestexcept(FE_INVALID);
 		}
 	} static exception_flags{};
-
-
-	static void SignalInexactOperation(const bool value)
-	{
-		FCR31.cause.I = value;
-		if (FCR31.cause.I)
-		{
-			FCR31.flag.I |= value;
-			if (FCR31.enable.I)
-				InvalidOperationException();
-		}
-	}
-
-
-	static void SignalUnderflow(const bool value)
-	{
-		FCR31.cause.U = value;
-		if (FCR31.cause.U)
-		{
-			FCR31.flag.U |= value;
-			if (FCR31.enable.U)
-				UnderflowException();
-		}
-	}
-
-
-	static void SignalOverflow(const bool value)
-	{
-		FCR31.cause.O = value;
-		if (FCR31.cause.O)
-		{
-			FCR31.flag.O |= value;
-			if (FCR31.enable.O)
-				OverflowException();
-		}
-	}
-
-
-	static void SignalInvalidOperation(const bool value)
-	{
-
-	}
-
-
-	static void SignalDivisionByZero(const bool value)
-	{
-
-	}
 
 
 	template<FPU_Instr instr>
@@ -168,7 +145,7 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == FPU_Instr::MFC1)
 		{
-			GPR[rt] = u64(FGR.Get<s32>(fs));
+			GPR.Set(rt, u64(FGR.Get<s32>(fs)));
 		}
 		else if constexpr (instr == FPU_Instr::CTC1)
 		{
@@ -177,7 +154,7 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == FPU_Instr::CFC1)
 		{
-			GPR[rt] = FPU_control.Get(fs);
+			GPR.Set(rt, FPU_control.Get(fs));
 		}
 		else if constexpr (instr == FPU_Instr::DMTC1)
 		{
@@ -185,7 +162,7 @@ namespace MIPS4300i
 		}
 		else if constexpr (instr == FPU_Instr::DMFC1)
 		{
-			GPR[rt] = FGR.Get<s64>(fs);
+			GPR.Set(rt, FGR.Get<s64>(fs));
 		}
 		else
 		{

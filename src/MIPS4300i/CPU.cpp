@@ -8,7 +8,7 @@ namespace MIPS4300i
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 address = GPR[base] + offset;
+		const u64 address = GPR.Get(base) + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
@@ -16,15 +16,13 @@ namespace MIPS4300i
 		{
 			/* Load Byte;
 			   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-			GPR[rt] = MMU::cpu_read_mem<s8>(address);
-			//GPR.Set(rt, MMU::cpu_read_mem<s8>(address));
+			GPR.Set(rt, MMU::cpu_read_mem<s8>(address));
 		}
 		else if constexpr (instr == Instr::LBU)
 		{
 			/* Load Byte Unsigned;
 			   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-			GPR[rt] = MMU::cpu_read_mem<u8>(address);
-			//GPR.Set(rt, MMU::cpu_read_mem<u8>(address));
+			GPR.Set(rt, MMU::cpu_read_mem<u8>(address));
 		}
 		else if constexpr (instr == Instr::LH)
 		{
@@ -33,7 +31,7 @@ namespace MIPS4300i
 			if (address & 1)
 				AddressErrorException();
 			else
-				GPR[rt] = MMU::cpu_read_mem<s16>(address); //GPR.Set(rt, MMU::cpu_read_mem<s16>(address));
+				GPR.Set(rt, MMU::cpu_read_mem<s16>(address));
 		}
 		else if constexpr (instr == Instr::LHU)
 		{
@@ -42,7 +40,7 @@ namespace MIPS4300i
 			if (address & 1)
 				AddressErrorException();
 			else
-				GPR[rt] = MMU::cpu_read_mem<u16>(address);
+				GPR.Set(rt, MMU::cpu_read_mem<u16>(address));
 		}
 		else if constexpr (instr == Instr::LW)
 		{
@@ -51,7 +49,7 @@ namespace MIPS4300i
 			if (address & 3)
 				AddressErrorException();
 			else
-				GPR[rt] = MMU::cpu_read_mem<s32>(address);
+				GPR.Set(rt, MMU::cpu_read_mem<s32>(address));
 		}
 		else if constexpr (instr == Instr::LWU)
 		{
@@ -60,7 +58,7 @@ namespace MIPS4300i
 			if (address & 3)
 				AddressErrorException();
 			else
-				GPR[rt] = MMU::cpu_read_mem<u32>(address);
+				GPR.Set(rt, MMU::cpu_read_mem<u32>(address));
 		}
 		else if constexpr (instr == Instr::LWL)
 		{
@@ -69,7 +67,7 @@ namespace MIPS4300i
 			   the address is at the leftmost position of the word. Sign-extends (in the 64-
 			   bit mode), merges the result of the shift and the contents of register rt, and
 			   loads the result to register rt. */
-			GPR[rt] = MMU::cpu_read_mem<u32>(address);
+			GPR.Set(rt, MMU::cpu_read_mem<u32>(address));
 		}
 		else if constexpr (instr == Instr::LWR)
 		{
@@ -78,7 +76,7 @@ namespace MIPS4300i
 			   the address is at the rightmost position of the word. Sign-extends (in the 64-
 			   bit mode), merges the result of the shift and the contents of register rt, and
 			   loads the result to register rt. */
-			GPR[rt] = MMU::cpu_read_mem<u32>(address);
+			GPR.Set(rt, MMU::cpu_read_mem<u32>(address));
 		}
 		else if constexpr (instr == Instr::LD)
 		{
@@ -87,7 +85,7 @@ namespace MIPS4300i
 			if (address & 7)
 				AddressErrorException();
 			else
-				GPR[rt] = MMU::cpu_read_mem<u64>(address);
+				GPR.Set(rt, MMU::cpu_read_mem<u64>(address));
 		}
 		else if constexpr (instr == Instr::LDL)
 		{
@@ -96,7 +94,7 @@ namespace MIPS4300i
 			   specified by the address is at the leftmost position of the doubleword.
 			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
-			GPR[rt] = MMU::cpu_read_mem<u64>(address);
+			GPR.Set(rt, MMU::cpu_read_mem<u64>(address));
 		}
 		else if constexpr (instr == Instr::LDR)
 		{
@@ -105,13 +103,13 @@ namespace MIPS4300i
 			   specified by the address is at the rightmost position of the doubleword.
 			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
-			GPR[rt] = MMU::cpu_read_mem<u64, MMU::ReadFromNextBoundary::Yes>(address);
+			GPR.Set(rt, MMU::cpu_read_mem<u64, MMU::ReadFromNextBoundary::Yes>(address));
 		}
 		else if constexpr (instr == Instr::LL)
 		{
 			/* Load Linked;
 			   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-			GPR[rt] = MMU::cpu_read_mem<s32>(address);
+			GPR.Set(rt, MMU::cpu_read_mem<s32>(address));
 			LL = 1;
 			/* TODO the specified physical address of the memory is stored to the LLAddr register */
 		}
@@ -119,7 +117,7 @@ namespace MIPS4300i
 		{
 			/* Load Linked Doubleword;
 			   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
-			GPR[rt] = MMU::cpu_read_mem<u64>(address);
+			   GPR.Set(rt, MMU::cpu_read_mem<u64>(address));
 			LL = 1;
 		}
 		else
@@ -135,7 +133,7 @@ namespace MIPS4300i
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 address = GPR[base] + offset;
+		const u64 address = GPR.Get(base) + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
@@ -214,11 +212,11 @@ namespace MIPS4300i
 			if (LL == 1)
 			{
 				MMU::cpu_write_mem<u32>(address, GPR[rt]);
-				GPR[rt] = 1;
+				GPR.Set(rt, 1);
 			}
 			else
 			{
-				GPR[rt] = 0;
+				GPR.Set(rt, 0);
 			}
 		}
 		else if constexpr (instr == Instr::SCD)
@@ -231,11 +229,11 @@ namespace MIPS4300i
 			if (LL == 1)
 			{
 				MMU::cpu_write_mem<u64>(address, GPR[rt]);
-				GPR[rt] = 1;
+				GPR.Set(rt, 1);
 			}
 			else
 			{
-				GPR[rt] = 0;
+				GPR.Set(rt, 0);
 			}
 		}
 		else
@@ -269,7 +267,7 @@ namespace MIPS4300i
 			if (overflow)
 				IntegerOverflowException();
 			else
-				GPR[rt] = sum;
+				GPR.Set(rt, sum);
 		}
 		else if constexpr (instr == Instr::ADDIU)
 		{
@@ -278,7 +276,7 @@ namespace MIPS4300i
 			   result to register rt (sign-extends the result in the 64-bit mode). Does not
 			   generate an exception even if an integer overflow occurs. */
 			const s32 sum = GPR[rs] + immediate;
-			GPR[rt] = sum;
+			GPR.Set(rt, sum);
 		}
 		else if constexpr (instr == Instr::SLTI)
 		{
@@ -286,7 +284,7 @@ namespace MIPS4300i
 			   Sign-extends the 16-bit immediate and compares it with register rs as a
 			   signed integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
-			GPR[rt] = s64(GPR[rs]) < immediate; /* TODO s32 in 32-bit mode */
+			GPR.Set(rt, s64(GPR[rs]) < immediate); /* TODO s32 in 32-bit mode */
 		}
 		else if constexpr (instr == Instr::SLTIU)
 		{
@@ -295,28 +293,28 @@ namespace MIPS4300i
 			   unsigned integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
 			   /* TODO */
-			GPR[rt] = GPR[rs] < immediate;
+			GPR.Set(rt, GPR[rs] < immediate);
 		}
 		else if constexpr (instr == Instr::ANDI)
 		{
 			/* And Immediate;
 			   Zero-extends the 16-bit immediate, ANDs it with register rs, and stores the
 			   result to register rt. */
-			GPR[rt] = GPR[rs] & immediate;
+			GPR.Set(rt, GPR[rs] & immediate);
 		}
 		else if constexpr (instr == Instr::ORI)
 		{
 			/* Or Immediate;
 			   Zero-extends the 16-bit immediate, ORs it with register rs, and stores the
 			   result to register rt. */
-			GPR[rt] = GPR[rs] | immediate;
+			GPR.Set(rt, GPR[rs] | immediate);
 		}
 		else if constexpr (instr == Instr::XORI)
 		{
 			/* Exclusive Or Immediate;
 			   Zero-extends the 16-bit immediate, exclusive-ORs it with register rs, and
 			   stores the result to register rt. */
-			GPR[rt] = GPR[rs] ^ immediate;
+			GPR.Set(rt, GPR[rs] ^ immediate);
 		}
 		else if constexpr (instr == Instr::LUI)
 		{
@@ -325,7 +323,7 @@ namespace MIPS4300i
 			   of the word to 0.
 			   Stores the result to register rt (by sign-extending the result in the 64-bit mode). */
 			const s32 result = immediate << 16;
-			GPR[rt] = result;
+			GPR.Set(rt, result);
 		}
 		else if constexpr (instr == Instr::DADDI)
 		{
@@ -341,7 +339,7 @@ namespace MIPS4300i
 			if (overflow)
 				IntegerOverflowException();
 			else
-				GPR[rt] = sum;
+				GPR.Set(rt, sum);
 		}
 		else if constexpr (instr == Instr::DADDIU)
 		{
@@ -350,7 +348,7 @@ namespace MIPS4300i
 			   the 64-bit result to register rt. Does not generate an exception even if an
 			   integer overflow occurs. */
 			const s64 sum = (s64)GPR[rs] + immediate;
-			GPR[rt] = sum;
+			GPR.Set(rt, sum);
 		}
 		else
 		{
@@ -378,7 +376,7 @@ namespace MIPS4300i
 			if (overflow)
 				IntegerOverflowException();
 			else
-				GPR[rd] = sum;
+				GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::ADDU)
 		{
@@ -386,7 +384,7 @@ namespace MIPS4300i
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
 			   the 32-bit result to register rd. Does not generate an exception even if an integer overflow occurs. */
 			const s32 sum = s32(GPR[rs]) + s32(GPR[rt]);
-			GPR[rd] = sum;
+			GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::SUB)
 		{
@@ -398,7 +396,7 @@ namespace MIPS4300i
 			if (overflow)
 				IntegerOverflowException();
 			else
-				GPR[rd] = sum;
+				GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::SUBU)
 		{
@@ -407,7 +405,7 @@ namespace MIPS4300i
 			   in the 64-bit mode) the 32-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs.*/
 			const s32 sum = s32(GPR[rs]) - s32(GPR[rt]);
-			GPR[rd] = sum;
+			GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::SLT)
 		{
@@ -415,7 +413,7 @@ namespace MIPS4300i
 			   Compares the contents of registers rs and rt as signed integers.
 			   If the contents of register rs are less than those of rt, stores 1 to register rd;
 			   otherwise, stores 0 to rd. */
-			GPR[rd] = s64(GPR[rs]) < s64(GPR[rt]); /* todo: is it 32 bit comparison or not? */
+			GPR.Set(rd, s64(GPR[rs]) < s64(GPR[rt])); /* todo: is it 32 bit comparison or not? */
 		}
 		else if constexpr (instr == Instr::SLTU)
 		{
@@ -423,31 +421,31 @@ namespace MIPS4300i
 			   Compares the contents of registers rs and rt as unsigned integers.
 			   If the contents of register rs are less than those of rt, stores 1 to register rd;
 			   otherwise, stores 0 to rd. */
-			GPR[rd] = GPR[rs] < GPR[rt];
+			GPR.Set(rd, GPR[rs] < GPR[rt]);
 		}
 		else if constexpr (instr == Instr::AND)
 		{
 			/* And;
 			   ANDs the contents of registers rs and rt in bit units, and stores the result to register rd. */
-			GPR[rd] = GPR[rs] & GPR[rt];
+			GPR.Set(rd, GPR[rs] & GPR[rt]);
 		}
 		else if constexpr (instr == Instr::OR)
 		{
 			/* Or;
 			   ORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
-			GPR[rd] = GPR[rs] | GPR[rt];
+			GPR.Set(rd, GPR[rs] | GPR[rt]);
 		}
 		else if constexpr (instr == Instr::XOR)
 		{
 			/* Exclusive Or;
 			   Exclusive-ORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
-			GPR[rd] = GPR[rs] ^ GPR[rt];
+			GPR.Set(rd, GPR[rs] ^ GPR[rt]);
 		}
 		else if constexpr (instr == Instr::NOR)
 		{
 			/* Nor;
 			   NORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
-			GPR[rd] = ~(GPR[rs] | GPR[rt]);
+			GPR.Set(rd, ~(GPR[rs] | GPR[rt]));
 		}
 		else if constexpr (instr == Instr::DADD)
 		{
@@ -462,7 +460,7 @@ namespace MIPS4300i
 			if (overflow)
 				IntegerOverflowException();
 			else
-				GPR[rd] = sum;
+				GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::DADDU)
 		{
@@ -470,7 +468,7 @@ namespace MIPS4300i
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
 			const u64 sum = GPR[rs] + GPR[rt];
-			GPR[rd] = sum;
+			GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::DSUB)
 		{
@@ -482,7 +480,7 @@ namespace MIPS4300i
 			if (overflow)
 				IntegerOverflowException();
 			else
-				GPR[rd] = sum;
+				GPR.Set(rd, sum);
 		}
 		else if constexpr (instr == Instr::DSUBU)
 		{
@@ -490,7 +488,7 @@ namespace MIPS4300i
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
 			const u64 sum = GPR[rs] - GPR[rt];
-			GPR[rd] = sum;
+			GPR.Set(rd, sum);
 		}
 		else
 		{
@@ -517,133 +515,131 @@ namespace MIPS4300i
 			else return 0;
 		}();
 
-		if constexpr (instr == Instr::SLL)
-		{
-			/* Shift Left Logical;
-			   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
-			   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-			const s32 result = s32(GPR[rt]) << sa;
-			GPR[rd] = result;
-		}
-		else if constexpr (instr == Instr::SRL)
-		{
-			/* Shift Right Logical;
-			   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
-			   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-			const s32 result = GPR[rt] >> sa;
-			GPR[rd] = result;
-		}
-		else if constexpr (instr == Instr::SRA)
-		{
-			/* Shift Right Arithmetic;
-			   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
-			   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-			const s32 result = (s32)GPR[rt] >> sa;
-			GPR[rd] = result;
-		}
-		else if constexpr (instr == Instr::SLLV)
-		{
-			/* Shift Left Logical Variable;
-			   Shifts the contents of register rt to the left and inserts 0 to the low-order bits.
-			   The number of bits by which the register contents are to be shifted is
-			   specified by the low-order 5 bits of register rs.
-			   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
-			const s32 result = s32(GPR[rt]) << (GPR[rs] & 0x1F);
-			GPR[rd] = result;
-		}
-		else if constexpr (instr == Instr::SRLV)
-		{
-			/* Shift Right Logical Variable;
-			   Shifts the contents of register rt to the right, and inserts 0 to the high-order bits.
-			   The number of bits by which the register contents are to be shifted is
-			   specified by the low-order 5 bits of register rs.
-			   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-			const s32 result = GPR[rt] >> (GPR[rs] & 0x1F);
-			GPR[rd] = result;
-		}
-		else if constexpr (instr == Instr::SRAV)
-		{
-			/* Shift Right Arithmetic Variable;
-			   Shifts the contents of register rt to the right and sign-extends the high-order bits.
-			   The number of bits by which the register contents are to be shifted is
-			   specified by the low-order 5 bits of register rs.
-			   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-			GPR[rd] = (s32)GPR[rt] >> (GPR[rs] & 0x1F);
-		}
-		else if constexpr (instr == Instr::DSLL)
-		{
-			/* Doubleword Shift Left Logical;
-			   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
-			   Stores the 64-bit result to register rd. */
-			GPR[rd] = GPR[rt] << sa;
-		}
-		else if constexpr (instr == Instr::DSRL)
-		{
-			/* Doubleword Shift Right Logical;
-			   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
-			   Stores the 64-bit result to register rd. */
-			GPR[rd] = GPR[rt] >> sa;
-		}
-		else if constexpr (instr == Instr::DSRA)
-		{
-			/* Doubleword Shift Right Arithmetic;
-			   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
-			   Stores the 64-bit result to register rd. */
-			GPR[rd] = (s64)GPR[rt] >> sa;
-		}
-		else if constexpr (instr == Instr::DSLLV)
-		{
-			/* Doubleword Shift Left Logical Variable;
-			   Shifts the contents of register rt to the left, and inserts 0 to the low-order bits.
-			   The number of bits by which the register contents are to be shifted is
-			   specified by the low-order 6 bits of register rs.
-			   Stores the 64-bit result and stores it to register rd. */
-			GPR[rd] = GPR[rt] << (GPR[rs] & 0x3F);
-		}
-		else if constexpr (instr == Instr::DSRLV)
-		{
-			/* Doubleword Shift Right Logical Variable;
-			   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
-			   The number of bits by which the register contents are to be shifted is
-			   specified by the low-order 6 bits of register rs.
-			   Sign-extends the 64-bit result and stores it to register rd. */
-			GPR[rd] = (s64)(GPR[rt] >> (GPR[rs] & 0x3F)); /* TODO sign-extends the 64-bit result? */
-		}
-		else if constexpr (instr == Instr::DSRAV)
-		{
-			/* Doubleword Shift Right Arithmetic Variable;
-			   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
-			   The number of bits by which the register contents are to be shifted is
-			   specified by the low-order 6 bits of register rs.
-			   Sign-extends the 64-bit result and stores it to register rd. */
-			GPR[rd] = (s64)GPR[rt] >> (GPR[rs] & 0x3F);
-		}
-		else if constexpr (instr == Instr::DSLL32)
-		{
-			/* Doubleword Shift Left Logical + 32;
-			   Shifts the contents of register rt 32+sa bits to the left, and inserts 0 to the low-order bits.
-			   Stores the 64-bit result to register rd. */
-			GPR[rd] = GPR[rt] << (sa + 32);
-			//GPR.Set(rd, GPR.Get(rt) << (sa + 32));
-		}
-		else if constexpr (instr == Instr::DSRL32)
-		{
-			/* Doubleword Shift Right Logical + 32;
-			   Shifts the contents of register rt 32+sa bits to the right, and inserts 0 to the high-order bits.
-			   Stores the 64-bit result to register rd. */
-			GPR[rd] = GPR[rt] >> (sa + 32);
-		}
-		else if constexpr (instr == Instr::DSRA32)
-		{
-			/* Doubleword Shift Right Arithmetic + 32;
-			   Shifts the contents of register rt 32+sa bits to the right, and sign-extends the high-order bits.
-			   Stores the 64-bit result to register rd.*/
-			GPR[rd] = (s64)GPR[rt] >> (sa + 32);
-		}
-		else
-		{
-			static_assert(false, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
-		}
+		const s64 result = [&] {
+			if constexpr (instr == Instr::SLL)
+			{
+				/* Shift Left Logical;
+				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s64(s32(GPR[rt]) << sa);
+			}
+			else if constexpr (instr == Instr::SRL)
+			{
+				/* Shift Right Logical;
+				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s64(s32(GPR[rt]) >> sa);
+			}
+			else if constexpr (instr == Instr::SRA)
+			{
+				/* Shift Right Arithmetic;
+				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s64(s32(GPR[rt]) >> sa);
+			}
+			else if constexpr (instr == Instr::SLLV)
+			{
+				/* Shift Left Logical Variable;
+				   Shifts the contents of register rt to the left and inserts 0 to the low-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 5 bits of register rs.
+				   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
+				return s64(s32(GPR[rt]) << (GPR[rs] & 0x1F));
+			}
+			else if constexpr (instr == Instr::SRLV)
+			{
+				/* Shift Right Logical Variable;
+				   Shifts the contents of register rt to the right, and inserts 0 to the high-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 5 bits of register rs.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s64(s32(GPR[rt]) >> (GPR[rs] & 0x1F));
+			}
+			else if constexpr (instr == Instr::SRAV)
+			{
+				/* Shift Right Arithmetic Variable;
+				   Shifts the contents of register rt to the right and sign-extends the high-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 5 bits of register rs.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s64(s32(GPR[rt]) >> (GPR[rs] & 0x1F));
+			}
+			else if constexpr (instr == Instr::DSLL)
+			{
+				/* Doubleword Shift Left Logical;
+				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
+				   Stores the 64-bit result to register rd. */
+				return s64(GPR[rt] << sa);
+			}
+			else if constexpr (instr == Instr::DSRL)
+			{
+				/* Doubleword Shift Right Logical;
+				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
+				   Stores the 64-bit result to register rd. */
+				return s64(GPR[rt] >> sa);
+			}
+			else if constexpr (instr == Instr::DSRA)
+			{
+				/* Doubleword Shift Right Arithmetic;
+				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
+				   Stores the 64-bit result to register rd. */
+				return s64(GPR[rt]) >> sa;
+			}
+			else if constexpr (instr == Instr::DSLLV)
+			{
+				/* Doubleword Shift Left Logical Variable;
+				   Shifts the contents of register rt to the left, and inserts 0 to the low-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 6 bits of register rs.
+				   Stores the 64-bit result and stores it to register rd. */
+				return s64(GPR[rt] << (GPR[rs] & 0x3F));
+			}
+			else if constexpr (instr == Instr::DSRLV)
+			{
+				/* Doubleword Shift Right Logical Variable;
+				   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 6 bits of register rs.
+				   Sign-extends the 64-bit result and stores it to register rd. */
+				return s64(GPR[rt] >> (GPR[rs] & 0x3F)); /* TODO sign-extends the 64-bit result? */
+			}
+			else if constexpr (instr == Instr::DSRAV)
+			{
+				/* Doubleword Shift Right Arithmetic Variable;
+				   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 6 bits of register rs.
+				   Sign-extends the 64-bit result and stores it to register rd. */
+				return s64(GPR[rt]) >> (GPR[rs] & 0x3F);
+			}
+			else if constexpr (instr == Instr::DSLL32)
+			{
+				/* Doubleword Shift Left Logical + 32;
+				   Shifts the contents of register rt 32+sa bits to the left, and inserts 0 to the low-order bits.
+				   Stores the 64-bit result to register rd. */
+				return s64(GPR[rt] << (sa + 32));
+			}
+			else if constexpr (instr == Instr::DSRL32)
+			{
+				/* Doubleword Shift Right Logical + 32;
+				   Shifts the contents of register rt 32+sa bits to the right, and inserts 0 to the high-order bits.
+				   Stores the 64-bit result to register rd. */
+				return s64(GPR[rt] >> (sa + 32));
+			}
+			else if constexpr (instr == Instr::DSRA32)
+			{
+				/* Doubleword Shift Right Arithmetic + 32;
+				   Shifts the contents of register rt 32+sa bits to the right, and sign-extends the high-order bits.
+				   Stores the 64-bit result to register rd.*/
+				return s64(GPR[rt]) >> (sa + 32);
+			}
+			else
+			{
+				static_assert(false, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
+			}
+		}();
+
+		GPR.Set(rd, u64(result));
 	}
 
 
@@ -703,12 +699,12 @@ namespace MIPS4300i
 			   Multiplies the contents of register rs by the contents of register rt as a signed integer.
 			   Stores the 128-bit result to special registers HI and LO. */
 #if defined _MSC_VER
-			   //__int64 high_product;
-			   //__int64 low_product = _mul128(GPR[rs], GPR[rt], &high_product);
-			   //LO = low_product;
-			   //HI = high_product;
+			   __int64 high_product;
+			   __int64 low_product = _mul128(GPR[rs], GPR[rt], &high_product);
+			   LO = low_product;
+			   HI = high_product;
 #elif defined __clang__ || defined __GNUC__
-			__int128 product = __int128(GPR[rs]) * __int128(GPR[rt]);
+			const __int128 product = __int128(GPR[rs]) * __int128(GPR[rt]);
 			LO = product & 0xFFFFFFFF'FFFFFFFF;
 			HI = product >> 64;
 #else
@@ -721,12 +717,12 @@ namespace MIPS4300i
 			   Multiplies the contents of register rs by the contents of register rt as an unsigned integer.
 			   Stores the 128-bit result to special registers HI and LO. */
 #if defined _MSC_VER
-			   //unsigned __int64 high_product;
-			   //unsigned __int64 low_product = _umul128(GPR[rs], GPR[rt], &high_product);
-			   //LO = low_product;
-			   //HI = high_product;
+			   unsigned __int64 high_product;
+			   unsigned __int64 low_product = _umul128(GPR[rs], GPR[rt], &high_product);
+			   LO = low_product;
+			   HI = high_product;
 #elif defined __clang__ || defined __GNUC__
-			unsigned __int128 product = unsigned __int128(GPR[rs]) * unsigned __int128(GPR[rt]);
+			const unsigned __int128 product = unsigned __int128(GPR[rs]) * unsigned __int128(GPR[rt]);
 			LO = product & 0xFFFFFFFF'FFFFFFFF;
 			HI = product >> 64;
 #else
@@ -804,12 +800,12 @@ namespace MIPS4300i
 
 		if constexpr (instr == Instr::JAL)
 		{
-			GPR[31] = PC + 4;
+			GPR.Set(31, PC + 4);
 		}
 		else if constexpr (instr == Instr::JALR)
 		{
 			const u8 rd = instr_code >> 11 & 0x1F;
-			GPR[rd] = PC + 4;
+			GPR.Set(rd, PC + 4);
 		}
 	}
 
@@ -821,7 +817,7 @@ namespace MIPS4300i
 
 		if constexpr (instr == Instr::BLTZAL || instr == Instr::BGEZAL || instr == Instr::BLTZALL || instr == Instr::BGEZALL)
 		{
-			GPR[31] = PC + 4;
+			GPR.Set(31, PC + 4);
 		}
 
 		const u8 rt = [&] {
@@ -986,7 +982,7 @@ namespace MIPS4300i
 		/* Move From HI;
 		   Transfers the contents of special register HI to register rd. */
 		const u8 rd = instr_code >> 11 & 0x1F;
-		//GPR.Set(rd, HI);
+		GPR.Set(rd, HI);
 	}
 
 
@@ -995,7 +991,7 @@ namespace MIPS4300i
 		/* Move From LO;
 		   Transfers the contents of special register LO to register rd. */
 		const u8 rd = instr_code >> 11 & 0x1F;
-		//GPR.Set(rd, LO);
+		GPR.Set(rd, LO);
 	}
 
 
@@ -1004,7 +1000,7 @@ namespace MIPS4300i
 		/* Move To HI;
 		   Transfers the contents of register rs to special register HI. */
 		const u8 rs = instr_code >> 21 & 0x1F;
-		//HI = GPR.Get(rs);
+		HI = GPR[rs];
 	}
 
 
@@ -1013,7 +1009,7 @@ namespace MIPS4300i
 		/* Move To LO;
 		   Transfers the contents of register rs to special register LO. */
 		const u8 rs = instr_code >> 21 & 0x1F;
-		//LO = GPR.Get(rs);
+		LO = GPR[rs];
 	}
 
 
