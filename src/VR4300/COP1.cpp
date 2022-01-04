@@ -1,6 +1,6 @@
-module MIPS4300i;
+module VR4300;
 
-namespace MIPS4300i
+namespace VR4300
 {
 	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.
 	   The below maps formats to identifiers. */

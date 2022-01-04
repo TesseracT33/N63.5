@@ -1,6 +1,6 @@
-module MIPS4300i;
+module VR4300;
 
-namespace MIPS4300i
+namespace VR4300
 {
 	static void DecodeSpecialInstruction(const u32 instr_code)
 	{

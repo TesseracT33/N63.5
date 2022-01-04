@@ -1,4 +1,4 @@
-export module MIPS4300i;
+export module VR4300;
 
 import <array>;
 import <bit>;
@@ -16,7 +16,7 @@ import <intrin.h>;
 import MMU;
 import NumericalTypes;
 
-namespace MIPS4300i
+namespace VR4300
 {
 	export
 	{
@@ -63,7 +63,13 @@ namespace MIPS4300i
 	enum class CP0_Instr
 	{
 		/* Move instructions */
-		MTC0, MFC0, DMTC0, DMFC0
+		MTC0, MFC0, DMTC0, DMFC0,
+
+		/* TLB instructions */
+		TLBP, TLBR, TLBWI, TLBWR,
+
+		/* Misc. instructions */
+		ERET, CACHE
 	};
 
 	enum class FPU_Instr
@@ -90,20 +96,60 @@ namespace MIPS4300i
 
 	struct
 	{
-		unsigned IE  : 1; /* Specifies and indicates global interrupt enable (0: disable interrupts; 1: enable interrupts) */
+		unsigned IE : 1; /* Specifies and indicates global interrupt enable (0: disable interrupts; 1: enable interrupts) */
 		unsigned EXL : 1; /* Specifies and indiciates exception level (0: normal; 1: exception) */
 		unsigned ERL : 1; /* Specifies and indiciates error level (0: normal; 1: error) */
 		unsigned KSU : 2; /* Specifies and indicates mode bits (00: kernel; 01: supervisor; 10: user) */
-		unsigned UX  : 1; /* Enables 64-bit addressing and operations in User mode (0: 32-bit; 1: 64-bit) */
-		unsigned SX  : 1; /* Enables 64-bit addressing and operations in Supervisor mode (0: 32-bit; 1: 64-bit) */
-		unsigned KX  : 1; /* Enables 64-bit addressing in Kernel mode (0: 32-bit; 1: 64-bit) */
-		unsigned IM  : 8; /* Interrupt Mask field */
-		unsigned DS  : 9; /* Diagnostic Status field */
-		unsigned RE  : 1; /* Reverse-Endian bit, enables reverse of system endianness in User mode (0: disabled; 1: reversed) */
-		unsigned FR  : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
-		unsigned RP  : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
-		unsigned CU  : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
+		unsigned UX : 1; /* Enables 64-bit addressing and operations in User mode (0: 32-bit; 1: 64-bit) */
+		unsigned SX : 1; /* Enables 64-bit addressing and operations in Supervisor mode (0: 32-bit; 1: 64-bit) */
+		unsigned KX : 1; /* Enables 64-bit addressing in Kernel mode (0: 32-bit; 1: 64-bit) */
+		unsigned IM : 8; /* Interrupt Mask field */
+		unsigned DS : 9; /* Diagnostic Status field */
+		unsigned RE : 1; /* Reverse-Endian bit, enables reverse of system endianness in User mode (0: disabled; 1: reversed) */
+		unsigned FR : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
+		unsigned RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
+		unsigned CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 	} status_reg{};
+
+	struct
+	{
+		u32 index; /* (0) */
+		u32 random; /* (1) */
+		u64 entry_lo0; /* (2) */
+		u64 entry_hi1; /* (3) */
+		u64 context; /* (4) */
+		u32 page_mask; /* (5) */
+		u32 wired; /* (6) */
+		u64 bad_v_addr; /* (8) */
+		u32 count; /* (9) */
+		u64 entry_hi; /* (10) */
+		u32 compare; /* (11) */
+		u32 status; /* (12) */
+		u32 cause; /* (13) */
+		u64 epc; /* (14) */
+		const u32 pr_id = 0; /* (15) */
+		u32 config; /* (16) */
+		u32 LL_addr; /* (17) */
+		u32 watch_lo; /* (18) */
+		u32 watch_hi; /* (19) */
+		u64 x_context; /* (20) */
+		u32 parity_error; /* (26) */
+		u32 cache_error; /* (27) */
+		u32 tag_lo; /* (28) */
+		u32 tag_hi; /* (29) */
+		u64 error_epc; /* (30) */
+
+
+		u32 Get(const size_t index) const
+		{
+			return u32();
+		}
+
+		void Set(const size_t index, u64 data)
+		{
+
+		}
+	} CP0_GPR{};
 
 	struct FPU_Control_31
 	{
@@ -250,8 +296,6 @@ namespace MIPS4300i
 	} FPU_control;
 
 	u64 PC;
-
-	u64 CP0_GPR[32]{};
 
 	u64 HI, LO;
 

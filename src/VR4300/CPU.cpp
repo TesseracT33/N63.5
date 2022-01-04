@@ -1,6 +1,6 @@
-module MIPS4300i;
+module VR4300;
 
-namespace MIPS4300i /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
+namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
 	template<Instr instr>
 	void Load(const u32 instr_code)

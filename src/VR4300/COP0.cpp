@@ -1,6 +1,6 @@
-module MIPS4300i;
+module VR4300;
 
-namespace MIPS4300i
+namespace VR4300
 {
 	template<CP0_Instr instr>
 	void CP0_Move(const u32 instr_code)
@@ -13,28 +13,28 @@ namespace MIPS4300i
 			/* Move To System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			CP0_GPR[rd] = GPR[rt] & 0xFFFFFFFF;
+			CP0_GPR.Set(rd, GPR[rt] & 0xFFFFFFFF);
 		}
 		else if constexpr (instr == CP0_Instr::MFC0)
 		{
 			/* Move From System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rd of CP0
-			   to the general purpose register rd of the CPU. */
-			GPR.Set(rd, s64(GPR[rt] & 0xFFFFFFFF));
+			   to the general purpose register rt of the CPU. */
+			GPR.Set(rt, s64(CP0_GPR.Get(rd)));
 		}
 		else if constexpr (instr == CP0_Instr::DMTC0)
 		{
 			/* Doubleword Move To System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			CP0_GPR[rd] = GPR[rt];
+			CP0_GPR.Set(rd, GPR[rt]);
 		}
 		else if constexpr (instr == CP0_Instr::DMFC0)
 		{
 			/* Doubleword Move From System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rd of CP0
-			   to the general purpose register rd of the CPU. */
-			GPR.Set(rd, GPR[rt]);
+			   to the general purpose register rt of the CPU. */
+			GPR.Set(rt, CP0_GPR.Get(rd)); /* TODO The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined */
 		}
 		else
 		{
