@@ -1,5 +1,7 @@
 module VR4300;
 
+import MMU;
+
 namespace VR4300
 {
 	void Run(const int cycles)

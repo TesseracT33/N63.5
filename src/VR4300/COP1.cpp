@@ -1,5 +1,7 @@
 module VR4300;
 
+import MMU;
+
 namespace VR4300
 {
 	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.

@@ -1,5 +1,7 @@
 module VR4300;
 
+import MMU;
+
 namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
 	template<Instr instr>
