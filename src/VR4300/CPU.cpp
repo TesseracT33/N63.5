@@ -517,27 +517,27 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else return 0;
 		}();
 
-		const s64 result = [&] {
+		const u64 result = static_cast<u64>( [&] {
 			if constexpr (instr == Instr::SLL)
 			{
 				/* Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s64(s32(GPR[rt]) << sa);
+				return s32(GPR[rt] << sa);
 			}
 			else if constexpr (instr == Instr::SRL)
 			{
 				/* Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s64(s32(GPR[rt]) >> sa);
+				return s32(GPR[rt] >> sa);
 			}
 			else if constexpr (instr == Instr::SRA)
 			{
 				/* Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s64(s32(GPR[rt]) >> sa);
+				return s32(GPR[rt]) >> sa;
 			}
 			else if constexpr (instr == Instr::SLLV)
 			{
@@ -546,7 +546,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 5 bits of register rs.
 				   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
-				return s64(s32(GPR[rt]) << (GPR[rs] & 0x1F));
+				return s32(GPR[rt]) << (GPR[rs] & 0x1F);
 			}
 			else if constexpr (instr == Instr::SRLV)
 			{
@@ -555,7 +555,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 5 bits of register rs.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s64(s32(GPR[rt]) >> (GPR[rs] & 0x1F));
+				return s32(GPR[rt] >> (GPR[rs] & 0x1F));
 			}
 			else if constexpr (instr == Instr::SRAV)
 			{
@@ -564,21 +564,21 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 5 bits of register rs.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s64(s32(GPR[rt]) >> (GPR[rs] & 0x1F));
+				return s32(GPR[rt]) >> (GPR[rs] & 0x1F);
 			}
 			else if constexpr (instr == Instr::DSLL)
 			{
 				/* Doubleword Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 				   Stores the 64-bit result to register rd. */
-				return s64(GPR[rt] << sa);
+				return GPR[rt] << sa;
 			}
 			else if constexpr (instr == Instr::DSRL)
 			{
 				/* Doubleword Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
-				return s64(GPR[rt] >> sa);
+				return GPR[rt] >> sa;
 			}
 			else if constexpr (instr == Instr::DSRA)
 			{
@@ -594,7 +594,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 6 bits of register rs.
 				   Stores the 64-bit result and stores it to register rd. */
-				return s64(GPR[rt] << (GPR[rs] & 0x3F));
+				return GPR[rt] << (GPR[rs] & 0x3F);
 			}
 			else if constexpr (instr == Instr::DSRLV)
 			{
@@ -603,7 +603,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 6 bits of register rs.
 				   Sign-extends the 64-bit result and stores it to register rd. */
-				return s64(GPR[rt] >> (GPR[rs] & 0x3F)); /* TODO sign-extends the 64-bit result? */
+				return GPR[rt] >> (GPR[rs] & 0x3F); /* TODO sign-extends the 64-bit result? */
 			}
 			else if constexpr (instr == Instr::DSRAV)
 			{
@@ -619,14 +619,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Doubleword Shift Left Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the left, and inserts 0 to the low-order bits.
 				   Stores the 64-bit result to register rd. */
-				return s64(GPR[rt] << (sa + 32));
+				return GPR[rt] << (sa + 32);
 			}
 			else if constexpr (instr == Instr::DSRL32)
 			{
 				/* Doubleword Shift Right Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
-				return s64(GPR[rt] >> (sa + 32));
+				return GPR[rt] >> (sa + 32);
 			}
 			else if constexpr (instr == Instr::DSRA32)
 			{
@@ -639,9 +639,9 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			{
 				static_assert(false, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
 			}
-		}();
+		}());
 
-		GPR.Set(rd, u64(result));
+		GPR.Set(rd, result);
 	}
 
 
@@ -658,7 +658,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   signed integer. Sign-extends (in the 64-bit mode) and stores the 64-bit result
 			   to special registers HI and LO. */
 			const s64 result = s64(GPR[rs] & 0xFFFFFFFF) * s64(GPR[rt] & 0xFFFFFFFF);
-			LO = result & 0xFFFFFFFF;
+			LO = s32(result & 0xFFFFFFFF);
 			HI = result >> 32;
 		}
 		else if constexpr (instr == Instr::MULTU)
