@@ -1,4 +1,6 @@
-module VR4300;
+module VR4300:Operation;
+
+import :CPU;
 
 import MMU;
 

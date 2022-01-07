@@ -162,14 +162,19 @@
     <ClCompile Include="src\BitUtils.ixx" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="src\VR4300\COP0.cpp" />
+    <ClCompile Include="src\VR4300\COP0.ixx" />
     <ClCompile Include="src\VR4300\COP1.cpp" />
+    <ClCompile Include="src\VR4300\COP1.ixx" />
     <ClCompile Include="src\VR4300\CPU.cpp" />
+    <ClCompile Include="src\VR4300\CPU.ixx" />
     <ClCompile Include="src\VR4300\Exceptions.cpp" />
+    <ClCompile Include="src\VR4300\Exceptions.ixx" />
     <ClCompile Include="src\VR4300\InstructionDecode.cpp" />
     <ClCompile Include="src\memory\MMU.cpp" />
     <ClCompile Include="src\memory\MMU.ixx" />
     <ClCompile Include="src\NumericalTypes.ixx" />
-    <ClCompile Include="src\VR4300\VR4300.cpp" />
+    <ClCompile Include="src\VR4300\Operation.cpp" />
+    <ClCompile Include="src\VR4300\Operation.ixx" />
     <ClCompile Include="src\VR4300\VR4300.ixx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

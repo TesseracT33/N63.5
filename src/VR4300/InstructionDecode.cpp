@@ -1,4 +1,11 @@
-module VR4300;
+module VR4300:Operation;
+
+import :COP0;
+import :COP1;
+import :CPU;
+import :Exceptions;
+
+import NumericalTypes;
 
 namespace VR4300
 {

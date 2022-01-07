@@ -12,6 +12,11 @@
     <ClCompile Include="src\VR4300\Exceptions.cpp" />
     <ClCompile Include="src\VR4300\InstructionDecode.cpp" />
     <ClCompile Include="src\VR4300\VR4300.ixx" />
-    <ClCompile Include="src\VR4300\VR4300.cpp" />
+    <ClCompile Include="src\VR4300\CPU.ixx" />
+    <ClCompile Include="src\VR4300\COP0.ixx" />
+    <ClCompile Include="src\VR4300\COP1.ixx" />
+    <ClCompile Include="src\VR4300\Exceptions.ixx" />
+    <ClCompile Include="src\VR4300\Operation.ixx" />
+    <ClCompile Include="src\VR4300\Operation.cpp" />
   </ItemGroup>
 </Project>

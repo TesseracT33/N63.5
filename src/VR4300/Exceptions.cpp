@@ -1,4 +1,4 @@
-module VR4300;
+module VR4300:Exceptions;
 
 namespace VR4300
 {

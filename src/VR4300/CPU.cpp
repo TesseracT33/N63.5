@@ -1,4 +1,6 @@
-module VR4300;
+module VR4300:CPU;
+
+import :Exceptions;
 
 import MMU;
 

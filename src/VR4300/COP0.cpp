@@ -1,4 +1,6 @@
-module VR4300;
+module VR4300:COP0;
+
+import :CPU;
 
 import MMU;
 
@@ -15,14 +17,14 @@ namespace VR4300
 			/* Move To System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			CP0_reg.Set(rd, GPR[rt] & 0xFFFFFFFF);
+			CP0_reg.Set(rd, s32(GPR[rt]));
 		}
 		else if constexpr (instr == CP0_Instr::MFC0)
 		{
 			/* Move From System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			GPR.Set(rt, s64(CP0_reg.Get(rd)));
+			GPR.Set(rt, s32(CP0_reg.Get(rd)));
 		}
 		else if constexpr (instr == CP0_Instr::DMTC0)
 		{
@@ -51,11 +53,6 @@ namespace VR4300
 		   Searches a TLB entry that matches with the contents of the entry Hi register and
 		   sets the number of that TLB entry to the index register. If a TLB entry that
 		   matches is not found, sets the most significant bit of the index register. */
-		bool entry_found = false;
-		for (const auto& entry : MMU::TLB_entries)
-		{
-
-		}
 	}
 
 
@@ -74,7 +71,6 @@ namespace VR4300
 		   The TLB entry pointed at by the Index register is loaded with the contents of the
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
-
 	}
 
 
