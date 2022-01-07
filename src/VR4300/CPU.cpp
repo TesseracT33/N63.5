@@ -1,8 +1,7 @@
 module VR4300:CPU;
 
 import :Exceptions;
-
-import MMU;
+import :MMU;
 
 namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
@@ -20,13 +19,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Load Byte;
 			   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-			GPR.Set(rt, MMU::cpu_read_mem<s8>(address));
+			GPR.Set(rt, cpu_read_mem<s8>(address));
 		}
 		else if constexpr (instr == Instr::LBU)
 		{
 			/* Load Byte Unsigned;
 			   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-			GPR.Set(rt, MMU::cpu_read_mem<u8>(address));
+			GPR.Set(rt, cpu_read_mem<u8>(address));
 		}
 		else if constexpr (instr == Instr::LH)
 		{
@@ -35,7 +34,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 1)
 				AddressErrorException();
 			else
-				GPR.Set(rt, MMU::cpu_read_mem<s16>(address));
+				GPR.Set(rt, cpu_read_mem<s16>(address));
 		}
 		else if constexpr (instr == Instr::LHU)
 		{
@@ -44,7 +43,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 1)
 				AddressErrorException();
 			else
-				GPR.Set(rt, MMU::cpu_read_mem<u16>(address));
+				GPR.Set(rt, cpu_read_mem<u16>(address));
 		}
 		else if constexpr (instr == Instr::LW)
 		{
@@ -53,7 +52,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 3)
 				AddressErrorException();
 			else
-				GPR.Set(rt, MMU::cpu_read_mem<s32>(address));
+				GPR.Set(rt, cpu_read_mem<s32>(address));
 		}
 		else if constexpr (instr == Instr::LWU)
 		{
@@ -62,7 +61,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 3)
 				AddressErrorException();
 			else
-				GPR.Set(rt, MMU::cpu_read_mem<u32>(address));
+				GPR.Set(rt, cpu_read_mem<u32>(address));
 		}
 		else if constexpr (instr == Instr::LWL)
 		{
@@ -71,7 +70,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   the address is at the leftmost position of the word. Sign-extends (in the 64-
 			   bit mode), merges the result of the shift and the contents of register rt, and
 			   loads the result to register rt. */
-			GPR.Set(rt, MMU::cpu_read_mem<u32>(address));
+			GPR.Set(rt, cpu_read_mem<u32>(address));
 		}
 		else if constexpr (instr == Instr::LWR)
 		{
@@ -80,7 +79,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   the address is at the rightmost position of the word. Sign-extends (in the 64-
 			   bit mode), merges the result of the shift and the contents of register rt, and
 			   loads the result to register rt. */
-			GPR.Set(rt, MMU::cpu_read_mem<u32>(address));
+			GPR.Set(rt, cpu_read_mem<u32>(address));
 		}
 		else if constexpr (instr == Instr::LD)
 		{
@@ -89,7 +88,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 7)
 				AddressErrorException();
 			else
-				GPR.Set(rt, MMU::cpu_read_mem<u64>(address));
+				GPR.Set(rt, cpu_read_mem<u64>(address));
 		}
 		else if constexpr (instr == Instr::LDL)
 		{
@@ -98,7 +97,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   specified by the address is at the leftmost position of the doubleword.
 			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
-			GPR.Set(rt, MMU::cpu_read_mem<u64>(address));
+			GPR.Set(rt, cpu_read_mem<u64>(address));
 		}
 		else if constexpr (instr == Instr::LDR)
 		{
@@ -107,13 +106,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   specified by the address is at the rightmost position of the doubleword.
 			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
-			GPR.Set(rt, MMU::cpu_read_mem<u64, MMU::ReadFromNextBoundary::Yes>(address));
+			GPR.Set(rt, cpu_read_mem<u64, ReadFromNextBoundary::Yes>(address));
 		}
 		else if constexpr (instr == Instr::LL)
 		{
 			/* Load Linked;
 			   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-			GPR.Set(rt, MMU::cpu_read_mem<s32>(address));
+			GPR.Set(rt, cpu_read_mem<s32>(address));
 			LL = 1;
 			/* TODO the specified physical address of the memory is stored to the LLAddr register */
 		}
@@ -121,7 +120,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Load Linked Doubleword;
 			   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
-			   GPR.Set(rt, MMU::cpu_read_mem<u64>(address));
+			   GPR.Set(rt, cpu_read_mem<u64>(address));
 			LL = 1;
 		}
 		else
@@ -145,7 +144,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			MMU::cpu_write_mem<u8>(address, u8(GPR[rt]));
+			cpu_write_mem<u8>(address, u8(GPR[rt]));
 		}
 		else if constexpr (instr == Instr::SH)
 		{
@@ -154,7 +153,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 1)
 				AddressErrorException();
 			else
-				MMU::cpu_write_mem<u16>(address, u16(GPR[rt]));
+				cpu_write_mem<u16>(address, u16(GPR[rt]));
 		}
 		else if constexpr (instr == Instr::SW)
 		{
@@ -163,7 +162,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 3)
 				AddressErrorException();
 			else
-				MMU::cpu_write_mem<u32>(address, u32(GPR[rt]));
+				cpu_write_mem<u32>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == Instr::SWL)
 		{
@@ -171,7 +170,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			MMU::cpu_write_mem<u32>(address, u32(GPR[rt])); /* TODO write function should handle this? */
+			cpu_write_mem<u32>(address, u32(GPR[rt])); /* TODO write function should handle this? */
 		}
 		else if constexpr (instr == Instr::SWR)
 		{
@@ -179,7 +178,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			MMU::cpu_write_mem<u32, MMU::WriteToNextBoundary::Yes>(address, u32(GPR[rt]));
+			cpu_write_mem<u32, WriteToNextBoundary::Yes>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == Instr::SD)
 		{
@@ -188,7 +187,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if (address & 7)
 				AddressErrorException();
 			else
-				MMU::cpu_write_mem<u64>(address, GPR[rt]);
+				cpu_write_mem<u64>(address, GPR[rt]);
 		}
 		else if constexpr (instr == Instr::SDL)
 		{
@@ -196,7 +195,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			MMU::cpu_write_mem<u64>(address, GPR[rt]);
+			cpu_write_mem<u64>(address, GPR[rt]);
 		}
 		else if constexpr (instr == Instr::SDR)
 		{
@@ -204,7 +203,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			MMU::cpu_write_mem<u64, MMU::WriteToNextBoundary::Yes>(address, GPR[rt]);
+			cpu_write_mem<u64, WriteToNextBoundary::Yes>(address, GPR[rt]);
 		}
 		else if constexpr (instr == Instr::SC)
 		{
@@ -215,7 +214,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL == 1)
 			{
-				MMU::cpu_write_mem<u32>(address, GPR[rt]);
+				cpu_write_mem<u32>(address, GPR[rt]);
 				GPR.Set(rt, 1);
 			}
 			else
@@ -232,7 +231,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL == 1)
 			{
-				MMU::cpu_write_mem<u64>(address, GPR[rt]);
+				cpu_write_mem<u64>(address, GPR[rt]);
 				GPR.Set(rt, 1);
 			}
 			else

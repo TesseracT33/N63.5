@@ -1,8 +1,7 @@
 module VR4300:COP0;
 
 import :CPU;
-
-import MMU;
+import :MMU;
 
 namespace VR4300
 {

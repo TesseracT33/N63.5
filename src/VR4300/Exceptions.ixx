@@ -2,8 +2,7 @@ export module VR4300:Exceptions;
 
 namespace VR4300
 {
-	export void AddressErrorException();
-
+	void AddressErrorException();
 	void DivisionByZeroException();
 	void IntegerOverflowException();
 	void InexactOperationException();

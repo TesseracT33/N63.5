@@ -2,8 +2,7 @@ module VR4300:COP1;
 
 import :CPU;
 import :Exceptions;
-
-import MMU;
+import :MMU;
 
 namespace VR4300
 {
@@ -97,7 +96,7 @@ namespace VR4300
 			if (address & 3)
 				AddressErrorException();
 			else
-				FGR.Set<s32>(ft, MMU::cpu_read_mem<s32>(address));
+				FGR.Set<s32>(ft, cpu_read_mem<s32>(address));
 		}
 		else if constexpr (instr == FPU_Instr::LDC1)
 		{
@@ -109,7 +108,7 @@ namespace VR4300
 			if (address & 7)
 				AddressErrorException();
 			else
-				FGR.Set<s64>(ft, MMU::cpu_read_mem<s64>(address));
+				FGR.Set<s64>(ft, cpu_read_mem<s64>(address));
 		}
 		else
 		{
@@ -135,7 +134,7 @@ namespace VR4300
 			if (address & 3)
 				AddressErrorException();
 			else
-				MMU::cpu_write_mem<s32>(address, FGR.Get<s32>(ft));
+				cpu_write_mem<s32>(address, FGR.Get<s32>(ft));
 		}
 		else if constexpr (instr == FPU_Instr::SDC1)
 		{
@@ -147,7 +146,7 @@ namespace VR4300
 			if (address & 7)
 				AddressErrorException();
 			else
-				MMU::cpu_write_mem<s64>(address, FGR.Get<s64>(ft));
+				cpu_write_mem<s64>(address, FGR.Get<s64>(ft));
 		}
 		else
 		{

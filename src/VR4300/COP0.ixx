@@ -1,6 +1,7 @@
 export module VR4300:COP0;
 
-import NumericalTypes;
+import NumericalTypes;
+
 import <algorithm>;
 import <bit>;
 import <cstring>;
