@@ -52,6 +52,20 @@ namespace VR4300
 		   Searches a TLB entry that matches with the contents of the entry Hi register and
 		   sets the number of that TLB entry to the index register. If a TLB entry that
 		   matches is not found, sets the most significant bit of the index register. */
+		const auto TLB_index = std::find_if(std::begin(TLB_entries), std::end(TLB_entries),
+			[&](const auto& entry) {
+				return entry.ASID == CP0_reg.entry_hi.ASID && entry.VPN2 == CP0_reg.entry_hi.VPN2 && entry.R == CP0_reg.entry_hi.R;
+			});
+
+		if (TLB_index == std::end(TLB_entries))
+		{
+			CP0_reg.index.P = 1;
+		}
+		else
+		{
+			CP0_reg.index.index = std::distance(std::begin(TLB_entries), TLB_index);
+			CP0_reg.index.P = 0;
+		}
 	}
 
 
@@ -61,6 +75,14 @@ namespace VR4300
 		   The EntryHi and EntryLo registers are loaded with the contents of the TLB entry
 		   pointed at by the contents of the Index register. The G bit (which controls ASID matching)
 		   read from the TLB is written into both of the EntryLo0 and EntryLo1 registers. */
+		const unsigned TLB_index = CP0_reg.index.index & 0x1F; /* bit 5 is not used */
+		const std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
+		std::memcpy(&CP0_reg.entry_lo_0, arr, 4);
+		std::memcpy(&CP0_reg.entry_lo_1, arr + 4, 4);
+		std::memcpy(&CP0_reg.entry_hi, arr + 8, 4);
+		std::memcpy(&CP0_reg.page_mask, arr + 12, 4);
+		CP0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
+		CP0_reg.entry_lo_0.G = CP0_reg.entry_lo_1.G = TLB_entries[TLB_index].G;
 	}
 
 
@@ -70,6 +92,13 @@ namespace VR4300
 		   The TLB entry pointed at by the Index register is loaded with the contents of the
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
+		const unsigned TLB_index = CP0_reg.index.index & 0x1F; /* bit 5 is not used */
+		std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
+		std::memcpy(arr, &CP0_reg.entry_lo_0, 4);
+		std::memcpy(arr + 4, &CP0_reg.entry_lo_1, 4);
+		std::memcpy(arr + 8, &CP0_reg.entry_hi, 4);
+		std::memcpy(arr + 12, &CP0_reg.page_mask, 4);
+		TLB_entries[TLB_index].G = CP0_reg.entry_lo_0.G && CP0_reg.entry_lo_1.G;
 	}
 
 
@@ -78,7 +107,19 @@ namespace VR4300
 		/* Translation Lookaside Buffer Write Random;
 		   The TLB entry pointed at by the Random register is loaded with the contents of
 		   the EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
-		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
+		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
+		   The 'wired' register determines which TLB entries cannot be overwritten. */
+		const unsigned TLB_index = CP0_reg.random & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_wired_index = CP0_reg.wired & 0x1F;
+		if (TLB_index < TLB_wired_index) /* TODO: <= ? */
+			return;
+
+		std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
+		std::memcpy(arr, &CP0_reg.entry_lo_0, 4);
+		std::memcpy(arr + 4, &CP0_reg.entry_lo_1, 4);
+		std::memcpy(arr + 8, &CP0_reg.entry_hi, 4);
+		std::memcpy(arr + 12, &CP0_reg.page_mask, 4);
+		TLB_entries[TLB_index].G = CP0_reg.entry_lo_0.G && CP0_reg.entry_lo_1.G;
 	}
 
 
@@ -96,6 +137,11 @@ namespace VR4300
 		   generate a virtual address. The virtual address is converted into a physical
 		   address by using the TLB, and a cache operation indicated by a 5-bit sub op
 		   code is executed to that address. */
+		const s16 offset = instr_code & 0xFFFF;
+		const u8 op = instr_code >> 16 & 0x1F;
+		const u8 base = instr_code >> 21 & 0x1F;
+		const u64 virt_addr = GPR[base] + offset;
+		const u64 phys_addr = VirtualToPhysicalAddress<AccessOperation::Read>(virt_addr);
 	}
 
 
