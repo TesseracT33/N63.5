@@ -6,6 +6,10 @@ import NumericalTypes;
 
 namespace VR4300
 {
+
+
+	bool exception_has_occurred = false;
+
 	void AddressErrorException();
 	void ColdResetException();
 	void DivisionByZeroException();
