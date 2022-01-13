@@ -97,7 +97,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   specified by the address is at the leftmost position of the doubleword.
 			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u64>(address));
+			GPR.Set(rt, cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address));
 		}
 		else if constexpr (instr == Instr::LDR)
 		{
@@ -106,7 +106,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   specified by the address is at the rightmost position of the doubleword.
 			   Merges the result of the shift and the contents of register rt, and loads the
 			   result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u64, ReadFromNextBoundary::Yes>(address));
+			GPR.Set(rt, cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address));
 		}
 		else if constexpr (instr == Instr::LL)
 		{
@@ -178,7 +178,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			cpu_write_mem<u32, WriteToNextBoundary::Yes>(address, u32(GPR[rt]));
+			cpu_write_mem<u32, MemoryAccessAlignment::Unaligned>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == Instr::SD)
 		{
@@ -203,7 +203,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			cpu_write_mem<u64, WriteToNextBoundary::Yes>(address, GPR[rt]);
+			cpu_write_mem<u64, MemoryAccessAlignment::Unaligned>(address, GPR[rt]);
 		}
 		else if constexpr (instr == Instr::SC)
 		{
@@ -738,8 +738,6 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as a signed integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-
-			   /* TODO how to handle division by zero? "the result of this operation is undefined when the divisor is zero." */
 			const s64 quotient = (s64)GPR[rs] / (s64)GPR[rt];
 			const s64 remainder = (s64)GPR[rs] % (s64)GPR[rt];
 			LO = quotient;

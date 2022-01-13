@@ -1,5 +1,6 @@
 module VR4300:Operation;
 
+import :COP0;
 import :CPU;
 import :MMU;
 
@@ -20,5 +21,17 @@ namespace VR4300
 		const u32 instr_code = cpu_read_mem<u32>(PC);
 		PC += 4;
 		DecodeAndExecuteInstruction(instr_code);
+
+		CP0_reg.random++;
+	}
+
+	void EnterKernelMode()
+	{
+
+	}
+
+	void DisableInterrupts()
+	{
+
 	}
 }

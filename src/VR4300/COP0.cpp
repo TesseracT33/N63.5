@@ -141,7 +141,7 @@ namespace VR4300
 		const u8 op = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 virt_addr = GPR[base] + offset;
-		const u64 phys_addr = VirtualToPhysicalAddress<AccessOperation::Read>(virt_addr);
+		const u64 phys_addr = VirtualToPhysicalAddress<MemoryAccessOperation::Read>(virt_addr);
 	}
 
 

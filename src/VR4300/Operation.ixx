@@ -1,8 +1,8 @@
 export module VR4300:Operation;
 
-import <cassert>;
-
 import NumericalTypes;
+
+import <cassert>;
 
 namespace VR4300
 {
@@ -10,10 +10,13 @@ namespace VR4300
 	{
 		void Reset();
 		void Run(const int cycles);
-
-		enum class OperatingMode { User, Supervisor, Kernel } operatingMode;
 	}
+
+	enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
 
 	void ExecuteInstruction();
 	void DecodeAndExecuteInstruction(const u32 instr_code);
+
+	void EnterKernelMode();
+	void DisableInterrupts();
 }

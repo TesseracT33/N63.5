@@ -4,8 +4,10 @@ import NumericalTypes;
 
 namespace Memory
 {
-	export u64 ReadPhysical(const u32 address)
+	export
+	template<typename T = u32 /*temp*/>
+	T ReadPhysical(const u32 physical_address)
 	{
-		return u64(5);
+		return T();
 	}
 }
