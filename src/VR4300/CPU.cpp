@@ -15,120 +15,113 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 address = GPR[base] + offset;
 
-		/* For all instructions:
-		   Generates an address by adding a sign-extended offset to the contents of register base. */
-		if constexpr (instr == LB)
-		{
-			/* Load Byte;
-			   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-			GPR.Set(rt, cpu_read_mem<s8>(address));
-		}
-		else if constexpr (instr == LBU)
-		{
-			/* Load Byte Unsigned;
-			   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u8>(address));
-		}
-		else if constexpr (instr == LH)
-		{
-			/* Load halfword;
-			   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
-			if (address & 1)
-				AddressErrorException();
+		const auto result = [&] {
+			/* For all instructions:
+					   Generates an address by adding a sign-extended offset to the contents of register base. */
+			if constexpr (instr == LB)
+			{
+				/* Load Byte;
+				   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
+				return cpu_read_mem<s8>(address);
+			}
+			else if constexpr (instr == LBU)
+			{
+				/* Load Byte Unsigned;
+				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
+				return cpu_read_mem<u8>(address);
+			}
+			else if constexpr (instr == LH)
+			{
+				/* Load halfword;
+				   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
+				return cpu_read_mem<s16>(address);
+			}
+			else if constexpr (instr == LHU)
+			{
+				/* Load Halfword Unsigned;
+				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
+				return cpu_read_mem<u16>(address);
+			}
+			else if constexpr (instr == LW)
+			{
+				/* Load Word;
+				   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
+				return cpu_read_mem<s32>(address);
+			}
+			else if constexpr (instr == LWU)
+			{
+				/* Load Word Unsigned;
+				   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
+				return cpu_read_mem<u32>(address);
+			}
+			else if constexpr (instr == LWL)
+			{
+				/* Load Word Left;
+				   Shifts a word specified by the address to the left, so that a byte specified by
+				   the address is at the leftmost position of the word. Sign-extends (in the 64-
+				   bit mode), merges the result of the shift and the contents of register rt, and
+				   loads the result to register rt. */
+				return cpu_read_mem<u32, MemoryAccessAlignment::Unaligned>(address);
+			}
+			else if constexpr (instr == LWR)
+			{
+				/* Load Word Right;
+				   Shifts a word specified by the address to the right, so that a byte specified by
+				   the address is at the rightmost position of the word. Sign-extends (in the 64-
+				   bit mode), merges the result of the shift and the contents of register rt, and
+				   loads the result to register rt. */
+				return cpu_read_mem<u32, MemoryAccessAlignment::Unaligned>(address);
+			}
+			else if constexpr (instr == LD)
+			{
+				/* Load Doubleword;
+				   Loads the contents of a word specified by the address to register rt. */
+				return cpu_read_mem<u64>(address);
+			}
+			else if constexpr (instr == LDL)
+			{
+				/* Load Doubleword Left;
+				   Shifts the doubleword specified by the address to the left so that the byte
+				   specified by the address is at the leftmost position of the doubleword.
+				   Merges the result of the shift and the contents of register rt, and loads the
+				   result to register rt. */
+				return cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address);
+			}
+			else if constexpr (instr == LDR)
+			{
+				/* Load Doubleword Right;
+				   Shifts the doubleword specified by the address to the right so that the byte
+				   specified by the address is at the rightmost position of the doubleword.
+				   Merges the result of the shift and the contents of register rt, and loads the
+				   result to register rt. */
+				return cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address);
+			}
+			else if constexpr (instr == LL)
+			{
+				/* Load Linked;
+				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
+				return cpu_read_mem<s32>(address);
+				/* TODO the specified physical address of the memory is stored to the LLAddr register */
+			}
+			else if constexpr (instr == LLD)
+			{
+				/* Load Linked Doubleword;
+				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
+				return cpu_read_mem<u64>(address);
+			}
 			else
-				GPR.Set(rt, cpu_read_mem<s16>(address));
-		}
-		else if constexpr (instr == LHU)
-		{
-			/* Load Halfword Unsigned;
-			   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-			if (address & 1)
-				AddressErrorException();
-			else
-				GPR.Set(rt, cpu_read_mem<u16>(address));
-		}
-		else if constexpr (instr == LW)
-		{
-			/* Load Word;
-			   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
-			if (address & 3)
-				AddressErrorException();
-			else
-				GPR.Set(rt, cpu_read_mem<s32>(address));
-		}
-		else if constexpr (instr == LWU)
-		{
-			/* Load Word Unsigned;
-			   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
-			if (address & 3)
-				AddressErrorException();
-			else
-				GPR.Set(rt, cpu_read_mem<u32>(address));
-		}
-		else if constexpr (instr == LWL)
-		{
-			/* Load Word Left;
-			   Shifts a word specified by the address to the left, so that a byte specified by
-			   the address is at the leftmost position of the word. Sign-extends (in the 64-
-			   bit mode), merges the result of the shift and the contents of register rt, and
-			   loads the result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u32>(address));
-		}
-		else if constexpr (instr == LWR)
-		{
-			/* Load Word Right;
-			   Shifts a word specified by the address to the right, so that a byte specified by
-			   the address is at the rightmost position of the word. Sign-extends (in the 64-
-			   bit mode), merges the result of the shift and the contents of register rt, and
-			   loads the result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u32>(address));
-		}
-		else if constexpr (instr == LD)
-		{
-			/* Load Doubleword;
-			   Loads the contents of a word specified by the address to register rt. */
-			if (address & 7)
-				AddressErrorException();
-			else
-				GPR.Set(rt, cpu_read_mem<u64>(address));
-		}
-		else if constexpr (instr == LDL)
-		{
-			/* Load Doubleword Left;
-			   Shifts the doubleword specified by the address to the left so that the byte
-			   specified by the address is at the leftmost position of the doubleword.
-			   Merges the result of the shift and the contents of register rt, and loads the
-			   result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address));
-		}
-		else if constexpr (instr == LDR)
-		{
-			/* Load Doubleword Right;
-			   Shifts the doubleword specified by the address to the right so that the byte
-			   specified by the address is at the rightmost position of the doubleword.
-			   Merges the result of the shift and the contents of register rt, and loads the
-			   result to register rt. */
-			GPR.Set(rt, cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address));
-		}
-		else if constexpr (instr == LL)
-		{
-			/* Load Linked;
-			   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-			GPR.Set(rt, cpu_read_mem<s32>(address));
+			{
+				static_assert(false, "\"Load\" template function called, but no matching load instruction was found.");
+			}
+		}();
+
+		if (exception_has_occurred)
+			return;
+
+		if constexpr (instr == LL || instr == LLD)
 			LL_bit = 1;
-			/* TODO the specified physical address of the memory is stored to the LLAddr register */
-		}
-		else if constexpr (instr == LLD)
-		{
-			/* Load Linked Doubleword;
-			   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
-			   GPR.Set(rt, cpu_read_mem<u64>(address));
-			LL_bit = 1;
-		}
-		else
-		{
-			static_assert(false, "\"Load\" template function called, but no matching load instruction was found.");
-		}
+
+		GPR.Set(rt, result);
 	}
 
 
@@ -154,19 +147,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			if (address & 1)
-				AddressErrorException();
-			else
-				cpu_write_mem<u16>(address, u16(GPR[rt]));
+			cpu_write_mem<u16>(address, u16(GPR[rt]));
 		}
 		else if constexpr (instr == SW)
 		{
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			if (address & 3)
-				AddressErrorException();
-			else
-				cpu_write_mem<u32>(address, u32(GPR[rt]));
+			cpu_write_mem<u32>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == SWL)
 		{
@@ -174,7 +161,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			cpu_write_mem<u32>(address, u32(GPR[rt])); /* TODO write function should handle this? */
+			cpu_write_mem<u32, MemoryAccessAlignment::Unaligned>(address, u32(GPR[rt])); /* TODO write function should handle this? */
 		}
 		else if constexpr (instr == SWR)
 		{
@@ -188,10 +175,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
-			if (address & 7)
-				AddressErrorException();
-			else
-				cpu_write_mem<u64>(address, GPR[rt]);
+			cpu_write_mem<u64>(address, GPR[rt]);
 		}
 		else if constexpr (instr == SDL)
 		{
