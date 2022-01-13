@@ -5,34 +5,36 @@ import :MMU;
 
 namespace VR4300
 {
-	template<CP0_Instr instr>
+	template<CP0_Instruction instr>
 	void CP0_Move(const u32 instr_code)
 	{
+		using enum CP0_Instruction;
+
 		const u8 rd = instr_code >> 11 & 0x1F;
 		const u8 rt = instr_code >> 16 & 0x1F;
 
-		if constexpr (instr == CP0_Instr::MTC0)
+		if constexpr (instr == MTC0)
 		{
 			/* Move To System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
 			CP0_reg.Set(rd, s32(GPR[rt]));
 		}
-		else if constexpr (instr == CP0_Instr::MFC0)
+		else if constexpr (instr == MFC0)
 		{
 			/* Move From System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
 			GPR.Set(rt, s32(CP0_reg.Get(rd)));
 		}
-		else if constexpr (instr == CP0_Instr::DMTC0)
+		else if constexpr (instr == DMTC0)
 		{
 			/* Doubleword Move To System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
 			CP0_reg.Set(rd, GPR[rt]);
 		}
-		else if constexpr (instr == CP0_Instr::DMFC0)
+		else if constexpr (instr == DMFC0)
 		{
 			/* Doubleword Move From System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rd of CP0
@@ -145,8 +147,8 @@ namespace VR4300
 	}
 
 
-	template void CP0_Move<CP0_Instr::MTC0>(const u32 instr_code);
-	template void CP0_Move<CP0_Instr::MFC0>(const u32 instr_code);
-	template void CP0_Move<CP0_Instr::DMTC0>(const u32 instr_code);
-	template void CP0_Move<CP0_Instr::DMFC0>(const u32 instr_code);
+	template void CP0_Move<CP0_Instruction::MTC0>(const u32 instr_code);
+	template void CP0_Move<CP0_Instruction::MFC0>(const u32 instr_code);
+	template void CP0_Move<CP0_Instruction::DMTC0>(const u32 instr_code);
+	template void CP0_Move<CP0_Instruction::DMFC0>(const u32 instr_code);
 }

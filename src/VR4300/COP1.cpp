@@ -79,15 +79,17 @@ namespace VR4300
 	} static exception_flags{};
 
 
-	template<FPU_Instr instr>
+	template<FPU_Instruction instr>
 	void FPU_Load(const u32 instr_code)
 	{
+		using enum FPU_Instruction;
+
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 ft = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 address = GPR[base] + offset;
 
-		if constexpr (instr == FPU_Instr::LWC1)
+		if constexpr (instr == LWC1)
 		{
 			/* Load Word To FPU;
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
@@ -98,7 +100,7 @@ namespace VR4300
 			else
 				FGR.Set<s32>(ft, cpu_read_mem<s32>(address));
 		}
-		else if constexpr (instr == FPU_Instr::LDC1)
+		else if constexpr (instr == LDC1)
 		{
 			/* Load Doubleword To FPU;
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
@@ -117,15 +119,17 @@ namespace VR4300
 	}
 
 
-	template<FPU_Instr instr>
+	template<FPU_Instruction instr>
 	void FPU_Store(const u32 instr_code)
 	{
+		using enum FPU_Instruction;
+
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 ft = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 address = GPR[base] + offset;
 
-		if constexpr (instr == FPU_Instr::SWC1)
+		if constexpr (instr == SWC1)
 		{
 			/* Store Word From FPU;
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
@@ -136,7 +140,7 @@ namespace VR4300
 			else
 				cpu_write_mem<s32>(address, FGR.Get<s32>(ft));
 		}
-		else if constexpr (instr == FPU_Instr::SDC1)
+		else if constexpr (instr == SDC1)
 		{
 			/* Store Doubleword From FPU;
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
@@ -155,44 +159,46 @@ namespace VR4300
 	}
 
 
-	template<FPU_Instr instr>
+	template<FPU_Instruction instr>
 	void FPU_Move(const u32 instr_code)
 	{
+		using enum FPU_Instruction;
+
 		const u8 fs = instr_code >> 11 & 0x1F;
 		const u8 rt = instr_code >> 16 & 0x1F;
 
-		if constexpr (instr == FPU_Instr::MTC1)
+		if constexpr (instr == MTC1)
 		{
 			/* Move Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
 			FGR.Set<s32>(fs, s32(GPR[rt]));
 		}
-		else if constexpr (instr == FPU_Instr::MFC1)
+		else if constexpr (instr == MFC1)
 		{
 			/* Move Word From FPU;
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
 			GPR.Set(rt, u64(FGR.Get<s32>(fs)));
 		}
-		else if constexpr (instr == FPU_Instr::CTC1)
+		else if constexpr (instr == CTC1)
 		{
 			/* Move Control Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
 			FPU_control.Set(fs, GPR[rt]);
 			exception_flags.test_and_signal_all();
 		}
-		else if constexpr (instr == FPU_Instr::CFC1)
+		else if constexpr (instr == CFC1)
 		{
 			/* Move Control Word From FPU;
 			   Transfers the contents of FPU control register fs to CPU general purpose register rt. */
 			GPR.Set(rt, FPU_control.Get(fs));
 		}
-		else if constexpr (instr == FPU_Instr::DMTC1)
+		else if constexpr (instr == DMTC1)
 		{
 			/* Doubleword Move To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
 			FGR.Set<s64>(fs, s64(GPR[rt]));
 		}
-		else if constexpr (instr == FPU_Instr::DMFC1)
+		else if constexpr (instr == DMFC1)
 		{
 			/* Doubleword Move From FPU;
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
@@ -205,9 +211,11 @@ namespace VR4300
 	}
 
 
-	template<FPU_Instr instr>
+	template<FPU_Instruction instr>
 	void FPU_Convert(const u32 instr_code)
 	{
+		using enum FPU_Instruction;
+
 		/* Test for unimplemented operation exception sources for CVT/round instructions. These cannot be found out from std::fetestexcept.
 		   This function should be called after the conversion has been made.
 		   For all these instructions, an unimplemented exception will occur if either:
@@ -235,7 +243,7 @@ namespace VR4300
 		const u8 fs = instr_code >> 11 & 0x1F;
 		const u8 fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == FPU_Instr::CVT_S || instr == FPU_Instr::CVT_D || instr == FPU_Instr::CVT_W || instr == FPU_Instr::CVT_L)
+		if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_W || instr == CVT_L)
 		{
 			/* CVT.S/CVT.D: Convert To Single/Double Floating-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
@@ -261,13 +269,13 @@ namespace VR4300
 					   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995. */
 				};
 
-				if constexpr (instr == FPU_Instr::CVT_S)
+				if constexpr (instr == CVT_S)
 					Convert2.template operator() < Input_Type, f32 > ();
-				else if constexpr (instr == FPU_Instr::CVT_D)
+				else if constexpr (instr == CVT_D)
 					Convert2.template operator() < Input_Type, f64 > ();
-				else if constexpr (instr == FPU_Instr::CVT_W)
+				else if constexpr (instr == CVT_W)
 					Convert2.template operator() < Input_Type, s32 > ();
-				else if constexpr (instr == FPU_Instr::CVT_L)
+				else if constexpr (instr == CVT_L)
 					Convert2.template operator() < Input_Type, s64 > ();
 				else
 					static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
@@ -299,8 +307,8 @@ namespace VR4300
 
 			exception_flags.test_and_signal_all();
 		}
-		else if constexpr (instr == FPU_Instr::ROUND_W || instr == FPU_Instr::TRUNC_W || instr == FPU_Instr::CEIL_W || instr == FPU_Instr::FLOOR_W ||
-			               instr == FPU_Instr::ROUND_L || instr == FPU_Instr::TRUNC_L || instr == FPU_Instr::CEIL_L || instr == FPU_Instr::FLOOR_L)
+		else if constexpr (instr == ROUND_W || instr == TRUNC_W || instr == CEIL_W || instr == FLOOR_W ||
+			               instr == ROUND_L || instr == TRUNC_L || instr == CEIL_L || instr == FLOOR_L)
 		{
 			/* ROUND.L/ROUND.W/TRUNC.L/TRUNC.W/CEIL.L/CEIL.W/FLOOR.L/FLOOR.W: Round/Truncate/Ceiling/Floor To Single/Long Fixed-point Format;
 			   Rounds the contents of floating-point register fs to a value closest to the 32/64-bit
@@ -312,13 +320,13 @@ namespace VR4300
 				const Input_Float source = FGR.Get<Input_Float>(fs);
 
 				const Output_Int result = [&] {
-					if constexpr (instr == FPU_Instr::ROUND_W || instr == FPU_Instr::ROUND_L)
+					if constexpr (instr == ROUND_W || instr == ROUND_L)
 						return Output_Int(std::round(source));
-					else if constexpr (instr == FPU_Instr::TRUNC_W || instr == FPU_Instr::TRUNC_L)
+					else if constexpr (instr == TRUNC_W || instr == TRUNC_L)
 						return Output_Int(std::trunc(source));
-					else if constexpr (instr == FPU_Instr::CEIL_W || instr == FPU_Instr::CEIL_L)
+					else if constexpr (instr == CEIL_W || instr == CEIL_L)
 						return Output_Int(std::ceil(source));
-					else if constexpr (instr == FPU_Instr::FLOOR_W || instr == FPU_Instr::FLOOR_L)
+					else if constexpr (instr == FLOOR_W || instr == FLOOR_L)
 						return Output_Int(std::floor(source));
 					else
 						static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
@@ -338,7 +346,7 @@ namespace VR4300
 			exception_flags.clear_all();
 
 			constexpr bool rounding_is_made_to_s32 =
-				instr == FPU_Instr::ROUND_W || instr == FPU_Instr::TRUNC_W || instr == FPU_Instr::CEIL_W || instr == FPU_Instr::FLOOR_W;
+				instr == ROUND_W || instr == TRUNC_W || instr == CEIL_W || instr == FLOOR_W;
 
 			switch (fmt)
 			{
@@ -377,14 +385,16 @@ namespace VR4300
 	}
 
 
-	template<FPU_Instr instr>
+	template<FPU_Instruction instr>
 	void FPU_Compute(const u32 instr_code)
 	{
+		using enum FPU_Instruction;
+
 		const u8 fd = instr_code >> 6 & 0x1F;
 		const u8 fs = instr_code >> 11 & 0x1F;
 		const u8 fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == FPU_Instr::ADD || instr == FPU_Instr::SUB || instr == FPU_Instr::MUL || instr == FPU_Instr::DIV)
+		if constexpr (instr == ADD || instr == SUB || instr == MUL || instr == DIV)
 		{
 			/* Floating-point Add/Subtract/Multiply/Divide;
 			   Arithmetically adds/subtracts/multiplies/divides the contents of floating-point registers
@@ -398,13 +408,13 @@ namespace VR4300
 				const Float op2 = FGR.Get<Float>(ft);
 
 				const Float result = [&] {
-					if constexpr (instr == FPU_Instr::ADD)
+					if constexpr (instr == ADD)
 						return op1 + op2;
-					else if constexpr (instr == FPU_Instr::SUB)
+					else if constexpr (instr == SUB)
 						return op1 - op2;
-					else if constexpr (instr == FPU_Instr::MUL)
+					else if constexpr (instr == MUL)
 						return op1 * op2;
-					else if constexpr (instr == FPU_Instr::DIV)
+					else if constexpr (instr == DIV)
 						return op1 / op2;
 					else
 						static_assert(false);
@@ -433,7 +443,7 @@ namespace VR4300
 
 			exception_flags.test_and_signal_all();
 		}
-		else if constexpr (instr == FPU_Instr::ABS || instr == FPU_Instr::MOV || instr == FPU_Instr::NEG || instr == FPU_Instr::SQRT)
+		else if constexpr (instr == ABS || instr == MOV || instr == NEG || instr == SQRT)
 		{
 			/* Floating-point Absolute Value;
 			   Calculates the arithmetic absolute value of the contents of floating-point
@@ -456,13 +466,13 @@ namespace VR4300
 				const Float op = FGR.Get<Float>(fs);
 
 				const Float result = [&] {
-					if constexpr (instr == FPU_Instr::ABS)
+					if constexpr (instr == ABS)
 						return std::abs(op);
-					else if constexpr (instr == FPU_Instr::MOV)
+					else if constexpr (instr == MOV)
 						return op; /* This unnecessary copy from 'op' to 'result' should be optimized away. */
-					else if constexpr (instr == FPU_Instr::NEG)
+					else if constexpr (instr == NEG)
 						return -op;
-					else if constexpr (instr == FPU_Instr::SQRT)
+					else if constexpr (instr == SQRT)
 						return std::sqrt(op);
 					else
 						static_assert(false);
@@ -472,7 +482,7 @@ namespace VR4300
 			};
 
 			/* The MOV instruction does not update the exception flags (except for unimplemented exception (see below)) */
-			if constexpr (instr != FPU_Instr::MOV)
+			if constexpr (instr != MOV)
 				exception_flags.clear_all();
 
 			switch (fmt)
@@ -491,7 +501,7 @@ namespace VR4300
 				exception_flags.unimplemented_operation = true;
 			}
 
-			if constexpr (instr != FPU_Instr::MOV)
+			if constexpr (instr != MOV)
 				exception_flags.test_and_signal_all();
 			else
 				exception_flags.test_and_signal_unimplemented_exception();
@@ -503,9 +513,11 @@ namespace VR4300
 	}
 
 
-	template<FPU_Instr instr>
+	template<FPU_Instruction instr>
 	void FPU_Branch(const u32 instr_code)
 	{
+		using enum FPU_Instruction;
+
 		/* For all instructions: Adds the instruction address in the delay slot and a 16-bit offset (shifted 2 bits
 		   to the left and sign-extended) to calculate the branch target address.
 
@@ -528,9 +540,9 @@ namespace VR4300
 		const s64 target = s64(offset) << 2;
 
 		const bool branch_cond = [&] {
-			if constexpr (instr == FPU_Instr::BC1T || instr == FPU_Instr::BC1TL)
+			if constexpr (instr == BC1T || instr == BC1TL)
 				return cond;
-			else if constexpr (instr == FPU_Instr::BC1F || instr == FPU_Instr::BC1FL)
+			else if constexpr (instr == BC1F || instr == BC1FL)
 				return !cond;
 			else
 				static_assert(false, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
@@ -540,7 +552,7 @@ namespace VR4300
 		{
 			PC += offset;
 		}
-		else if constexpr (instr == FPU_Instr::BC1TL || instr == FPU_Instr::BC1FL)
+		else if constexpr (instr == BC1TL || instr == BC1FL)
 		{
 			// TODO invalidate current instruction
 		}
@@ -603,43 +615,43 @@ namespace VR4300
 	}
 
 
-	template void FPU_Load<FPU_Instr::LWC1>(const u32 instr_code);
-	template void FPU_Load<FPU_Instr::LDC1>(const u32 instr_code);
+	template void FPU_Load<FPU_Instruction::LWC1>(const u32 instr_code);
+	template void FPU_Load<FPU_Instruction::LDC1>(const u32 instr_code);
 
-	template void FPU_Store<FPU_Instr::SWC1>(const u32 instr_code);
-	template void FPU_Store<FPU_Instr::SDC1>(const u32 instr_code);
+	template void FPU_Store<FPU_Instruction::SWC1>(const u32 instr_code);
+	template void FPU_Store<FPU_Instruction::SDC1>(const u32 instr_code);
 
-	template void FPU_Move<FPU_Instr::MTC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instr::MFC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instr::CTC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instr::CFC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instr::DMTC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instr::DMFC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::MTC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::MFC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::CTC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::CFC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::DMTC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::DMFC1>(const u32 instr_code);
 
-	template void FPU_Convert<FPU_Instr::CVT_S>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::CVT_D>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::CVT_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::CVT_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::ROUND_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::ROUND_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::TRUNC_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::TRUNC_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::CEIL_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::CEIL_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::FLOOR_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instr::FLOOR_W>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CVT_S>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CVT_D>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CVT_L>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CVT_W>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::ROUND_L>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::ROUND_W>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::TRUNC_L>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::TRUNC_W>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CEIL_L>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CEIL_W>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::FLOOR_L>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::FLOOR_W>(const u32 instr_code);
 
-	template void FPU_Compute<FPU_Instr::ADD>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::SUB>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::MUL>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::DIV>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::ABS>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::MOV>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::NEG>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instr::SQRT>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::ADD>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::SUB>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::MUL>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::DIV>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::ABS>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::MOV>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::NEG>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::SQRT>(const u32 instr_code);
 
-	template void FPU_Branch<FPU_Instr::BC1T>(const u32 instr_code);
-	template void FPU_Branch<FPU_Instr::BC1F>(const u32 instr_code);
-	template void FPU_Branch<FPU_Instr::BC1TL>(const u32 instr_code);
-	template void FPU_Branch<FPU_Instr::BC1FL>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instruction::BC1T>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instruction::BC1F>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instruction::BC1TL>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instruction::BC1FL>(const u32 instr_code);
 }

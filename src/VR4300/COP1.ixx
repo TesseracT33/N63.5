@@ -20,7 +20,7 @@ namespace VR4300
 		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
 		std::is_same_v<s64, typename std::remove_cv<T>::type>;
 
-	enum class FPU_Instr
+	enum class FPU_Instruction
 	{
 		/* Load/store/transfer instructions */
 		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1,
@@ -166,11 +166,11 @@ namespace VR4300
 	} FPU_control;
 
 	/* COP1/FPU instructions */
-	template<FPU_Instr instr> void FPU_Load(const u32 instr_code);
-	template<FPU_Instr instr> void FPU_Store(const u32 instr_code);
-	template<FPU_Instr instr> void FPU_Move(const u32 instr_code);
-	template<FPU_Instr instr> void FPU_Convert(const u32 instr_code);
-	template<FPU_Instr instr> void FPU_Compute(const u32 instr_code);
-	template<FPU_Instr instr> void FPU_Branch(const u32 instr_code);
+	template<FPU_Instruction instr> void FPU_Load(const u32 instr_code);
+	template<FPU_Instruction instr> void FPU_Store(const u32 instr_code);
+	template<FPU_Instruction instr> void FPU_Move(const u32 instr_code);
+	template<FPU_Instruction instr> void FPU_Convert(const u32 instr_code);
+	template<FPU_Instruction instr> void FPU_Compute(const u32 instr_code);
+	template<FPU_Instruction instr> void FPU_Branch(const u32 instr_code);
 	void FPU_Compare(const u32 instr_code);
 }

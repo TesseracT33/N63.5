@@ -10,7 +10,7 @@ import <intrin.h>;
 
 namespace VR4300
 {
-	enum class Instr
+	enum class CPU_Instruction
 	{
 		/* Load instructions */
 		LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD,
@@ -59,22 +59,22 @@ namespace VR4300
 
 	u64 HI, LO;
 
-	bool LL;
+	bool LL_bit;
 
 	bool jump_next_instruction;
 	u64 addr_to_jump_to;
 
 	/* Main processor instructions */
-	template<Instr instr> void Load(const u32 instr_code);
-	template<Instr instr> void Store(const u32 instr_code);
-	template<Instr instr> void ALU_Immediate(const u32 instr_code);
-	template<Instr instr> void ALU_ThreeOperand(const u32 instr_code);
-	template<Instr instr> void ALU_Shift(const u32 instr_code);
-	template<Instr instr> void ALU_MulDiv(const u32 instr_code);
-	template<Instr instr> void Jump(const u32 instr_code);
-	template<Instr instr> void Branch(const u32 instr_code);
-	template<Instr instr> void Trap_ThreeOperand(const u32 instr_code);
-	template<Instr instr> void Trap_Immediate(const u32 instr_code);
+	template<CPU_Instruction instr> void Load(const u32 instr_code);
+	template<CPU_Instruction instr> void Store(const u32 instr_code);
+	template<CPU_Instruction instr> void ALU_Immediate(const u32 instr_code);
+	template<CPU_Instruction instr> void ALU_ThreeOperand(const u32 instr_code);
+	template<CPU_Instruction instr> void ALU_Shift(const u32 instr_code);
+	template<CPU_Instruction instr> void ALU_MulDiv(const u32 instr_code);
+	template<CPU_Instruction instr> void Jump(const u32 instr_code);
+	template<CPU_Instruction instr> void Branch(const u32 instr_code);
+	template<CPU_Instruction instr> void Trap_ThreeOperand(const u32 instr_code);
+	template<CPU_Instruction instr> void Trap_Immediate(const u32 instr_code);
 	void MFHI(const u32 instr_code);
 	void MFLO(const u32 instr_code);
 	void MTHI(const u32 instr_code);

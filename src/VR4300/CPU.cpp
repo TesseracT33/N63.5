@@ -5,9 +5,11 @@ import :MMU;
 
 namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void Load(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
@@ -15,19 +17,19 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
-		if constexpr (instr == Instr::LB)
+		if constexpr (instr == LB)
 		{
 			/* Load Byte;
 			   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
 			GPR.Set(rt, cpu_read_mem<s8>(address));
 		}
-		else if constexpr (instr == Instr::LBU)
+		else if constexpr (instr == LBU)
 		{
 			/* Load Byte Unsigned;
 			   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
 			GPR.Set(rt, cpu_read_mem<u8>(address));
 		}
-		else if constexpr (instr == Instr::LH)
+		else if constexpr (instr == LH)
 		{
 			/* Load halfword;
 			   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
@@ -36,7 +38,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, cpu_read_mem<s16>(address));
 		}
-		else if constexpr (instr == Instr::LHU)
+		else if constexpr (instr == LHU)
 		{
 			/* Load Halfword Unsigned;
 			   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
@@ -45,7 +47,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, cpu_read_mem<u16>(address));
 		}
-		else if constexpr (instr == Instr::LW)
+		else if constexpr (instr == LW)
 		{
 			/* Load Word;
 			   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
@@ -54,7 +56,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, cpu_read_mem<s32>(address));
 		}
-		else if constexpr (instr == Instr::LWU)
+		else if constexpr (instr == LWU)
 		{
 			/* Load Word Unsigned;
 			   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
@@ -63,7 +65,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, cpu_read_mem<u32>(address));
 		}
-		else if constexpr (instr == Instr::LWL)
+		else if constexpr (instr == LWL)
 		{
 			/* Load Word Left;
 			   Shifts a word specified by the address to the left, so that a byte specified by
@@ -72,7 +74,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   loads the result to register rt. */
 			GPR.Set(rt, cpu_read_mem<u32>(address));
 		}
-		else if constexpr (instr == Instr::LWR)
+		else if constexpr (instr == LWR)
 		{
 			/* Load Word Right;
 			   Shifts a word specified by the address to the right, so that a byte specified by
@@ -81,7 +83,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   loads the result to register rt. */
 			GPR.Set(rt, cpu_read_mem<u32>(address));
 		}
-		else if constexpr (instr == Instr::LD)
+		else if constexpr (instr == LD)
 		{
 			/* Load Doubleword;
 			   Loads the contents of a word specified by the address to register rt. */
@@ -90,7 +92,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, cpu_read_mem<u64>(address));
 		}
-		else if constexpr (instr == Instr::LDL)
+		else if constexpr (instr == LDL)
 		{
 			/* Load Doubleword Left;
 			   Shifts the doubleword specified by the address to the left so that the byte
@@ -99,7 +101,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   result to register rt. */
 			GPR.Set(rt, cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address));
 		}
-		else if constexpr (instr == Instr::LDR)
+		else if constexpr (instr == LDR)
 		{
 			/* Load Doubleword Right;
 			   Shifts the doubleword specified by the address to the right so that the byte
@@ -108,20 +110,20 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   result to register rt. */
 			GPR.Set(rt, cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address));
 		}
-		else if constexpr (instr == Instr::LL)
+		else if constexpr (instr == LL)
 		{
 			/* Load Linked;
 			   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
 			GPR.Set(rt, cpu_read_mem<s32>(address));
-			LL = 1;
+			LL_bit = 1;
 			/* TODO the specified physical address of the memory is stored to the LLAddr register */
 		}
-		else if constexpr (instr == Instr::LLD)
+		else if constexpr (instr == LLD)
 		{
 			/* Load Linked Doubleword;
 			   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
 			   GPR.Set(rt, cpu_read_mem<u64>(address));
-			LL = 1;
+			LL_bit = 1;
 		}
 		else
 		{
@@ -130,9 +132,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void Store(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
@@ -140,13 +144,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
-		if constexpr (instr == Instr::SB)
+		if constexpr (instr == SB)
 		{
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
 			cpu_write_mem<u8>(address, u8(GPR[rt]));
 		}
-		else if constexpr (instr == Instr::SH)
+		else if constexpr (instr == SH)
 		{
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
@@ -155,7 +159,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				cpu_write_mem<u16>(address, u16(GPR[rt]));
 		}
-		else if constexpr (instr == Instr::SW)
+		else if constexpr (instr == SW)
 		{
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
@@ -164,7 +168,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				cpu_write_mem<u32>(address, u32(GPR[rt]));
 		}
-		else if constexpr (instr == Instr::SWL)
+		else if constexpr (instr == SWL)
 		{
 			/* Store Word Left;
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
@@ -172,7 +176,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   of the shift to the lower portion of the word in memory. */
 			cpu_write_mem<u32>(address, u32(GPR[rt])); /* TODO write function should handle this? */
 		}
-		else if constexpr (instr == Instr::SWR)
+		else if constexpr (instr == SWR)
 		{
 			/* Store Word Right;
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
@@ -180,7 +184,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   of the shift to the higher portion of the word in memory. */
 			cpu_write_mem<u32, MemoryAccessAlignment::Unaligned>(address, u32(GPR[rt]));
 		}
-		else if constexpr (instr == Instr::SD)
+		else if constexpr (instr == SD)
 		{
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
@@ -189,7 +193,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				cpu_write_mem<u64>(address, GPR[rt]);
 		}
-		else if constexpr (instr == Instr::SDL)
+		else if constexpr (instr == SDL)
 		{
 			/* Store Doubleword Left;
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
@@ -197,7 +201,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   result of the shift to the lower portion of the doubleword in memory. */
 			cpu_write_mem<u64>(address, GPR[rt]);
 		}
-		else if constexpr (instr == Instr::SDR)
+		else if constexpr (instr == SDR)
 		{
 			/* Store Doubleword Right;
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
@@ -205,14 +209,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   result of the shift to the higher portion of the doubleword in memory. */
 			cpu_write_mem<u64, MemoryAccessAlignment::Unaligned>(address, GPR[rt]);
 		}
-		else if constexpr (instr == Instr::SC)
+		else if constexpr (instr == SC)
 		{
 			/* Store Conditional;
 			   If the LL bit is 1, stores the contents of the low-order word of register rt to
 			   the memory specified by the address, and sets register rt to 1.
 			   If the LL bit is 0, does not store the contents of the word, and clears register
 			   rt to 0. */
-			if (LL == 1)
+			if (LL_bit == 1)
 			{
 				cpu_write_mem<u32>(address, GPR[rt]);
 				GPR.Set(rt, 1);
@@ -222,14 +226,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				GPR.Set(rt, 0);
 			}
 		}
-		else if constexpr (instr == Instr::SCD)
+		else if constexpr (instr == SCD)
 		{
 			/* Store Conditional Doubleword;
 			   If the LL bit is 1, stores the contents of register rt to the memory specified by
 			   the address, and sets register rt to 1.
 			   If the LL bit is 0, does not store the contents of the register, and clears register
 			   rt to 0. */
-			if (LL == 1)
+			if (LL_bit == 1)
 			{
 				cpu_write_mem<u64>(address, GPR[rt]);
 				GPR.Set(rt, 1);
@@ -246,20 +250,22 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void ALU_Immediate(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 rs = instr_code >> 21 & 0x1F;
 
 		const auto immediate = [&] {
-			if constexpr (instr == Instr::ADDI || instr == Instr::ADDIU || instr == Instr::SLTI || instr == Instr::SLTIU || instr == Instr::DADDI || instr == Instr::DADDIU)
+			if constexpr (instr == ADDI || instr == ADDIU || instr == SLTI || instr == SLTIU || instr == DADDI || instr == DADDIU)
 				return s16(instr_code & 0xFFFF);
 			else
 				return u16(instr_code & 0xFFFF);
 		}();
 
-		if constexpr (instr == Instr::ADDI)
+		if constexpr (instr == ADDI)
 		{
 			/* Add Immediate;
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the
@@ -272,7 +278,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, sum);
 		}
-		else if constexpr (instr == Instr::ADDIU)
+		else if constexpr (instr == ADDIU)
 		{
 			/* Add Immediate Unsigned;
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the 32-bit
@@ -281,7 +287,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 sum = GPR[rs] + immediate;
 			GPR.Set(rt, sum);
 		}
-		else if constexpr (instr == Instr::SLTI)
+		else if constexpr (instr == SLTI)
 		{
 			/* Set On Less Than Immediate;
 			   Sign-extends the 16-bit immediate and compares it with register rs as a
@@ -289,7 +295,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   otherwise, stores 0 to register rt. */
 			GPR.Set(rt, s64(GPR[rs]) < immediate); /* TODO s32 in 32-bit mode */
 		}
-		else if constexpr (instr == Instr::SLTIU)
+		else if constexpr (instr == SLTIU)
 		{
 			/* Set On Less Than Immediate Unsigned;
 			   Sign-extends the 16-bit immediate and compares it with register rs as an
@@ -298,28 +304,28 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   /* TODO */
 			GPR.Set(rt, GPR[rs] < immediate);
 		}
-		else if constexpr (instr == Instr::ANDI)
+		else if constexpr (instr == ANDI)
 		{
 			/* And Immediate;
 			   Zero-extends the 16-bit immediate, ANDs it with register rs, and stores the
 			   result to register rt. */
 			GPR.Set(rt, GPR[rs] & immediate);
 		}
-		else if constexpr (instr == Instr::ORI)
+		else if constexpr (instr == ORI)
 		{
 			/* Or Immediate;
 			   Zero-extends the 16-bit immediate, ORs it with register rs, and stores the
 			   result to register rt. */
 			GPR.Set(rt, GPR[rs] | immediate);
 		}
-		else if constexpr (instr == Instr::XORI)
+		else if constexpr (instr == XORI)
 		{
 			/* Exclusive Or Immediate;
 			   Zero-extends the 16-bit immediate, exclusive-ORs it with register rs, and
 			   stores the result to register rt. */
 			GPR.Set(rt, GPR[rs] ^ immediate);
 		}
-		else if constexpr (instr == Instr::LUI)
+		else if constexpr (instr == LUI)
 		{
 			/* Load Upper Immediate;
 			   Shifts the 16-bit immediate 16 bits to the left, and clears the low-order 16 bits
@@ -328,7 +334,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 result = immediate << 16;
 			GPR.Set(rt, result);
 		}
-		else if constexpr (instr == Instr::DADDI)
+		else if constexpr (instr == DADDI)
 		{
 			/* Doubleword Add Immediate;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
@@ -344,7 +350,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rt, sum);
 		}
-		else if constexpr (instr == Instr::DADDIU)
+		else if constexpr (instr == DADDIU)
 		{
 			/* Doubleword Add Immediate Unsigned;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
@@ -359,14 +365,16 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}
 	}
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void ALU_ThreeOperand(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const u8 rd = instr_code >> 11 & 0x1F;
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == Instr::ADD)
+		if constexpr (instr == ADD)
 		{
 			/* Add;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
@@ -381,7 +389,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::ADDU)
+		else if constexpr (instr == ADDU)
 		{
 			/* Add Unsigned;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
@@ -389,7 +397,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 sum = s32(GPR[rs]) + s32(GPR[rt]);
 			GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::SUB)
+		else if constexpr (instr == SUB)
 		{
 			/* Subtract;
 			   Subtracts the contents of register rs from register rt, and stores (sign-extends
@@ -401,7 +409,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::SUBU)
+		else if constexpr (instr == SUBU)
 		{
 			/* Subtract Unsigned;
 			   Subtracts the contents of register rt from register rs, and stores (sign-extends
@@ -410,7 +418,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 sum = s32(GPR[rs]) - s32(GPR[rt]);
 			GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::SLT)
+		else if constexpr (instr == SLT)
 		{
 			/* Set On Less Than;
 			   Compares the contents of registers rs and rt as signed integers.
@@ -418,7 +426,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   otherwise, stores 0 to rd. */
 			GPR.Set(rd, s64(GPR[rs]) < s64(GPR[rt])); /* todo: is it 32 bit comparison or not? */
 		}
-		else if constexpr (instr == Instr::SLTU)
+		else if constexpr (instr == SLTU)
 		{
 			/* Set On Less Than Unsigned;
 			   Compares the contents of registers rs and rt as unsigned integers.
@@ -426,31 +434,31 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   otherwise, stores 0 to rd. */
 			GPR.Set(rd, GPR[rs] < GPR[rt]);
 		}
-		else if constexpr (instr == Instr::AND)
+		else if constexpr (instr == AND)
 		{
 			/* And;
 			   ANDs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			GPR.Set(rd, GPR[rs] & GPR[rt]);
 		}
-		else if constexpr (instr == Instr::OR)
+		else if constexpr (instr == OR)
 		{
 			/* Or;
 			   ORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			GPR.Set(rd, GPR[rs] | GPR[rt]);
 		}
-		else if constexpr (instr == Instr::XOR)
+		else if constexpr (instr == XOR)
 		{
 			/* Exclusive Or;
 			   Exclusive-ORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			GPR.Set(rd, GPR[rs] ^ GPR[rt]);
 		}
-		else if constexpr (instr == Instr::NOR)
+		else if constexpr (instr == NOR)
 		{
 			/* Nor;
 			   NORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			GPR.Set(rd, ~(GPR[rs] | GPR[rt]));
 		}
-		else if constexpr (instr == Instr::DADD)
+		else if constexpr (instr == DADD)
 		{
 			/* Doubleword Add;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
@@ -465,7 +473,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::DADDU)
+		else if constexpr (instr == DADDU)
 		{
 			/* Doubleword Add Unsigned;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
@@ -473,7 +481,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const u64 sum = GPR[rs] + GPR[rt];
 			GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::DSUB)
+		else if constexpr (instr == DSUB)
 		{
 			/* Doubleword Subtract;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit
@@ -485,7 +493,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else
 				GPR.Set(rd, sum);
 		}
-		else if constexpr (instr == Instr::DSUBU)
+		else if constexpr (instr == DSUBU)
 		{
 			/* Doubleword Subtract Unsigned;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit result to register rd.
@@ -500,47 +508,49 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void ALU_Shift(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const u8 rd = instr_code >> 11 & 0x1F;
 		const u8 rt = instr_code >> 16 & 0x1F;
 
 		const u8 rs = [&] {
-			if constexpr (instr == Instr::SLLV || instr == Instr::SRLV || instr == Instr::SRAV || instr == Instr::DSLLV || instr == Instr::DSRLV || instr == Instr::DSRAV)
+			if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
 				return instr_code >> 21 & 0x1F;
 			else return 0;
 		}();
 
 		const u8 sa = [&] {
-			if constexpr (instr == Instr::SLL || instr == Instr::SRL || instr == Instr::SRA || instr == Instr::DSLL || instr == Instr::DSRL || instr == Instr::DSRA || instr == Instr::DSLL32 || instr == Instr::DSRL32)
+			if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == DSLL || instr == DSRL || instr == DSRA || instr == DSLL32 || instr == DSRL32)
 				return instr_code & 0x1F;
 			else return 0;
 		}();
 
 		const u64 result = static_cast<u64>( [&] {
-			if constexpr (instr == Instr::SLL)
+			if constexpr (instr == SLL)
 			{
 				/* Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(GPR[rt] << sa);
 			}
-			else if constexpr (instr == Instr::SRL)
+			else if constexpr (instr == SRL)
 			{
 				/* Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(GPR[rt] >> sa);
 			}
-			else if constexpr (instr == Instr::SRA)
+			else if constexpr (instr == SRA)
 			{
 				/* Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(GPR[rt]) >> sa;
 			}
-			else if constexpr (instr == Instr::SLLV)
+			else if constexpr (instr == SLLV)
 			{
 				/* Shift Left Logical Variable;
 				   Shifts the contents of register rt to the left and inserts 0 to the low-order bits.
@@ -549,7 +559,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
 				return s32(GPR[rt]) << (GPR[rs] & 0x1F);
 			}
-			else if constexpr (instr == Instr::SRLV)
+			else if constexpr (instr == SRLV)
 			{
 				/* Shift Right Logical Variable;
 				   Shifts the contents of register rt to the right, and inserts 0 to the high-order bits.
@@ -558,7 +568,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(GPR[rt] >> (GPR[rs] & 0x1F));
 			}
-			else if constexpr (instr == Instr::SRAV)
+			else if constexpr (instr == SRAV)
 			{
 				/* Shift Right Arithmetic Variable;
 				   Shifts the contents of register rt to the right and sign-extends the high-order bits.
@@ -567,28 +577,28 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(GPR[rt]) >> (GPR[rs] & 0x1F);
 			}
-			else if constexpr (instr == Instr::DSLL)
+			else if constexpr (instr == DSLL)
 			{
 				/* Doubleword Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 				   Stores the 64-bit result to register rd. */
 				return GPR[rt] << sa;
 			}
-			else if constexpr (instr == Instr::DSRL)
+			else if constexpr (instr == DSRL)
 			{
 				/* Doubleword Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return GPR[rt] >> sa;
 			}
-			else if constexpr (instr == Instr::DSRA)
+			else if constexpr (instr == DSRA)
 			{
 				/* Doubleword Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return s64(GPR[rt]) >> sa;
 			}
-			else if constexpr (instr == Instr::DSLLV)
+			else if constexpr (instr == DSLLV)
 			{
 				/* Doubleword Shift Left Logical Variable;
 				   Shifts the contents of register rt to the left, and inserts 0 to the low-order bits.
@@ -597,7 +607,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   Stores the 64-bit result and stores it to register rd. */
 				return GPR[rt] << (GPR[rs] & 0x3F);
 			}
-			else if constexpr (instr == Instr::DSRLV)
+			else if constexpr (instr == DSRLV)
 			{
 				/* Doubleword Shift Right Logical Variable;
 				   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
@@ -606,7 +616,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   Sign-extends the 64-bit result and stores it to register rd. */
 				return GPR[rt] >> (GPR[rs] & 0x3F); /* TODO sign-extends the 64-bit result? */
 			}
-			else if constexpr (instr == Instr::DSRAV)
+			else if constexpr (instr == DSRAV)
 			{
 				/* Doubleword Shift Right Arithmetic Variable;
 				   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
@@ -615,21 +625,21 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   Sign-extends the 64-bit result and stores it to register rd. */
 				return s64(GPR[rt]) >> (GPR[rs] & 0x3F);
 			}
-			else if constexpr (instr == Instr::DSLL32)
+			else if constexpr (instr == DSLL32)
 			{
 				/* Doubleword Shift Left Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the left, and inserts 0 to the low-order bits.
 				   Stores the 64-bit result to register rd. */
 				return GPR[rt] << (sa + 32);
 			}
-			else if constexpr (instr == Instr::DSRL32)
+			else if constexpr (instr == DSRL32)
 			{
 				/* Doubleword Shift Right Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return GPR[rt] >> (sa + 32);
 			}
-			else if constexpr (instr == Instr::DSRA32)
+			else if constexpr (instr == DSRA32)
 			{
 				/* Doubleword Shift Right Arithmetic + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and sign-extends the high-order bits.
@@ -646,13 +656,15 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void ALU_MulDiv(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == Instr::MULT)
+		if constexpr (instr == MULT)
 		{
 			/* Multiply;
 			   Multiplies the contents of register rs by the contents of register rt as a 32-bit
@@ -662,7 +674,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			LO = s32(result & 0xFFFFFFFF);
 			HI = result >> 32;
 		}
-		else if constexpr (instr == Instr::MULTU)
+		else if constexpr (instr == MULTU)
 		{
 			/* Multiply Unsigned;
 			   Multiplies the contents of register rs by the contents of register rt as a 32-bit
@@ -672,7 +684,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			LO = s32(result & 0xFFFFFFFF);
 			HI = s32(result >> 32);
 		}
-		else if constexpr (instr == Instr::DIV)
+		else if constexpr (instr == DIV)
 		{
 			/* Divide;
 			   Divides the contents of register rs by the contents of register rt. The operand
@@ -684,7 +696,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			LO = quotient;
 			HI = remainder;
 		}
-		else if constexpr (instr == Instr::DIVU)
+		else if constexpr (instr == DIVU)
 		{
 			/* Divide Unsigned;
 			   Divides the contents of register rs by the contents of register rt. The operand
@@ -696,7 +708,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			LO = s32(quotient);
 			HI = s32(remainder);
 		}
-		else if constexpr (instr == Instr::DMULT)
+		else if constexpr (instr == DMULT)
 		{
 			/* Doubleword Multiply;
 			   Multiplies the contents of register rs by the contents of register rt as a signed integer.
@@ -714,7 +726,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			static_assert(false);
 #endif
 		}
-		else if constexpr (instr == Instr::DMULTU)
+		else if constexpr (instr == DMULTU)
 		{
 			/* Doubleword Multiply Unsigned;
 			   Multiplies the contents of register rs by the contents of register rt as an unsigned integer.
@@ -732,7 +744,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			static_assert(false);
 #endif
 		}
-		else if constexpr (instr == Instr::DDIV)
+		else if constexpr (instr == DDIV)
 		{
 			/* Doubleword Divide;
 			   Divides the contents of register rs by the contents of register rt.
@@ -743,7 +755,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			LO = quotient;
 			HI = remainder;
 		}
-		else if constexpr (instr == Instr::DDIVU)
+		else if constexpr (instr == DDIVU)
 		{
 			/* Doubleword Divide Unsigned;
 			   Divides the contents of register rs by the contents of register rt.
@@ -761,9 +773,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void Jump(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		/* J: Jump;
 		   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
 		   coupled with the high-order 4 bits of the PC, delayed by one instruction.
@@ -781,11 +795,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Stores the address of the instruction following the delay slot to register rd. */
 
 		const u64 target = [&] {
-			if constexpr (instr == Instr::J || instr == Instr::JAL)
+			if constexpr (instr == J || instr == JAL)
 			{
 				return PC & 0xFFFF'FFFF'F000'0000 | u64(instr_code & 0x3FFFFFF) << 2;
 			}
-			else if constexpr (instr == Instr::JR || instr == Instr::JALR)
+			else if constexpr (instr == JR || instr == JALR)
 			{
 				const u8 rs = instr_code >> 21 & 0x1F;
 				return GPR[rs];
@@ -799,11 +813,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		addr_to_jump_to = target;
 		jump_next_instruction = true;
 
-		if constexpr (instr == Instr::JAL)
+		if constexpr (instr == JAL)
 		{
 			GPR.Set(31, PC + 4);
 		}
-		else if constexpr (instr == Instr::JALR)
+		else if constexpr (instr == JALR)
 		{
 			const u8 rd = instr_code >> 11 & 0x1F;
 			GPR.Set(rd, PC + 4);
@@ -811,38 +825,40 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void Branch(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const u8 rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == Instr::BLTZAL || instr == Instr::BGEZAL || instr == Instr::BLTZALL || instr == Instr::BGEZALL)
+		if constexpr (instr == BLTZAL || instr == BGEZAL || instr == BLTZALL || instr == BGEZALL)
 		{
 			GPR.Set(31, PC + 4);
 		}
 
 		const u8 rt = [&] {
-			if constexpr (instr == Instr::BEQ || instr == Instr::BNE || instr == Instr::BEQL || instr == Instr::BNEL)
+			if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
 				return instr_code >> 16 & 0x1F;
 			else return 0; /* TODO: feels like a hack. RT is not needed for the other instructions, but I cannot put the declaration of it in an if-constexpr. */
 		}();
 
 		const bool branch_cond = [&] {
-			if constexpr (instr == Instr::BEQ || instr == Instr::BEQL) /* Branch On Equal (Likely) */
+			if constexpr (instr == BEQ || instr == BEQL) /* Branch On Equal (Likely) */
 				return GPR[rs] == GPR[rt];
-			else if constexpr (instr == Instr::BNE || instr == Instr::BNEL) /* Branch On Not Equal (Likely) */
+			else if constexpr (instr == BNE || instr == BNEL) /* Branch On Not Equal (Likely) */
 				return GPR[rs] != GPR[rt];
-			else if constexpr (instr == Instr::BLEZ || instr == Instr::BLEZL) /* Branch On Less Than Or Equal To Zero (Likely) */
+			else if constexpr (instr == BLEZ || instr == BLEZL) /* Branch On Less Than Or Equal To Zero (Likely) */
 				return s64(GPR[rs]) <= 0;
-			else if constexpr (instr == Instr::BGTZ || instr == Instr::BGTZL) /* Branch On Greater Than Zero (Likely) */
+			else if constexpr (instr == BGTZ || instr == BGTZL) /* Branch On Greater Than Zero (Likely) */
 				return s64(GPR[rs]) > 0;
-			else if constexpr (instr == Instr::BLTZ || instr == Instr::BLTZL) /* Branch On Less Than Zero (Likely) */
+			else if constexpr (instr == BLTZ || instr == BLTZL) /* Branch On Less Than Zero (Likely) */
 				return s64(GPR[rs]) < 0;
-			else if constexpr (instr == Instr::BGEZ || instr == Instr::BGEZL) /* Branch On Greater Than or Equal To Zero (Likely) */
+			else if constexpr (instr == BGEZ || instr == BGEZL) /* Branch On Greater Than or Equal To Zero (Likely) */
 				return s64(GPR[rs]) >= 0;
-			else if constexpr (instr == Instr::BLTZAL || instr == Instr::BLTZALL) /* Branch On Less Than Zero and Link (Likely) */
+			else if constexpr (instr == BLTZAL || instr == BLTZALL) /* Branch On Less Than Zero and Link (Likely) */
 				return s64(GPR[rs]) < 0;
-			else if constexpr (instr == Instr::BGEZAL || instr == Instr::BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
+			else if constexpr (instr == BGEZAL || instr == BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
 				return s64(GPR[rs]) >= 0;
 			else
 			{
@@ -855,56 +871,58 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 offset = s32(instr_code & 0xFFFF) << 2;
 			PC += offset;
 		}
-		else if constexpr (instr == Instr::BEQL || instr == Instr::BNEL || instr == Instr::BLEZL || instr == Instr::BGTZL ||
-			instr == Instr::BEQL || instr == Instr::BLTZL || instr == Instr::BGEZL || instr == Instr::BLTZALL || instr == Instr::BGEZALL)
+		else if constexpr (instr == BEQL || instr == BNEL || instr == BLEZL || instr == BGTZL ||
+			instr == BEQL || instr == BLTZL || instr == BGEZL || instr == BLTZALL || instr == BGEZALL)
 		{
 			PC += 4; /* TODO no idea if correct or not */
 		}
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void Trap_ThreeOperand(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const u8 rt = instr_code >> 16 & 0x1F;
 		const u8 rs = instr_code >> 21 & 0x1F;
 
 		const bool trap_cond = [&] {
-			if constexpr (instr == Instr::TGE)
+			if constexpr (instr == TGE)
 			{
 				/* Trap If Greater Than Or Equal;
 				   Compares registers rs and rt as signed integers.
 				   If register rs is greater than rt, generates an exception. */
 				return s64(GPR[rs]) > s64(GPR[rt]);
 			}
-			else if constexpr (instr == Instr::TGEU)
+			else if constexpr (instr == TGEU)
 			{
 				/* Trap If Greater Than Or Equal Unsigned;
 				   Compares registers rs and rt as unsigned integers.
 				   If register rs is greater than rt, generates an exception. */
 				return GPR[rs] > GPR[rt];
 			}
-			else if constexpr (instr == Instr::TLT)
+			else if constexpr (instr == TLT)
 			{
 				/* Trap If Less Than;
 				   Compares registers rs and rt as signed integers.
 				   If register rs is less than rt, generates an exception. */
 				return s64(GPR[rs]) < s64(GPR[rt]);
 			}
-			else if constexpr (instr == Instr::TLTU)
+			else if constexpr (instr == TLTU)
 			{
 				/* Trap If Less Than Unsigned;
 				   Compares registers rs and rt as unsigned integers.
 				   If register rs is less than rt, generates an exception. */
 				return GPR[rs] < GPR[rt];
 			}
-			else if constexpr (instr == Instr::TEQ)
+			else if constexpr (instr == TEQ)
 			{
 				/* Trap If Equal;
 				   Generates an exception if registers rs and rt are equal. */
 				return GPR[rs] == GPR[rt];
 			}
-			else if constexpr (instr == Instr::TNE)
+			else if constexpr (instr == TNE)
 			{
 				/* Trap If Not Equal;
 				   Generates an exception if registers rs and rt are not equal. */
@@ -921,48 +939,50 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	}
 
 
-	template<Instr instr>
+	template<CPU_Instruction instr>
 	void Trap_Immediate(const u32 instr_code)
 	{
+		using enum CPU_Instruction;
+
 		const s16 immedate = instr_code & 0xFFFF;
 		const u8 rs = instr_code >> 21 & 0x1F;
 
 		const bool trap_cond = [&] {
-			if constexpr (instr == Instr::TGEI)
+			if constexpr (instr == TGEI)
 			{
 				/* Trap If Greater Than Or Equal Immediate;
 				   Compares the contents of register rs with 16-bit sign-extended immediate as a
 				   signed integer. If rs contents are greater than the immediate, generates an exception. */
 				return s64(GPR[rs]) > immedate;
 			}
-			else if constexpr (instr == Instr::TGEIU)
+			else if constexpr (instr == TGEIU)
 			{
 				/* Trap If Greater Than Or Equal Immediate Unsigned;
 				   Compares the contents of register rs with 16-bit zero-extended immediate as an
 				   unsigned integer. If rs contents are greater than the immediate, generates an exception. */
 				return GPR[rs] > immedate;
 			}
-			else if constexpr (instr == Instr::TLTI)
+			else if constexpr (instr == TLTI)
 			{
 				/* Trap If Less Than Immediate;
 				   Compares the contents of register rs with 16-bit sign-extended immediate as a
 				   signed integer. If rs contents are less than the immediate, generates an exception. */
 				return s64(GPR[rs]) < immedate;
 			}
-			else if constexpr (instr == Instr::TLTIU)
+			else if constexpr (instr == TLTIU)
 			{
 				/* Trap If Less Than Immediate Unsigned;
 				   Compares the contents of register rs with 16-bit zero-extended immediate as an
 				   unsigned integer. If rs contents are less than the immediate, generates an exception. */
 				return GPR[rs] < immedate;
 			}
-			else if constexpr (instr == Instr::TEQI)
+			else if constexpr (instr == TEQI)
 			{
 				/* Trap If Equal Immediate;
 				   Generates an exception if the contents of register rs are equal to immediate. */
 				return s64(GPR[rs]) == immedate; /* TODO: should we really cast to s64? */
 			}
-			else if constexpr (instr == Instr::TNEI)
+			else if constexpr (instr == TNEI)
 			{
 				/* Trap If Not Equal Immediate;
 				   Generates an exception if the contents of register rs are not equal to immediate. */
@@ -1041,115 +1061,115 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   /* TODO */
 	}
 
-	template void Load<Instr::LB>(const u32 instr_code);
-	template void Load<Instr::LBU>(const u32 instr_code);
-	template void Load<Instr::LH>(const u32 instr_code);
-	template void Load<Instr::LHU>(const u32 instr_code);
-	template void Load<Instr::LW>(const u32 instr_code);
-	template void Load<Instr::LWU>(const u32 instr_code);
-	template void Load<Instr::LWL>(const u32 instr_code);
-	template void Load<Instr::LWR>(const u32 instr_code);
-	template void Load<Instr::LD>(const u32 instr_code);
-	template void Load<Instr::LDL>(const u32 instr_code);
-	template void Load<Instr::LDR>(const u32 instr_code);
-	template void Load<Instr::LL>(const u32 instr_code);
-	template void Load<Instr::LLD>(const u32 instr_code);
+	template void Load<CPU_Instruction::LB>(const u32 instr_code);
+	template void Load<CPU_Instruction::LBU>(const u32 instr_code);
+	template void Load<CPU_Instruction::LH>(const u32 instr_code);
+	template void Load<CPU_Instruction::LHU>(const u32 instr_code);
+	template void Load<CPU_Instruction::LW>(const u32 instr_code);
+	template void Load<CPU_Instruction::LWU>(const u32 instr_code);
+	template void Load<CPU_Instruction::LWL>(const u32 instr_code);
+	template void Load<CPU_Instruction::LWR>(const u32 instr_code);
+	template void Load<CPU_Instruction::LD>(const u32 instr_code);
+	template void Load<CPU_Instruction::LDL>(const u32 instr_code);
+	template void Load<CPU_Instruction::LDR>(const u32 instr_code);
+	template void Load<CPU_Instruction::LL>(const u32 instr_code);
+	template void Load<CPU_Instruction::LLD>(const u32 instr_code);
 
-	template void Store<Instr::SB>(const u32 instr_code);
-	template void Store<Instr::SH>(const u32 instr_code);
-	template void Store<Instr::SW>(const u32 instr_code);
-	template void Store<Instr::SWL>(const u32 instr_code);
-	template void Store<Instr::SWR>(const u32 instr_code);
-	template void Store<Instr::SC>(const u32 instr_code);
-	template void Store<Instr::SCD>(const u32 instr_code);
-	template void Store<Instr::SD>(const u32 instr_code);
-	template void Store<Instr::SDL>(const u32 instr_code);
-	template void Store<Instr::SDR>(const u32 instr_code);
+	template void Store<CPU_Instruction::SB>(const u32 instr_code);
+	template void Store<CPU_Instruction::SH>(const u32 instr_code);
+	template void Store<CPU_Instruction::SW>(const u32 instr_code);
+	template void Store<CPU_Instruction::SWL>(const u32 instr_code);
+	template void Store<CPU_Instruction::SWR>(const u32 instr_code);
+	template void Store<CPU_Instruction::SC>(const u32 instr_code);
+	template void Store<CPU_Instruction::SCD>(const u32 instr_code);
+	template void Store<CPU_Instruction::SD>(const u32 instr_code);
+	template void Store<CPU_Instruction::SDL>(const u32 instr_code);
+	template void Store<CPU_Instruction::SDR>(const u32 instr_code);
 
-	template void ALU_Immediate<Instr::ADDI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::ADDIU>(const u32 instr_code);
-	template void ALU_Immediate<Instr::SLTI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::SLTIU>(const u32 instr_code);
-	template void ALU_Immediate<Instr::ANDI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::ORI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::XORI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::LUI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::DADDI>(const u32 instr_code);
-	template void ALU_Immediate<Instr::DADDIU>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::ADDI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::ADDIU>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::SLTI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::SLTIU>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::ANDI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::ORI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::XORI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::LUI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::DADDI>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::DADDIU>(const u32 instr_code);
 
-	template void ALU_ThreeOperand<Instr::ADD>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::ADDU>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::SUB>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::SUBU>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::SLT>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::SLTU>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::AND>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::OR>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::XOR>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::NOR>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::DADD>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::DADDU>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::DSUB>(const u32 instr_code);
-	template void ALU_ThreeOperand<Instr::DSUBU>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::ADD>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::ADDU>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::SUB>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::SUBU>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::SLT>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::SLTU>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::AND>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::OR>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::XOR>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::NOR>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::DADD>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::DADDU>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::DSUB>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::DSUBU>(const u32 instr_code);
 
-	template void ALU_Shift<Instr::SLL>(const u32 instr_code);
-	template void ALU_Shift<Instr::SRL>(const u32 instr_code);
-	template void ALU_Shift<Instr::SRA>(const u32 instr_code);
-	template void ALU_Shift<Instr::SLLV>(const u32 instr_code);
-	template void ALU_Shift<Instr::SRLV>(const u32 instr_code);
-	template void ALU_Shift<Instr::SRAV>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSLL>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSRL>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSRA>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSLLV>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSRLV>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSRAV>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSLL32>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSRL32>(const u32 instr_code);
-	template void ALU_Shift<Instr::DSRA32>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SLL>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SRL>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SRA>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SLLV>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SRLV>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SRAV>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSLL>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSRL>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSRA>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSLLV>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSRLV>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSRAV>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSLL32>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSRL32>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::DSRA32>(const u32 instr_code);
 
-	template void ALU_MulDiv<Instr::MULT>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::MULTU>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::DIV>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::DIVU>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::DMULT>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::DMULTU>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::DDIV>(const u32 instr_code);
-	template void ALU_MulDiv<Instr::DDIVU>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::MULT>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::MULTU>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::DIV>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::DIVU>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::DMULT>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::DMULTU>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::DDIV>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::DDIVU>(const u32 instr_code);
 
-	template void Jump<Instr::J>(const u32 instr_code);
-	template void Jump<Instr::JAL>(const u32 instr_code);
-	template void Jump<Instr::JR>(const u32 instr_code);
-	template void Jump<Instr::JALR>(const u32 instr_code);
+	template void Jump<CPU_Instruction::J>(const u32 instr_code);
+	template void Jump<CPU_Instruction::JAL>(const u32 instr_code);
+	template void Jump<CPU_Instruction::JR>(const u32 instr_code);
+	template void Jump<CPU_Instruction::JALR>(const u32 instr_code);
 
-	template void Branch<Instr::BEQ>(const u32 instr_code);
-	template void Branch<Instr::BNE>(const u32 instr_code);
-	template void Branch<Instr::BLEZ>(const u32 instr_code);
-	template void Branch<Instr::BGTZ>(const u32 instr_code);
-	template void Branch<Instr::BLTZ>(const u32 instr_code);
-	template void Branch<Instr::BGEZ>(const u32 instr_code);
-	template void Branch<Instr::BLTZAL>(const u32 instr_code);
-	template void Branch<Instr::BGEZAL>(const u32 instr_code);
-	template void Branch<Instr::BEQL>(const u32 instr_code);
-	template void Branch<Instr::BNEL>(const u32 instr_code);
-	template void Branch<Instr::BLEZL>(const u32 instr_code);
-	template void Branch<Instr::BGTZL>(const u32 instr_code);
-	template void Branch<Instr::BLTZL>(const u32 instr_code);
-	template void Branch<Instr::BGEZL>(const u32 instr_code);
-	template void Branch<Instr::BLTZALL>(const u32 instr_code);
-	template void Branch<Instr::BGEZALL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BEQ>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BNE>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BLEZ>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BGTZ>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BLTZ>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BGEZ>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BLTZAL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BGEZAL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BEQL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BNEL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BLEZL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BGTZL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BLTZL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BGEZL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BLTZALL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BGEZALL>(const u32 instr_code);
 
-	template void Trap_ThreeOperand<Instr::TGE>(const u32 instr_code);
-	template void Trap_ThreeOperand<Instr::TGEU>(const u32 instr_code);
-	template void Trap_ThreeOperand<Instr::TLT>(const u32 instr_code);
-	template void Trap_ThreeOperand<Instr::TLTU>(const u32 instr_code);
-	template void Trap_ThreeOperand<Instr::TEQ>(const u32 instr_code);
-	template void Trap_ThreeOperand<Instr::TNE>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TGE>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TGEU>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TLT>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TLTU>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TEQ>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TNE>(const u32 instr_code);
 
-	template void Trap_Immediate<Instr::TGEI>(const u32 instr_code);
-	template void Trap_Immediate<Instr::TGEIU>(const u32 instr_code);
-	template void Trap_Immediate<Instr::TLTI>(const u32 instr_code);
-	template void Trap_Immediate<Instr::TLTIU>(const u32 instr_code);
-	template void Trap_Immediate<Instr::TEQI>(const u32 instr_code);
-	template void Trap_Immediate<Instr::TNEI>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TGEI>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TGEIU>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TLTI>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TLTIU>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TEQI>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TNEI>(const u32 instr_code);
 }
