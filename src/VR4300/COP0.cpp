@@ -111,7 +111,7 @@ namespace VR4300
 		   the EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
 		   The 'wired' register determines which TLB entries cannot be overwritten. */
-		const unsigned TLB_index = CP0_reg.random & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_index = CP0_reg.random.random & 0x1F; /* bit 5 is not used */
 		const unsigned TLB_wired_index = CP0_reg.wired & 0x1F;
 		if (TLB_index < TLB_wired_index) /* TODO: <= ? */
 			return;

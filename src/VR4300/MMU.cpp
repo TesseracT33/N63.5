@@ -202,32 +202,72 @@ namespace VR4300
 	template<MemoryAccessOperation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr)
 	{
+		/* Used for extracting the VPN from the virtual address;
+		   given the page mask register in a TLB entry, tells by how many positions the virtual address needs to be shifted to the left. */
+		static constexpr std::array<u8, 4096> page_mask_to_vaddr_VPN_shift_count = [] {
+			std::array<u8, 4096> table{};
+			for (int i = 0; i < table.size(); i++) {
+				table[i] = [&] {
+					if (i == 0) return 12;
+					if (i <= 3) return 14;
+					if (i <= 15) return 16;
+					if (i <= 63) return 18;
+					if (i <= 255) return 20;
+					if (i <= 1023) return 22;
+					return 24;
+				}();
+			}
+			return table;
+		}();
+
+		/* Used for extracting the offset from the virtual address;
+		   given the page mask register in a TLB entry, tells what the virtual address need to be masked with. */
+		static constexpr std::array<u32, 4096> page_mask_to_vaddr_offset_mask = [] {
+			std::array<u32, 4096> table{};
+			for (int i = 0; i < table.size(); i++) {
+				table[i] = [&] {
+					if (i == 0) return 0xFFF;
+					if (i <= 3) return 0x3FFF;
+					if (i <= 15) return 0xFFFF;
+					if (i <= 63) return 0x3FFFF;
+					if (i <= 255) return 0xFFFFF;
+					if (i <= 1023) return 0x3FFFFF;
+					return 0xFFFFFF;
+				}();
+			}
+			return table;
+		}();
+
 		/* TODO If there are two or more TLB entries that coincide, the TLB operation is not
 correctly executed. In this case, the TLB-Shutdown (TS) bit of the status register
 is set to 1, and then the TLB cannot be used. */
-		const u32 addr_VPN2 = (virt_addr >> virt_addr_shift_count & virt_addr_VPN_mask) >> 1;
-
 		for (const TLB_Entry& entry : TLB_entries)
 		{
+			const u32 addr_VPN = virt_addr >> page_mask_to_vaddr_VPN_shift_count[entry.MASK] & 0xFFF'FFFF; /* VPN is at most 28 bits */
+			const u32 addr_VPN2 = addr_VPN >> 1; /* VPN divided by two */
+
+			/* For a TLB hit to occur, the virtual page number of the virtual address must coincide with the one in the TLB entry. */
 			if (entry.VPN2 != addr_VPN2 || (!entry.G && entry.ASID != CP0_reg.entry_hi.ASID))
 				continue;
 
-			/* found match */
-			if (!entry.lo_0.V)
+			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */
+			const auto& entry_reg = (addr_VPN & 1) ? entry.lo_1 : entry.lo_0;
+
+			if (!entry_reg.V) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
 			{
-				TLB_InvalidException();
-				break;
+				SignalException<Exception::TLB_Invalid>();
+				return 0;
 			}
 			if constexpr (operation == MemoryAccessOperation::Write)
 			{
-				if (!entry.lo_0.D)
+				if (!entry_reg.D) /* If the "Dirty" bit is clear, writing is disallowed. */
 				{
-					TLB_ModException();
-					break;
+					SignalException<Exception::TLB_Modification>();
+					return 0;
 				}
 			}
-			const u32 addr_offset = virt_addr & virt_addr_offset_mask;
-			const u32 phys_addr = addr_offset | entry.lo_0.PFN << virt_addr_shift_count;
+			const u32 virt_addr_offset = virt_addr & page_mask_to_vaddr_offset_mask[entry.MASK];
+			const u32 phys_addr = virt_addr_offset | entry_reg.PFN << page_mask_to_vaddr_VPN_shift_count[entry.MASK];
 			/* TODO 'C' (0-7) is the page coherency attribute. Cache is not used if C == 2, else, it is used. */
 			return phys_addr;
 		}

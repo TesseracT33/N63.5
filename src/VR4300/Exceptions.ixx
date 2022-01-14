@@ -6,7 +6,18 @@ import NumericalTypes;
 
 namespace VR4300
 {
+	enum class Exception
+	{
+		TLB_Invalid,
+		TLB_Miss,
+		TLB_Modification
+	};
 
+	template<Exception exception>
+	void SignalException()
+	{
+
+	}
 
 	bool exception_has_occurred = false;
 

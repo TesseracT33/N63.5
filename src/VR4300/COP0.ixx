@@ -2,7 +2,6 @@ export module VR4300:COP0;
 
 import NumericalTypes;
 
-import <algorithm>;
 import <bit>;
 import <cassert>;
 import <cstring>;
@@ -52,8 +51,12 @@ namespace VR4300
 			u32 P : 1; /* Shows the success (0) or failure (1) of the last TLB Probe (TLBP) instruction executed. */
 		} index{};
 
-		/* TODO is actually six bits, but has range 0-31 */
-		u32 random : 5; /* (1); Decrements every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction.  */
+		struct /* (1) */
+		{
+			u32 random : 5; /* Decrements every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
+			u32 : 1; /* R/W, but has no function. */
+			u32 : 26;
+		} random{}; 
 
 		struct /* (2), (3); Used to rewrite the TLB or to check coincidence of a TLB entry when addresses are converted. */
 		{
@@ -191,12 +194,12 @@ namespace VR4300
 
 		u64 Get(const size_t register_index) const
 		{
-			auto get_struct_reg = [](const auto& struc) -> u64 /* Non-UB type punning between a struct register and an u32/u64. */
+			auto get_struct_reg = [](const auto& structure) -> u64 /* Non-UB type punning between a struct register and an u32/u64. */
 			{
-				if constexpr (sizeof struc == sizeof u64)
-					return std::bit_cast<u64, std::remove_reference_t<decltype(struc)>>(struc);
-				else if constexpr (sizeof struc == sizeof u32)
-					return static_cast<u64>(std::bit_cast<u32, std::remove_reference_t<decltype(struc)>>(struc));
+				if constexpr (sizeof structure == sizeof u64)
+					return std::bit_cast<u64, std::remove_reference_t<decltype(structure)>>(structure);
+				else if constexpr (sizeof structure == sizeof u32)
+					return static_cast<u64>(std::bit_cast<u32, std::remove_reference_t<decltype(structure)>>(structure));
 				else
 					static_assert(false, "Incorrectly sized struct given.");
 			};
@@ -204,7 +207,7 @@ namespace VR4300
 			switch (register_index)
 			{
 			case 0: return get_struct_reg(index);
-			case 1: return random;
+			case 1: return get_struct_reg(random);
 			case 2: return get_struct_reg(entry_lo_0);
 			case 3: return get_struct_reg(entry_lo_1);
 			case 4: return get_struct_reg(context);
@@ -233,12 +236,12 @@ namespace VR4300
 
 		void Set(const size_t register_index, const u64 value)
 		{
-			auto set_struct_reg = [](auto& struc, const u64 value) -> void /* Non-UB type punning between a struct register and an u32/u64. */
+			auto set_struct_reg = [](auto& structure, const u64 value) -> void /* Non-UB type punning between a struct register and an u32/u64. */
 			{
-				if constexpr (sizeof struc == sizeof u64)
-					struc = std::bit_cast<std::remove_reference_t<decltype(struc)>, u64>(value);
-				else if constexpr (sizeof struc == sizeof u32)
-					struc = std::bit_cast<std::remove_reference_t<decltype(struc)>, u32>(static_cast<u32>(value));
+				if constexpr (sizeof structure == sizeof u64)
+					structure = std::bit_cast<std::remove_reference_t<decltype(structure)>, u64>(value);
+				else if constexpr (sizeof structure == sizeof u32)
+					structure = std::bit_cast<std::remove_reference_t<decltype(structure)>, u32>(static_cast<u32>(value));
 				else
 					static_assert(false, "Incorrectly sized struct given.");
 			};
@@ -246,7 +249,7 @@ namespace VR4300
 			switch (register_index)
 			{
 			break; case 0: set_struct_reg(index, value & 0x800000CF);
-			break; case 1: random = value;
+			break; case 1: set_struct_reg(random, value & 0x3F);
 			break; case 2: set_struct_reg(entry_lo_0, value & 0xCFFFFFFF);
 			break; case 3: set_struct_reg(entry_lo_1, value & 0xCFFFFFFF);
 			break; case 4: set_struct_reg(context, value & 0xFFFFFFF0);
@@ -280,24 +283,8 @@ namespace VR4300
 	void ERET();
 	void CACHE(const u32 instr_code);
 
-	unsigned virt_addr_page_size_in_bits;
-	u32 virt_addr_offset_mask;
-	u32 virt_addr_VPN_mask;
-	u32 virt_addr_shift_count;
-
-	void SetPageMask()
+	void DecrementRandomRegister()
 	{
-		switch (CP0_reg.page_mask.MASK)
-		{
-		case 0: virt_addr_offset_mask = 0xFFF; virt_addr_shift_count = 12; break;
-		case 0b11: virt_addr_offset_mask = 0x3FFF; virt_addr_shift_count = 14; break;
-		case 0b1111: virt_addr_offset_mask = 0xFFFF; virt_addr_shift_count = 16; break;
-		case 0b111111: virt_addr_offset_mask = 0x3FFFF; virt_addr_shift_count = 18; break;
-		case 0b11111111: virt_addr_offset_mask = 0xFFFFF; virt_addr_shift_count = 20; break;
-		case 0b1111111111: virt_addr_offset_mask = 0x3FFFFF; virt_addr_shift_count = 22; break;
-		case 0b111111111111: virt_addr_offset_mask = 0xFFFFFF; virt_addr_shift_count = 24; break;
-		default: assert(false);
-		}
-		virt_addr_VPN_mask = ~virt_addr_offset_mask;
+
 	}
 }

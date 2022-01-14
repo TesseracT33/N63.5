@@ -41,7 +41,7 @@ namespace VR4300
 		CP0_reg.status.ERL = CP0_reg.status.BEV = 1;
 		CP0_reg.config.EP = 0;
 		CP0_reg.config.BE = 1;
-		CP0_reg.random = 31;
+		CP0_reg.random.random = 31;
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
 

@@ -22,7 +22,7 @@ namespace VR4300
 		PC += 4;
 		DecodeAndExecuteInstruction(instr_code);
 
-		CP0_reg.random++;
+		DecrementRandomRegister();
 	}
 
 	void EnterKernelMode()
