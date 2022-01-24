@@ -3,6 +3,6 @@
 
 int main(int argc, char* argv[])
 {
-    SDL_SetMainReady();
-    SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_SetMainReady();
+	SDL_Init(SDL_INIT_EVERYTHING);
 }
