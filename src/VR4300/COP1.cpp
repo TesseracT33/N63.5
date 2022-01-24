@@ -549,7 +549,7 @@ namespace VR4300
 		}
 		else if constexpr (instr == BC1TL || instr == BC1FL)
 		{
-			// TODO invalidate current instruction
+			PC += 4; /* The instruction in the branch delay slot is discarded. */
 		}
 	}
 
