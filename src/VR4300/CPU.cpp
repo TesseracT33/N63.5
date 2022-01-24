@@ -118,10 +118,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		if (exception_has_occurred)
 			return;
 
+		GPR.Set(rt, result);
+
 		if constexpr (instr == LL || instr == LLD)
 			LL_bit = 1;
-
-		GPR.Set(rt, result);
 	}
 
 
@@ -754,6 +754,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			static_assert(false, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}
+
+		p_cycle_counter += [&] {
+			     if constexpr (instr == MULT  || instr == MULTU)  return 5;
+			else if constexpr (instr == DMULT || instr == DMULTU) return 8;
+			else if constexpr (instr == DIV   || instr == DIVU)   return 37;
+			else if constexpr (instr == DDIV  || instr == DDIVU)  return 69;
+			else static_assert(false, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+		}();
 	}
 
 
@@ -794,8 +802,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			}
 		}();
 
-		addr_to_jump_to = target;
-		jump_next_instruction = true;
+		PrepareJump(target);
 
 		if constexpr (instr == JAL)
 		{
@@ -816,16 +823,20 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		const u8 rs = instr_code >> 21 & 0x1F;
 
+		const u8 rt = [&] {
+			if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
+				return instr_code >> 16 & 0x1F;
+			else return 0; /* 'rt' is not needed for the other instructions; this will be optimized away. */
+		}();
+
+		/* For all instructions: branch to the branch address if the condition is met, with a delay of one instruction.
+		   For "likely" instructions: if the branch condition is not satisfied, the instruction in the branch delay slot is discarded.
+		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
+
 		if constexpr (instr == BLTZAL || instr == BGEZAL || instr == BLTZALL || instr == BGEZALL)
 		{
 			GPR.Set(31, PC + 4);
 		}
-
-		const u8 rt = [&] {
-			if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
-				return instr_code >> 16 & 0x1F;
-			else return 0; /* TODO: feels like a hack. RT is not needed for the other instructions, but I cannot put the declaration of it in an if-constexpr. */
-		}();
 
 		const bool branch_cond = [&] {
 			if constexpr (instr == BEQ || instr == BEQL) /* Branch On Equal (Likely) */
@@ -845,20 +856,18 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else if constexpr (instr == BGEZAL || instr == BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
 				return s64(GPR[rs]) >= 0;
 			else
-			{
 				static_assert(false, "\"Branch\" template function called, but no matching branch instruction was found.");
-			}
 		}();
 
 		if (branch_cond)
 		{
 			const s32 offset = s32(instr_code & 0xFFFF) << 2;
-			PC += offset;
+			PrepareJump(PC + offset);
 		}
 		else if constexpr (instr == BEQL || instr == BNEL || instr == BLEZL || instr == BGTZL ||
 			instr == BEQL || instr == BLTZL || instr == BGEZL || instr == BLTZALL || instr == BGEZALL)
 		{
-			PC += 4; /* TODO no idea if correct or not */
+			PC += 4; /* The instruction in the branch delay slot is discarded. */
 		}
 	}
 
@@ -1025,6 +1034,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Load/store instruction is executed. */
 
 		   /* TODO */
+		assert(false);
 	}
 
 
@@ -1034,6 +1044,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Generates a system call exception and transfers control to the exception processing program. */
 
 		   /* TODO */
+		assert(false);
 	}
 
 
@@ -1043,6 +1054,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Generates a breakpoint exception and transfers control to the exception processing program. */
 
 		   /* TODO */
+		assert(false);
 	}
 
 	template void Load<CPU_Instruction::LB>(const u32 instr_code);

@@ -61,8 +61,18 @@ namespace VR4300
 
 	bool LL_bit;
 
-	bool jump_next_instruction;
+	bool jump_is_pending = false;
+	unsigned instructions_until_jump = 0;
 	u64 addr_to_jump_to;
+
+	unsigned p_cycle_counter = 0;
+
+	void PrepareJump(const u64 target_address)
+	{
+		jump_is_pending = true;
+		instructions_until_jump = 1;
+		addr_to_jump_to = target_address;
+	}
 
 	/* Main processor instructions */
 	template<CPU_Instruction instr> void Load(const u32 instr_code);

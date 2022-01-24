@@ -89,33 +89,34 @@ namespace VR4300
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 address = GPR[base] + offset;
 
-		if constexpr (instr == LWC1)
-		{
-			/* Load Word To FPU;
-			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
-			   an address. Loads the contents of the word specified by the address to the
-			   FPU general purpose register ft. */
-			if (address & 3)
-				AddressErrorException();
+		const auto result = [&] {
+			if constexpr (instr == LWC1)
+			{
+				/* Load Word To FPU;
+				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
+				   an address. Loads the contents of the word specified by the address to the
+				   FPU general purpose register ft. */
+				return cpu_read_mem<s32>(address);
+			}
+			else if constexpr (instr == LDC1)
+			{
+				/* Load Doubleword To FPU;
+				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
+				   an address. Loads the contents of the doubleword specified by the address to
+				   the FPU general purpose registers ft and ft+1 when FR = 0, or to the FPU
+				   general purpose register ft when FR = 1. */
+				return cpu_read_mem<s64>(address);
+			}
 			else
-				FGR.Set<s32>(ft, cpu_read_mem<s32>(address));
-		}
-		else if constexpr (instr == LDC1)
-		{
-			/* Load Doubleword To FPU;
-			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
-			   an address. Loads the contents of the doubleword specified by the address to
-			   the FPU general purpose registers ft and ft+1 when FR = 0, or to the FPU
-			   general purpose register ft when FR = 1. */
-			if (address & 7)
-				AddressErrorException();
-			else
-				FGR.Set<s64>(ft, cpu_read_mem<s64>(address));
-		}
-		else
-		{
-			static_assert(false, "\"FPU_Load\" template function called, but no matching load instruction was found.");
-		}
+			{
+				static_assert(false, "\"FPU_Load\" template function called, but no matching load instruction was found.");
+			}
+		}();
+
+		if (exception_has_occurred)
+			return;
+
+		FGR.Set(ft, result);
 	}
 
 
@@ -135,10 +136,7 @@ namespace VR4300
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose register ft to the
 			   memory position specified by the address. */
-			if (address & 3)
-				AddressErrorException();
-			else
-				cpu_write_mem<s32>(address, FGR.Get<s32>(ft));
+			cpu_write_mem<s32>(address, FGR.Get<s32>(ft));
 		}
 		else if constexpr (instr == SDC1)
 		{
@@ -147,10 +145,7 @@ namespace VR4300
 			   an address. Stores the contents of the FPU general purpose registers ft and
 			   ft+1 to the memory position specified by the address when FR = 0, and the
 			   contents of the FPU general purpose register ft when FR = 1. */
-			if (address & 7)
-				AddressErrorException();
-			else
-				cpu_write_mem<s64>(address, FGR.Get<s64>(ft));
+			cpu_write_mem<s64>(address, FGR.Get<s64>(ft));
 		}
 		else
 		{
@@ -550,7 +545,7 @@ namespace VR4300
 
 		if (branch_cond)
 		{
-			PC += offset;
+			PrepareJump(PC + offset);
 		}
 		else if constexpr (instr == BC1TL || instr == BC1FL)
 		{

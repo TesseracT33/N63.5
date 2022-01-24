@@ -9,7 +9,7 @@ namespace VR4300
 	export
 	{
 		void Reset();
-		void Run(const int cycles);
+		void Run(const int cycles_to_run);
 	}
 
 	enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
