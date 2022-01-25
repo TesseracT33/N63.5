@@ -6,3 +6,4 @@ export import :CPU;
 export import :Exceptions;
 export import :MMU;
 export import :Operation;
+export import :Registers;

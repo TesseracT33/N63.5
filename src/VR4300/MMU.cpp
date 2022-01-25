@@ -9,8 +9,8 @@ namespace VR4300
 {
 	void AssignActiveVirtualToPhysicalFunctions()
 	{
-		active_virtual_to_physical_fun_read = virtual_to_physical_fun_read_table[CP0_reg.status.KSU][CP0_reg.status.UX];
-		active_virtual_to_physical_fun_write = virtual_to_physical_fun_write_table[CP0_reg.status.KSU][CP0_reg.status.UX];
+		active_virtual_to_physical_fun_read = virtual_to_physical_fun_read_table[COP0_reg.status.KSU][COP0_reg.status.UX];
+		active_virtual_to_physical_fun_write = virtual_to_physical_fun_write_table[COP0_reg.status.KSU][COP0_reg.status.UX];
 	}
 
 	template<MemoryAccessOperation operation>
@@ -241,13 +241,16 @@ namespace VR4300
 		/* TODO If there are two or more TLB entries that coincide, the TLB operation is not
 correctly executed. In this case, the TLB-Shutdown (TS) bit of the status register
 is set to 1, and then the TLB cannot be used. */
+
+		u32 addr_VPN2 = 0;
+
 		for (const TLB_Entry& entry : TLB_entries)
 		{
 			const u32 addr_VPN = virt_addr >> page_mask_to_vaddr_VPN_shift_count[entry.MASK] & 0xFFF'FFFF; /* VPN is at most 28 bits */
-			const u32 addr_VPN2 = addr_VPN >> 1; /* VPN divided by two */
+			addr_VPN2 = addr_VPN >> 1; /* VPN divided by two */
 
 			/* For a TLB hit to occur, the virtual page number of the virtual address must coincide with the one in the TLB entry. */
-			if (entry.VPN2 != addr_VPN2 || (!entry.G && entry.ASID != CP0_reg.entry_hi.ASID))
+			if (entry.VPN2 != addr_VPN2 || (!entry.G && entry.ASID != COP0_reg.entry_hi.ASID))
 				continue;
 
 			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */
@@ -272,7 +275,7 @@ is set to 1, and then the TLB cannot be used. */
 			return phys_addr;
 		}
 
-		TLB_MissException<operation>(virt_addr); /* todo: distinguish between 32 and 64 bit */
+		TLB_MissException<operation>(virt_addr, addr_VPN2); /* todo: distinguish between 32 and 64 bit */
 		return 0;
 	}
 

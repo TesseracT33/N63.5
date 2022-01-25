@@ -3,6 +3,7 @@ module VR4300:COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
+import :Registers;
 
 namespace VR4300
 {

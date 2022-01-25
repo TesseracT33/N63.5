@@ -2,14 +2,13 @@ export module VR4300:Operation;
 
 import NumericalTypes;
 
-import <cassert>;
-
 namespace VR4300
 {
 	export
 	{
 		void Reset();
 		void Run(const int cycles_to_run);
+		void PowerOn();
 	}
 
 	enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
@@ -19,4 +18,6 @@ namespace VR4300
 
 	void EnterKernelMode();
 	void DisableInterrupts();
+
+	unsigned p_cycle_counter = 0;
 }

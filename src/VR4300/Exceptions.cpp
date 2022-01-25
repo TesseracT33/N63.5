@@ -22,11 +22,12 @@ namespace VR4300
 
 	static void EnterException()
 	{
-		CP0_reg.epc = PC;
+		COP0_reg.epc = PC;
 		exception_context.save_context();
 		EnterKernelMode();
 		DisableInterrupts();
 	}
+
 
 	void AddressErrorException()
 	{
@@ -36,12 +37,12 @@ namespace VR4300
 
 	void ColdResetException()
 	{
-		PC = 0xFFFF'FFFF'BFC0'0000;
-		CP0_reg.status.RP = CP0_reg.status.SR = CP0_reg.status.TS = 0;
-		CP0_reg.status.ERL = CP0_reg.status.BEV = 1;
-		CP0_reg.config.EP = 0;
-		CP0_reg.config.BE = 1;
-		CP0_reg.random.random = 31;
+		PC = GetExceptionVector<Exception::ColdReset>();
+		COP0_reg.status.RP = COP0_reg.status.SR = COP0_reg.status.TS = 0;
+		COP0_reg.status.ERL = COP0_reg.status.BEV = 1;
+		COP0_reg.config.EP = 0;
+		COP0_reg.config.BE = 1;
+		COP0_reg.random.random = 31;
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
 
@@ -78,7 +79,6 @@ namespace VR4300
 
 	void NMI_Exception()
 	{
-		PC = 0xFFFF'FFFF'BFC0'0000;
 
 	}
 
@@ -91,12 +91,9 @@ namespace VR4300
 
 	void SoftResetException()
 	{
-		if (CP0_reg.status.ERL == 0)
-			PC = CP0_reg.error_epc;
-		else
-			PC = 0xFFFF'FFFF'BFC0'0000;
-		CP0_reg.status.RP = CP0_reg.status.TS = 0;
-		CP0_reg.status.BEV = CP0_reg.status.ERL = CP0_reg.status.SR = 1;
+		PC = COP0_reg.status.ERL == 0 ? COP0_reg.error_epc : GetExceptionVector<Exception::SoftReset>();
+		COP0_reg.status.RP = COP0_reg.status.TS = 0;
+		COP0_reg.status.BEV = COP0_reg.status.ERL = COP0_reg.status.SR = 1;
 	}
 
 
@@ -107,15 +104,18 @@ namespace VR4300
 
 
 	template<MemoryAccessOperation operation>
-	void TLB_MissException(const u32 bad_virt_addr)
+	void TLB_MissException(const u32 bad_virt_addr, const u32 bad_VPN2)
 	{
-		CP0_reg.cause.exc_code = static_cast<u32>([&] {
+		COP0_reg.context.bad_vpn2 = bad_VPN2;
+		/* TODO: context.PTEBase */
+
+		COP0_reg.bad_v_addr = bad_virt_addr; /* TODO arg is u32, dest is u64 */
+
+		COP0_reg.cause.exc_code = static_cast<u32>([] {
 			if constexpr (operation == MemoryAccessOperation::Read)
-				return CauseExcCode::TLBL;
-			else /* Write */
-				return CauseExcCode::TLBS;
+				return ExceptionCode::TLBL;
+			else return ExceptionCode::TLBS; /* Write */
 		}());
-		CP0_reg.bad_v_addr = bad_virt_addr; /* TODO arg is u32, dest is u64 */
 	}
 
 
@@ -149,6 +149,6 @@ namespace VR4300
 	}
 
 
-	template void TLB_MissException<MemoryAccessOperation::Read>(const u32 bad_virt_addr);
-	template void TLB_MissException<MemoryAccessOperation::Write>(const u32 bad_virt_addr);
+	template void TLB_MissException<MemoryAccessOperation::Read>(const u32 bad_virt_addr, const u32 bad_VPN2);
+	template void TLB_MissException<MemoryAccessOperation::Write>(const u32 bad_virt_addr, const u32 bad_VPN2);
 }

@@ -1,6 +1,7 @@
 module VR4300:COP0;
 
 import :CPU;
+import :Registers;
 import :MMU;
 
 namespace VR4300
@@ -18,28 +19,28 @@ namespace VR4300
 			/* Move To System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			CP0_reg.Set(rd, s32(GPR[rt]));
+			COP0_reg.Set(rd, s32(GPR[rt]));
 		}
 		else if constexpr (instr == MFC0)
 		{
 			/* Move From System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			GPR.Set(rt, s32(CP0_reg.Get(rd)));
+			GPR.Set(rt, s32(COP0_reg.Get(rd)));
 		}
 		else if constexpr (instr == DMTC0)
 		{
 			/* Doubleword Move To System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			CP0_reg.Set(rd, GPR[rt]);
+			COP0_reg.Set(rd, GPR[rt]);
 		}
 		else if constexpr (instr == DMFC0)
 		{
 			/* Doubleword Move From System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			GPR.Set(rt, CP0_reg.Get(rd)); /* TODO The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined */
+			GPR.Set(rt, COP0_reg.Get(rd)); /* TODO The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined */
 		}
 		else
 		{
@@ -56,17 +57,17 @@ namespace VR4300
 		   matches is not found, sets the most significant bit of the index register. */
 		const auto TLB_index = std::find_if(std::begin(TLB_entries), std::end(TLB_entries),
 			[&](const auto& entry) {
-				return entry.ASID == CP0_reg.entry_hi.ASID && entry.VPN2 == CP0_reg.entry_hi.VPN2 && entry.R == CP0_reg.entry_hi.R;
+				return entry.ASID == COP0_reg.entry_hi.ASID && entry.VPN2 == COP0_reg.entry_hi.VPN2 && entry.R == COP0_reg.entry_hi.R;
 			});
 
 		if (TLB_index == std::end(TLB_entries))
 		{
-			CP0_reg.index.P = 1;
+			COP0_reg.index.P = 1;
 		}
 		else
 		{
-			CP0_reg.index.index = std::distance(std::begin(TLB_entries), TLB_index);
-			CP0_reg.index.P = 0;
+			COP0_reg.index.index = std::distance(std::begin(TLB_entries), TLB_index);
+			COP0_reg.index.P = 0;
 		}
 	}
 
@@ -77,14 +78,14 @@ namespace VR4300
 		   The EntryHi and EntryLo registers are loaded with the contents of the TLB entry
 		   pointed at by the contents of the Index register. The G bit (which controls ASID matching)
 		   read from the TLB is written into both of the EntryLo0 and EntryLo1 registers. */
-		const unsigned TLB_index = CP0_reg.index.index & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_index = COP0_reg.index.index & 0x1F; /* bit 5 is not used */
 		const std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
-		std::memcpy(&CP0_reg.entry_lo_0, arr, 4);
-		std::memcpy(&CP0_reg.entry_lo_1, arr + 4, 4);
-		std::memcpy(&CP0_reg.entry_hi, arr + 8, 4);
-		std::memcpy(&CP0_reg.page_mask, arr + 12, 4);
-		CP0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
-		CP0_reg.entry_lo_0.G = CP0_reg.entry_lo_1.G = TLB_entries[TLB_index].G;
+		std::memcpy(&COP0_reg.entry_lo_0, arr, 4);
+		std::memcpy(&COP0_reg.entry_lo_1, arr + 4, 4);
+		std::memcpy(&COP0_reg.entry_hi, arr + 8, 4);
+		std::memcpy(&COP0_reg.page_mask, arr + 12, 4);
+		COP0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
+		COP0_reg.entry_lo_0.G = COP0_reg.entry_lo_1.G = TLB_entries[TLB_index].G;
 	}
 
 
@@ -94,13 +95,13 @@ namespace VR4300
 		   The TLB entry pointed at by the Index register is loaded with the contents of the
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
-		const unsigned TLB_index = CP0_reg.index.index & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_index = COP0_reg.index.index & 0x1F; /* bit 5 is not used */
 		std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
-		std::memcpy(arr, &CP0_reg.entry_lo_0, 4);
-		std::memcpy(arr + 4, &CP0_reg.entry_lo_1, 4);
-		std::memcpy(arr + 8, &CP0_reg.entry_hi, 4);
-		std::memcpy(arr + 12, &CP0_reg.page_mask, 4);
-		TLB_entries[TLB_index].G = CP0_reg.entry_lo_0.G && CP0_reg.entry_lo_1.G;
+		std::memcpy(arr, &COP0_reg.entry_lo_0, 4);
+		std::memcpy(arr + 4, &COP0_reg.entry_lo_1, 4);
+		std::memcpy(arr + 8, &COP0_reg.entry_hi, 4);
+		std::memcpy(arr + 12, &COP0_reg.page_mask, 4);
+		TLB_entries[TLB_index].G = COP0_reg.entry_lo_0.G && COP0_reg.entry_lo_1.G;
 	}
 
 
@@ -111,17 +112,17 @@ namespace VR4300
 		   the EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
 		   The 'wired' register determines which TLB entries cannot be overwritten. */
-		const unsigned TLB_index = CP0_reg.random.random & 0x1F; /* bit 5 is not used */
-		const unsigned TLB_wired_index = CP0_reg.wired & 0x1F;
+		const unsigned TLB_index = COP0_reg.random.random & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_wired_index = COP0_reg.wired & 0x1F;
 		if (TLB_index < TLB_wired_index) /* TODO: <= ? */
 			return;
 
 		std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
-		std::memcpy(arr, &CP0_reg.entry_lo_0, 4);
-		std::memcpy(arr + 4, &CP0_reg.entry_lo_1, 4);
-		std::memcpy(arr + 8, &CP0_reg.entry_hi, 4);
-		std::memcpy(arr + 12, &CP0_reg.page_mask, 4);
-		TLB_entries[TLB_index].G = CP0_reg.entry_lo_0.G && CP0_reg.entry_lo_1.G;
+		std::memcpy(arr, &COP0_reg.entry_lo_0, 4);
+		std::memcpy(arr + 4, &COP0_reg.entry_lo_1, 4);
+		std::memcpy(arr + 8, &COP0_reg.entry_hi, 4);
+		std::memcpy(arr + 12, &COP0_reg.page_mask, 4);
+		TLB_entries[TLB_index].G = COP0_reg.entry_lo_0.G && COP0_reg.entry_lo_1.G;
 	}
 
 

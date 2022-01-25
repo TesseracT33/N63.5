@@ -19,5 +19,6 @@
     <ClCompile Include="src\VR4300\MMU.cpp" />
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\VR4300\Registers.ixx" />
   </ItemGroup>
 </Project>

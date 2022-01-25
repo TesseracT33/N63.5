@@ -2,7 +2,10 @@ module VR4300:Operation;
 
 import :COP0;
 import :CPU;
+import :Exceptions;
 import :MMU;
+
+import <cassert>;
 
 namespace VR4300
 {
@@ -13,13 +16,27 @@ namespace VR4300
 		while (p_cycle_counter < cycles_to_run)
 		{
 			ExecuteInstruction();
+			DecrementRandomRegister();
+			if (exception_has_occurred)
+				HandleException();
 		}
 	}
 
 	void Reset()
 	{
-		p_cycle_counter = 0;
 		jump_is_pending = false;
+
+		SignalException<Exception::SoftReset>();
+		HandleException();
+	}
+
+	void PowerOn()
+	{
+		exception_has_occurred = false;
+		jump_is_pending = false;
+
+		SignalException<Exception::ColdReset>();
+		HandleException();
 	}
 
 	void ExecuteInstruction() /* todo: bad name for now */
@@ -37,8 +54,6 @@ namespace VR4300
 		const u32 instr_code = cpu_read_mem<u32>(PC);
 		PC += 4;
 		DecodeAndExecuteInstruction(instr_code);
-
-		DecrementRandomRegister();
 	}
 
 	void EnterKernelMode()

@@ -46,26 +46,9 @@ namespace VR4300
 		SYNC, SYSCALL, BREAK
 	};
 
-	struct GeneralPurposeRegisters
-	{
-		inline u64 Get(const size_t index) const { return GPR[index]; }
-		inline void Set(const size_t index, const u64 data) { if (index != 0) GPR[index] = data; }
-		u64 operator[](const size_t index) { return GPR[index]; } /* returns by value so that assignments have to made through function "Set". */
-	private:
-		std::array<u64, 32> GPR{};
-	} GPR;
-
-	u64 PC;
-
-	u64 HI, LO;
-
-	bool LL_bit;
-
 	bool jump_is_pending = false;
 	unsigned instructions_until_jump = 0;
 	u64 addr_to_jump_to;
-
-	unsigned p_cycle_counter = 0;
 
 	void PrepareJump(const u64 target_address)
 	{

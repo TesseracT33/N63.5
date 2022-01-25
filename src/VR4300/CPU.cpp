@@ -2,6 +2,8 @@ module VR4300:CPU;
 
 import :Exceptions;
 import :MMU;
+import :Operation;
+import :Registers;
 
 namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
