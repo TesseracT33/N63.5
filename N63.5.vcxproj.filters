@@ -20,5 +20,9 @@
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\VR4300\Registers.ixx" />
+    <ClCompile Include="src\memory\Cartridge.ixx" />
+    <ClCompile Include="src\memory\Cartridge.cpp" />
+    <ClCompile Include="src\N64.ixx" />
+    <ClCompile Include="src\N64.cpp" />
   </ItemGroup>
 </Project>

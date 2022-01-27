@@ -91,7 +91,7 @@ namespace VR4300
 		}
 
 		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_read, address);
-		bool error = true; /* error from translation */
+		bool error = false; /* error from translation */
 		if (error)
 			return 0;
 

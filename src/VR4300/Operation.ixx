@@ -8,7 +8,7 @@ namespace VR4300
 	{
 		void Reset();
 		void Run(const int cycles_to_run);
-		void PowerOn();
+		void PowerOn(const bool hle_pif);
 	}
 
 	enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
@@ -20,4 +20,6 @@ namespace VR4300
 	void DisableInterrupts();
 
 	unsigned p_cycle_counter = 0;
+
+	void HLE_PIF();
 }

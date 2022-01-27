@@ -40,6 +40,7 @@ namespace VR4300
 		PC = GetExceptionVector<Exception::ColdReset>();
 		COP0_reg.status.RP = COP0_reg.status.SR = COP0_reg.status.TS = 0;
 		COP0_reg.status.ERL = COP0_reg.status.BEV = 1;
+		COP0_reg.status.NotifyCPUAfterWrite(); /* TODO: temp solution; VERY bug-prone */
 		COP0_reg.config.EP = 0;
 		COP0_reg.config.BE = 1;
 		COP0_reg.random.random = 31;
@@ -75,7 +76,6 @@ namespace VR4300
 	{
 
 	}
-
 
 	void NMI_Exception()
 	{

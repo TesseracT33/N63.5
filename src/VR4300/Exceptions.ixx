@@ -50,8 +50,8 @@ namespace VR4300
 		const exception_handler_fun_t handler_fun;
 	};
 
-	constexpr Exc cold_reset = { 0, 5, AddressErrorException };
-	constexpr Exc soft_reset = { 1, 5, AddressErrorException };
+	constexpr Exc cold_reset = { 0, 5, ColdResetException };
+	constexpr Exc soft_reset = { 1, 5, SoftResetException };
 	constexpr Exc nmi = { 2, 5, AddressErrorException };
 	constexpr Exc address_error_instruction_fetch = { 3, 5, AddressErrorException };
 	constexpr Exc tlb_miss = { 4, 5, AddressErrorException };
@@ -85,6 +85,7 @@ namespace VR4300
 
 	bool exception_has_occurred = false;
 	Exception occurred_exception;
+	Exc occ_exc = cold_reset;
 
 	template<Exception exception>
 	u64 GetExceptionVector()
@@ -123,6 +124,7 @@ namespace VR4300
 	{
 		//const auto exception_handler_fun = exception_handler_fun_table[static_cast<unsigned>(occurred_exception)];
 		//std::invoke(exception_handler_fun);
+		std::invoke(occ_exc.handler_fun);
 		exception_has_occurred = false;
 	}
 

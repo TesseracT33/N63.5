@@ -1,6 +1,7 @@
 export module VR4300:Registers;
 
 import :COP1;
+import :MMU;
 
 import NumericalTypes;
 
@@ -109,6 +110,11 @@ namespace VR4300
 			u32 FR : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
 			u32 RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 			u32 CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
+
+			void NotifyCPUAfterWrite()  /* TODO: temp solution; VERY bug-prone */
+			{
+				AssignActiveVirtualToPhysicalFunctions();
+			}
 		} status{};
 
 		struct /* (13) */
