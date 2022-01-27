@@ -83,6 +83,7 @@ namespace VR4300
 		COP0_reg.Set(12, 0x7040'0004);
 		COP0_reg.Set(15, 0x0000'0B00);
 		COP0_reg.Set(16, 0x0006'E463);
+		COP0_reg.status.NotifyCPUAfterWrite(); /* TODO: temp solution; VERY bug-prone */
 
 		cpu_write_mem<u32>(0x0430'0004, 0x0101'0101);
 		for (unsigned i = 0; i < 0x1000; i++) /* no clue if some kind of DMA */

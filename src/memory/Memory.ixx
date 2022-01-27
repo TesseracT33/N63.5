@@ -9,10 +9,8 @@ import NumericalTypes;
 
 namespace Memory
 {
-	export Cartridge* cartridge;
-
 	u64 read_pif(const u32 addr);
-	u64 read_rom(const u32 addr);
+	u64 read_rdram(const u32 addr);
 	u64 invalid_read(const u32 addr);
 
 	typedef u64(*read_fun_t)(const u32);
@@ -22,7 +20,7 @@ namespace Memory
 		unsigned addr = 0;
 		for (auto& fun : table) {
 			fun = [&] {
-				if (addr <= 0x003) return invalid_read; /* temp */
+				if (addr <= 0x003) return read_rdram; /* temp */
 				if (addr <= 0x007) return invalid_read;
 				if (addr <= 0x03E) return invalid_read;
 				if (addr == 0x03F) return invalid_read;
@@ -40,7 +38,7 @@ namespace Memory
 				if (addr <= 0x05F) return invalid_read;
 				if (addr <= 0x07F) return invalid_read;
 				if (addr <= 0x0FF) return invalid_read;
-				if (addr <= 0x1FB) return read_rom;
+				if (addr <= 0x1FB) return Cartridge::read;
 				if (addr == 0x1FC) return read_pif;
 				if (addr <= 0x7FF) return invalid_read;
 				return invalid_read;
@@ -66,11 +64,13 @@ namespace Memory
 
 	u64 read_pif(const u32 addr)
 	{
+		assert(false);
 		return 0;
 	}
 
-	u64 read_rom(const u32 addr)
+	u64 read_rdram(const u32 addr)
 	{
-		return cartridge->read(addr);
+		assert(false);
+		return 0;
 	}
 }

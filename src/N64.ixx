@@ -18,6 +18,4 @@ namespace N64
 
 		void Run();
 	}
-
-	Cartridge cartridge{};
 }

@@ -11,10 +11,9 @@ namespace N64
 		const unsigned window_width,
 		const unsigned window_height)
 	{
-		bool success = cartridge.load_rom(rom_path);
+		bool success = Cartridge::load_rom(rom_path);
 		if (!success)
 			return false;
-		Memory::cartridge = &cartridge;
 
 		VR4300::PowerOn(true);
 
