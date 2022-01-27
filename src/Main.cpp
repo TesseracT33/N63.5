@@ -5,6 +5,7 @@
 #include <string>
 
 import N64;
+import UserMessage;
 
 int main(int argc, char* argv[])
 {
@@ -34,20 +35,19 @@ int main(int argc, char* argv[])
 		std::cerr << SDL_GetError();
 		exit(1);
 	}
+	UserMessage::SetWindow(sdl_window);
 
 	SDL_Renderer* sdl_renderer = SDL_CreateRenderer(sdl_window, 0, SDL_RENDERER_ACCELERATED);
 	if (sdl_renderer == nullptr)
 	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error starting emulator",
-			SDL_GetError(), sdl_window);
+		UserMessage::Show(SDL_GetError(), UserMessage::Type::Error);
 		exit(1);
 	}
 
 	bool success = N64::PowerOn(rom_path, sdl_renderer, 640, 480);
 	if (!success)
 	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error starting emulator",
-			"Error occured when starting the emulator.", sdl_window);
+		UserMessage::Show("An error occured when starting the emulator.", UserMessage::Type::Error);
 		exit(1);
 	}
 	N64::Run();

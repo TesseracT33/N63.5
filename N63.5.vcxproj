@@ -166,6 +166,7 @@
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\N64.ixx" />
+    <ClCompile Include="src\UserMessage.ixx" />
     <ClCompile Include="src\VR4300\COP0.cpp" />
     <ClCompile Include="src\VR4300\COP0.ixx" />
     <ClCompile Include="src\VR4300\COP1.cpp" />

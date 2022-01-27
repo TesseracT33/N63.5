@@ -24,5 +24,6 @@
     <ClCompile Include="src\memory\Cartridge.cpp" />
     <ClCompile Include="src\N64.ixx" />
     <ClCompile Include="src\N64.cpp" />
+    <ClCompile Include="src\UserMessage.ixx" />
   </ItemGroup>
 </Project>

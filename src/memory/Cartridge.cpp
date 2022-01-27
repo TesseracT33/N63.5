@@ -1,11 +1,12 @@
 module Cartridge;
 
+import UserMessage;
+
 
 Cartridge::Cartridge(const std::string& rom_path)
 {
 	load_rom(rom_path);
 }
-
 
 
 bool Cartridge::load_rom(const std::string& rom_path)
@@ -14,7 +15,7 @@ bool Cartridge::load_rom(const std::string& rom_path)
 	std::ifstream ifs{ rom_path, std::ifstream::in | std::ifstream::binary };
 	if (!ifs)
 	{
-		//UserMessage::Show("Failed to open rom file.", UserMessage::Type::Error);
+		UserMessage::Show("Failed to open rom file.", UserMessage::Type::Error);
 		return false;
 	}
 
