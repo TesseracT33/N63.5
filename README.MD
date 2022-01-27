@@ -1,8 +1,11 @@
 # Summary
-An experimental, work-in-progress N64 emulator.
+An experimental, work-in-progress N64 emulator. Does not boot any games or show any graphical output, yet.
 
-# Compiling and running
-C++20 is required for compiling. Current external dependencies are SDL2 (SDL-2.0.12 was used). I only supply Visual Studio solution files. The project settings were as follows:
+# Running
+The path to the rom file used is supplied as the first command-line argument.
+
+# Compiling
+C++20 is required for compiling. This project uses C++20 modules. As such, this probably only compiles on MSVC due to Clang's and GCC's incomplete implementations of modules. Current external dependencies are SDL2 (SDL-2.0.12 was used). I only supply Visual Studio solution files. The project settings were as follows:
 
 C/C++ -- Additional Include Directories:
 F:\SDKs\SDL2-2.0.12\include
