@@ -4,6 +4,7 @@ import :COP0;
 import :CPU;
 import :Exceptions;
 import :MMU;
+import :Registers;
 
 import <cassert>;
 
@@ -90,5 +91,22 @@ namespace VR4300
 			cpu_write_mem<u32>(0xA400'0000 + i, cpu_read_mem<u32>(0xB000'0000 + i));
 
 		PC = 0xA4000040;
+	}
+
+
+	void SetNewEndianness()
+	{ /* See table 16-1 in VR4300 manual */
+		endianness = [] {
+			if (operating_mode == OperatingMode::User)
+			{
+				return COP0_reg.config.BE ^ COP0_reg.status.RE
+					? std::endian::big : std::endian::little;
+			}
+			else
+			{
+				return COP0_reg.config.BE
+					? std::endian::big : std::endian::little;
+			}
+		}();
 	}
 }

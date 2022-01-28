@@ -2,20 +2,25 @@ export module VR4300:Operation;
 
 import NumericalTypes;
 
+import <bit>;
+
 namespace VR4300
 {
 	export
 	{
-		void Reset();
+		enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
+
+		std::endian endianness;
+
 		void Run(const int cycles_to_run);
+		void Reset();
 		void PowerOn(const bool hle_pif);
 	}
-
-	enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
 
 	void ExecuteInstruction();
 	void DecodeAndExecuteInstruction(const u32 instr_code);
 
+	void SetNewEndianness();
 	void EnterKernelMode();
 	void DisableInterrupts();
 

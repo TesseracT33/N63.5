@@ -1,5 +1,8 @@
 module Memory;
 
+import HostSystem;
+import VR4300;
+
 namespace Memory
 {
 	/* All read functions in read_table return u64.
@@ -9,8 +12,8 @@ namespace Memory
 	{
 		static_assert(sizeof T == 1 || sizeof T == 2 || sizeof T == 4 || sizeof T == 8);
 
-		if constexpr (sizeof T == 1) /* N64 endianness irrelevant */
-		{
+		if constexpr (sizeof T == 1)
+		{ /* N64 endianness irrelevant */
 			if constexpr (HostSystem::endianness == std::endian::little)
 				return T(value & 0xFF);
 			else
@@ -18,9 +21,7 @@ namespace Memory
 		}
 		else
 		{
-			std::endian n64_endianness = std::endian::big; /* todo: determine n64 endianness */
-
-			if (HostSystem::endianness == n64_endianness)
+			if (HostSystem::endianness == VR4300::endianness)
 				return T(value);
 			else
 			{

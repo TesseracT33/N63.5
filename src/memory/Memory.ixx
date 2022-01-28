@@ -7,9 +7,7 @@ import <concepts>;
 import <functional>;
 
 import Cartridge;
-import HostSystem;
 import NumericalTypes;
-import UserMessage;
 
 namespace Memory
 {
