@@ -40,10 +40,13 @@ namespace VR4300
 		PC = GetExceptionVector<Exception::ColdReset>();
 		COP0_reg.status.RP = COP0_reg.status.SR = COP0_reg.status.TS = 0;
 		COP0_reg.status.ERL = COP0_reg.status.BEV = 1;
-		COP0_reg.status.NotifyCPUAfterWrite(); /* TODO: temp solution; VERY bug-prone */
 		COP0_reg.config.EP = 0;
 		COP0_reg.config.BE = 1;
 		COP0_reg.random.random = 31;
+
+		COP0_reg.status.notify_cpu_after_write();
+		COP0_reg.config.notify_cpu_after_write();
+
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
 

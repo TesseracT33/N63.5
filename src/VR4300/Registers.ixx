@@ -2,6 +2,7 @@ export module VR4300:Registers;
 
 import :COP1;
 import :MMU;
+import :Operation;
 
 import NumericalTypes;
 
@@ -14,6 +15,13 @@ import <type_traits>;
 
 namespace VR4300
 {
+	/* For (COP0) registers (structs) that, once they have been written to, need to tell the rest of the cpu about it. */
+	template<typename T>
+	concept notifies_cpu_on_write = requires(T t)
+	{
+		{ t.notify_cpu_after_write() } -> std::convertible_to<void>;
+	};
+
 	u64 PC{}; /* Program counter */
 
 	u64 HI{}, LO{}; /* Contain the result of a double-word multiplication or division. */
@@ -111,9 +119,10 @@ namespace VR4300
 			u32 RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 			u32 CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 
-			void NotifyCPUAfterWrite()  /* TODO: temp solution; VERY bug-prone */
+			void notify_cpu_after_write()
 			{
 				AssignActiveVirtualToPhysicalFunctions();
+				SetNewEndianness();
 			}
 		} status{};
 
@@ -148,6 +157,11 @@ namespace VR4300
 			u32 EP : 4; /* Sets transfer data pattern (single/block write request) (0 => D (default on cold reset); 6 => DxxDxx (2 doublewords/six cycles). */
 			u32 EC : 3; /* Operating frequency ratio (read-only). */
 			u32 : 1; /* Returns 0 when read. */
+
+			void notify_cpu_after_write()
+			{
+				SetNewEndianness();
+			}
 		} config{};
 
 		u32 LL_addr; /* (17); Contains the physical address read by the most recent Load Linked instruction. */
@@ -223,7 +237,6 @@ namespace VR4300
 			case 26: return parity_err_diagnostic;
 			case 28: return get_struct_reg(tag_lo);
 			case 30: return error_epc;
-
 			default: return 0;
 			}
 		}
@@ -238,6 +251,10 @@ namespace VR4300
 					structure = std::bit_cast<std::remove_reference_t<decltype(structure)>, u32>(static_cast<u32>(value));
 				else
 					static_assert(false, "Incorrectly sized struct given.");
+
+				/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
+				if constexpr (notifies_cpu_on_write<decltype(structure)>)
+					structure.notify_cpu_after_write();
 			};
 
 			switch (register_index)
@@ -268,7 +285,7 @@ namespace VR4300
 		}
 	} COP0_reg{};
 
-	/* Floating pointer control register #31 */
+	/* Floating point control register #31 */
 	struct
 	{
 		void Set(const u32 data)

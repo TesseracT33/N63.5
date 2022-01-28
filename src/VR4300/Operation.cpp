@@ -80,11 +80,12 @@ namespace VR4300
 		GPR.Set(20, 1);
 		GPR.Set(22, 0x3F);
 		GPR.Set(29, 0xA400'1FF0);
-		COP0_reg.Set(1, 0x0000'001F);
-		COP0_reg.Set(12, 0x7040'0004);
-		COP0_reg.Set(15, 0x0000'0B00);
-		COP0_reg.Set(16, 0x0006'E463);
-		COP0_reg.status.NotifyCPUAfterWrite(); /* TODO: temp solution; VERY bug-prone */
+		COP0_reg.Set(1, 0x0000'001F); /* random */
+		COP0_reg.Set(12, 0x7040'0004); /* status */
+		COP0_reg.Set(15, 0x0000'0B00); /* pr_id */
+		COP0_reg.Set(16, 0x0006'E463); /* config */
+		COP0_reg.status.notify_cpu_after_write();
+		COP0_reg.config.notify_cpu_after_write();
 
 		cpu_write_mem<u32>(0x0430'0004, 0x0101'0101);
 		for (unsigned i = 0; i < 0x1000; i++) /* no clue if some kind of DMA */
