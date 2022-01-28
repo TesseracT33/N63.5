@@ -25,5 +25,7 @@
     <ClCompile Include="src\N64.ixx" />
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\UserMessage.ixx" />
+    <ClCompile Include="src\HostSystem.ixx" />
+    <ClCompile Include="src\memory\Memory.cpp" />
   </ItemGroup>
 </Project>

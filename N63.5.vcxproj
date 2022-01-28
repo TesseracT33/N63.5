@@ -160,9 +160,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\BitUtils.ixx" />
+    <ClCompile Include="src\HostSystem.ixx" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\memory\Cartridge.cpp" />
     <ClCompile Include="src\memory\Cartridge.ixx" />
+    <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\N64.ixx" />

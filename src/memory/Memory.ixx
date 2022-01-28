@@ -1,14 +1,21 @@
 export module Memory;
 
 import <array>;
+import <bit>;
 import <cassert>;
+import <concepts>;
 import <functional>;
 
 import Cartridge;
+import HostSystem;
 import NumericalTypes;
+import UserMessage;
 
 namespace Memory
 {
+	template<std::integral T>
+	T TruncateAndConvertEndian(const u64 value);
+
 	u64 read_pif(const u32 addr);
 	u64 read_rdram(const u32 addr);
 	u64 invalid_read(const u32 addr);
@@ -20,7 +27,7 @@ namespace Memory
 		unsigned addr = 0;
 		for (auto& fun : table) {
 			fun = [&] {
-				if (addr <= 0x003) return read_rdram; /* temp */
+				if (addr <= 0x003) return read_rdram;
 				if (addr <= 0x007) return invalid_read;
 				if (addr <= 0x03E) return invalid_read;
 				if (addr == 0x03F) return invalid_read;
@@ -49,11 +56,14 @@ namespace Memory
 	}();
 
 	export
-	template<typename T = u32 /*temp*/>
+	template<std::integral T>
 	T ReadPhysical(const u32 physical_address)
 	{
 		const auto page = physical_address >> 20;
-		return std::invoke(read_table[page], physical_address);
+		const u64 value = std::invoke(read_table[page], physical_address);
+		/* Every read function always reads 64 bits. We convert it to the width of T, and reverse bytes if the host and n64 endianness are different. */
+		const T ret_value = TruncateAndConvertEndian<T>(value); 
+		return ret_value;
 	}
 
 	u64 invalid_read(const u32 addr)
