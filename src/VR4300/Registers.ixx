@@ -365,15 +365,30 @@ namespace VR4300
 		template<typename FPU_NumericType>
 		FPU_NumericType Get(const size_t index) const
 		{
-			if constexpr (std::is_same<FPU_NumericType, s32>::value)
+			if constexpr (std::is_same_v<FPU_NumericType, s32>)
 				return s32(FGR[index]);
-			else if constexpr (std::is_same<FPU_NumericType, s64>::value)
-				return COP0_reg.status.FR ? FGR[index] : FGR[index] & 0xFFFFFFFF | FGR[index + 1] << 32; /* TODO: if index is odd, result is supposed to be undefined. If index == 31, then that is very bad */
-			else if constexpr (std::is_same<FPU_NumericType, f32>::value)
+			else if constexpr (std::is_same_v<FPU_NumericType, f32>)
 				return std::bit_cast<f32, s32>(s32(FGR[index]));
-			else if constexpr (std::is_same<FPU_NumericType, f64>::value)
-				return COP0_reg.status.FR ? std::bit_cast<f64, s64>(FGR[index])
-				: std::bit_cast<f64, s64>(FGR[index] & 0xFFFFFFFF | FGR[index + 1] << 32);
+			else if constexpr (std::is_same_v<FPU_NumericType, s64>)
+			{
+				if (COP0_reg.status.FR)
+					return FGR[index];
+				else
+				{ /* If the index is odd, then the result is undefined. */
+					const size_t new_index = index & 0x1E;
+					return FGR[new_index] & 0xFFFFFFFF | FGR[new_index + 1] << 32;
+				}
+			}
+			else if constexpr (std::is_same_v<FPU_NumericType, f64>)
+			{
+				if (COP0_reg.status.FR)
+					return std::bit_cast<f64, s64>(FGR[index]);
+				else
+				{ /* If the index is odd, then the result is undefined. */
+					const size_t new_index = index & 0x1E;
+					return std::bit_cast<f64, s64>(FGR[new_index] & 0xFFFFFFFF | FGR[new_index + 1] << 32);
+				}
+			}
 			else
 				static_assert(false);
 		}
@@ -381,33 +396,31 @@ namespace VR4300
 		template<typename FPU_NumericType>
 		void Set(const size_t index, const FPU_NumericType data)
 		{
-			if constexpr (std::is_same<FPU_NumericType, s32>::value)
-			{
+			if constexpr (std::is_same_v<FPU_NumericType, s32>)
 				FGR[index] = data;
-			}
-			else if constexpr (std::is_same<FPU_NumericType, s64>::value)
+			else if constexpr (std::is_same_v<FPU_NumericType, f32>)
+				FGR[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
+			else if constexpr (std::is_same_v<FPU_NumericType, s64>)
 			{
-				if (FCR31.FS)
+				if (COP0_reg.status.FR)
 					FGR[index] = data;
 				else
-				{
-					FGR[index] = data & 0xFFFFFFFF;
-					FGR[index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+				{ /* If the index is odd, then the result is undefined. */
+					const size_t new_index = index & 0x1E;
+					FGR[new_index] = data & 0xFFFFFFFF;
+					FGR[new_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 				}
 			}
-			else if constexpr (std::is_same<FPU_NumericType, f32>::value)
+			else if constexpr (std::is_same_v<FPU_NumericType, f64>)
 			{
-				FGR[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
-			}
-			else if constexpr (std::is_same<FPU_NumericType, f64>::value)
-			{
-				if (FCR31.FS)
+				if (COP0_reg.status.FR)
 					FGR[index] = std::bit_cast<s64, f64>(data);
 				else
-				{
+				{ /* If the index is odd, then the result is undefined. */
+					const size_t new_index = index & 0x1E;
 					const s64 conv = std::bit_cast<s64, f64>(data);
-					FGR[index] = conv & 0xFFFFFFFF;
-					FGR[index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+					FGR[new_index] = conv & 0xFFFFFFFF;
+					FGR[new_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 				}
 			}
 			else
