@@ -179,7 +179,7 @@ namespace VR4300
 		{
 			/* Move Control Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
-			FPU_control.Set(fs, GPR[rt]);
+			FPU_control.Set(fs, u32(GPR[rt]));
 			exception_flags.test_and_signal_all();
 		}
 		else if constexpr (instr == CFC1)

@@ -267,14 +267,14 @@ namespace VR4300
 			break; case 5: set_struct_reg(page_mask, value & 0x01FFE000);
 			break; case 6: wired = value;
 			break; case 8: bad_v_addr = value;
-			break; case 9: count = value;
+			break; case 9: count = u32(value);
 			break; case 10: set_struct_reg(entry_hi, value & 0xC00000FFFFFFE0FF);
-			break; case 11: compare = value;
+			break; case 11: compare = u32(value);
 			break; case 12: set_struct_reg(status, value);
 			break; case 13: set_struct_reg(cause, value & 0xB000FF7C);
 			break; case 14: epc = value;
 			break; case 16: set_struct_reg(config, value & 0x7F00800F | 0xC6460);
-			break; case 17: LL_addr = value;
+			break; case 17: LL_addr = u32(value);
 			break; case 18: set_struct_reg(watch_lo, value & 0xFFFFFFFB);
 			break; case 19: watch_hi_p_addr_1 = value;
 			break; case 20: set_struct_reg(x_context, value & 0xFFFFFFFF'FFFFFFF0);

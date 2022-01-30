@@ -270,7 +270,7 @@ is set to 1, and then the TLB cannot be used. */
 				}
 			}
 			const u32 virt_addr_offset = virt_addr & page_mask_to_vaddr_offset_mask[entry.MASK];
-			const u32 phys_addr = virt_addr_offset | entry_reg.PFN << page_mask_to_vaddr_VPN_shift_count[entry.MASK];
+			const u32 phys_addr = u32(virt_addr_offset | entry_reg.PFN << page_mask_to_vaddr_VPN_shift_count[entry.MASK]);
 			/* TODO 'C' (0-7) is the page coherency attribute. Cache is not used if C == 2, else, it is used. */
 			return phys_addr;
 		}

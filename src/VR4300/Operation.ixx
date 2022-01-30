@@ -12,7 +12,7 @@ namespace VR4300
 
 		std::endian endianness;
 
-		void Run(const int cycles_to_run);
+		void Run(const unsigned cycles_to_run);
 		void Reset();
 		void PowerOn(const bool hle_pif);
 	}

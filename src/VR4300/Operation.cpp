@@ -10,7 +10,7 @@ import <cassert>;
 
 namespace VR4300
 {
-	void Run(const int cycles_to_run)
+	void Run(const unsigned cycles_to_run)
 	{
 		p_cycle_counter = 0;
 
@@ -89,7 +89,7 @@ namespace VR4300
 
 		cpu_write_mem<u32>(0x0430'0004, 0x0101'0101);
 		for (unsigned i = 0; i < 0x1000; i++) /* no clue if some kind of DMA */
-			cpu_write_mem<u32>(0xA400'0000 + i, cpu_read_mem<u32>(0xB000'0000 + i));
+			cpu_write_mem<u8>(0xA400'0000 + i, cpu_read_mem<u8>(0xB000'0000 + i));
 
 		PC = 0xA4000040;
 	}

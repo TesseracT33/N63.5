@@ -204,7 +204,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL_bit == 1)
 			{
-				cpu_write_mem<u32>(address, GPR[rt]);
+				cpu_write_mem<u32>(address, u32(GPR[rt]));
 				GPR.Set(rt, 1);
 			}
 			else
@@ -257,7 +257,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the
 			   32-bit result to register rt (sign-extends the result in the 64-bit mode).
 			   Generates an exception if a 2's complement integer overflow occurs. */
-			const s32 sum = GPR[rs] + immediate;
+			const s32 sum = s32(GPR[rs] + immediate);
 			const bool overflow = (GPR[rs] ^ sum) & (immediate ^ sum) & 0x80000000;
 			if (overflow)
 				IntegerOverflowException();
@@ -270,7 +270,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the 32-bit
 			   result to register rt (sign-extends the result in the 64-bit mode). Does not
 			   generate an exception even if an integer overflow occurs. */
-			const s32 sum = GPR[rs] + immediate;
+			const s32 sum = s32(GPR[rs] + immediate);
 			GPR.Set(rt, sum);
 		}
 		else if constexpr (instr == SLTI)
