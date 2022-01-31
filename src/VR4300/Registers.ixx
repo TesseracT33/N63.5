@@ -375,8 +375,8 @@ namespace VR4300
 					return FGR[index];
 				else
 				{ /* If the index is odd, then the result is undefined. */
-					const size_t new_index = index & 0x1E;
-					return FGR[new_index] & 0xFFFFFFFF | FGR[new_index + 1] << 32;
+					const auto aligned_index = index & 0x1E;
+					return FGR[aligned_index] & 0xFFFFFFFF | FGR[aligned_index + 1] << 32;
 				}
 			}
 			else if constexpr (std::is_same_v<FPU_NumericType, f64>)
@@ -385,8 +385,8 @@ namespace VR4300
 					return std::bit_cast<f64, s64>(FGR[index]);
 				else
 				{ /* If the index is odd, then the result is undefined. */
-					const size_t new_index = index & 0x1E;
-					return std::bit_cast<f64, s64>(FGR[new_index] & 0xFFFFFFFF | FGR[new_index + 1] << 32);
+					const auto aligned_index = index & 0x1E;
+					return std::bit_cast<f64, s64>(FGR[aligned_index] & 0xFFFFFFFF | FGR[aligned_index + 1] << 32);
 				}
 			}
 			else
@@ -406,9 +406,9 @@ namespace VR4300
 					FGR[index] = data;
 				else
 				{ /* If the index is odd, then the result is undefined. */
-					const size_t new_index = index & 0x1E;
-					FGR[new_index] = data & 0xFFFFFFFF;
-					FGR[new_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+					const auto aligned_index = index & 0x1E;
+					FGR[aligned_index] = data & 0xFFFFFFFF;
+					FGR[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 				}
 			}
 			else if constexpr (std::is_same_v<FPU_NumericType, f64>)
@@ -417,10 +417,10 @@ namespace VR4300
 					FGR[index] = std::bit_cast<s64, f64>(data);
 				else
 				{ /* If the index is odd, then the result is undefined. */
-					const size_t new_index = index & 0x1E;
+					const auto aligned_index = index & 0x1E;
 					const s64 conv = std::bit_cast<s64, f64>(data);
-					FGR[new_index] = conv & 0xFFFFFFFF;
-					FGR[new_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+					FGR[aligned_index] = conv & 0xFFFFFFFF;
+					FGR[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 				}
 			}
 			else
