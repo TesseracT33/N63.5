@@ -15,11 +15,7 @@ namespace UserMessage
 
 	export inline void Show(const std::string& message, const Type type = Type::Unspecified)
 	{
-		if (sdl_window == nullptr)
-		{
-			assert(false);
-			return;
-		}
+		assert(sdl_window != nullptr);
 
 		const std::string out_msg_prefix = [&] {
 			switch (type)
