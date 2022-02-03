@@ -5,6 +5,9 @@ import :MMU;
 import :Operation;
 import :Registers;
 
+import MemoryAccess;
+import MemoryUtils;
+
 namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
 	template<CPU_Instruction instr>
@@ -63,7 +66,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   the address is at the leftmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return cpu_read_mem<u32, MemoryAccessAlignment::Unaligned>(address);
+				return cpu_read_mem<u32, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LWR)
 			{
@@ -72,7 +75,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   the address is at the rightmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return cpu_read_mem<u32, MemoryAccessAlignment::Unaligned>(address);
+				return cpu_read_mem<u32, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LD)
 			{
@@ -87,7 +90,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   specified by the address is at the leftmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address);
+				return cpu_read_mem<u64, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LDR)
 			{
@@ -96,7 +99,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   specified by the address is at the rightmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return cpu_read_mem<u64, MemoryAccessAlignment::Unaligned>(address);
+				return cpu_read_mem<u64, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LL)
 			{
@@ -163,7 +166,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			cpu_write_mem<u32, MemoryAccessAlignment::Unaligned>(address, u32(GPR[rt])); /* TODO write function should handle this? */
+			cpu_write_mem<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt])); /* TODO write function should handle this? */
 		}
 		else if constexpr (instr == SWR)
 		{
@@ -171,7 +174,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			cpu_write_mem<u32, MemoryAccessAlignment::Unaligned>(address, u32(GPR[rt]));
+			cpu_write_mem<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == SD)
 		{
@@ -185,7 +188,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			cpu_write_mem<u64>(address, GPR[rt]);
+			cpu_write_mem<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
 		}
 		else if constexpr (instr == SDR)
 		{
@@ -193,7 +196,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			cpu_write_mem<u64, MemoryAccessAlignment::Unaligned>(address, GPR[rt]);
+			cpu_write_mem<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
 		}
 		else if constexpr (instr == SC)
 		{

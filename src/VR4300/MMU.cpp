@@ -3,8 +3,6 @@ module VR4300:MMU;
 import :COP0;
 import :Exceptions;
 
-import Memory;
-
 namespace VR4300
 {
 	void AssignActiveVirtualToPhysicalFunctions()
@@ -13,7 +11,7 @@ namespace VR4300
 		active_virtual_to_physical_fun_write = virtual_to_physical_fun_write_table[COP0_reg.status.KSU][COP0_reg.status.UX];
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressUserMode32(const u64 virt_addr)
 	{
 		if (virt_addr < 0x80000000)
@@ -27,7 +25,7 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressUserMode64(const u64 virt_addr)
 	{
 		if (virt_addr < 0x100'00000000)
@@ -41,7 +39,7 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressSupervisorMode32(const u64 virt_addr)
 	{
 		switch (virt_addr >> 28)
@@ -55,7 +53,7 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressSupervisorMode64(const u64 virt_addr)
 	{
 		switch (virt_addr >> 60)
@@ -99,7 +97,7 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressKernelMode32(const u64 virt_addr)
 	{
 		if ((virt_addr & 0xC000'0000) == 0x8000'0000) /* TODO: currently, caching is not emulated; this does not take into account uncached vs. cacheable segments */
@@ -112,7 +110,7 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressKernelMode64(const u64 virt_addr)
 	{
 		switch (virt_addr >> 60)
@@ -192,14 +190,14 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressInvalid(const u64 virt_addr)
 	{
 		assert(false); /* CP0 status KSU == 0b11 */
 		return 0;
 	}
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr)
 	{
 		/* Used for extracting the VPN from the virtual address;
@@ -261,7 +259,7 @@ is set to 1, and then the TLB cannot be used. */
 				SignalException<Exception::TLB_Invalid>();
 				return 0;
 			}
-			if constexpr (operation == MemoryAccessOperation::Write)
+			if constexpr (operation == MemoryAccess::Operation::Write)
 			{
 				if (!entry_reg.D) /* If the "Dirty" bit is clear, writing is disallowed. */
 				{
@@ -279,21 +277,21 @@ is set to 1, and then the TLB cannot be used. */
 		return 0;
 	}
 
-	template u32 VirtualToPhysicalAddressUserMode32<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressUserMode32<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressUserMode64<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressUserMode64<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressSupervisorMode32<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressSupervisorMode32<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressSupervisorMode64<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressSupervisorMode64<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressKernelMode32<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressKernelMode32<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressInvalid<MemoryAccessOperation::Write>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddressInvalid<MemoryAccessOperation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Read>(const u64 virt_addr);
 
-	template u32 VirtualToPhysicalAddress<MemoryAccessOperation::Read>(const u64 virt_addr);
-	template u32 VirtualToPhysicalAddress<MemoryAccessOperation::Write>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(const u64 virt_addr);
+	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Write>(const u64 virt_addr);
 }

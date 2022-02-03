@@ -27,5 +27,8 @@
     <ClCompile Include="src\UserMessage.ixx" />
     <ClCompile Include="src\HostSystem.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
+    <ClCompile Include="src\memory\RDRAM.ixx" />
+    <ClCompile Include="src\memory\MemoryUtils.ixx" />
+    <ClCompile Include="src\memory\MemoryAccess.ixx" />
   </ItemGroup>
 </Project>

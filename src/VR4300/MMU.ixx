@@ -7,15 +7,12 @@ import <concepts>;
 import <functional>;
 
 import Memory;
-
+import MemoryAccess;
+import MemoryUtils;
 import NumericalTypes;
 
 namespace VR4300
 {
-	enum class MemoryAccessOperation { Read, Write };
-
-	enum class MemoryAccessAlignment { Aligned, Unaligned };
-
 	struct TLB_Entry
 	{
 		struct
@@ -42,13 +39,13 @@ namespace VR4300
 
 	std::array<TLB_Entry, 32> TLB_entries{};
 
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressUserMode32(const u64 virt_addr);
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressUserMode64(const u64 virt_addr);
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressSupervisorMode32(const u64 virt_addr);
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressSupervisorMode64(const u64 virt_addr);
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressKernelMode32(const u64 virt_addr);
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressKernelMode64(const u64 virt_addr);
-	template<MemoryAccessOperation operation> u32 VirtualToPhysicalAddressInvalid(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode32(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode64(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressSupervisorMode32(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressSupervisorMode64(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode32(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode64(const u64 virt_addr);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressInvalid(const u64 virt_addr);
 
 	typedef u32(*virtual_to_physical_address_fun_t)(const u64);
 
@@ -56,53 +53,61 @@ namespace VR4300
 	virtual_to_physical_address_fun_t active_virtual_to_physical_fun_write = nullptr;
 
 	constexpr std::array<std::array<virtual_to_physical_address_fun_t, 2>, 4> virtual_to_physical_fun_read_table = {{
-		{VirtualToPhysicalAddressKernelMode32<MemoryAccessOperation::Read>, VirtualToPhysicalAddressKernelMode64<MemoryAccessOperation::Read>},
-		{VirtualToPhysicalAddressSupervisorMode32<MemoryAccessOperation::Read>, VirtualToPhysicalAddressSupervisorMode64<MemoryAccessOperation::Read>},
-		{VirtualToPhysicalAddressUserMode32<MemoryAccessOperation::Read>, VirtualToPhysicalAddressUserMode64<MemoryAccessOperation::Read>},
-		{VirtualToPhysicalAddressInvalid<MemoryAccessOperation::Read>, VirtualToPhysicalAddressInvalid<MemoryAccessOperation::Read>}
+		{VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>},
+		{VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Read>},
+		{VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Read>},
+		{VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Read>}
 	}};
 
 	constexpr std::array<std::array<virtual_to_physical_address_fun_t, 2>, 4> virtual_to_physical_fun_write_table = {{
-		{VirtualToPhysicalAddressKernelMode32<MemoryAccessOperation::Write>, VirtualToPhysicalAddressKernelMode64<MemoryAccessOperation::Write>},
-		{VirtualToPhysicalAddressSupervisorMode32<MemoryAccessOperation::Write>, VirtualToPhysicalAddressSupervisorMode64<MemoryAccessOperation::Write>},
-		{VirtualToPhysicalAddressUserMode32<MemoryAccessOperation::Write>, VirtualToPhysicalAddressUserMode64<MemoryAccessOperation::Write>},
-		{VirtualToPhysicalAddressInvalid<MemoryAccessOperation::Write>, VirtualToPhysicalAddressInvalid<MemoryAccessOperation::Write>}
+		{VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>},
+		{VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>},
+		{VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Write>},
+		{VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Write>}
 	}};
 
 	void AssignActiveVirtualToPhysicalFunctions();
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr);
 
-	template<std::integral T, MemoryAccessAlignment alignment = MemoryAccessAlignment::Aligned>
-	T cpu_read_mem(const u64 address)
+	template<std::integral T, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
+	T cpu_read_mem(const u64 virtual_address)
 	{
-		if constexpr (alignment == MemoryAccessAlignment::Aligned)
+		const std::size_t number_of_bytes =
+			MemoryUtils::get_number_of_bytes_to_access<T, alignment>(virtual_address);
+		if (number_of_bytes != sizeof T)
 		{
-			if constexpr (sizeof T > 1)
-			{
-				constexpr auto alignment_mask = sizeof T - 1;
-				if (address & alignment_mask)
-				{
-					//AddressErrorException();
-					return 0;
-				}
-			}
+			//AddressErrorException();
+			return 0;
 		}
 
-		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_read, address);
+		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_read, virtual_address);
 		bool error = false; /* error from translation */
 		if (error)
 			return 0;
 
-		const T value = Memory::ReadPhysical<T>(physical_address);
-		return value;
+		const T value = Memory::ReadPhysical<T>(number_of_bytes, physical_address);
+		return 0;
 	}
 
-	template<std::integral T, MemoryAccessAlignment alignment = MemoryAccessAlignment::Aligned>
-	void cpu_write_mem(const u64 address, const T data)
+	template<std::integral T, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
+	void cpu_write_mem(const u64 virtual_address, const T data)
 	{
+		const std::size_t number_of_bytes =
+			MemoryUtils::get_number_of_bytes_to_access<T, alignment>(virtual_address);
+		if (number_of_bytes != sizeof T)
+		{
+			//AddressErrorException();
+			return;
+		}
 
+		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_write, virtual_address);
+		bool error = false; /* error from translation */
+		if (error)
+			return;
+
+		Memory::WritePhysical<T>(number_of_bytes, virtual_address, data);
 	}
 }
 

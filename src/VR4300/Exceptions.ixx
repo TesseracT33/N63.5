@@ -5,8 +5,8 @@ import <functional>;
 
 import :COP0;
 import :Registers;
-import :MMU;
 
+import MemoryAccess;
 import NumericalTypes;
 
 namespace VR4300
@@ -130,6 +130,6 @@ namespace VR4300
 
 
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	void TLB_MissException(const u32 bad_virt_addr, const u32 bad_VPN2);
 }

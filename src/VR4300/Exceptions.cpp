@@ -106,7 +106,7 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccessOperation operation>
+	template<MemoryAccess::Operation operation>
 	void TLB_MissException(const u32 bad_virt_addr, const u32 bad_VPN2)
 	{
 		COP0_reg.context.bad_vpn2 = bad_VPN2;
@@ -115,7 +115,7 @@ namespace VR4300
 		COP0_reg.bad_v_addr = bad_virt_addr; /* TODO arg is u32, dest is u64 */
 
 		COP0_reg.cause.exc_code = static_cast<u32>([] {
-			if constexpr (operation == MemoryAccessOperation::Read)
+			if constexpr (operation == MemoryAccess::Operation::Read)
 				return ExceptionCode::TLBL;
 			else return ExceptionCode::TLBS; /* Write */
 		}());
@@ -152,6 +152,6 @@ namespace VR4300
 	}
 
 
-	template void TLB_MissException<MemoryAccessOperation::Read>(const u32 bad_virt_addr, const u32 bad_VPN2);
-	template void TLB_MissException<MemoryAccessOperation::Write>(const u32 bad_virt_addr, const u32 bad_VPN2);
+	template void TLB_MissException<MemoryAccess::Operation::Read>(const u32 bad_virt_addr, const u32 bad_VPN2);
+	template void TLB_MissException<MemoryAccess::Operation::Write>(const u32 bad_virt_addr, const u32 bad_VPN2);
 }
