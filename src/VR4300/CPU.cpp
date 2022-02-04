@@ -27,37 +27,37 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			{
 				/* Load Byte;
 				   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return cpu_read_mem<s8>(address);
+				return ReadVirtual<s8>(address);
 			}
 			else if constexpr (instr == LBU)
 			{
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return cpu_read_mem<u8>(address);
+				return ReadVirtual<u8>(address);
 			}
 			else if constexpr (instr == LH)
 			{
 				/* Load halfword;
 				   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return cpu_read_mem<s16>(address);
+				return ReadVirtual<s16>(address);
 			}
 			else if constexpr (instr == LHU)
 			{
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return cpu_read_mem<u16>(address);
+				return ReadVirtual<u16>(address);
 			}
 			else if constexpr (instr == LW)
 			{
 				/* Load Word;
 				   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
-				return cpu_read_mem<s32>(address);
+				return ReadVirtual<s32>(address);
 			}
 			else if constexpr (instr == LWU)
 			{
 				/* Load Word Unsigned;
 				   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
-				return cpu_read_mem<u32>(address);
+				return ReadVirtual<u32>(address);
 			}
 			else if constexpr (instr == LWL)
 			{
@@ -66,7 +66,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   the address is at the leftmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return cpu_read_mem<u32, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<u32, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LWR)
 			{
@@ -75,13 +75,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   the address is at the rightmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return cpu_read_mem<u32, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<u32, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LD)
 			{
 				/* Load Doubleword;
 				   Loads the contents of a word specified by the address to register rt. */
-				return cpu_read_mem<u64>(address);
+				return ReadVirtual<u64>(address);
 			}
 			else if constexpr (instr == LDL)
 			{
@@ -90,7 +90,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   specified by the address is at the leftmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return cpu_read_mem<u64, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<u64, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LDR)
 			{
@@ -99,20 +99,20 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   specified by the address is at the rightmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return cpu_read_mem<u64, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<u64, MemoryAccess::Alignment::Unaligned>(address);
 			}
 			else if constexpr (instr == LL)
 			{
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-				return cpu_read_mem<s32>(address);
+				return ReadVirtual<s32>(address);
 				/* TODO the specified physical address of the memory is stored to the LLAddr register */
 			}
 			else if constexpr (instr == LLD)
 			{
 				/* Load Linked Doubleword;
 				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
-				return cpu_read_mem<u64>(address);
+				return ReadVirtual<u64>(address);
 			}
 			else
 			{
@@ -146,19 +146,19 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			cpu_write_mem<u8>(address, u8(GPR[rt]));
+			WriteVirtual<u8>(address, u8(GPR[rt]));
 		}
 		else if constexpr (instr == SH)
 		{
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			cpu_write_mem<u16>(address, u16(GPR[rt]));
+			WriteVirtual<u16>(address, u16(GPR[rt]));
 		}
 		else if constexpr (instr == SW)
 		{
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			cpu_write_mem<u32>(address, u32(GPR[rt]));
+			WriteVirtual<u32>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == SWL)
 		{
@@ -166,7 +166,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			cpu_write_mem<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt])); /* TODO write function should handle this? */
+			WriteVirtual<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt])); /* TODO write function should handle this? */
 		}
 		else if constexpr (instr == SWR)
 		{
@@ -174,13 +174,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			cpu_write_mem<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt]));
+			WriteVirtual<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt]));
 		}
 		else if constexpr (instr == SD)
 		{
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
-			cpu_write_mem<u64>(address, GPR[rt]);
+			WriteVirtual<u64>(address, GPR[rt]);
 		}
 		else if constexpr (instr == SDL)
 		{
@@ -188,7 +188,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			cpu_write_mem<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
+			WriteVirtual<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
 		}
 		else if constexpr (instr == SDR)
 		{
@@ -196,7 +196,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			cpu_write_mem<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
+			WriteVirtual<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
 		}
 		else if constexpr (instr == SC)
 		{
@@ -207,7 +207,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL_bit == 1)
 			{
-				cpu_write_mem<u32>(address, u32(GPR[rt]));
+				WriteVirtual<u32>(address, u32(GPR[rt]));
 				GPR.Set(rt, 1);
 			}
 			else
@@ -224,7 +224,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL_bit == 1)
 			{
-				cpu_write_mem<u64>(address, GPR[rt]);
+				WriteVirtual<u64>(address, GPR[rt]);
 				GPR.Set(rt, 1);
 			}
 			else

@@ -13,13 +13,13 @@ namespace Memory
 	/* Use this function to do a conversion between little and big endian if necessary,
 	   before the value is read back / written. */
 	template<std::integral T>
-	T convert_endian(const T value);
+	T ConvertEndian(const T value);
 
 	template<std::integral T>
-	T invalid_read(const u32 addr);
+	T InvalidRead(const u32 addr);
 
 	template<std::integral T>
-	void invalid_write(const u32 addr, const T data);
+	void InvalidWrite(const u32 addr, const T data);
 
 	export
 	template<std::integral T>

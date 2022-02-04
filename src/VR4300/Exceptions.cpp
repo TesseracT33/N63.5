@@ -44,8 +44,8 @@ namespace VR4300
 		COP0_reg.config.BE = 1;
 		COP0_reg.random.random = 31;
 
-		COP0_reg.status.notify_cpu_after_write();
-		COP0_reg.config.notify_cpu_after_write();
+		COP0_reg.status.NotifyCpuAfterWrite();
+		COP0_reg.config.NotifyCpuAfterWrite();
 
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}

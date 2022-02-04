@@ -8,7 +8,7 @@ import VR4300;
 namespace Memory
 {
 	template<std::integral T>
-	T convert_endian(const T value)
+	T ConvertEndian(const T value)
 	{
 		static_assert(sizeof T == 1 || sizeof T == 2 || sizeof T == 4 || sizeof T == 8);
 
@@ -31,7 +31,7 @@ namespace Memory
 
 
 	template<std::integral T>
-	T invalid_read(const u32 addr)
+	T InvalidRead(const u32 addr)
 	{
 		assert(false);
 		return T();
@@ -39,7 +39,7 @@ namespace Memory
 
 
 	template<std::integral T>
-	void invalid_write(const u32 addr, const T data)
+	void InvalidWrite(const u32 addr, const T data)
 	{
 		assert(false);
 	}
@@ -52,13 +52,13 @@ namespace Memory
 		switch (physical_address >> 20)
 		{
 		case 0x000: case 0x001: case 0x002: case 0x003:
-			return RDRAM::read_standard_region<T>(number_of_bytes, physical_address);
+			return RDRAM::ReadStandardRegion<T>(number_of_bytes, physical_address);
 
 		case 0x004: case 0x005: case 0x006: case 0x007:
-			return RDRAM::read_expanded_region<T>(number_of_bytes, physical_address);
+			return RDRAM::ReadExpandedRegion<T>(number_of_bytes, physical_address);
 
 		case 0x03F:
-			return RDRAM::read_register_region<T>(number_of_bytes, physical_address);
+			return RDRAM::ReadRegisterRegion<T>(number_of_bytes, physical_address);
 
 		case 0x040:
 			assert(false);
@@ -124,7 +124,7 @@ namespace Memory
 		case 0x0E8: case 0x0E9: case 0x0EA: case 0x0EB: case 0x0EC: case 0x0ED: case 0x0EE: case 0x0EF:
 		case 0x0F0: case 0x0F1: case 0x0F2: case 0x0F3: case 0x0F4: case 0x0F5: case 0x0F6: case 0x0F7:
 		case 0x0F8: case 0x0F9: case 0x0FA: case 0x0FB: case 0x0FC: case 0x0FD: case 0x0FE: case 0x0FF:
-			return Cartridge::read_sram<T>(number_of_bytes, physical_address);
+			return Cartridge::ReadSram<T>(number_of_bytes, physical_address);
 
 		case 0x100: case 0x101: case 0x102: case 0x103: case 0x104: case 0x105: case 0x106: case 0x107:
 		case 0x108: case 0x109: case 0x10A: case 0x10B: case 0x10C: case 0x10D: case 0x10E: case 0x10F:
@@ -158,7 +158,7 @@ namespace Memory
 		case 0x1E8: case 0x1E9: case 0x1EA: case 0x1EB: case 0x1EC: case 0x1ED: case 0x1EE: case 0x1EF:
 		case 0x1F0: case 0x1F1: case 0x1F2: case 0x1F3: case 0x1F4: case 0x1F5: case 0x1F6: case 0x1F7:
 		case 0x1F8: case 0x1F9: case 0x1FA: case 0x1FB:
-			return Cartridge::read_rom<T>(number_of_bytes, physical_address);
+			return Cartridge::ReadRom<T>(number_of_bytes, physical_address);
 
 		case 0x1FC:
 			assert(false);

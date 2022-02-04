@@ -59,7 +59,7 @@ namespace VR4300
 			else instructions_until_jump--;
 		}
 
-		const u32 instr_code = cpu_read_mem<u32>(PC);
+		const u32 instr_code = ReadVirtual<u32>(PC);
 		PC += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
@@ -84,12 +84,12 @@ namespace VR4300
 		COP0_reg.Set(12, 0x7040'0004); /* status */
 		COP0_reg.Set(15, 0x0000'0B00); /* pr_id */
 		COP0_reg.Set(16, 0x0006'E463); /* config */
-		COP0_reg.status.notify_cpu_after_write();
-		COP0_reg.config.notify_cpu_after_write();
+		COP0_reg.status.NotifyCpuAfterWrite();
+		COP0_reg.config.NotifyCpuAfterWrite();
 
-		cpu_write_mem<u32>(0x0430'0004, 0x0101'0101);
+		WriteVirtual<u32>(0x0430'0004, 0x0101'0101);
 		for (unsigned i = 0; i < 0x1000; i++) /* no clue if some kind of DMA */
-			cpu_write_mem<u8>(0xA400'0000 + i, cpu_read_mem<u8>(0xB000'0000 + i));
+			WriteVirtual<u8>(0xA400'0000 + i, ReadVirtual<u8>(0xB000'0000 + i));
 
 		PC = 0xA4000040;
 	}

@@ -41,13 +41,13 @@ namespace VR4300
 	void UnimplementedOperationException();
 	void XTLB_MissException();
 
-	typedef void(*exception_handler_fun_t)();
-	exception_handler_fun_t exception_fun_to_call;
+	typedef void(*ExceptionHandlerFun)();
+	ExceptionHandlerFun exception_fun_to_call;
 
 	struct Exc
 	{
 		const unsigned exception_code, priority;
-		const exception_handler_fun_t handler_fun;
+		const ExceptionHandlerFun handler_fun;
 	};
 
 	constexpr Exc cold_reset = { 0, 5, ColdResetException };

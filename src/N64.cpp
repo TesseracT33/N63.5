@@ -11,7 +11,7 @@ namespace N64
 		const unsigned window_width,
 		const unsigned window_height)
 	{
-		bool success = Cartridge::load_rom(rom_path);
+		bool success = Cartridge::LoadRom(rom_path);
 		if (!success)
 			return false;
 

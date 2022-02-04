@@ -19,7 +19,7 @@ namespace VR4300
 	template<typename T>
 	concept notifies_cpu_on_write = requires(T t)
 	{
-		{ t.notify_cpu_after_write() } -> std::convertible_to<void>;
+		{ t.NotifyCpuAfterWrite() } -> std::convertible_to<void>;
 	};
 
 	u64 PC{}; /* Program counter */
@@ -119,7 +119,7 @@ namespace VR4300
 			u32 RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 			u32 CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 
-			void notify_cpu_after_write()
+			void NotifyCpuAfterWrite()
 			{
 				AssignActiveVirtualToPhysicalFunctions();
 				SetNewEndianness();
@@ -158,7 +158,7 @@ namespace VR4300
 			u32 EC : 3; /* Operating frequency ratio (read-only). */
 			u32 : 1; /* Returns 0 when read. */
 
-			void notify_cpu_after_write()
+			void NotifyCpuAfterWrite()
 			{
 				SetNewEndianness();
 			}
@@ -202,7 +202,7 @@ namespace VR4300
 
 		u64 Get(const size_t register_index) const
 		{
-			auto get_struct_reg = [](const auto& structure) -> u64 /* Non-UB type punning between a struct register and an u32/u64. */
+			auto GetStructReg = [](const auto& structure) -> u64 /* Non-UB type punning between a struct register and an u32/u64. */
 			{
 				if constexpr (sizeof structure == sizeof u64)
 					return std::bit_cast<u64, std::remove_reference_t<decltype(structure)>>(structure);
@@ -214,28 +214,28 @@ namespace VR4300
 
 			switch (register_index)
 			{
-			case 0: return get_struct_reg(index);
-			case 1: return get_struct_reg(random);
-			case 2: return get_struct_reg(entry_lo_0);
-			case 3: return get_struct_reg(entry_lo_1);
-			case 4: return get_struct_reg(context);
-			case 5: return get_struct_reg(page_mask);
+			case 0: return GetStructReg(index);
+			case 1: return GetStructReg(random);
+			case 2: return GetStructReg(entry_lo_0);
+			case 3: return GetStructReg(entry_lo_1);
+			case 4: return GetStructReg(context);
+			case 5: return GetStructReg(page_mask);
 			case 6: return wired;
 			case 8: return bad_v_addr;
 			case 9: return count;
-			case 10: return get_struct_reg(entry_hi);
+			case 10: return GetStructReg(entry_hi);
 			case 11: return compare;
-			case 12: return get_struct_reg(status);
-			case 13: return get_struct_reg(cause);
+			case 12: return GetStructReg(status);
+			case 13: return GetStructReg(cause);
 			case 14: return epc;
-			case 15: return get_struct_reg(pr_id);
-			case 16: return get_struct_reg(config);
+			case 15: return GetStructReg(pr_id);
+			case 16: return GetStructReg(config);
 			case 17: return LL_addr;
-			case 18: return get_struct_reg(watch_lo);
+			case 18: return GetStructReg(watch_lo);
 			case 19: return watch_hi_p_addr_1;
-			case 20: return get_struct_reg(x_context);
+			case 20: return GetStructReg(x_context);
 			case 26: return parity_err_diagnostic;
-			case 28: return get_struct_reg(tag_lo);
+			case 28: return GetStructReg(tag_lo);
 			case 30: return error_epc;
 			default: return 0;
 			}
@@ -243,7 +243,7 @@ namespace VR4300
 
 		void Set(const size_t register_index, const u64 value)
 		{
-			auto set_struct_reg = [](auto& structure, const u64 value) -> void /* Non-UB type punning between a struct register and an u32/u64. */
+			auto SetStructReg = [](auto& structure, const u64 value) -> void /* Non-UB type punning between a struct register and an u32/u64. */
 			{
 				if constexpr (sizeof structure == sizeof u64)
 					structure = std::bit_cast<std::remove_reference_t<decltype(structure)>, u64>(value);
@@ -254,32 +254,32 @@ namespace VR4300
 
 				/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
 				if constexpr (notifies_cpu_on_write<decltype(structure)>)
-					structure.notify_cpu_after_write();
+					structure.NotifyCpuAfterWrite();
 			};
 
 			switch (register_index)
 			{
-			break; case 0: set_struct_reg(index, value & 0x800000CF);
-			break; case 1: set_struct_reg(random, value & 0x3F);
-			break; case 2: set_struct_reg(entry_lo_0, value & 0xCFFFFFFF);
-			break; case 3: set_struct_reg(entry_lo_1, value & 0xCFFFFFFF);
-			break; case 4: set_struct_reg(context, value & 0xFFFFFFF0);
-			break; case 5: set_struct_reg(page_mask, value & 0x01FFE000);
+			break; case 0: SetStructReg(index, value & 0x800000CF);
+			break; case 1: SetStructReg(random, value & 0x3F);
+			break; case 2: SetStructReg(entry_lo_0, value & 0xCFFFFFFF);
+			break; case 3: SetStructReg(entry_lo_1, value & 0xCFFFFFFF);
+			break; case 4: SetStructReg(context, value & 0xFFFFFFF0);
+			break; case 5: SetStructReg(page_mask, value & 0x01FFE000);
 			break; case 6: wired = value;
 			break; case 8: bad_v_addr = value;
 			break; case 9: count = u32(value);
-			break; case 10: set_struct_reg(entry_hi, value & 0xC00000FFFFFFE0FF);
+			break; case 10: SetStructReg(entry_hi, value & 0xC00000FFFFFFE0FF);
 			break; case 11: compare = u32(value);
-			break; case 12: set_struct_reg(status, value);
-			break; case 13: set_struct_reg(cause, value & 0xB000FF7C);
+			break; case 12: SetStructReg(status, value);
+			break; case 13: SetStructReg(cause, value & 0xB000FF7C);
 			break; case 14: epc = value;
-			break; case 16: set_struct_reg(config, value & 0x7F00800F | 0xC6460);
+			break; case 16: SetStructReg(config, value & 0x7F00800F | 0xC6460);
 			break; case 17: LL_addr = u32(value);
-			break; case 18: set_struct_reg(watch_lo, value & 0xFFFFFFFB);
+			break; case 18: SetStructReg(watch_lo, value & 0xFFFFFFFB);
 			break; case 19: watch_hi_p_addr_1 = value;
-			break; case 20: set_struct_reg(x_context, value & 0xFFFFFFFF'FFFFFFF0);
+			break; case 20: SetStructReg(x_context, value & 0xFFFFFFFF'FFFFFFF0);
 			break; case 26: parity_err_diagnostic = value;
-			break; case 28: set_struct_reg(tag_lo, value & 0x0FFFFFC0);
+			break; case 28: SetStructReg(tag_lo, value & 0x0FFFFFC0);
 			break; case 30: error_epc = value;
 			}
 		}

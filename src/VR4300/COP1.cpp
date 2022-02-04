@@ -97,7 +97,7 @@ namespace VR4300
 				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 				   an address. Loads the contents of the word specified by the address to the
 				   FPU general purpose register ft. */
-				return cpu_read_mem<s32>(address);
+				return ReadVirtual<s32>(address);
 			}
 			else if constexpr (instr == LDC1)
 			{
@@ -106,7 +106,7 @@ namespace VR4300
 				   an address. Loads the contents of the doubleword specified by the address to
 				   the FPU general purpose registers ft and ft+1 when FR = 0, or to the FPU
 				   general purpose register ft when FR = 1. */
-				return cpu_read_mem<s64>(address);
+				return ReadVirtual<s64>(address);
 			}
 			else
 			{
@@ -137,7 +137,7 @@ namespace VR4300
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose register ft to the
 			   memory position specified by the address. */
-			cpu_write_mem<s32>(address, FGR.Get<s32>(ft));
+			WriteVirtual<s32>(address, FGR.Get<s32>(ft));
 		}
 		else if constexpr (instr == SDC1)
 		{
@@ -146,7 +146,7 @@ namespace VR4300
 			   an address. Stores the contents of the FPU general purpose registers ft and
 			   ft+1 to the memory position specified by the address when FR = 0, and the
 			   contents of the FPU general purpose register ft when FR = 1. */
-			cpu_write_mem<s64>(address, FGR.Get<s64>(ft));
+			WriteVirtual<s64>(address, FGR.Get<s64>(ft));
 		}
 		else
 		{

@@ -202,7 +202,7 @@ namespace VR4300
 	{
 		/* Used for extracting the VPN from the virtual address;
 		   given the page mask register in a TLB entry, tells by how many positions the virtual address needs to be shifted to the left. */
-		static constexpr std::array<u8, 4096> page_mask_to_vaddr_VPN_shift_count = [] {
+		static constexpr std::array page_mask_to_vaddr_VPN_shift_count = [] {
 			std::array<u8, 4096> table{};
 			for (int i = 0; i < table.size(); i++) {
 				table[i] = [&] {
@@ -220,7 +220,7 @@ namespace VR4300
 
 		/* Used for extracting the offset from the virtual address;
 		   given the page mask register in a TLB entry, tells what the virtual address need to be masked with. */
-		static constexpr std::array<u32, 4096> page_mask_to_vaddr_offset_mask = [] {
+		static constexpr std::array page_mask_to_vaddr_offset_mask = [] {
 			std::array<u32, 4096> table{};
 			for (int i = 0; i < table.size(); i++) {
 				table[i] = [&] {
