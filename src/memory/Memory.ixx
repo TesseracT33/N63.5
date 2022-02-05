@@ -10,7 +10,10 @@ import Cartridge;
 import MemoryUtils;
 import MIPS_Interface;
 import NumericalTypes;
+import PeripheralInterface;
 import RDRAM;
+import SerialInterface;
+import VideoInterface;
 
 namespace Memory
 {
@@ -42,7 +45,8 @@ namespace Memory
 			return RDRAM::ReadRegisterRegion<number_of_bytes>(physical_address);
 
 		case 0x040:
-			return MIPS_Interface::Read<number_of_bytes>(physical_address);
+			assert(false);
+			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
 
 		case 0x041:
 			assert(false);
@@ -53,28 +57,24 @@ namespace Memory
 			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
 
 		case 0x043:
-			assert(false);
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+			return MIPS_Interface::Read<number_of_bytes>(physical_address);
 
 		case 0x044:
-			assert(false);
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+			return VideoInterface::Read<number_of_bytes>(physical_address);
 
 		case 0x045:
 			assert(false);
 			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
 
 		case 0x046:
-			assert(false);
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+			return PeripheralInterface::Read<number_of_bytes>(physical_address);
 
 		case 0x047:
 			assert(false);
 			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
 
 		case 0x048:
-			assert(false);
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+			return SerialInterface::Read<number_of_bytes>(physical_address);
 
 		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
 		case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
@@ -104,7 +104,7 @@ namespace Memory
 		case 0x0E8: case 0x0E9: case 0x0EA: case 0x0EB: case 0x0EC: case 0x0ED: case 0x0EE: case 0x0EF:
 		case 0x0F0: case 0x0F1: case 0x0F2: case 0x0F3: case 0x0F4: case 0x0F5: case 0x0F6: case 0x0F7:
 		case 0x0F8: case 0x0F9: case 0x0FA: case 0x0FB: case 0x0FC: case 0x0FD: case 0x0FE: case 0x0FF:
-			return Cartridge::ReadSram<number_of_bytes>(physical_address);
+			return Cartridge::ReadSRAM<number_of_bytes>(physical_address);
 
 		case 0x100: case 0x101: case 0x102: case 0x103: case 0x104: case 0x105: case 0x106: case 0x107:
 		case 0x108: case 0x109: case 0x10A: case 0x10B: case 0x10C: case 0x10D: case 0x10E: case 0x10F:
@@ -138,7 +138,7 @@ namespace Memory
 		case 0x1E8: case 0x1E9: case 0x1EA: case 0x1EB: case 0x1EC: case 0x1ED: case 0x1EE: case 0x1EF:
 		case 0x1F0: case 0x1F1: case 0x1F2: case 0x1F3: case 0x1F4: case 0x1F5: case 0x1F6: case 0x1F7:
 		case 0x1F8: case 0x1F9: case 0x1FA: case 0x1FB:
-			return Cartridge::ReadRom<number_of_bytes>(physical_address);
+			return Cartridge::ReadROM<number_of_bytes>(physical_address);
 
 		case 0x1FC:
 			assert(false);
