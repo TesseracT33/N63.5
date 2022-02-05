@@ -8,6 +8,7 @@ import <functional>;
 
 import Cartridge;
 import MemoryUtils;
+import MIPS_Interface;
 import NumericalTypes;
 import RDRAM;
 
@@ -41,8 +42,7 @@ namespace Memory
 			return RDRAM::ReadRegisterRegion<number_of_bytes>(physical_address);
 
 		case 0x040:
-			assert(false);
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+			return MIPS_Interface::Read<number_of_bytes>(physical_address);
 
 		case 0x041:
 			assert(false);

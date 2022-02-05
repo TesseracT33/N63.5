@@ -30,5 +30,6 @@
     <ClCompile Include="src\memory\RDRAM.ixx" />
     <ClCompile Include="src\memory\MemoryUtils.ixx" />
     <ClCompile Include="src\memory\MemoryAccess.ixx" />
+    <ClCompile Include="src\interface\MIPS_Interface.ixx" />
   </ItemGroup>
 </Project>
