@@ -5,7 +5,6 @@ import NumericalTypes;
 
 import <algorithm>;
 import <cassert>;
-import <concepts>;
 import <vector>;
 
 namespace RDRAM
@@ -24,50 +23,50 @@ namespace RDRAM
 		}
 
 		/* $0000'0000 - $0x003F'FFFF */
-		template<std::integral T>
-		T ReadStandardRegion(const std::size_t number_of_bytes, const u32 address)
+		template<std::size_t number_of_bytes>
+		auto ReadStandardRegion(const u32 address)
 		{
-			return MemoryUtils::GenericRead<T>(number_of_bytes, &RDRAM[address]);
+			return MemoryUtils::GenericRead<number_of_bytes>(&RDRAM[address]);
 		}
 
 		/* $0040'0000 - $007F'FFFF */
-		template<std::integral T>
-		T ReadExpandedRegion(const std::size_t number_of_bytes, const u32 address)
+		template<std::size_t number_of_bytes>
+		auto ReadExpandedRegion(const u32 address)
 		{
 			if (RDRAM.size() != rdram_expanded_size)
-				return 0;
+				return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
 			else
-				return MemoryUtils::GenericRead<T>(number_of_bytes, &RDRAM[address]);
+				return MemoryUtils::GenericRead<number_of_bytes>(&RDRAM[address]);
 		}
 
 		/* $03F0'0000 - $03FF'FFFF */
-		template<std::integral T>
-		T ReadRegisterRegion(const std::size_t number_of_bytes, const u32 address)
+		template<std::size_t number_of_bytes>
+		auto ReadRegisterRegion(const u32 address)
 		{
 			assert(false);
-			return 0;
+			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
 		}
 
 		/* $0000'0000 - $0x003F'FFFF */
-		template<std::integral T>
-		void WriteStandardRegion(const std::size_t number_of_bytes, const u32 address, const T data)
+		template<std::size_t number_of_bytes>
+		void WriteStandardRegion(const u32 address, const auto data)
 		{
-			MemoryUtils::GenericWrite<T>(number_of_bytes, &RDRAM[address], data);
+			MemoryUtils::GenericWrite<number_of_bytes>(&RDRAM[address], data);
 		}
 
 		/* $0040'0000 - $007F'FFFF */
-		template<std::integral T>
-		void WriteExpandedRegion(const std::size_t number_of_bytes, const u32 address, const T data)
+		template<std::size_t number_of_bytes>
+		void WriteExpandedRegion(const u32 address, const auto data)
 		{
 			if (RDRAM.size() == rdram_expanded_size)
 				return;
 			else
-				MemoryUtils::GenericWrite<T>(number_of_bytes, &RDRAM[address], data);
+				MemoryUtils::GenericWrite<number_of_bytes>(&RDRAM[address], data);
 		}
 
 		/* $03F0'0000 - $03FF'FFFF */
-		template<std::integral T>
-		void WriteRegisterRegion(const std::size_t number_of_bytes, const u32 address, const T data)
+		template<std::size_t number_of_bytes>
+		void WriteRegisterRegion(const u32 address, const auto data)
 		{
 			assert(false);
 		}

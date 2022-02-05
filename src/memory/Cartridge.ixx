@@ -1,8 +1,8 @@
 export module Cartridge;
 
+import MemoryUtils;
 import NumericalTypes;
 
-import <concepts>;
 import <fstream>;
 import <string>;
 import <vector>;
@@ -13,11 +13,17 @@ namespace Cartridge
 	{
 		bool LoadRom(const std::string& rom_path);
 
-		template<std::integral T>
-		T ReadRom(const std::size_t number_of_bytes, const u32 addr);
+		template<std::size_t number_of_bytes>
+		auto ReadRom(const u32 addr)
+		{
+			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+		}
 
-		template<std::integral T>
-		T ReadSram(const std::size_t number_of_bytes, const u32 addr);
+		template<std::size_t number_of_bytes>
+		auto ReadSram(const u32 addr)
+		{
+			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
+		}
 	}
 
 	std::vector<u8> rom{};

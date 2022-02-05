@@ -10,7 +10,7 @@ export namespace MemoryUtils
 {
 	/* The result will different from sizeof(T) only for unaligned memory accesses. */
 	template<std::integral T, MemoryAccess::Alignment alignment>
-	constexpr std::size_t GetNumberOfBytesToAccess(const u32 addr)
+	constexpr std::size_t GetNumberOfBytesToAccess(const auto addr)
 	{
 		if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			return sizeof T;
@@ -18,16 +18,36 @@ export namespace MemoryUtils
 			return sizeof T - (addr & (sizeof T - 1));
 	}
 
-	template<std::integral T>
-	T GenericRead(const std::size_t number_of_bytes, const void* source)
+	template<std::size_t number_of_bytes>
+	auto ConstructUnsignedIntegral(const auto data)
 	{
-		T ret;
+		     if constexpr (number_of_bytes == 1) return u8(data);
+		else if constexpr (number_of_bytes == 2) return u16(data);
+		else if constexpr (number_of_bytes <= 4) return u32(data);
+		else if constexpr (number_of_bytes <= 8) return u64(data);
+		else                                     static_assert(false);
+	}
+
+	template<std::size_t number_of_bytes>
+	auto ConstructSignedIntegral(const auto data)
+	{
+		     if constexpr (number_of_bytes == 1) return s8(data);
+		else if constexpr (number_of_bytes == 2) return s16(data);
+		else if constexpr (number_of_bytes <= 4) return s32(data);
+		else if constexpr (number_of_bytes <= 8) return s64(data);
+		else                                     static_assert(false);
+	}
+
+	template<std::size_t number_of_bytes>
+	auto GenericRead(const void* source)
+	{
+		auto ret = ConstructUnsignedIntegral<number_of_bytes>(0);
 		std::memcpy(&ret, source, number_of_bytes);
 		return ret;
 	}
 
-	template<std::integral T>
-	void GenericWrite(const std::size_t number_of_bytes, void* destination, const T data)
+	template<std::size_t number_of_bytes>
+	void GenericWrite(void* destination, const auto data)
 	{
 		std::memcpy(destination, &data, number_of_bytes);
 	}

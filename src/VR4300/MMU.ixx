@@ -76,19 +76,42 @@ namespace VR4300
 	{
 		const std::size_t number_of_bytes =
 			MemoryUtils::GetNumberOfBytesToAccess<T, alignment>(virtual_address);
-		if (number_of_bytes != sizeof T)
+		if constexpr (sizeof T > 1 && alignment == MemoryAccess::Alignment::Aligned)
 		{
-			//AddressErrorException();
-			return 0;
+			if (number_of_bytes != sizeof T)
+			{
+				//AddressErrorException();
+				return 0;
+			}
 		}
 
 		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_read, virtual_address);
-		bool error = false; /* error from translation */
+		bool error = false; /* todo: error from translation */
 		if (error)
 			return 0;
 
-		const T value = Memory::ReadPhysical<T>(number_of_bytes, physical_address);
-		return 0;
+		if constexpr (sizeof T == 1)
+			return T(Memory::ReadPhysical<1>(physical_address));
+		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
+			return T(Memory::ReadPhysical<sizeof T>(physical_address));
+		else
+		{
+			/* This branch will be worth it; the fact that we can pass the number of bytes to access
+			   as a template argument means that, among other things, memcpy will be optimized away
+			   to 'mov' instructions, when we later go to actually access data. */
+			switch (number_of_bytes)
+			{
+			case 1: return T(Memory::ReadPhysical<1>(physical_address));
+			case 2: return T(Memory::ReadPhysical<2>(physical_address));
+			case 3: return T(Memory::ReadPhysical<3>(physical_address));
+			case 4: return T(Memory::ReadPhysical<4>(physical_address));
+			case 5: return T(Memory::ReadPhysical<5>(physical_address));
+			case 6: return T(Memory::ReadPhysical<6>(physical_address));
+			case 7: return T(Memory::ReadPhysical<7>(physical_address));
+			case 8: return T(Memory::ReadPhysical<8>(physical_address));
+			default: assert(false); return T(0);
+			}
+		}
 	}
 
 	template<std::integral T, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
@@ -96,18 +119,42 @@ namespace VR4300
 	{
 		const std::size_t number_of_bytes =
 			MemoryUtils::GetNumberOfBytesToAccess<T, alignment>(virtual_address);
-		if (number_of_bytes != sizeof T)
+		if constexpr (sizeof T > 1 && alignment == MemoryAccess::Alignment::Aligned)
 		{
-			//AddressErrorException();
-			return;
+			if (number_of_bytes != sizeof T)
+			{
+				//AddressErrorException();
+				return;
+			}
 		}
 
 		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_write, virtual_address);
-		bool error = false; /* error from translation */
+		bool error = false; /* todo: error from translation */
 		if (error)
 			return;
 
-		Memory::WritePhysical<T>(number_of_bytes, virtual_address, data);
+		if constexpr (sizeof T == 1)
+			Memory::WritePhysical<1>(physical_address, data);
+		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
+			Memory::WritePhysical<sizeof T>(physical_address, data);
+		else
+		{
+			/* This branch will be worth it; the fact that we can pass the number of bytes to access
+			   as a template argument means that, among other things, memcpy will be optimized away
+			   to 'mov' instructions, when we later go to actually access data. */
+			switch (number_of_bytes)
+			{
+			break; case 1: Memory::WritePhysical<1>(physical_address, data);
+			break; case 2: Memory::WritePhysical<2>(physical_address, data);
+			break; case 3: Memory::WritePhysical<3>(physical_address, data);
+			break; case 4: Memory::WritePhysical<4>(physical_address, data);
+			break; case 5: Memory::WritePhysical<5>(physical_address, data);
+			break; case 6: Memory::WritePhysical<6>(physical_address, data);
+			break; case 7: Memory::WritePhysical<7>(physical_address, data);
+			break; case 8: Memory::WritePhysical<8>(physical_address, data);
+			break; default: assert(false);
+			}
+		}
 	}
 }
 
