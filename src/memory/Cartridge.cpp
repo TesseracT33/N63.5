@@ -35,6 +35,6 @@ namespace Cartridge
 
 	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr)
 	{
-		return rom.size() - (addr % rom.size());
+		return rom.size() - (start_addr % rom.size());
 	}
 }
