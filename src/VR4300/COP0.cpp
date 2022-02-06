@@ -150,8 +150,8 @@ namespace VR4300
 	}
 
 
-	template void CP0_Move<CP0_Instruction::MTC0>(const u32 instr_code);
-	template void CP0_Move<CP0_Instruction::MFC0>(const u32 instr_code);
-	template void CP0_Move<CP0_Instruction::DMTC0>(const u32 instr_code);
-	template void CP0_Move<CP0_Instruction::DMFC0>(const u32 instr_code);
+	template void CP0_Move<CP0_Instruction::MTC0>(const u32);
+	template void CP0_Move<CP0_Instruction::MFC0>(const u32);
+	template void CP0_Move<CP0_Instruction::DMTC0>(const u32);
+	template void CP0_Move<CP0_Instruction::DMFC0>(const u32);
 }

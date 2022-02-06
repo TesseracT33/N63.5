@@ -152,6 +152,6 @@ namespace VR4300
 	}
 
 
-	template void TLB_MissException<MemoryAccess::Operation::Read>(const u32 bad_virt_addr, const u32 bad_VPN2);
-	template void TLB_MissException<MemoryAccess::Operation::Write>(const u32 bad_virt_addr, const u32 bad_VPN2);
+	template void TLB_MissException<MemoryAccess::Operation::Read>(const u32, const u32);
+	template void TLB_MissException<MemoryAccess::Operation::Write>(const u32, const u32);
 }

@@ -352,6 +352,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			static_assert(false, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
 		}
+
+		p_cycle_counter += 1;
 	}
 
 	template<CPU_Instruction instr>
@@ -494,6 +496,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			static_assert(false, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
 		}
+
+		p_cycle_counter += 1;
 	}
 
 
@@ -1062,115 +1066,115 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		assert(false);
 	}
 
-	template void Load<CPU_Instruction::LB>(const u32 instr_code);
-	template void Load<CPU_Instruction::LBU>(const u32 instr_code);
-	template void Load<CPU_Instruction::LH>(const u32 instr_code);
-	template void Load<CPU_Instruction::LHU>(const u32 instr_code);
-	template void Load<CPU_Instruction::LW>(const u32 instr_code);
-	template void Load<CPU_Instruction::LWU>(const u32 instr_code);
-	template void Load<CPU_Instruction::LWL>(const u32 instr_code);
-	template void Load<CPU_Instruction::LWR>(const u32 instr_code);
-	template void Load<CPU_Instruction::LD>(const u32 instr_code);
-	template void Load<CPU_Instruction::LDL>(const u32 instr_code);
-	template void Load<CPU_Instruction::LDR>(const u32 instr_code);
-	template void Load<CPU_Instruction::LL>(const u32 instr_code);
-	template void Load<CPU_Instruction::LLD>(const u32 instr_code);
+	template void Load<CPU_Instruction::LB>(const u32);
+	template void Load<CPU_Instruction::LBU>(const u32);
+	template void Load<CPU_Instruction::LH>(const u32);
+	template void Load<CPU_Instruction::LHU>(const u32);
+	template void Load<CPU_Instruction::LW>(const u32);
+	template void Load<CPU_Instruction::LWU>(const u32);
+	template void Load<CPU_Instruction::LWL>(const u32);
+	template void Load<CPU_Instruction::LWR>(const u32);
+	template void Load<CPU_Instruction::LD>(const u32);
+	template void Load<CPU_Instruction::LDL>(const u32);
+	template void Load<CPU_Instruction::LDR>(const u32);
+	template void Load<CPU_Instruction::LL>(const u32);
+	template void Load<CPU_Instruction::LLD>(const u32);
 
-	template void Store<CPU_Instruction::SB>(const u32 instr_code);
-	template void Store<CPU_Instruction::SH>(const u32 instr_code);
-	template void Store<CPU_Instruction::SW>(const u32 instr_code);
-	template void Store<CPU_Instruction::SWL>(const u32 instr_code);
-	template void Store<CPU_Instruction::SWR>(const u32 instr_code);
-	template void Store<CPU_Instruction::SC>(const u32 instr_code);
-	template void Store<CPU_Instruction::SCD>(const u32 instr_code);
-	template void Store<CPU_Instruction::SD>(const u32 instr_code);
-	template void Store<CPU_Instruction::SDL>(const u32 instr_code);
-	template void Store<CPU_Instruction::SDR>(const u32 instr_code);
+	template void Store<CPU_Instruction::SB>(const u32);
+	template void Store<CPU_Instruction::SH>(const u32);
+	template void Store<CPU_Instruction::SW>(const u32);
+	template void Store<CPU_Instruction::SWL>(const u32);
+	template void Store<CPU_Instruction::SWR>(const u32);
+	template void Store<CPU_Instruction::SC>(const u32);
+	template void Store<CPU_Instruction::SCD>(const u32);
+	template void Store<CPU_Instruction::SD>(const u32);
+	template void Store<CPU_Instruction::SDL>(const u32);
+	template void Store<CPU_Instruction::SDR>(const u32);
 
-	template void ALU_Immediate<CPU_Instruction::ADDI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::ADDIU>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::SLTI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::SLTIU>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::ANDI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::ORI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::XORI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::LUI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::DADDI>(const u32 instr_code);
-	template void ALU_Immediate<CPU_Instruction::DADDIU>(const u32 instr_code);
+	template void ALU_Immediate<CPU_Instruction::ADDI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::ADDIU>(const u32);
+	template void ALU_Immediate<CPU_Instruction::SLTI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::SLTIU>(const u32);
+	template void ALU_Immediate<CPU_Instruction::ANDI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::ORI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::XORI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::LUI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::DADDI>(const u32);
+	template void ALU_Immediate<CPU_Instruction::DADDIU>(const u32);
 
-	template void ALU_ThreeOperand<CPU_Instruction::ADD>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::ADDU>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::SUB>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::SUBU>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::SLT>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::SLTU>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::AND>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::OR>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::XOR>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::NOR>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::DADD>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::DADDU>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::DSUB>(const u32 instr_code);
-	template void ALU_ThreeOperand<CPU_Instruction::DSUBU>(const u32 instr_code);
+	template void ALU_ThreeOperand<CPU_Instruction::ADD>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::ADDU>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::SUB>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::SUBU>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::SLT>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::SLTU>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::AND>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::OR>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::XOR>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::NOR>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::DADD>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::DADDU>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::DSUB>(const u32);
+	template void ALU_ThreeOperand<CPU_Instruction::DSUBU>(const u32);
 
-	template void ALU_Shift<CPU_Instruction::SLL>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::SRL>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::SRA>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::SLLV>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::SRLV>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::SRAV>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSLL>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSRL>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSRA>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSLLV>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSRLV>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSRAV>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSLL32>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSRL32>(const u32 instr_code);
-	template void ALU_Shift<CPU_Instruction::DSRA32>(const u32 instr_code);
+	template void ALU_Shift<CPU_Instruction::SLL>(const u32);
+	template void ALU_Shift<CPU_Instruction::SRL>(const u32);
+	template void ALU_Shift<CPU_Instruction::SRA>(const u32);
+	template void ALU_Shift<CPU_Instruction::SLLV>(const u32);
+	template void ALU_Shift<CPU_Instruction::SRLV>(const u32);
+	template void ALU_Shift<CPU_Instruction::SRAV>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSLL>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSRL>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSRA>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSLLV>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSRLV>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSRAV>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSLL32>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSRL32>(const u32);
+	template void ALU_Shift<CPU_Instruction::DSRA32>(const u32);
 
-	template void ALU_MulDiv<CPU_Instruction::MULT>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::MULTU>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::DIV>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::DIVU>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::DMULT>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::DMULTU>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::DDIV>(const u32 instr_code);
-	template void ALU_MulDiv<CPU_Instruction::DDIVU>(const u32 instr_code);
+	template void ALU_MulDiv<CPU_Instruction::MULT>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::MULTU>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::DIV>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::DIVU>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::DMULT>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::DMULTU>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::DDIV>(const u32);
+	template void ALU_MulDiv<CPU_Instruction::DDIVU>(const u32);
 
-	template void Jump<CPU_Instruction::J>(const u32 instr_code);
-	template void Jump<CPU_Instruction::JAL>(const u32 instr_code);
-	template void Jump<CPU_Instruction::JR>(const u32 instr_code);
-	template void Jump<CPU_Instruction::JALR>(const u32 instr_code);
+	template void Jump<CPU_Instruction::J>(const u32);
+	template void Jump<CPU_Instruction::JAL>(const u32);
+	template void Jump<CPU_Instruction::JR>(const u32);
+	template void Jump<CPU_Instruction::JALR>(const u32);
 
-	template void Branch<CPU_Instruction::BEQ>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BNE>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BLEZ>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BGTZ>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BLTZ>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BGEZ>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BLTZAL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BGEZAL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BEQL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BNEL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BLEZL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BGTZL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BLTZL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BGEZL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BLTZALL>(const u32 instr_code);
-	template void Branch<CPU_Instruction::BGEZALL>(const u32 instr_code);
+	template void Branch<CPU_Instruction::BEQ>(const u32);
+	template void Branch<CPU_Instruction::BNE>(const u32);
+	template void Branch<CPU_Instruction::BLEZ>(const u32);
+	template void Branch<CPU_Instruction::BGTZ>(const u32);
+	template void Branch<CPU_Instruction::BLTZ>(const u32);
+	template void Branch<CPU_Instruction::BGEZ>(const u32);
+	template void Branch<CPU_Instruction::BLTZAL>(const u32);
+	template void Branch<CPU_Instruction::BGEZAL>(const u32);
+	template void Branch<CPU_Instruction::BEQL>(const u32);
+	template void Branch<CPU_Instruction::BNEL>(const u32);
+	template void Branch<CPU_Instruction::BLEZL>(const u32);
+	template void Branch<CPU_Instruction::BGTZL>(const u32);
+	template void Branch<CPU_Instruction::BLTZL>(const u32);
+	template void Branch<CPU_Instruction::BGEZL>(const u32);
+	template void Branch<CPU_Instruction::BLTZALL>(const u32);
+	template void Branch<CPU_Instruction::BGEZALL>(const u32);
 
-	template void Trap_ThreeOperand<CPU_Instruction::TGE>(const u32 instr_code);
-	template void Trap_ThreeOperand<CPU_Instruction::TGEU>(const u32 instr_code);
-	template void Trap_ThreeOperand<CPU_Instruction::TLT>(const u32 instr_code);
-	template void Trap_ThreeOperand<CPU_Instruction::TLTU>(const u32 instr_code);
-	template void Trap_ThreeOperand<CPU_Instruction::TEQ>(const u32 instr_code);
-	template void Trap_ThreeOperand<CPU_Instruction::TNE>(const u32 instr_code);
+	template void Trap_ThreeOperand<CPU_Instruction::TGE>(const u32);
+	template void Trap_ThreeOperand<CPU_Instruction::TGEU>(const u32);
+	template void Trap_ThreeOperand<CPU_Instruction::TLT>(const u32);
+	template void Trap_ThreeOperand<CPU_Instruction::TLTU>(const u32);
+	template void Trap_ThreeOperand<CPU_Instruction::TEQ>(const u32);
+	template void Trap_ThreeOperand<CPU_Instruction::TNE>(const u32);
 
-	template void Trap_Immediate<CPU_Instruction::TGEI>(const u32 instr_code);
-	template void Trap_Immediate<CPU_Instruction::TGEIU>(const u32 instr_code);
-	template void Trap_Immediate<CPU_Instruction::TLTI>(const u32 instr_code);
-	template void Trap_Immediate<CPU_Instruction::TLTIU>(const u32 instr_code);
-	template void Trap_Immediate<CPU_Instruction::TEQI>(const u32 instr_code);
-	template void Trap_Immediate<CPU_Instruction::TNEI>(const u32 instr_code);
+	template void Trap_Immediate<CPU_Instruction::TGEI>(const u32);
+	template void Trap_Immediate<CPU_Instruction::TGEIU>(const u32);
+	template void Trap_Immediate<CPU_Instruction::TLTI>(const u32);
+	template void Trap_Immediate<CPU_Instruction::TLTIU>(const u32);
+	template void Trap_Immediate<CPU_Instruction::TEQI>(const u32);
+	template void Trap_Immediate<CPU_Instruction::TNEI>(const u32);
 }

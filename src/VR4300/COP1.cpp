@@ -611,43 +611,43 @@ namespace VR4300
 	}
 
 
-	template void FPU_Load<FPU_Instruction::LWC1>(const u32 instr_code);
-	template void FPU_Load<FPU_Instruction::LDC1>(const u32 instr_code);
+	template void FPU_Load<FPU_Instruction::LWC1>(const u32);
+	template void FPU_Load<FPU_Instruction::LDC1>(const u32);
 
-	template void FPU_Store<FPU_Instruction::SWC1>(const u32 instr_code);
-	template void FPU_Store<FPU_Instruction::SDC1>(const u32 instr_code);
+	template void FPU_Store<FPU_Instruction::SWC1>(const u32);
+	template void FPU_Store<FPU_Instruction::SDC1>(const u32);
 
-	template void FPU_Move<FPU_Instruction::MTC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instruction::MFC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instruction::CTC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instruction::CFC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instruction::DMTC1>(const u32 instr_code);
-	template void FPU_Move<FPU_Instruction::DMFC1>(const u32 instr_code);
+	template void FPU_Move<FPU_Instruction::MTC1>(const u32);
+	template void FPU_Move<FPU_Instruction::MFC1>(const u32);
+	template void FPU_Move<FPU_Instruction::CTC1>(const u32);
+	template void FPU_Move<FPU_Instruction::CFC1>(const u32);
+	template void FPU_Move<FPU_Instruction::DMTC1>(const u32);
+	template void FPU_Move<FPU_Instruction::DMFC1>(const u32);
 
-	template void FPU_Convert<FPU_Instruction::CVT_S>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::CVT_D>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::CVT_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::CVT_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::ROUND_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::ROUND_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::TRUNC_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::TRUNC_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::CEIL_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::CEIL_W>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::FLOOR_L>(const u32 instr_code);
-	template void FPU_Convert<FPU_Instruction::FLOOR_W>(const u32 instr_code);
+	template void FPU_Convert<FPU_Instruction::CVT_S>(const u32);
+	template void FPU_Convert<FPU_Instruction::CVT_D>(const u32);
+	template void FPU_Convert<FPU_Instruction::CVT_L>(const u32);
+	template void FPU_Convert<FPU_Instruction::CVT_W>(const u32);
+	template void FPU_Convert<FPU_Instruction::ROUND_L>(const u32);
+	template void FPU_Convert<FPU_Instruction::ROUND_W>(const u32);
+	template void FPU_Convert<FPU_Instruction::TRUNC_L>(const u32);
+	template void FPU_Convert<FPU_Instruction::TRUNC_W>(const u32);
+	template void FPU_Convert<FPU_Instruction::CEIL_L>(const u32);
+	template void FPU_Convert<FPU_Instruction::CEIL_W>(const u32);
+	template void FPU_Convert<FPU_Instruction::FLOOR_L>(const u32);
+	template void FPU_Convert<FPU_Instruction::FLOOR_W>(const u32);
 
-	template void FPU_Compute<FPU_Instruction::ADD>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::SUB>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::MUL>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::DIV>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::ABS>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::MOV>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::NEG>(const u32 instr_code);
-	template void FPU_Compute<FPU_Instruction::SQRT>(const u32 instr_code);
+	template void FPU_Compute<FPU_Instruction::ADD>(const u32);
+	template void FPU_Compute<FPU_Instruction::SUB>(const u32);
+	template void FPU_Compute<FPU_Instruction::MUL>(const u32);
+	template void FPU_Compute<FPU_Instruction::DIV>(const u32);
+	template void FPU_Compute<FPU_Instruction::ABS>(const u32);
+	template void FPU_Compute<FPU_Instruction::MOV>(const u32);
+	template void FPU_Compute<FPU_Instruction::NEG>(const u32);
+	template void FPU_Compute<FPU_Instruction::SQRT>(const u32);
 
-	template void FPU_Branch<FPU_Instruction::BC1T>(const u32 instr_code);
-	template void FPU_Branch<FPU_Instruction::BC1F>(const u32 instr_code);
-	template void FPU_Branch<FPU_Instruction::BC1TL>(const u32 instr_code);
-	template void FPU_Branch<FPU_Instruction::BC1FL>(const u32 instr_code);
+	template void FPU_Branch<FPU_Instruction::BC1T>(const u32);
+	template void FPU_Branch<FPU_Instruction::BC1F>(const u32);
+	template void FPU_Branch<FPU_Instruction::BC1TL>(const u32);
+	template void FPU_Branch<FPU_Instruction::BC1FL>(const u32);
 }
