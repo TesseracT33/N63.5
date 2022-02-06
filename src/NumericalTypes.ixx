@@ -1,5 +1,6 @@
 export module NumericalTypes;
 
+import <cstddef>;
 import <cstdint>;
 
 export
@@ -18,4 +19,6 @@ export
 
 	typedef float       f32;
 	typedef double      f64;
+
+	using std::size_t;
 }
