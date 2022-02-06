@@ -36,5 +36,6 @@
     <ClCompile Include="src\interface\VideoInterface.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />
     <ClCompile Include="src\memory\DMA.ixx" />
+    <ClCompile Include="src\memory\DMA.cpp" />
   </ItemGroup>
 </Project>

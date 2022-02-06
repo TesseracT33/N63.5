@@ -1,5 +1,6 @@
 export module PeripheralInterface;
 
+import DMA;
 import MemoryUtils;
 import NumericalTypes;
 
@@ -49,6 +50,19 @@ namespace PeripheralInterface
 		constexpr std::size_t number_of_bytes_to_write =
 			number_of_bytes <= 4 - start ? number_of_bytes : 4 - start;
 		MemoryUtils::GenericWrite<number_of_bytes_to_write>(&mem[start + PI_RD_LEN], data);
+
+		/* Initialize DMA transfer */
+		std::size_t dma_length;
+		std::memcpy(&dma_length, &mem[PI_RD_LEN], 3); /* total amount of bytes to transfer - 1 */
+		dma_length++;
+
+		u32 rdram_start_addr;
+		std::memcpy(&rdram_start_addr, &mem[PI_DRAM_ADDR], 3);
+
+		u32 cart_start_addr;
+		std::memcpy(&cart_start_addr, &mem[PI_CART_ADDR], 3);
+
+		DMA::Init<DMA::Location::RDRAM, DMA::Location::Cartridge>(dma_length, rdram_start_addr, cart_start_addr);
 	}
 
 
@@ -58,6 +72,19 @@ namespace PeripheralInterface
 		constexpr std::size_t number_of_bytes_to_write =
 			number_of_bytes <= 4 - start ? number_of_bytes : 4 - start;
 		MemoryUtils::GenericWrite<number_of_bytes_to_write>(&mem[start + PI_WR_LEN], data);
+
+		/* Initialize DMA transfer */
+		std::size_t dma_length;
+		std::memcpy(&dma_length, &mem[PI_WR_LEN], 3); /* total amount of bytes to transfer - 1 */
+		dma_length++;
+
+		u32 cart_start_addr;
+		std::memcpy(&cart_start_addr, &mem[PI_CART_ADDR], 3);
+
+		u32 rdram_start_addr;
+		std::memcpy(&rdram_start_addr, &mem[PI_DRAM_ADDR], 3);
+
+		DMA::Init<DMA::Location::Cartridge, DMA::Location::RDRAM>(dma_length, cart_start_addr, rdram_start_addr);
 	}
 
 

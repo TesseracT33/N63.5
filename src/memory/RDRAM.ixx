@@ -9,8 +9,8 @@ import <vector>;
 
 namespace RDRAM
 {
-	constexpr size_t rdram_standard_size = 0x400000;
-	constexpr size_t rdram_expanded_size = 0x800000;
+	constexpr std::size_t rdram_standard_size = 0x400000;
+	constexpr std::size_t rdram_expanded_size = 0x800000;
 
 	std::vector<u8> RDRAM(rdram_standard_size, 0);
 
@@ -69,6 +69,16 @@ namespace RDRAM
 		void WriteRegisterRegion(const u32 address, const auto data)
 		{
 			assert(false);
+		}
+
+		u8* GetPointer(const u32 addr)
+		{
+			return RDRAM.data() + (addr & (RDRAM.size() - 1)); /* AND with either $3FFFFF or $7FFFFF. */
+		}
+
+		std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr)
+		{
+			return RDRAM.size() - (start_addr & (RDRAM.size() - 1));
 		}
 	}
 }

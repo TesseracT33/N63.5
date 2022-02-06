@@ -25,4 +25,16 @@ namespace Cartridge
 
 		return true;
 	}
+
+
+	u8* GetPointerToROM(const u32 addr)
+	{
+		return rom.data() + (addr % rom.size());
+	}
+
+
+	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr)
+	{
+		return rom.size() - (addr % rom.size());
+	}
 }
