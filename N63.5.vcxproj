@@ -159,7 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\BitUtils.ixx" />
+    <ClCompile Include="src\Utils\BitUtils.ixx" />
     <ClCompile Include="src\HostSystem.ixx" />
     <ClCompile Include="src\interface\MIPS_Interface.cpp" />
     <ClCompile Include="src\interface\MIPS_Interface.ixx" />

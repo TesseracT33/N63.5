@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClCompile Include="src\VR4300\CPU.cpp" />
     <ClCompile Include="src\NumericalTypes.ixx" />
-    <ClCompile Include="src\BitUtils.ixx" />
+    <ClCompile Include="src\Utils\BitUtils.ixx" />
     <ClCompile Include="src\VR4300\COP0.cpp" />
     <ClCompile Include="src\VR4300\COP1.cpp" />
     <ClCompile Include="src\VR4300\Exceptions.cpp" />
