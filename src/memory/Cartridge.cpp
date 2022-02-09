@@ -2,6 +2,8 @@ module Cartridge;
 
 import UserMessage;
 
+#include "../Utils/EnumerateTemplateSpecializations.h"
+
 namespace Cartridge
 {
 	bool LoadROM(const std::string& rom_path)
@@ -37,4 +39,38 @@ namespace Cartridge
 	{
 		return rom.size() - (start_addr % rom.size());
 	}
+
+
+	template<std::integral Int>
+	Int ReadROM(const u32 addr)
+	{
+		return Int(0);
+	}
+
+
+	template<std::integral Int>
+	Int ReadSRAM(const u32 addr)
+	{
+		return Int(0);
+	}
+
+
+	template<std::size_t number_of_bytes>
+	void WriteROM(const u32 addr, const auto data)
+	{
+		assert(false);
+	}
+
+
+	template<std::size_t number_of_bytes>
+	void WriteSRAM(const u32 addr, const auto data)
+	{
+
+	}
+
+
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadROM, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadSRAM, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteROM, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteSRAM, const u32)
 }

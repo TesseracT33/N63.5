@@ -1,9 +1,5 @@
 export module VR4300:Registers;
 
-import :COP1;
-import :MMU;
-import :Operation;
-
 import NumericalTypes;
 
 import <array>;
@@ -22,6 +18,13 @@ namespace VR4300
 		{ t.NotifyCpuAfterWrite() } -> std::convertible_to<void>;
 	};
 
+	template<typename T>
+	concept FPU_NumericType =
+		std::is_same_v<f32, typename std::remove_cv<T>::type> ||
+		std::is_same_v<f64, typename std::remove_cv<T>::type> ||
+		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
+		std::is_same_v<s64, typename std::remove_cv<T>::type>;
+
 	u64 PC{}; /* Program counter */
 
 	u64 HI{}, LO{}; /* Contain the result of a double-word multiplication or division. */
@@ -39,7 +42,7 @@ namespace VR4300
 	} GPR;
 
 	/* COP0 registers. Used for exception handling and memory management. */
-	struct
+	struct COP0Registers
 	{
 		struct /* (0) */
 		{
@@ -95,7 +98,7 @@ namespace VR4300
 
 		u32 compare; /* (11) */
 
-		struct /* (12) */
+		struct StatusRegister /* (12) */
 		{
 			u32 IE : 1; /* Specifies and indicates global interrupt enable (0: disable interrupts; 1: enable interrupts) */
 			u32 EXL : 1; /* Specifies and indiciates exception level (0: normal; 1: exception) */
@@ -119,11 +122,7 @@ namespace VR4300
 			u32 RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 			u32 CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 
-			void NotifyCpuAfterWrite()
-			{
-				AssignActiveVirtualToPhysicalFunctions();
-				SetNewEndianness();
-			}
+			void NotifyCpuAfterWrite() {}
 		} status{};
 
 		struct /* (13) */
@@ -147,7 +146,7 @@ namespace VR4300
 			u32 : 16;
 		} const pr_id{};
 
-		struct /* (16) */
+		struct ConfigRegister /* (16) */
 		{
 			u32 K0 : 3; /* Sets coherency algorithm of kseg0 (010 => cache is not used; else => cache is used). */
 			u32 CU : 1; /* RFU. However, can be read or written by software. */
@@ -158,10 +157,7 @@ namespace VR4300
 			u32 EC : 3; /* Operating frequency ratio (read-only). */
 			u32 : 1; /* Returns 0 when read. */
 
-			void NotifyCpuAfterWrite()
-			{
-				SetNewEndianness();
-			}
+			void NotifyCpuAfterWrite(){}
 		} config{};
 
 		u32 LL_addr; /* (17); Contains the physical address read by the most recent Load Linked instruction. */
@@ -200,113 +196,15 @@ namespace VR4300
 		u64 error_epc; /* (30) */
 
 
-		u64 Get(const size_t register_index) const
-		{
-			auto GetStructReg = [](const auto& structure) -> u64 /* Non-UB type punning between a struct register and an u32/u64. */
-			{
-				if constexpr (sizeof structure == sizeof u64)
-					return std::bit_cast<u64, std::remove_reference_t<decltype(structure)>>(structure);
-				else if constexpr (sizeof structure == sizeof u32)
-					return static_cast<u64>(std::bit_cast<u32, std::remove_reference_t<decltype(structure)>>(structure));
-				else
-					static_assert(false, "Incorrectly sized struct given.");
-			};
-
-			switch (register_index)
-			{
-			case 0: return GetStructReg(index);
-			case 1: return GetStructReg(random);
-			case 2: return GetStructReg(entry_lo_0);
-			case 3: return GetStructReg(entry_lo_1);
-			case 4: return GetStructReg(context);
-			case 5: return GetStructReg(page_mask);
-			case 6: return wired;
-			case 8: return bad_v_addr;
-			case 9: return count;
-			case 10: return GetStructReg(entry_hi);
-			case 11: return compare;
-			case 12: return GetStructReg(status);
-			case 13: return GetStructReg(cause);
-			case 14: return epc;
-			case 15: return GetStructReg(pr_id);
-			case 16: return GetStructReg(config);
-			case 17: return LL_addr;
-			case 18: return GetStructReg(watch_lo);
-			case 19: return watch_hi_p_addr_1;
-			case 20: return GetStructReg(x_context);
-			case 26: return parity_err_diagnostic;
-			case 28: return GetStructReg(tag_lo);
-			case 30: return error_epc;
-			default: return 0;
-			}
-		}
-
-		void Set(const size_t register_index, const u64 value)
-		{
-			auto SetStructReg = [](auto& structure, const u64 value) -> void /* Non-UB type punning between a struct register and an u32/u64. */
-			{
-				if constexpr (sizeof structure == sizeof u64)
-					structure = std::bit_cast<std::remove_reference_t<decltype(structure)>, u64>(value);
-				else if constexpr (sizeof structure == sizeof u32)
-					structure = std::bit_cast<std::remove_reference_t<decltype(structure)>, u32>(static_cast<u32>(value));
-				else
-					static_assert(false, "Incorrectly sized struct given.");
-
-				/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
-				if constexpr (notifies_cpu_on_write<decltype(structure)>)
-					structure.NotifyCpuAfterWrite();
-			};
-
-			switch (register_index)
-			{
-			break; case 0: SetStructReg(index, value & 0x800000CF);
-			break; case 1: SetStructReg(random, value & 0x3F);
-			break; case 2: SetStructReg(entry_lo_0, value & 0xCFFFFFFF);
-			break; case 3: SetStructReg(entry_lo_1, value & 0xCFFFFFFF);
-			break; case 4: SetStructReg(context, value & 0xFFFFFFF0);
-			break; case 5: SetStructReg(page_mask, value & 0x01FFE000);
-			break; case 6: wired = value;
-			break; case 8: bad_v_addr = value;
-			break; case 9: count = u32(value);
-			break; case 10: SetStructReg(entry_hi, value & 0xC00000FFFFFFE0FF);
-			break; case 11: compare = u32(value);
-			break; case 12: SetStructReg(status, value);
-			break; case 13: SetStructReg(cause, value & 0xB000FF7C);
-			break; case 14: epc = value;
-			break; case 16: SetStructReg(config, value & 0x7F00800F | 0xC6460);
-			break; case 17: LL_addr = u32(value);
-			break; case 18: SetStructReg(watch_lo, value & 0xFFFFFFFB);
-			break; case 19: watch_hi_p_addr_1 = value;
-			break; case 20: SetStructReg(x_context, value & 0xFFFFFFFF'FFFFFFF0);
-			break; case 26: parity_err_diagnostic = value;
-			break; case 28: SetStructReg(tag_lo, value & 0x0FFFFFC0);
-			break; case 30: error_epc = value;
-			}
-		}
+		u64 Get(const size_t register_index) const;
+		void Set(const size_t register_index, const u64 value);
 	} COP0_reg{};
 
 	/* Floating point control register #31 */
-	struct
+	struct FPUControl31
 	{
-		void Set(const u32 data)
-		{
-			/* TODO */
-			/* after updating RM... */
-			const int new_rounding_mode = [&] {
-				switch (RM)
-				{
-				case 0b00: return FE_TONEAREST;  /* RN */
-				case 0b01: return FE_TOWARDZERO; /* RZ */
-				case 0b10: return FE_UPWARD;     /* RP */
-				case 0b11: return FE_DOWNWARD;   /* RM */
-				default: return 0; /* impossible */
-				}
-			}();
-			std::fesetround(new_rounding_mode);
-			/* TODO: initial rounding mode? */
-		}
-
-		u32 Get() const { return std::bit_cast<u32, std::remove_reference_t<decltype(*this)>>(*this); }
+		void Set(const u32 data);
+		u32 Get() const;
 
 		u32 RM : 2;
 
@@ -336,96 +234,20 @@ namespace VR4300
 	} FCR31{};
 
 	/* Floating point control registers. */
-	struct
+	struct FPUControl
 	{
-		u32 Get(const size_t index) const
-		{
-			if (index == 0)
-				return 0;
-			else if (index == 31)
-				return FCR31.Get();
-			else
-				return 0; /* TODO ??? */
-		}
-
-		void Set(const size_t index, const u32 data)
-		{
-			if (index == 0)
-				;
-			else if (index == 31)
-				FCR31.Set(data);
-			else
-				; /* TODO ??? */
-		}
+		u32 Get(const size_t index) const;
+		void Set(const size_t index, const u32 data);
 	} FPU_control;
 
 	/* General-purpose floating point registers. */
-	struct
+	struct FPURegister
 	{
 		template<typename FPU_NumericType>
-		FPU_NumericType Get(const size_t index) const
-		{
-			if constexpr (std::is_same_v<FPU_NumericType, s32>)
-				return s32(FGR[index]);
-			else if constexpr (std::is_same_v<FPU_NumericType, f32>)
-				return std::bit_cast<f32, s32>(s32(FGR[index]));
-			else if constexpr (std::is_same_v<FPU_NumericType, s64>)
-			{
-				if (COP0_reg.status.FR)
-					return FGR[index];
-				else
-				{ /* If the index is odd, then the result is undefined. */
-					const auto aligned_index = index & 0x1E;
-					return FGR[aligned_index] & 0xFFFFFFFF | FGR[aligned_index + 1] << 32;
-				}
-			}
-			else if constexpr (std::is_same_v<FPU_NumericType, f64>)
-			{
-				if (COP0_reg.status.FR)
-					return std::bit_cast<f64, s64>(FGR[index]);
-				else
-				{ /* If the index is odd, then the result is undefined. */
-					const auto aligned_index = index & 0x1E;
-					return std::bit_cast<f64, s64>(FGR[aligned_index] & 0xFFFFFFFF | FGR[aligned_index + 1] << 32);
-				}
-			}
-			else
-				static_assert(false);
-		}
+		FPU_NumericType Get(const size_t index) const;
 
 		template<typename FPU_NumericType>
-		void Set(const size_t index, const FPU_NumericType data)
-		{
-			if constexpr (std::is_same_v<FPU_NumericType, s32>)
-				FGR[index] = data;
-			else if constexpr (std::is_same_v<FPU_NumericType, f32>)
-				FGR[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
-			else if constexpr (std::is_same_v<FPU_NumericType, s64>)
-			{
-				if (COP0_reg.status.FR)
-					FGR[index] = data;
-				else
-				{ /* If the index is odd, then the result is undefined. */
-					const auto aligned_index = index & 0x1E;
-					FGR[aligned_index] = data & 0xFFFFFFFF;
-					FGR[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
-				}
-			}
-			else if constexpr (std::is_same_v<FPU_NumericType, f64>)
-			{
-				if (COP0_reg.status.FR)
-					FGR[index] = std::bit_cast<s64, f64>(data);
-				else
-				{ /* If the index is odd, then the result is undefined. */
-					const auto aligned_index = index & 0x1E;
-					const s64 conv = std::bit_cast<s64, f64>(data);
-					FGR[aligned_index] = conv & 0xFFFFFFFF;
-					FGR[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
-				}
-			}
-			else
-				static_assert(false);
-		}
+		void Set(const size_t index, const FPU_NumericType data);
 
 	private:
 		std::array<s64, 32> FGR{};

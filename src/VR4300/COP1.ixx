@@ -5,19 +5,10 @@ import <cmath>;
 import <concepts>;
 import <type_traits>;
 
-import :COP0;
-
 import NumericalTypes;
 
 namespace VR4300
 {
-	template<typename T>
-	concept FPU_NumericType =
-		std::is_same_v<f32, typename std::remove_cv<T>::type> ||
-		std::is_same_v<f64, typename std::remove_cv<T>::type> ||
-		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
-		std::is_same_v<s64, typename std::remove_cv<T>::type>;
-
 	enum class FPU_Instruction
 	{
 		/* Load/store/transfer instructions */

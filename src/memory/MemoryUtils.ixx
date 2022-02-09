@@ -19,7 +19,7 @@ export namespace MemoryUtils
 	}
 
 	template<std::size_t number_of_bytes>
-	auto ConstructUnsignedIntegral(const auto data)
+	constexpr auto ConstructUnsignedIntegral(const auto data)
 	{
 		     if constexpr (number_of_bytes == 1) return u8(data);
 		else if constexpr (number_of_bytes == 2) return u16(data);
@@ -29,26 +29,12 @@ export namespace MemoryUtils
 	}
 
 	template<std::size_t number_of_bytes>
-	auto ConstructSignedIntegral(const auto data)
+	constexpr auto ConstructSignedIntegral(const auto data)
 	{
 		     if constexpr (number_of_bytes == 1) return s8(data);
 		else if constexpr (number_of_bytes == 2) return s16(data);
 		else if constexpr (number_of_bytes <= 4) return s32(data);
 		else if constexpr (number_of_bytes <= 8) return s64(data);
 		else                                     static_assert(false);
-	}
-
-	template<std::size_t number_of_bytes>
-	auto GenericRead(const void* source)
-	{
-		auto ret = ConstructUnsignedIntegral<number_of_bytes>(0);
-		std::memcpy(&ret, source, number_of_bytes);
-		return ret;
-	}
-
-	template<std::size_t number_of_bytes>
-	void GenericWrite(void* destination, const auto data)
-	{
-		std::memcpy(destination, &data, number_of_bytes);
 	}
 }

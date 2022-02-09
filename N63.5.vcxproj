@@ -161,9 +161,13 @@
   <ItemGroup>
     <ClCompile Include="src\BitUtils.ixx" />
     <ClCompile Include="src\HostSystem.ixx" />
+    <ClCompile Include="src\interface\MIPS_Interface.cpp" />
     <ClCompile Include="src\interface\MIPS_Interface.ixx" />
+    <ClCompile Include="src\interface\PeripheralInterface.cpp" />
     <ClCompile Include="src\interface\PeripheralInterface.ixx" />
+    <ClCompile Include="src\interface\SerialInterface.cpp" />
     <ClCompile Include="src\interface\SerialInterface.ixx" />
+    <ClCompile Include="src\interface\VideoInterface.cpp" />
     <ClCompile Include="src\interface\VideoInterface.ixx" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\memory\Cartridge.cpp" />
@@ -175,6 +179,7 @@
     <ClCompile Include="src\memory\MemoryAccess.ixx" />
     <ClCompile Include="src\memory\MemoryUtils.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />
+    <ClCompile Include="src\memory\RDRAM.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\N64.ixx" />
@@ -193,8 +198,12 @@
     <ClCompile Include="src\VR4300\MMU.ixx" />
     <ClCompile Include="src\VR4300\Operation.cpp" />
     <ClCompile Include="src\VR4300\Operation.ixx" />
+    <ClCompile Include="src\VR4300\Registers.cpp" />
     <ClCompile Include="src\VR4300\Registers.ixx" />
     <ClCompile Include="src\VR4300\VR4300.ixx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

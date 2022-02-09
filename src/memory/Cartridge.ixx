@@ -1,9 +1,9 @@
 export module Cartridge;
 
-import MemoryUtils;
 import NumericalTypes;
 
 import <cassert>;
+import <concepts>;
 import <fstream>;
 import <string>;
 import <vector>;
@@ -21,28 +21,16 @@ namespace Cartridge
 
 		std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr);
 
-		template<std::size_t number_of_bytes>
-		auto ReadROM(const u32 addr)
-		{
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
-		}
+		template<std::integral Int>
+		Int ReadROM(const u32 addr);
+
+		template<std::integral Int>
+		Int ReadSRAM(const u32 addr);
 
 		template<std::size_t number_of_bytes>
-		auto ReadSRAM(const u32 addr)
-		{
-			return MemoryUtils::ConstructUnsignedIntegral<number_of_bytes>(0);
-		}
+		void WriteROM(const u32 addr, const auto data);
 
 		template<std::size_t number_of_bytes>
-		void WriteROM(const u32 addr, const auto data)
-		{
-			assert(false);
-		}
-
-		template<std::size_t number_of_bytes>
-		void WriteSRAM(const u32 addr, const auto data)
-		{
-
-		}
+		void WriteSRAM(const u32 addr, const auto data);
 	}
 }

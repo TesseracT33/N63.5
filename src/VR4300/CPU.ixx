@@ -50,12 +50,7 @@ namespace VR4300
 	unsigned instructions_until_jump = 0;
 	u64 addr_to_jump_to;
 
-	void PrepareJump(const u64 target_address)
-	{
-		jump_is_pending = true;
-		instructions_until_jump = 1;
-		addr_to_jump_to = target_address;
-	}
+	void PrepareJump(const u64 target_address);
 
 	/* Main processor instructions */
 	template<CPU_Instruction instr> void Load(const u32 instr_code);

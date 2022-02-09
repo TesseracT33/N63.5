@@ -37,5 +37,14 @@
     <ClCompile Include="src\memory\PIF.ixx" />
     <ClCompile Include="src\memory\DMA.ixx" />
     <ClCompile Include="src\memory\DMA.cpp" />
+    <ClCompile Include="src\VR4300\Registers.cpp" />
+    <ClCompile Include="src\memory\RDRAM.cpp" />
+    <ClCompile Include="src\interface\MIPS_Interface.cpp" />
+    <ClCompile Include="src\interface\PeripheralInterface.cpp" />
+    <ClCompile Include="src\interface\SerialInterface.cpp" />
+    <ClCompile Include="src\interface\VideoInterface.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
 </Project>

@@ -22,7 +22,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		const auto result = [&] {
 			/* For all instructions:
-					   Generates an address by adding a sign-extended offset to the contents of register base. */
+			   Generates an address by adding a sign-extended offset to the contents of register base. */
 			if constexpr (instr == LB)
 			{
 				/* Load Byte;
@@ -1065,6 +1065,15 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   /* TODO */
 		assert(false);
 	}
+
+
+	void PrepareJump(const u64 target_address)
+	{
+		jump_is_pending = true;
+		instructions_until_jump = 1;
+		addr_to_jump_to = target_address;
+	}
+
 
 	template void Load<CPU_Instruction::LB>(const u32);
 	template void Load<CPU_Instruction::LBU>(const u32);
