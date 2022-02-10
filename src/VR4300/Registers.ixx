@@ -122,7 +122,7 @@ namespace VR4300
 			u32 RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 			u32 CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
 
-			void NotifyCpuAfterWrite() {}
+			void NotifyCpuAfterWrite();
 		} status{};
 
 		struct /* (13) */
@@ -157,7 +157,7 @@ namespace VR4300
 			u32 EC : 3; /* Operating frequency ratio (read-only). */
 			u32 : 1; /* Returns 0 when read. */
 
-			void NotifyCpuAfterWrite(){}
+			void NotifyCpuAfterWrite();
 		} config{};
 
 		u32 LL_addr; /* (17); Contains the physical address read by the most recent Load Linked instruction. */

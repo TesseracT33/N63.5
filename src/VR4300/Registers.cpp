@@ -6,17 +6,17 @@ import :Operation;
 
 namespace VR4300
 {
-	//void StatusRegister::NotifyCpuAfterWrite()
-	//{
-	//	AssignActiveVirtualToPhysicalFunctions();
-	//	SetNewEndianness();
-	//}
+	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()
+	{
+		AssignActiveVirtualToPhysicalFunctions();
+		SetNewEndianness();
+	}
 
 
-	//void ConfigRegister::NotifyCpuAfterWrite()
-	//{
-	//	SetNewEndianness();
-	//}
+	void COP0Registers::ConfigRegister::NotifyCpuAfterWrite()
+	{
+		SetNewEndianness();
+	}
 
 
 	u64 COP0Registers::Get(const size_t register_index) const
