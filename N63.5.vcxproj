@@ -159,6 +159,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\RSP\RSP.cpp" />
+    <ClCompile Include="src\RSP\RSP.ixx" />
     <ClCompile Include="src\Utils\BitUtils.ixx" />
     <ClCompile Include="src\HostSystem.ixx" />
     <ClCompile Include="src\interface\MIPS_Interface.cpp" />

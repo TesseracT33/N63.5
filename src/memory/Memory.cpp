@@ -6,6 +6,7 @@ import MemoryUtils;
 import MIPS_Interface;
 import PeripheralInterface;
 import RDRAM;
+import RSP;
 import SerialInterface;
 import VideoInterface;
 import VR4300;
@@ -68,8 +69,7 @@ namespace Memory
 			return RDRAM::ReadRegisterRegion<Int>(physical_address);
 
 		case 0x040:
-			assert(false);
-			return Int(0);
+			return RSP::ReadMemory<Int>(physical_address);
 
 		case 0x041:
 			assert(false);
@@ -198,6 +198,7 @@ namespace Memory
 			break;
 
 		case 0x040:
+			RSP::WriteMemory<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x041:

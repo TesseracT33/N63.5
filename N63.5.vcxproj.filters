@@ -43,6 +43,8 @@
     <ClCompile Include="src\interface\PeripheralInterface.cpp" />
     <ClCompile Include="src\interface\SerialInterface.cpp" />
     <ClCompile Include="src\interface\VideoInterface.cpp" />
+    <ClCompile Include="src\RSP\RSP.ixx" />
+    <ClCompile Include="src\RSP\RSP.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
