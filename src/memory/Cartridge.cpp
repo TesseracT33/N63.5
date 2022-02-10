@@ -1,5 +1,6 @@
 module Cartridge;
 
+import Memory;
 import UserMessage;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
@@ -18,7 +19,11 @@ namespace Cartridge
 
 		/* Compute the rom file size and resize the rom vector */
 		ifs.seekg(0, ifs.end);
-		const size_t rom_size = ifs.tellg();
+		const std::size_t rom_size = ifs.tellg();
+		rom_size_mask = u32( [&] {
+			if (rom_size <= rom_region_size) return rom_size - 1; /* TODO: can we assume that N64 rom sizes are always a power of 2? */
+			else return rom_region_size;
+		}());
 		rom.resize(rom_size);
 
 		/* Read the file */
@@ -44,14 +49,16 @@ namespace Cartridge
 	template<std::integral Int>
 	Int ReadROM(const u32 addr)
 	{
-		return Int(0);
+		const u32 read_offset = addr & rom_size_mask;
+		return Memory::GenericRead<Int>(rom.data() + read_offset);
 	}
 
 
 	template<std::integral Int>
 	Int ReadSRAM(const u32 addr)
 	{
-		return Int(0);
+		const u32 read_offset = addr & sram_size_mask;
+		return Memory::GenericRead<Int>(sram.data() + read_offset);
 	}
 
 
@@ -65,7 +72,8 @@ namespace Cartridge
 	template<std::size_t number_of_bytes>
 	void WriteSRAM(const u32 addr, const auto data)
 	{
-
+		const u32 write_offset = addr & sram_size_mask & 0x07FF'FFFF;
+		Memory::GenericWrite<number_of_bytes>(sram.data() + write_offset, data);
 	}
 
 

@@ -10,8 +10,14 @@ import <vector>;
 
 namespace Cartridge
 {
+	constexpr std::size_t rom_region_size = 0x0FC0'0000;
+	constexpr std::size_t sram_region_size = 0x0800'0000;
+
 	std::vector<u8> rom{};
 	std::vector<u8> sram{};
+
+	u32 rom_size_mask;
+	u32 sram_size_mask;
 
 	export
 	{
