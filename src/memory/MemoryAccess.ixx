@@ -2,7 +2,11 @@ export module MemoryAccess;
 
 export namespace MemoryAccess
 {
-	enum class Operation { Read, Write };
+	enum class Operation { Read, Write, InstrFetch };
 
-	enum class Alignment { Aligned, Unaligned };
+	enum class Alignment
+	{
+		Aligned,
+		Unaligned
+	};
 }

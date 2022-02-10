@@ -2,6 +2,7 @@ module VR4300:MMU;
 
 import :COP0;
 import :Exceptions;
+import :Registers;
 
 import Memory;
 import MemoryUtils;
@@ -23,7 +24,7 @@ namespace VR4300
 		}
 		else
 		{
-			AddressErrorException();
+			SignalException<Exception::AddressError, operation>();
 			return 0;
 		}
 	}
@@ -37,7 +38,7 @@ namespace VR4300
 		}
 		else
 		{
-			AddressErrorException();
+			SignalException<Exception::AddressError, operation>();
 			return 0;
 		}
 	}
@@ -51,7 +52,7 @@ namespace VR4300
 			return VirtualToPhysicalAddress<operation>(virt_addr);
 
 		default:
-			AddressErrorException();
+			SignalException<Exception::AddressError, operation>();
 			return 0;
 		}
 	}
@@ -68,7 +69,7 @@ namespace VR4300
 			}
 			else
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
@@ -79,7 +80,7 @@ namespace VR4300
 			}
 			else
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
@@ -90,12 +91,12 @@ namespace VR4300
 			}
 			else /* $F000'0000'0000'0000 -- $FFFF'FFFF'BFFF'FFFF; $FFFF'FFFF'E000'0000 -- $FFFF'FFFF'FFFF'FFFF */
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
 		default:
-			AddressErrorException();
+			SignalException<Exception::AddressError, operation>();
 			return 0;
 		}
 	}
@@ -125,7 +126,7 @@ namespace VR4300
 			}
 			else
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
@@ -136,7 +137,7 @@ namespace VR4300
 			}
 			else
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
@@ -152,7 +153,7 @@ namespace VR4300
 			}
 			else
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
@@ -163,7 +164,7 @@ namespace VR4300
 			}
 			else
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
@@ -183,12 +184,12 @@ namespace VR4300
 			}
 			else [[unlikely]]
 			{
-				AddressErrorException();
+				SignalException<Exception::AddressError, operation>();
 				return 0;
 			}
 
 		default:
-			AddressErrorException();
+			SignalException<Exception::AddressError, operation>();
 			return 0;
 		}
 	}
@@ -259,14 +260,14 @@ is set to 1, and then the TLB cannot be used. */
 
 			if (!entry_reg.V) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
 			{
-				SignalException<Exception::TLB_Invalid>();
+				SignalException<Exception::TLB_Invalid, operation>();
 				return 0;
 			}
 			if constexpr (operation == MemoryAccess::Operation::Write)
 			{
 				if (!entry_reg.D) /* If the "Dirty" bit is clear, writing is disallowed. */
 				{
-					SignalException<Exception::TLB_Modification>();
+					SignalException<Exception::TLB_Modification, operation>();
 					return 0;
 				}
 			}
@@ -276,26 +277,29 @@ is set to 1, and then the TLB cannot be used. */
 			return phys_addr;
 		}
 
-		TLB_MissException<operation>(virt_addr, addr_VPN2); /* todo: distinguish between 32 and 64 bit */
+		SignalException<Exception::TLB_Miss, operation>(); /* todo: distinguish between 32 and 64 bit */
 		return 0;
 	}
 
 
-	template<std::integral Int, MemoryAccess::Alignment alignment>
+	template<std::integral Int, MemoryAccess::Alignment alignment, MemoryAccess::Operation operation>
 	Int ReadVirtual(u64 virtual_address)
 	{
+		std::size_t bytes_from_boundary = 0;
+
 		if constexpr (sizeof Int > 1)
 		{
 			if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			{
 				if (virtual_address & (sizeof Int - 1))
 				{
-					//AddressErrorException();
+					SignalException<Exception::AddressError, operation>();
 					return Int(0);
 				}
 			}
 			else
 			{ /* For unaligned accesses, always read from the last boundary, with the number of bytes being sizeof T. */
+				bytes_from_boundary = virtual_address & (sizeof Int - 1);
 				virtual_address &= ~(sizeof Int - 1);
 			}
 		}
@@ -303,7 +307,18 @@ is set to 1, and then the TLB cannot be used. */
 		if (exception_has_occurred)
 			return Int(0);
 
-		return Memory::ReadPhysical<Int>(physical_address);
+		Int ret = Memory::ReadPhysical<Int>(physical_address);
+
+		//if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft)
+		//{
+		//	ret <<= bytes_from_boundary * 8;
+		//}
+		//else if constexpr (alignment == MemoryAccess::Alignment::UnalignedRight)
+		//{
+
+		//}
+
+		return ret;
 	}
 
 
@@ -317,7 +332,7 @@ is set to 1, and then the TLB cannot be used. */
 		{
 			if (number_of_bytes != sizeof Int)
 			{
-				//AddressErrorException();
+				SignalException<Exception::AddressError, MemoryAccess::Operation::Write>();
 				return;
 			}
 		}
@@ -350,6 +365,12 @@ is set to 1, and then the TLB cannot be used. */
 				}
 			}
 		}
+	}
+
+
+	u32 InstructionFetch(u64 virtual_address)
+	{
+		return ReadVirtual<u32, MemoryAccess::Alignment::Aligned, MemoryAccess::Operation::InstrFetch>(virtual_address);
 	}
 
 

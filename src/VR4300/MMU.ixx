@@ -70,10 +70,15 @@ namespace VR4300
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr);
 
-	template<std::integral Int, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
+	template<
+		std::integral Int,
+		MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned,
+		MemoryAccess::Operation operation = MemoryAccess::Operation::Read>
 	Int ReadVirtual(u64 virtual_address);
 
 	template<std::integral Int, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
 	void WriteVirtual(const u64 virtual_address, const Int data);
+
+	u32 InstructionFetch(u64 virtual_address);
 }
 

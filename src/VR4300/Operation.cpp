@@ -59,7 +59,7 @@ namespace VR4300
 			else instructions_until_jump--;
 		}
 
-		const u32 instr_code = ReadVirtual<u32>(PC);
+		const u32 instr_code = InstructionFetch(PC);
 		PC += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
