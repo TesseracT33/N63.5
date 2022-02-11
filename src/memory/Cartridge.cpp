@@ -50,13 +50,16 @@ namespace Cartridge
 	Int ReadROM(const u32 addr)
 	{
 		const u32 read_offset = addr & rom_size_mask;
-		return Memory::GenericRead<Int>(rom.data() + read_offset);
+		const Int ret = Memory::GenericRead<Int>(rom.data() + read_offset);
+		return Memory::Byteswap(ret);
 	}
 
 
 	template<std::integral Int>
 	Int ReadSRAM(const u32 addr)
 	{
+		if (sram.size() == 0)
+			return 0;
 		const u32 read_offset = addr & sram_size_mask;
 		return Memory::GenericRead<Int>(sram.data() + read_offset);
 	}
@@ -72,6 +75,8 @@ namespace Cartridge
 	template<std::size_t number_of_bytes>
 	void WriteSRAM(const u32 addr, const auto data)
 	{
+		if (sram.size() == 0)
+			return;
 		const u32 write_offset = addr & sram_size_mask;
 		Memory::GenericWrite<number_of_bytes>(sram.data() + write_offset, data);
 	}

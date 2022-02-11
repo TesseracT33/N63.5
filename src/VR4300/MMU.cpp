@@ -336,41 +336,38 @@ is set to 1, and then the TLB cannot be used. */
 				return;
 			}
 		}
+		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_write, virtual_address);
+		if (exception_has_occurred)
+			return;
+
+		if constexpr (sizeof Int == 1)
+			Memory::WritePhysical<1>(physical_address, data);
+		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
+			Memory::WritePhysical<sizeof Int>(physical_address, data);
 		else
 		{
-			const u32 physical_address = std::invoke(active_virtual_to_physical_fun_write, virtual_address);
-			if (exception_has_occurred)
-				return;
-
-			if constexpr (sizeof Int == 1)
-				Memory::WritePhysical<1>(physical_address, data);
-			else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
-				Memory::WritePhysical<sizeof Int>(physical_address, data);
-			else
+			/* This branch will be worth it; the fact that we can pass the number of bytes to access
+			   as a template argument means that, among other things, memcpy will be optimized away
+			   to 'mov' instructions, when we later go to actually access data. */
+			switch (number_of_bytes)
 			{
-				/* This branch will be worth it; the fact that we can pass the number of bytes to access
-				   as a template argument means that, among other things, memcpy will be optimized away
-				   to 'mov' instructions, when we later go to actually access data. */
-				switch (number_of_bytes)
-				{
-				break; case 1: Memory::WritePhysical<1>(physical_address, data);
-				break; case 2: Memory::WritePhysical<2>(physical_address, data);
-				break; case 3: Memory::WritePhysical<3>(physical_address, data);
-				break; case 4: Memory::WritePhysical<4>(physical_address, data);
-				break; case 5: Memory::WritePhysical<5>(physical_address, data);
-				break; case 6: Memory::WritePhysical<6>(physical_address, data);
-				break; case 7: Memory::WritePhysical<7>(physical_address, data);
-				break; case 8: Memory::WritePhysical<8>(physical_address, data);
-				break; default: assert(false);
-				}
+			break; case 1: Memory::WritePhysical<1>(physical_address, data);
+			break; case 2: Memory::WritePhysical<2>(physical_address, data);
+			break; case 3: Memory::WritePhysical<3>(physical_address, data);
+			break; case 4: Memory::WritePhysical<4>(physical_address, data);
+			break; case 5: Memory::WritePhysical<5>(physical_address, data);
+			break; case 6: Memory::WritePhysical<6>(physical_address, data);
+			break; case 7: Memory::WritePhysical<7>(physical_address, data);
+			break; case 8: Memory::WritePhysical<8>(physical_address, data);
+			break; default: assert(false);
 			}
 		}
 	}
 
 
-	u32 InstructionFetch(u64 virtual_address)
+	u32 FetchInstruction(u64 virtual_address)
 	{
-		return ReadVirtual<u32, MemoryAccess::Alignment::Aligned, MemoryAccess::Operation::InstrFetch>(virtual_address);
+		return ReadVirtual<u32, MemoryAccess::Alignment::Unaligned, MemoryAccess::Operation::InstrFetch>(virtual_address);
 	}
 
 

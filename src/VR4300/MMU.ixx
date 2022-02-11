@@ -79,6 +79,6 @@ namespace VR4300
 	template<std::integral Int, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
 	void WriteVirtual(const u64 virtual_address, const Int data);
 
-	u32 InstructionFetch(u64 virtual_address);
+	u32 FetchInstruction(u64 virtual_address);
 }
 

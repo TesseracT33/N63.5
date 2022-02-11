@@ -15,25 +15,28 @@ import VR4300;
 
 namespace Memory
 {
+	/* Use this function to do a conversion between little and big endian if necessary,
+	   before the value is read back / written. */
 	template<std::integral Int>
-	Int ConvertEndian(const Int value)
+	Int Byteswap(const Int value)
 	{
 		static_assert(sizeof Int == 1 || sizeof Int == 2 || sizeof Int == 4 || sizeof Int == 8);
 
-		if constexpr (sizeof Int == 1)
-		{ /* No conversion necessary. N64 endianness irrelevant. */
+		if constexpr (sizeof Int == 1 || HostSystem::endianness == VR4300::endianness)
+		{ /* No conversion necessary. */
 			return value;
 		}
 		else
 		{
-			if (HostSystem::endianness == VR4300::endianness)
-				return value;
+			/* TODO: C++23 feature, to be used very soon */
+			//return std::byteswap(value);
+			/* TEMP */
+			if constexpr (sizeof Int == 2)
+				return static_cast<Int>(_byteswap_ushort(static_cast<u16>(value)));
+			else if constexpr (sizeof Int == 4)
+				return static_cast<Int>(_byteswap_ulong(static_cast<u32>(value)));
 			else
-			{
-				/* TODO: C++23 feature, to be used very soon */
-				//return std::byteswap(value_to_byteswap);
-				return value;
-			}
+				return static_cast<Int>(_byteswap_uint64(static_cast<u64>(value)));
 		}
 	}
 
@@ -335,4 +338,13 @@ namespace Memory
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WritePhysical, const u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(GenericRead, const void*)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(GenericWrite, void*)
+
+	template u8 Byteswap<u8>(u8);
+	template s8 Byteswap<s8>(s8);
+	template u16 Byteswap<u16>(u16);
+	template s16 Byteswap<s16>(s16);
+	template u32 Byteswap<u32>(u32);
+	template s32 Byteswap<s32>(s32);
+	template u64 Byteswap<u64>(u64);
+	template s64 Byteswap<s64>(s64);
 }

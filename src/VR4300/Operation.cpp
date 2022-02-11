@@ -59,7 +59,7 @@ namespace VR4300
 			else instructions_until_jump--;
 		}
 
-		const u32 instr_code = InstructionFetch(PC);
+		const u32 instr_code = FetchInstruction(PC);
 		PC += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
@@ -87,27 +87,9 @@ namespace VR4300
 		COP0_reg.status.NotifyCpuAfterWrite();
 		COP0_reg.config.NotifyCpuAfterWrite();
 
-		WriteVirtual<u32>(0x0430'0004, 0x0101'0101);
-		for (unsigned i = 0; i < 0x1000; i++) /* no clue if some kind of DMA */
-			WriteVirtual<u8>(0xA400'0000 + i, ReadVirtual<u8>(0xB000'0000 + i));
+		for (unsigned i = 0; i < 0x1000; i += 4) /* no clue if some kind of DMA */
+			WriteVirtual<u32>(0xA400'0000 + i, ReadVirtual<u32>(0xB000'0000 + i));
 
-		PC = 0xA4000040;
-	}
-
-
-	void SetNewEndianness()
-	{ /* See table 16-1 in VR4300 manual */
-		endianness = [] {
-			if (operating_mode == OperatingMode::User)
-			{
-				return COP0_reg.config.BE ^ COP0_reg.status.RE
-					? std::endian::big : std::endian::little;
-			}
-			else
-			{
-				return COP0_reg.config.BE
-					? std::endian::big : std::endian::little;
-			}
-		}();
+		PC = 0xA400'0040;
 	}
 }

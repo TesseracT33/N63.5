@@ -9,13 +9,12 @@ namespace VR4300
 	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()
 	{
 		AssignActiveVirtualToPhysicalFunctions();
-		SetNewEndianness();
 	}
 
 
 	void COP0Registers::ConfigRegister::NotifyCpuAfterWrite()
 	{
-		SetNewEndianness();
+
 	}
 
 
