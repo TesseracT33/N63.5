@@ -7,7 +7,7 @@ import <concepts>;
 
 namespace RSP
 {
-	std::array<u8, 0x1000> mem{}; /* Data & instruction memory */
+	std::array<u8, 0x2000> mem{}; /* Data & instruction memory */
 
 	export
 	{

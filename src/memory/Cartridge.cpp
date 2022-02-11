@@ -72,7 +72,7 @@ namespace Cartridge
 	template<std::size_t number_of_bytes>
 	void WriteSRAM(const u32 addr, const auto data)
 	{
-		const u32 write_offset = addr & sram_size_mask & 0x07FF'FFFF;
+		const u32 write_offset = addr & sram_size_mask;
 		Memory::GenericWrite<number_of_bytes>(sram.data() + write_offset, data);
 	}
 
