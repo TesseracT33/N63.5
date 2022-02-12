@@ -209,11 +209,11 @@ namespace VR4300
 		if constexpr (exception == ColdReset || exception == SoftReset || exception == NMI)
 			return vector_base_addr[1];
 		else if constexpr (exception == TLB_Miss)
-			return vector_base_addr[COP0_reg.status.BEV] | (COP0_reg.status.EXL ? 0x0180 : 0x0000);
+			return vector_base_addr[cop0_reg.status.BEV] | (cop0_reg.status.EXL ? 0x0180 : 0x0000);
 		else if constexpr (exception == XTLB_Miss)
-			return vector_base_addr[COP0_reg.status.BEV] | (COP0_reg.status.EXL ? 0x0180 : 0x0080);
+			return vector_base_addr[cop0_reg.status.BEV] | (cop0_reg.status.EXL ? 0x0180 : 0x0080);
 		else
-			return vector_base_addr[COP0_reg.status.BEV] | 0x0180;
+			return vector_base_addr[cop0_reg.status.BEV] | 0x0180;
 	}
 
 
@@ -221,19 +221,19 @@ namespace VR4300
 	{
 		OperatingMode operating_mode;
 		bool interrupts_enabled;
-		u64 PC;
+		u64 pc;
 
 		void SaveContext()
 		{
 			this->operating_mode = VR4300::operating_mode;
-			this->PC = VR4300::PC;
+			this->pc = VR4300::pc;
 		}
 	} exception_context;
 
 
 	static void EnterException()
 	{
-		COP0_reg.epc = PC;
+		cop0_reg.epc = pc;
 		exception_context.SaveContext();
 		EnterKernelMode();
 		DisableInterrupts();
@@ -242,7 +242,12 @@ namespace VR4300
 
 	void AddressErrorException()
 	{
-
+		cop0_reg.bad_v_addr = bad_virt_addr;
+		cop0_reg.epc = pc - 4;
+		/* TODO The EPC register contains the address of the instruction that caused the exception,
+unless this instruction is in a branch delay slot. If it is in a branch delay slot, the
+EPC register contains the address of the preceding branch instruction and the BD
+bit of the Cause register is set.*/
 	}
 
 
@@ -260,15 +265,15 @@ namespace VR4300
 
 	void ColdResetException()
 	{
-		PC = exception_vector;
-		COP0_reg.status.RP = COP0_reg.status.SR = COP0_reg.status.TS = 0;
-		COP0_reg.status.ERL = COP0_reg.status.BEV = 1;
-		COP0_reg.config.EP = 0;
-		COP0_reg.config.BE = 1;
-		COP0_reg.random.random = 31;
+		pc = exception_vector;
+		cop0_reg.status.RP = cop0_reg.status.SR = cop0_reg.status.TS = 0;
+		cop0_reg.status.ERL = cop0_reg.status.BEV = 1;
+		cop0_reg.config.EP = 0;
+		cop0_reg.config.BE = 1;
+		cop0_reg.random.random = 31;
 
-		COP0_reg.status.NotifyCpuAfterWrite();
-		COP0_reg.config.NotifyCpuAfterWrite();
+		cop0_reg.status.NotifyCpuAfterWrite();
+		cop0_reg.config.NotifyCpuAfterWrite();
 
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
@@ -336,9 +341,9 @@ namespace VR4300
 
 	void SoftResetException()
 	{
-		PC = COP0_reg.status.ERL == 0 ? COP0_reg.error_epc : exception_vector;
-		COP0_reg.status.RP = COP0_reg.status.TS = 0;
-		COP0_reg.status.BEV = COP0_reg.status.ERL = COP0_reg.status.SR = 1;
+		pc = cop0_reg.status.ERL == 0 ? cop0_reg.error_epc : exception_vector;
+		cop0_reg.status.RP = cop0_reg.status.TS = 0;
+		cop0_reg.status.BEV = cop0_reg.status.ERL = cop0_reg.status.SR = 1;
 	}
 
 
@@ -359,12 +364,12 @@ namespace VR4300
 		u32 bad_VPN2 = 0; /* TEMP */
 		u32 bad_virt_addr = 0; /* TEMP */
 
-		COP0_reg.context.bad_vpn2 = bad_VPN2;
+		cop0_reg.context.bad_vpn2 = bad_VPN2;
 		/* TODO: context.PTEBase */
 
-		COP0_reg.bad_v_addr = bad_virt_addr; /* TODO arg is u32, dest is u64 */
+		cop0_reg.bad_v_addr = bad_virt_addr; /* TODO arg is u32, dest is u64 */
 
-		COP0_reg.cause.exc_code = exception_cause_code;
+		cop0_reg.cause.exc_code = exception_cause_code;
 	}
 
 

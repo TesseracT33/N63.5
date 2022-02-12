@@ -67,6 +67,8 @@ namespace VR4300
 		void HandleException();
 
 		bool exception_has_occurred = false;
+
+		u64 bad_virt_addr;
 	}
 
 	Exception occurred_exception;
