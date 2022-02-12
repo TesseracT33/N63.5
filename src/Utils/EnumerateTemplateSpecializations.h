@@ -2,6 +2,12 @@
 
 import NumericalTypes;
 
+/* A lot of functions for reading from and writing to memory looks like this:
+   template<std::integer Int> Int Read(const u32 address);
+   template<std::size_t number_of_bytes> void Write(const u32 address, const auto data);
+   With the below macros, we are able to list all relevant template specializations of
+   a particular read/write function. */
+
 #define ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(FUNCTION, ARG_TYPE) \
 	template u8 FUNCTION<u8>(ARG_TYPE); \
 	template s8 FUNCTION<s8>(ARG_TYPE); \
