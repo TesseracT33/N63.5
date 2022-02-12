@@ -20,8 +20,6 @@ namespace Memory
 	template<std::integral Int>
 	Int Byteswap(const Int value)
 	{
-		static_assert(sizeof Int == 1 || sizeof Int == 2 || sizeof Int == 4 || sizeof Int == 8);
-
 		if constexpr (sizeof Int == 1 || HostSystem::endianness == VR4300::endianness)
 		{ /* No conversion necessary. */
 			return value;

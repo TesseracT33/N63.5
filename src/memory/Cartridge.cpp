@@ -50,8 +50,7 @@ namespace Cartridge
 	Int ReadROM(const u32 addr)
 	{
 		const u32 read_offset = addr & rom_size_mask;
-		const Int ret = Memory::GenericRead<Int>(rom.data() + read_offset);
-		return Memory::Byteswap(ret);
+		return Memory::GenericRead<Int>(rom.data() + read_offset);
 	}
 
 

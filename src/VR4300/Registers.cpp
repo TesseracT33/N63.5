@@ -4,6 +4,8 @@ import :COP1;
 import :MMU;
 import :Operation;
 
+import MemoryUtils;
+
 namespace VR4300
 {
 	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()

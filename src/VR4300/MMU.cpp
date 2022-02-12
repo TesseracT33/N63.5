@@ -307,7 +307,9 @@ is set to 1, and then the TLB cannot be used. */
 		if (exception_has_occurred)
 			return Int(0);
 
-		Int ret = Memory::ReadPhysical<Int>(physical_address);
+		const Int value = Memory::ReadPhysical<Int>(physical_address);
+		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian, does nothing */
+
 
 		//if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft)
 		//{
@@ -318,7 +320,7 @@ is set to 1, and then the TLB cannot be used. */
 
 		//}
 
-		return ret;
+		return byteswapped_value;
 	}
 
 
@@ -340,10 +342,12 @@ is set to 1, and then the TLB cannot be used. */
 		if (exception_has_occurred)
 			return;
 
+		const Int byteswapped_data = Memory::Byteswap(data); /* If the host is big endian, does nothing */
+
 		if constexpr (sizeof Int == 1)
-			Memory::WritePhysical<1>(physical_address, data);
+			Memory::WritePhysical<1>(physical_address, byteswapped_data);
 		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
-			Memory::WritePhysical<sizeof Int>(physical_address, data);
+			Memory::WritePhysical<sizeof Int>(physical_address, byteswapped_data);
 		else
 		{
 			/* This branch will be worth it; the fact that we can pass the number of bytes to access
@@ -351,14 +355,14 @@ is set to 1, and then the TLB cannot be used. */
 			   to 'mov' instructions, when we later go to actually access data. */
 			switch (number_of_bytes)
 			{
-			break; case 1: Memory::WritePhysical<1>(physical_address, data);
-			break; case 2: Memory::WritePhysical<2>(physical_address, data);
-			break; case 3: Memory::WritePhysical<3>(physical_address, data);
-			break; case 4: Memory::WritePhysical<4>(physical_address, data);
-			break; case 5: Memory::WritePhysical<5>(physical_address, data);
-			break; case 6: Memory::WritePhysical<6>(physical_address, data);
-			break; case 7: Memory::WritePhysical<7>(physical_address, data);
-			break; case 8: Memory::WritePhysical<8>(physical_address, data);
+			break; case 1: Memory::WritePhysical<1>(physical_address, byteswapped_data);
+			break; case 2: Memory::WritePhysical<2>(physical_address, byteswapped_data);
+			break; case 3: Memory::WritePhysical<3>(physical_address, byteswapped_data);
+			break; case 4: Memory::WritePhysical<4>(physical_address, byteswapped_data);
+			break; case 5: Memory::WritePhysical<5>(physical_address, byteswapped_data);
+			break; case 6: Memory::WritePhysical<6>(physical_address, byteswapped_data);
+			break; case 7: Memory::WritePhysical<7>(physical_address, byteswapped_data);
+			break; case 8: Memory::WritePhysical<8>(physical_address, byteswapped_data);
 			break; default: assert(false);
 			}
 		}
