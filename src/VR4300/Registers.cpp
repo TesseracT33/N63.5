@@ -8,7 +8,7 @@ namespace VR4300
 {
 	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()
 	{
-		AssignActiveVirtualToPhysicalFunctions();
+		SetActiveVirtualToPhysicalFunctions();
 	}
 
 

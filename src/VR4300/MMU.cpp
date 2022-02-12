@@ -8,10 +8,51 @@ import Memory;
 
 namespace VR4300
 {
-	void AssignActiveVirtualToPhysicalFunctions()
+	void SetActiveVirtualToPhysicalFunctions()
 	{
-		active_virtual_to_physical_fun_read = virtual_to_physical_fun_read_table[cop0_reg.status.KSU][cop0_reg.status.UX];
-		active_virtual_to_physical_fun_write = virtual_to_physical_fun_write_table[cop0_reg.status.KSU][cop0_reg.status.UX];
+		if (cop0_reg.status.KSU == 0b00 || cop0_reg.status.ERL == 1 || cop0_reg.status.EXL == 1) /* Kernel mode */
+		{
+			if (cop0_reg.status.KX == 0)
+			{
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>;
+			}
+			else
+			{
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>;
+			}
+		}
+		else if (cop0_reg.status.KSU == 0b01) /* Supervisor mode */
+		{
+			if (cop0_reg.status.SX == 0)
+			{
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>;
+			}
+			else
+			{
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>;
+			}
+		}
+		else if (cop0_reg.status.KSU == 0b10) /* User mode */
+		{
+			if (cop0_reg.status.UX == 0)
+			{
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>;
+			}
+			else
+			{
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Write>;
+			}
+		}
+		else /* Unknown?! */
+		{
+			assert(false);
+		}
 	}
 
 	template<MemoryAccess::Operation operation>

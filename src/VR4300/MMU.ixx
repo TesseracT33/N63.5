@@ -51,21 +51,7 @@ namespace VR4300
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read = nullptr;
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write = nullptr;
 
-	constexpr std::array<std::array<VirtualToPhysicalAddressFun, 2>, 4> virtual_to_physical_fun_read_table = {{
-		{VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>},
-		{VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Read>},
-		{VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Read>},
-		{VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Read>, VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Read>}
-	}};
-
-	constexpr std::array<std::array<VirtualToPhysicalAddressFun, 2>, 4> virtual_to_physical_fun_write_table = {{
-		{VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>},
-		{VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>},
-		{VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Write>},
-		{VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Write>, VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Write>}
-	}};
-
-	void AssignActiveVirtualToPhysicalFunctions();
+	void SetActiveVirtualToPhysicalFunctions();
 
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr);
