@@ -12,6 +12,8 @@ import NumericalTypes;
 
 namespace VR4300
 {
+	typedef u32(*VirtualToPhysicalAddressFun)(u64); /* Used in both 32-bit and 64-bit mode */
+
 	struct TLB_Entry
 	{
 		struct
@@ -38,23 +40,17 @@ namespace VR4300
 
 	std::array<TLB_Entry, 32> TLB_entries{};
 
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode32(const u64 virt_addr);
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode64(const u64 virt_addr);
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressSupervisorMode32(const u64 virt_addr);
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressSupervisorMode64(const u64 virt_addr);
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode32(const u64 virt_addr);
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode64(const u64 virt_addr);
-	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressInvalid(const u64 virt_addr);
-
-	typedef u32(*VirtualToPhysicalAddressFun)(const u64);
-
-	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read = nullptr;
-	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write = nullptr;
-
-	void SetActiveVirtualToPhysicalFunctions();
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode32(u64);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode64(u64);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressSupervisorMode32(u64);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressSupervisorMode64(u64);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode32(u64);
+	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode64(u64);
 
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr);
+
+	void SetActiveVirtualToPhysicalFunctions();
 
 	template<
 		std::integral Int,
@@ -66,5 +62,8 @@ namespace VR4300
 	void WriteVirtual(const u64 virtual_address, const Int data);
 
 	u32 FetchInstruction(u64 virtual_address);
+
+	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read = nullptr;
+	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write = nullptr;
 }
 

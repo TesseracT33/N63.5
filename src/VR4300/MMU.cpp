@@ -55,9 +55,11 @@ namespace VR4300
 		}
 	}
 
+
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressUserMode32(const u64 virt_addr)
+	u32 VirtualToPhysicalAddressUserMode32(u64 virt_addr)
 	{
+		virt_addr &= 0xFFFFFFFF;
 		if (virt_addr < 0x80000000)
 		{
 			return VirtualToPhysicalAddress<operation>(virt_addr);
@@ -69,8 +71,9 @@ namespace VR4300
 		}
 	}
 
+
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressUserMode64(const u64 virt_addr)
+	u32 VirtualToPhysicalAddressUserMode64(u64 virt_addr)
 	{
 		if (virt_addr < 0x100'00000000)
 		{
@@ -83,9 +86,11 @@ namespace VR4300
 		}
 	}
 
+
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressSupervisorMode32(const u64 virt_addr)
+	u32 VirtualToPhysicalAddressSupervisorMode32(u64 virt_addr)
 	{
+		virt_addr &= 0xFFFFFFFF;
 		switch (virt_addr >> 28)
 		{
 		case 0x0: case 0x1: case 0x2: case 0x3: case 0x4: case 0x5: case 0x6: case 0x7: case 0xC: case 0xD:
@@ -97,8 +102,9 @@ namespace VR4300
 		}
 	}
 
+
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressSupervisorMode64(const u64 virt_addr)
+	u32 VirtualToPhysicalAddressSupervisorMode64(u64 virt_addr)
 	{
 		switch (virt_addr >> 60)
 		{
@@ -142,7 +148,7 @@ namespace VR4300
 	}
 
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressKernelMode32(const u64 virt_addr)
+	u32 VirtualToPhysicalAddressKernelMode32(u64 virt_addr)
 	{
 		if ((virt_addr & 0xC000'0000) == 0x8000'0000) /* TODO: currently, caching is not emulated; this does not take into account uncached vs. cacheable segments */
 		{
@@ -154,8 +160,9 @@ namespace VR4300
 		}
 	}
 
+
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressKernelMode64(const u64 virt_addr)
+	u32 VirtualToPhysicalAddressKernelMode64(u64 virt_addr)
 	{
 		switch (virt_addr >> 60)
 		{
@@ -234,12 +241,6 @@ namespace VR4300
 		}
 	}
 
-	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddressInvalid(const u64 virt_addr)
-	{
-		assert(false); /* CP0 status KSU == 0b11 */
-		return 0;
-	}
 
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddress(const u64 virt_addr)
