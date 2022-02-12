@@ -28,7 +28,6 @@
     <ClCompile Include="src\HostSystem.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
-    <ClCompile Include="src\memory\MemoryUtils.ixx" />
     <ClCompile Include="src\memory\MemoryAccess.ixx" />
     <ClCompile Include="src\interface\MIPS_Interface.ixx" />
     <ClCompile Include="src\interface\PeripheralInterface.ixx" />

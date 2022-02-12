@@ -5,7 +5,6 @@ import :Exceptions;
 import :Registers;
 
 import Memory;
-import MemoryUtils;
 
 namespace VR4300
 {
@@ -285,8 +284,6 @@ is set to 1, and then the TLB cannot be used. */
 	template<std::integral Int, MemoryAccess::Alignment alignment, MemoryAccess::Operation operation>
 	Int ReadVirtual(u64 virtual_address)
 	{
-		std::size_t bytes_from_boundary = 0;
-
 		if constexpr (sizeof Int > 1)
 		{
 			if constexpr (alignment == MemoryAccess::Alignment::Aligned)
@@ -298,8 +295,9 @@ is set to 1, and then the TLB cannot be used. */
 				}
 			}
 			else
-			{ /* For unaligned accesses, always read from the last boundary, with the number of bytes being sizeof T. */
-				bytes_from_boundary = virtual_address & (sizeof Int - 1);
+			{
+				/* For unaligned accesses, always read from the last boundary, with the number of bytes being sizeof T.
+				   Shifting/masking is done by the function which handles the load instruction. */
 				virtual_address &= ~(sizeof Int - 1);
 			}
 		}
@@ -309,17 +307,6 @@ is set to 1, and then the TLB cannot be used. */
 
 		const Int value = Memory::ReadPhysical<Int>(physical_address);
 		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian, does nothing */
-
-
-		//if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft)
-		//{
-		//	ret <<= bytes_from_boundary * 8;
-		//}
-		//else if constexpr (alignment == MemoryAccess::Alignment::UnalignedRight)
-		//{
-
-		//}
-
 		return byteswapped_value;
 	}
 
@@ -327,12 +314,9 @@ is set to 1, and then the TLB cannot be used. */
 	template<std::integral Int, MemoryAccess::Alignment alignment>
 	void WriteVirtual(const u64 virtual_address, const Int data)
 	{
-		const std::size_t number_of_bytes =
-			MemoryUtils::GetNumberOfBytesToAccess<Int, alignment>(virtual_address);
-
 		if constexpr (sizeof Int > 1 && alignment == MemoryAccess::Alignment::Aligned)
 		{
-			if (number_of_bytes != sizeof Int)
+			if (virtual_address & (sizeof Int - 1))
 			{
 				SignalException<Exception::AddressError, MemoryAccess::Operation::Write>();
 				return;
@@ -350,6 +334,15 @@ is set to 1, and then the TLB cannot be used. */
 			Memory::WritePhysical<sizeof Int>(physical_address, byteswapped_data);
 		else
 		{
+			/* The result will different from sizeof(T) only for unaligned memory accesses. */
+			const std::size_t number_of_bytes = [&] {
+				if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft) /* Store (Double)Word Left */
+					return sizeof Int - (physical_address & (sizeof Int - 1)); 
+				else if constexpr (alignment == MemoryAccess::Alignment::UnalignedRight) /* Store (Double)Word Right */
+					return (physical_address & (sizeof Int - 1)) + 1;
+				else
+					static_assert(false);
+			}();
 			/* This branch will be worth it; the fact that we can pass the number of bytes to access
 			   as a template argument means that, among other things, memcpy will be optimized away
 			   to 'mov' instructions, when we later go to actually access data. */
@@ -371,7 +364,7 @@ is set to 1, and then the TLB cannot be used. */
 
 	u32 FetchInstruction(u64 virtual_address)
 	{
-		return ReadVirtual<u32, MemoryAccess::Alignment::Unaligned, MemoryAccess::Operation::InstrFetch>(virtual_address);
+		return ReadVirtual<u32, MemoryAccess::Alignment::Aligned, MemoryAccess::Operation::InstrFetch>(virtual_address);
 	}
 
 
@@ -383,14 +376,22 @@ is set to 1, and then the TLB cannot be used. */
 	template s32 ReadVirtual<s32, MemoryAccess::Alignment::Aligned>(u64);
 	template u64 ReadVirtual<u64, MemoryAccess::Alignment::Aligned>(u64);
 	template s64 ReadVirtual<s64, MemoryAccess::Alignment::Aligned>(u64);
-	template u8 ReadVirtual<u8, MemoryAccess::Alignment::Unaligned>(u64);
-	template s8 ReadVirtual<s8, MemoryAccess::Alignment::Unaligned>(u64);
-	template u16 ReadVirtual<u16, MemoryAccess::Alignment::Unaligned>(u64);
-	template s16 ReadVirtual<s16, MemoryAccess::Alignment::Unaligned>(u64);
-	template u32 ReadVirtual<u32, MemoryAccess::Alignment::Unaligned>(u64);
-	template s32 ReadVirtual<s32, MemoryAccess::Alignment::Unaligned>(u64);
-	template u64 ReadVirtual<u64, MemoryAccess::Alignment::Unaligned>(u64);
-	template s64 ReadVirtual<s64, MemoryAccess::Alignment::Unaligned>(u64);
+	template u8 ReadVirtual<u8, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template s8 ReadVirtual<s8, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template u16 ReadVirtual<u16, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template s16 ReadVirtual<s16, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template u32 ReadVirtual<u32, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template s32 ReadVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template u64 ReadVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template s64 ReadVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(u64);
+	template u8 ReadVirtual<u8, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template s8 ReadVirtual<s8, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template u16 ReadVirtual<u16, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template s16 ReadVirtual<s16, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template u32 ReadVirtual<u32, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template s32 ReadVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template u64 ReadVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(u64);
+	template s64 ReadVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(u64);
 
 	template void WriteVirtual<u8, MemoryAccess::Alignment::Aligned>(const u64, const u8);
 	template void WriteVirtual<s8, MemoryAccess::Alignment::Aligned>(const u64, const s8);
@@ -400,14 +401,22 @@ is set to 1, and then the TLB cannot be used. */
 	template void WriteVirtual<s32, MemoryAccess::Alignment::Aligned>(const u64, const s32);
 	template void WriteVirtual<u64, MemoryAccess::Alignment::Aligned>(const u64, const u64);
 	template void WriteVirtual<s64, MemoryAccess::Alignment::Aligned>(const u64, const s64);
-	template void WriteVirtual<u8, MemoryAccess::Alignment::Unaligned>(const u64, const u8);
-	template void WriteVirtual<s8, MemoryAccess::Alignment::Unaligned>(const u64, const s8);
-	template void WriteVirtual<u16, MemoryAccess::Alignment::Unaligned>(const u64, const u16);
-	template void WriteVirtual<s16, MemoryAccess::Alignment::Unaligned>(const u64, const s16);
-	template void WriteVirtual<u32, MemoryAccess::Alignment::Unaligned>(const u64, const u32);
-	template void WriteVirtual<s32, MemoryAccess::Alignment::Unaligned>(const u64, const s32);
-	template void WriteVirtual<u64, MemoryAccess::Alignment::Unaligned>(const u64, const u64);
-	template void WriteVirtual<s64, MemoryAccess::Alignment::Unaligned>(const u64, const s64);
+	template void WriteVirtual<u8, MemoryAccess::Alignment::UnalignedLeft>(const u64, const u8);
+	template void WriteVirtual<s8, MemoryAccess::Alignment::UnalignedLeft>(const u64, const s8);
+	template void WriteVirtual<u16, MemoryAccess::Alignment::UnalignedLeft>(const u64, const u16);
+	template void WriteVirtual<s16, MemoryAccess::Alignment::UnalignedLeft>(const u64, const s16);
+	template void WriteVirtual<u32, MemoryAccess::Alignment::UnalignedLeft>(const u64, const u32);
+	template void WriteVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(const u64, const s32);
+	template void WriteVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(const u64, const u64);
+	template void WriteVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(const u64, const s64);
+	template void WriteVirtual<u8, MemoryAccess::Alignment::UnalignedRight>(const u64, const u8);
+	template void WriteVirtual<s8, MemoryAccess::Alignment::UnalignedRight>(const u64, const s8);
+	template void WriteVirtual<u16, MemoryAccess::Alignment::UnalignedRight>(const u64, const u16);
+	template void WriteVirtual<s16, MemoryAccess::Alignment::UnalignedRight>(const u64, const s16);
+	template void WriteVirtual<u32, MemoryAccess::Alignment::UnalignedRight>(const u64, const u32);
+	template void WriteVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(const u64, const s32);
+	template void WriteVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(const u64, const u64);
+	template void WriteVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(const u64, const s64);
 
 	template u32 VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>(const u64);
 	template u32 VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>(const u64);

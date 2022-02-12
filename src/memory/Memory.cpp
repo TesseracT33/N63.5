@@ -2,7 +2,6 @@ module Memory;
 
 import Cartridge;
 import HostSystem;
-import MemoryUtils;
 import MIPS_Interface;
 import PeripheralInterface;
 import RDRAM;

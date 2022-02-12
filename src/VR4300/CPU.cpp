@@ -6,7 +6,6 @@ import :Operation;
 import :Registers;
 
 import MemoryAccess;
-import MemoryUtils;
 
 namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
 {
@@ -20,7 +19,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 address = GPR[base] + offset;
 
-		const auto result = [&] {
+		auto result = [&] {
 			/* For all instructions:
 			   Generates an address by adding a sign-extended offset to the contents of register base. */
 			if constexpr (instr == LB)
@@ -66,7 +65,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   the address is at the leftmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return ReadVirtual<u32, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(address);
 			}
 			else if constexpr (instr == LWR)
 			{
@@ -75,7 +74,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   the address is at the rightmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return ReadVirtual<u32, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(address);
 			}
 			else if constexpr (instr == LD)
 			{
@@ -90,7 +89,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   specified by the address is at the leftmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(address);
 			}
 			else if constexpr (instr == LDR)
 			{
@@ -99,7 +98,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   specified by the address is at the rightmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, MemoryAccess::Alignment::Unaligned>(address);
+				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(address);
 			}
 			else if constexpr (instr == LL)
 			{
@@ -123,10 +122,78 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		if (exception_has_occurred)
 			return;
 
-		GPR.Set(rt, result);
+		/* Unaligned memory access example: demonstrating that the below works.
+		   Memory in big endian: 01234567 (bytes), we perform LWL at $1 and then LWR at $4.
+		   The end result should be: reg = 1234
+			LWL, little endian host
+			N64 mem		host value
+			0123		3210		after read
+						0123		after swap (done in ReadVirtual)
+						123X		after shift (<< 8); 8 == 8 * (addr & (sizeof word - 1)) == 8 * (1 & 3)
 
+			LWR, little endian host
+			N64 mem		host value
+			4567		7654		after read
+						4567		after swap
+						XXX4		after shift (>> 24); 24 == 8 * (sizeof word - 1 - (addr & (sizeof word - 1))) == 8 * (3 - (4 & 3))
+
+			LWL, big endian host
+			N64 mem		host value
+			0123		0123		after read
+						123X		after shift (<< 8)
+
+			LWR, big endian host
+			N64 mem		host value
+			4567		4567		after read
+						XXX5		after shift (>> 24)
+		*/
+		/* For load right instructions, this represents the 'X's above, that is to be ANDed with GPR when combining it with the read value. */
+		static constexpr std::array<u64, 8> right_load_mask = {
+			0xFFFF'FFFF'FFFF'FF00,
+			0xFFFF'FFFF'FFFF'0000,
+			0xFFFF'FFFF'FF00'0000,
+			0xFFFF'FFFF'0000'0000,
+			0xFFFF'FF00'0000'0000,
+			0xFFFF'0000'0000'0000,
+			0xFF00'0000'0000'0000,
+			0
+		};
+		if constexpr (instr == LWL)
+		{
+			const std::size_t bits_from_last_boundary = 8 * (address & 3);
+			result <<= bits_from_last_boundary;
+			const s32 untouched_gpr = s32(GPR.Get(rt) & ((1 << bits_from_last_boundary) - 1));
+			GPR.Set(rt, result | untouched_gpr);
+		}
+		else if constexpr (instr == LDL)
+		{
+			const std::size_t bits_from_last_boundary = 8 * (address & 7);
+			result <<= bits_from_last_boundary;
+			const u64 untouched_gpr = GPR.Get(rt) & ((1ll << bits_from_last_boundary) - 1);
+			GPR.Set(rt, result | untouched_gpr);
+		}
+		else if constexpr (instr == LWR)
+		{
+			const std::size_t bytes_from_last_boundary = address & 3;
+			result >>= 8 * (3 - bytes_from_last_boundary);
+			const s32 untouched_gpr = s32(GPR.Get(rt) & right_load_mask[bytes_from_last_boundary]);
+			GPR.Set(rt, result | untouched_gpr);
+		}
+		else if constexpr (instr == LDR)
+		{
+			const std::size_t bytes_from_last_boundary = address & 7;
+			result >>= 8 * (7 - bytes_from_last_boundary);
+			const u64 untouched_gpr = GPR.Get(rt) & right_load_mask[bytes_from_last_boundary];
+			GPR.Set(rt, result | untouched_gpr);
+		}
+		else /* Aligned read */
+		{
+			GPR.Set(rt, result);
+		}
 		if constexpr (instr == LL || instr == LLD)
+		{
 			LL_bit = 1;
+		}
 	}
 
 
@@ -166,7 +233,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			WriteVirtual<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt])); /* TODO write function should handle this? */
+			const u32 data_to_write = u32(GPR[rt] & ~((1 << (8 * (address & 3))) - 1));
+			WriteVirtual<u32, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
 		}
 		else if constexpr (instr == SWR)
 		{
@@ -174,7 +242,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			WriteVirtual<u32, MemoryAccess::Alignment::Unaligned>(address, u32(GPR[rt]));
+			const u32 data_to_write = u32(GPR[rt] << (8 * (3 - (address & 3))));
+			WriteVirtual<u32, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
 		}
 		else if constexpr (instr == SD)
 		{
@@ -188,7 +257,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			WriteVirtual<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
+			const u64 data_to_write = GPR[rt] & ~((1ll << (8 * (address & 7))) - 1);
+			WriteVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
 		}
 		else if constexpr (instr == SDR)
 		{
@@ -196,7 +266,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			WriteVirtual<u64, MemoryAccess::Alignment::Unaligned>(address, GPR[rt]);
+			const u64 data_to_write = GPR[rt] << (8 * (7 - (address & 7)));
+			WriteVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
 		}
 		else if constexpr (instr == SC)
 		{

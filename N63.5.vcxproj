@@ -179,7 +179,6 @@
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\memory\MemoryAccess.ixx" />
-    <ClCompile Include="src\memory\MemoryUtils.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />
     <ClCompile Include="src\memory\RDRAM.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
