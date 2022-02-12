@@ -104,7 +104,7 @@ namespace VR4300
 	}
 
 
-	void FPUControl31::Set(const u32 data)
+	void FCR31::Set(const u32 data)
 	{
 		/* TODO */
 		/* after updating RM... */
@@ -123,7 +123,7 @@ namespace VR4300
 	}
 
 
-	u32 FPUControl31::Get() const
+	u32 FCR31::Get() const
 	{
 		return std::bit_cast<u32, std::remove_reference_t<decltype(*this)>>(*this);
 	}
@@ -134,7 +134,7 @@ namespace VR4300
 		if (index == 0)
 			return 0;
 		else if (index == 31)
-			return FCR31.Get();
+			return fcr31.Get();
 		else
 			return 0; /* TODO ??? */
 	}
@@ -145,37 +145,37 @@ namespace VR4300
 		if (index == 0)
 			;
 		else if (index == 31)
-			FCR31.Set(data);
+			fcr31.Set(data);
 		else
 			; /* TODO ??? */
 	}
 
 
 	template<typename FPU_NumericType>
-	FPU_NumericType FPURegister::Get(const size_t index) const
+	FPU_NumericType FGR::Get(const size_t index) const
 	{
 		if constexpr (std::is_same_v<FPU_NumericType, s32>)
-			return s32(FGR[index]);
+			return s32(fgr[index]);
 		else if constexpr (std::is_same_v<FPU_NumericType, f32>)
-			return std::bit_cast<f32, s32>(s32(FGR[index]));
+			return std::bit_cast<f32, s32>(s32(fgr[index]));
 		else if constexpr (std::is_same_v<FPU_NumericType, s64>)
 		{
-			if (COP0_reg.status.FR)
-				return FGR[index];
+			if (cop0_reg.status.FR)
+				return fgr[index];
 			else
 			{ /* If the index is odd, then the result is undefined. */
 				const auto aligned_index = index & 0x1E;
-				return FGR[aligned_index] & 0xFFFFFFFF | FGR[aligned_index + 1] << 32;
+				return fgr[aligned_index] & 0xFFFFFFFF | fgr[aligned_index + 1] << 32;
 			}
 		}
 		else if constexpr (std::is_same_v<FPU_NumericType, f64>)
 		{
-			if (COP0_reg.status.FR)
-				return std::bit_cast<f64, s64>(FGR[index]);
+			if (cop0_reg.status.FR)
+				return std::bit_cast<f64, s64>(fgr[index]);
 			else
 			{ /* If the index is odd, then the result is undefined. */
 				const auto aligned_index = index & 0x1E;
-				return std::bit_cast<f64, s64>(FGR[aligned_index] & 0xFFFFFFFF | FGR[aligned_index + 1] << 32);
+				return std::bit_cast<f64, s64>(fgr[aligned_index] & 0xFFFFFFFF | fgr[aligned_index + 1] << 32);
 			}
 		}
 		else
@@ -184,33 +184,33 @@ namespace VR4300
 
 
 	template<typename FPU_NumericType>
-	void FPURegister::Set(const size_t index, const FPU_NumericType data)
+	void FGR::Set(const size_t index, const FPU_NumericType data)
 	{
 		if constexpr (std::is_same_v<FPU_NumericType, s32>)
-			FGR[index] = data;
+			fgr[index] = data;
 		else if constexpr (std::is_same_v<FPU_NumericType, f32>)
-			FGR[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
+			fgr[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
 		else if constexpr (std::is_same_v<FPU_NumericType, s64>)
 		{
-			if (COP0_reg.status.FR)
-				FGR[index] = data;
+			if (cop0_reg.status.FR)
+				fgr[index] = data;
 			else
 			{ /* If the index is odd, then the result is undefined. */
 				const auto aligned_index = index & 0x1E;
-				FGR[aligned_index] = data & 0xFFFFFFFF;
-				FGR[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+				fgr[aligned_index] = data & 0xFFFFFFFF;
+				fgr[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 			}
 		}
 		else if constexpr (std::is_same_v<FPU_NumericType, f64>)
 		{
-			if (COP0_reg.status.FR)
-				FGR[index] = std::bit_cast<s64, f64>(data);
+			if (cop0_reg.status.FR)
+				fgr[index] = std::bit_cast<s64, f64>(data);
 			else
 			{ /* If the index is odd, then the result is undefined. */
 				const auto aligned_index = index & 0x1E;
 				const s64 conv = std::bit_cast<s64, f64>(data);
-				FGR[aligned_index] = conv & 0xFFFFFFFF;
-				FGR[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+				fgr[aligned_index] = conv & 0xFFFFFFFF;
+				fgr[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 			}
 		}
 		else
@@ -218,13 +218,13 @@ namespace VR4300
 	}
 
 
-	template s32 FPURegister::Get<s32>(const size_t) const;
-	template s64 FPURegister::Get<s64>(const size_t) const;
-	template f32 FPURegister::Get<f32>(const size_t) const;
-	template f64 FPURegister::Get<f64>(const size_t) const;
+	template s32 FGR::Get<s32>(const size_t) const;
+	template s64 FGR::Get<s64>(const size_t) const;
+	template f32 FGR::Get<f32>(const size_t) const;
+	template f64 FGR::Get<f64>(const size_t) const;
 
-	template void FPURegister::Set<s32>(const size_t, const s32);
-	template void FPURegister::Set<s64>(const size_t, const s64);
-	template void FPURegister::Set<f32>(const size_t, const f32);
-	template void FPURegister::Set<f64>(const size_t, const f64);
+	template void FGR::Set<s32>(const size_t, const s32);
+	template void FGR::Set<s64>(const size_t, const s64);
+	template void FGR::Set<f32>(const size_t, const f32);
+	template void FGR::Set<f64>(const size_t, const f64);
 }

@@ -10,8 +10,8 @@ namespace VR4300
 {
 	void AssignActiveVirtualToPhysicalFunctions()
 	{
-		active_virtual_to_physical_fun_read = virtual_to_physical_fun_read_table[COP0_reg.status.KSU][COP0_reg.status.UX];
-		active_virtual_to_physical_fun_write = virtual_to_physical_fun_write_table[COP0_reg.status.KSU][COP0_reg.status.UX];
+		active_virtual_to_physical_fun_read = virtual_to_physical_fun_read_table[cop0_reg.status.KSU][cop0_reg.status.UX];
+		active_virtual_to_physical_fun_write = virtual_to_physical_fun_write_table[cop0_reg.status.KSU][cop0_reg.status.UX];
 	}
 
 	template<MemoryAccess::Operation operation>
@@ -251,7 +251,7 @@ is set to 1, and then the TLB cannot be used. */
 			addr_VPN2 = addr_VPN >> 1; /* VPN divided by two */
 
 			/* For a TLB hit to occur, the virtual page number of the virtual address must coincide with the one in the TLB entry. */
-			if (entry.VPN2 != addr_VPN2 || (!entry.G && entry.ASID != COP0_reg.entry_hi.ASID))
+			if (entry.VPN2 != addr_VPN2 || (!entry.G && entry.ASID != cop0_reg.entry_hi.ASID))
 				continue;
 
 			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */

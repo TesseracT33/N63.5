@@ -35,47 +35,47 @@ namespace VR4300
 
 		void test_and_signal_all()
 		{
-			FCR31.cause_I = std::fetestexcept(FE_INEXACT);
-			FCR31.cause_U = std::fetestexcept(FE_UNDERFLOW);
-			FCR31.cause_O = std::fetestexcept(FE_OVERFLOW);
-			FCR31.cause_Z = std::fetestexcept(FE_DIVBYZERO);
-			FCR31.cause_V = std::fetestexcept(FE_INVALID);
-			FCR31.cause_E = unimplemented_operation;
+			fcr31.cause_I = std::fetestexcept(FE_INEXACT);
+			fcr31.cause_U = std::fetestexcept(FE_UNDERFLOW);
+			fcr31.cause_O = std::fetestexcept(FE_OVERFLOW);
+			fcr31.cause_Z = std::fetestexcept(FE_DIVBYZERO);
+			fcr31.cause_V = std::fetestexcept(FE_INVALID);
+			fcr31.cause_E = unimplemented_operation;
 
-			if (FCR31.enable_I)
+			if (fcr31.enable_I)
 				InexactOperationException();
 			else
-				FCR31.flag_I = true;
+				fcr31.flag_I = true;
 
-			if (FCR31.enable_U)
+			if (fcr31.enable_U)
 				UnderflowException();
 			else
-				FCR31.flag_U = true;
+				fcr31.flag_U = true;
 
-			if (FCR31.enable_O)
+			if (fcr31.enable_O)
 				OverflowException();
 			else
-				FCR31.flag_O = true;
+				fcr31.flag_O = true;
 
-			if (FCR31.enable_Z)
+			if (fcr31.enable_Z)
 				DivisionByZeroException();
 			else
-				FCR31.flag_Z = true;
+				fcr31.flag_Z = true;
 
-			if (FCR31.enable_V)
+			if (fcr31.enable_V)
 				InvalidOperationException();
 			else
-				FCR31.flag_V = true;
+				fcr31.flag_V = true;
 		}
 
 		void test_and_signal_unimplemented_exception()
 		{
-			FCR31.cause_E = unimplemented_operation;
+			fcr31.cause_E = unimplemented_operation;
 		}
 
 		void test_and_signal_invalid_exception()
 		{
-			FCR31.cause_V = std::fetestexcept(FE_INVALID);
+			fcr31.cause_V = std::fetestexcept(FE_INVALID);
 		}
 	} static exception_flags{};
 
@@ -88,7 +88,7 @@ namespace VR4300
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 ft = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 address = GPR[base] + offset;
+		const u64 address = gpr[base] + offset;
 
 		const auto result = [&] {
 			if constexpr (instr == LWC1)
@@ -117,7 +117,7 @@ namespace VR4300
 		if (exception_has_occurred)
 			return;
 
-		FGR.Set(ft, result);
+		fgr.Set(ft, result);
 	}
 
 
@@ -129,7 +129,7 @@ namespace VR4300
 		const s16 offset = instr_code & 0xFFFF;
 		const u8 ft = instr_code >> 16 & 0x1F;
 		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 address = GPR[base] + offset;
+		const u64 address = gpr[base] + offset;
 
 		if constexpr (instr == SWC1)
 		{
@@ -137,7 +137,7 @@ namespace VR4300
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose register ft to the
 			   memory position specified by the address. */
-			WriteVirtual<s32>(address, FGR.Get<s32>(ft));
+			WriteVirtual<s32>(address, fgr.Get<s32>(ft));
 		}
 		else if constexpr (instr == SDC1)
 		{
@@ -146,7 +146,7 @@ namespace VR4300
 			   an address. Stores the contents of the FPU general purpose registers ft and
 			   ft+1 to the memory position specified by the address when FR = 0, and the
 			   contents of the FPU general purpose register ft when FR = 1. */
-			WriteVirtual<s64>(address, FGR.Get<s64>(ft));
+			WriteVirtual<s64>(address, fgr.Get<s64>(ft));
 		}
 		else
 		{
@@ -167,38 +167,38 @@ namespace VR4300
 		{
 			/* Move Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
-			FGR.Set<s32>(fs, s32(GPR[rt]));
+			fgr.Set<s32>(fs, s32(gpr[rt]));
 		}
 		else if constexpr (instr == MFC1)
 		{
 			/* Move Word From FPU;
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
-			GPR.Set(rt, u64(FGR.Get<s32>(fs)));
+			gpr.Set(rt, u64(fgr.Get<s32>(fs)));
 		}
 		else if constexpr (instr == CTC1)
 		{
 			/* Move Control Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
-			FPU_control.Set(fs, u32(GPR[rt]));
+			fpu_control.Set(fs, u32(gpr[rt]));
 			exception_flags.test_and_signal_all();
 		}
 		else if constexpr (instr == CFC1)
 		{
 			/* Move Control Word From FPU;
 			   Transfers the contents of FPU control register fs to CPU general purpose register rt. */
-			GPR.Set(rt, FPU_control.Get(fs));
+			gpr.Set(rt, fpu_control.Get(fs));
 		}
 		else if constexpr (instr == DMTC1)
 		{
 			/* Doubleword Move To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
-			FGR.Set<s64>(fs, s64(GPR[rt]));
+			fgr.Set<s64>(fs, s64(gpr[rt]));
 		}
 		else if constexpr (instr == DMFC1)
 		{
 			/* Doubleword Move From FPU;
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
-			GPR.Set(rt, FGR.Get<s64>(fs));
+			gpr.Set(rt, fgr.Get<s64>(fs));
 		}
 		else
 		{
@@ -254,9 +254,9 @@ namespace VR4300
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
 				auto Convert2 = [&] <FPU_NumericType From, FPU_NumericType To> // TODO think of a new lambda name ;)
 				{
-					const From source = FGR.Get<From>(fs);
+					const From source = fgr.Get<From>(fs);
 					const To conv = To(source); // TODO this instruction may have to put exactly between when exceptions are cleared and checked via std::fetestex. Also TODO is the rounding mode taken into account here?
-					FGR.Set<To>(fd, conv);
+					fgr.Set<To>(fd, conv);
 
 					exception_flags.unimplemented_operation =
 						test_unimplemented_exception_from_conversion.template operator () < From, To > (source);
@@ -313,7 +313,7 @@ namespace VR4300
 			/* Interpret the source operand (as a float), and round it to an integer (s32 or s64). */
 			auto Round = [&] <std::floating_point Input_Float, std::signed_integral Output_Int>
 			{
-				const Input_Float source = FGR.Get<Input_Float>(fs);
+				const Input_Float source = fgr.Get<Input_Float>(fs);
 
 				const Output_Int result = [&] {
 					if constexpr (instr == ROUND_W || instr == ROUND_L)
@@ -332,8 +332,8 @@ namespace VR4300
 					test_unimplemented_exception_from_conversion.template operator () < Input_Float, Output_Int > (source);
 
 				/* If the invalid operation exception occurs, but the exception is not enabled, return INT_MAX */
-				FGR.Set<Output_Int>(fd, [&] {
-					if (std::fetestexcept(FE_INVALID) && !FCR31.enable_I)
+				fgr.Set<Output_Int>(fd, [&] {
+					if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I)
 						return std::numeric_limits<Output_Int>::max();
 					else return result;
 					}());
@@ -400,8 +400,8 @@ namespace VR4300
 
 			auto Compute = [&] <std::floating_point Float>
 			{
-				const Float op1 = FGR.Get<Float>(fs);
-				const Float op2 = FGR.Get<Float>(ft);
+				const Float op1 = fgr.Get<Float>(fs);
+				const Float op2 = fgr.Get<Float>(ft);
 
 				const Float result = [&] {
 					if constexpr (instr == ADD)
@@ -416,7 +416,7 @@ namespace VR4300
 						static_assert(false);
 				}();
 
-				FGR.Set<Float>(fd, result);
+				fgr.Set<Float>(fd, result);
 			};
 
 			exception_flags.clear_all();
@@ -459,7 +459,7 @@ namespace VR4300
 
 			auto Compute = [&] <std::floating_point Float>
 			{
-				const Float op = FGR.Get<Float>(fs);
+				const Float op = fgr.Get<Float>(fs);
 
 				const Float result = [&] {
 					if constexpr (instr == ABS)
@@ -474,7 +474,7 @@ namespace VR4300
 						static_assert(false);
 				}();
 
-				FGR.Set<Float>(fd, result);
+				fgr.Set<Float>(fd, result);
 			};
 
 			/* The MOV instruction does not update the exception flags (except for unimplemented exception (see below)) */
@@ -546,11 +546,11 @@ namespace VR4300
 
 		if (branch_cond)
 		{
-			PrepareJump(PC + offset);
+			PrepareJump(pc + offset);
 		}
 		else if constexpr (instr == BC1TL || instr == BC1FL)
 		{
-			PC += 4; /* The instruction in the branch delay slot is discarded. */
+			pc += 4; /* The instruction in the branch delay slot is discarded. */
 		}
 	}
 
@@ -570,8 +570,8 @@ namespace VR4300
 
 		auto Compare = [&] <std::floating_point Float>
 		{
-			const Float op1 = FGR.Get<Float>(fs);
-			const Float op2 = FGR.Get<Float>(ft);
+			const Float op1 = fgr.Get<Float>(fs);
+			const Float op2 = fgr.Get<Float>(ft);
 
 			const bool comp_result = [&] { /* See VR4300 User's Manual by NEC, p. 566 */
 				if (std::isnan(op1) || std::isnan(op2))
@@ -586,7 +586,7 @@ namespace VR4300
 				}
 			}();
 
-			FCR31.C = comp_result; /* TODO: also set 'COC1' to result*/
+			fcr31.C = comp_result; /* TODO: also set 'COC1' to result*/
 		};
 
 		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */

@@ -53,14 +53,14 @@ namespace VR4300
 		{
 			if (instructions_until_jump == 0)
 			{
-				PC = addr_to_jump_to;
+				pc = addr_to_jump_to;
 				jump_is_pending = false;
 			}
 			else instructions_until_jump--;
 		}
 
-		const u32 instr_code = FetchInstruction(PC);
-		PC += 4;
+		const u32 instr_code = FetchInstruction(pc);
+		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
 
@@ -77,19 +77,19 @@ namespace VR4300
 	void HLE_PIF()
 	{
 		/* https://github.com/Dillonb/n64-resources/blob/master/bootn64.html */
-		GPR.Set(20, 1);
-		GPR.Set(22, 0x3F);
-		GPR.Set(29, 0xA400'1FF0);
-		COP0_reg.Set(1, 0x0000'001F); /* random */
-		COP0_reg.Set(12, 0x7040'0004); /* status */
-		COP0_reg.Set(15, 0x0000'0B00); /* pr_id */
-		COP0_reg.Set(16, 0x0006'E463); /* config */
-		COP0_reg.status.NotifyCpuAfterWrite();
-		COP0_reg.config.NotifyCpuAfterWrite();
+		gpr.Set(20, 1);
+		gpr.Set(22, 0x3F);
+		gpr.Set(29, 0xA400'1FF0);
+		cop0_reg.Set(1, 0x0000'001F); /* random */
+		cop0_reg.Set(12, 0x7040'0004); /* status */
+		cop0_reg.Set(15, 0x0000'0B00); /* pr_id */
+		cop0_reg.Set(16, 0x0006'E463); /* config */
+		cop0_reg.status.NotifyCpuAfterWrite();
+		cop0_reg.config.NotifyCpuAfterWrite();
 
 		for (unsigned i = 0; i < 0x1000; i += 4) /* no clue if some kind of DMA */
 			WriteVirtual<u32>(0xA400'0000 + i, ReadVirtual<u32>(0xB000'0000 + i));
 
-		PC = 0xA400'0040;
+		pc = 0xA400'0040;
 	}
 }

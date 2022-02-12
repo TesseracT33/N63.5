@@ -25,21 +25,21 @@ namespace VR4300
 		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
 		std::is_same_v<s64, typename std::remove_cv<T>::type>;
 
-	u64 PC{}; /* Program counter */
+	u64 pc{}; /* Program counter */
 
-	u64 HI{}, LO{}; /* Contain the result of a double-word multiplication or division. */
+	u64 hi_reg{}, lo_reg{}; /* Contain the result of a double-word multiplication or division. */
 
 	bool LL_bit{}; /* Read from / written to by load linked and store conditional instructions. */
 
 	/* CPU general-purpose registers */
-	struct
+	struct GPR
 	{
-		u64 Get(const size_t index) const { return GPR[index]; }
-		void Set(const size_t index, const u64 data) { if (index != 0) GPR[index] = data; }
-		u64 operator[](const size_t index) { return GPR[index]; } /* returns by value so that assignments have to made through function "Set". */
+		u64 Get(const size_t index) const { return gpr[index]; }
+		void Set(const size_t index, const u64 data) { if (index != 0) gpr[index] = data; }
+		u64 operator[](const size_t index) { return gpr[index]; } /* returns by value so that assignments have to made through function "Set". */
 	private:
-		std::array<u64, 32> GPR{};
-	} GPR;
+		std::array<u64, 32> gpr{};
+	} gpr;
 
 	/* COP0 registers. Used for exception handling and memory management. */
 	struct COP0Registers
@@ -198,10 +198,10 @@ namespace VR4300
 
 		u64 Get(const size_t register_index) const;
 		void Set(const size_t register_index, const u64 value);
-	} COP0_reg{};
+	} cop0_reg{};
 
 	/* Floating point control register #31 */
-	struct FPUControl31
+	struct FCR31
 	{
 		void Set(const u32 data);
 		u32 Get() const;
@@ -231,17 +231,17 @@ namespace VR4300
 		u32 C : 1;
 		u32 FS : 1;
 		u32 : 7;
-	} FCR31{};
+	} fcr31{};
 
 	/* Floating point control registers. */
 	struct FPUControl
 	{
 		u32 Get(const size_t index) const;
 		void Set(const size_t index, const u32 data);
-	} FPU_control;
+	} fpu_control;
 
 	/* General-purpose floating point registers. */
-	struct FPURegister
+	struct FGR
 	{
 		template<typename FPU_NumericType>
 		FPU_NumericType Get(const size_t index) const;
@@ -250,6 +250,6 @@ namespace VR4300
 		void Set(const size_t index, const FPU_NumericType data);
 
 	private:
-		std::array<s64, 32> FGR{};
-	} FGR;
+		std::array<s64, 32> fgr{};
+	} fgr;
 }
