@@ -120,7 +120,11 @@ namespace VR4300
 			u32 RE : 1; /* Reverse-Endian bit, enables reverse of system endianness in User mode (0: disabled; 1: reversed) */
 			u32 FR : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
 			u32 RP : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
-			u32 CU : 4; /* Controls the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
+			/* The four flags below control the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
+			u32 CU0 : 1; /* Ignored by the N64; COP0 is always enabled. */
+			u32 CU1 : 1; /* If cleared, all COP1 instructions throw exceptions. */
+			u32 CU2 : 1; /* Ignored by the N64; there is no COP2. */
+			u32 CU3 : 1; /* Ignored by the N64; there is no COP3. */
 
 			void NotifyCpuAfterWrite();
 		} status{};

@@ -9,6 +9,7 @@ namespace VR4300
 	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()
 	{
 		SetActiveVirtualToPhysicalFunctions();
+		fpu_is_enabled = cop0_reg.status.CU1;
 	}
 
 

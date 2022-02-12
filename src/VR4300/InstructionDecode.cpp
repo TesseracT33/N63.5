@@ -145,6 +145,12 @@ namespace VR4300
 
 	static void DecodeCOP1Instruction(const u32 instr_code)
 	{
+		if (!fpu_is_enabled)
+		{
+			SignalException<Exception::CoprocessorUnusable>();
+			return;
+		}
+
 		const u8 sub_op_code = instr_code >> 21 & 0x1F;
 
 		switch (sub_op_code)
@@ -284,10 +290,33 @@ namespace VR4300
 
 		case 0b101111: CACHE(instr_code); break;
 
-		case 0b110101: FPU_Load<FPU_Instruction::LDC1>(instr_code); break;
-		case 0b110001: FPU_Load<FPU_Instruction::LWC1>(instr_code); break;
-		case 0b111101: FPU_Store<FPU_Instruction::SDC1>(instr_code); break;
-		case 0b111001: FPU_Store<FPU_Instruction::SWC1>(instr_code); break;
+		case 0b110101:
+			if (!fpu_is_enabled)
+				SignalException<Exception::CoprocessorUnusable>();
+			else
+				FPU_Load<FPU_Instruction::LDC1>(instr_code);
+			break;
+
+		case 0b110001:
+			if (!fpu_is_enabled)
+				SignalException<Exception::CoprocessorUnusable>();
+			else
+				FPU_Load<FPU_Instruction::LWC1>(instr_code);
+			break;
+
+		case 0b111101:
+			if (!fpu_is_enabled)
+				SignalException<Exception::CoprocessorUnusable>();
+			else
+				FPU_Store<FPU_Instruction::SDC1>(instr_code);
+			break;
+
+		case 0b111001:
+			if (!fpu_is_enabled)
+				SignalException<Exception::CoprocessorUnusable>();
+			else
+				FPU_Store<FPU_Instruction::SWC1>(instr_code);
+			break;
 
 		default:
 			ReservedInstructionException();
