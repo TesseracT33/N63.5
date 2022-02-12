@@ -91,14 +91,14 @@ namespace VR4300
 	u32 VirtualToPhysicalAddressSupervisorMode32(u64 virt_addr)
 	{
 		virt_addr &= 0xFFFFFFFF;
-		switch (virt_addr >> 28)
+		if ((virt_addr & 1 << 31) && (virt_addr & 0b11 << 29) != 0b10 << 29) /* $8000'0000-$BFFF'FFFF; $E000'0000-$FFFF'FFFF */
 		{
-		case 0x0: case 0x1: case 0x2: case 0x3: case 0x4: case 0x5: case 0x6: case 0x7: case 0xC: case 0xD:
-			return VirtualToPhysicalAddress<operation>(virt_addr);
-
-		default:
 			SignalException<Exception::AddressError, operation>();
 			return 0;
+		}
+		else /* 0-$7FFF'FFFF; $C000'0000-$DFFF'FFFF */
+		{
+			return VirtualToPhysicalAddress<operation>(virt_addr);
 		}
 	}
 
