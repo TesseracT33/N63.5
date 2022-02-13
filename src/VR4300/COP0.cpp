@@ -48,6 +48,8 @@ namespace VR4300
 		{
 			static_assert(false, "\"CP0_Move\" template function called, but no matching move instruction was found.");
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -71,6 +73,8 @@ namespace VR4300
 			cop0_reg.index.index = std::distance(std::begin(TLB_entries), TLB_index);
 			cop0_reg.index.P = 0;
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -88,6 +92,8 @@ namespace VR4300
 		std::memcpy(&cop0_reg.page_mask, arr + 12, 4);
 		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
 		cop0_reg.entry_lo_0.G = cop0_reg.entry_lo_1.G = TLB_entries[TLB_index].G;
+
+		AdvancePipeline(1);
 	}
 
 
@@ -104,6 +110,8 @@ namespace VR4300
 		std::memcpy(arr + 8, &cop0_reg.entry_hi, 4);
 		std::memcpy(arr + 12, &cop0_reg.page_mask, 4);
 		TLB_entries[TLB_index].G = cop0_reg.entry_lo_0.G && cop0_reg.entry_lo_1.G;
+
+		AdvancePipeline(1);
 	}
 
 
@@ -125,6 +133,8 @@ namespace VR4300
 		std::memcpy(arr + 8, &cop0_reg.entry_hi, 4);
 		std::memcpy(arr + 12, &cop0_reg.page_mask, 4);
 		TLB_entries[TLB_index].G = cop0_reg.entry_lo_0.G && cop0_reg.entry_lo_1.G;
+
+		AdvancePipeline(1);
 	}
 
 
@@ -132,6 +142,8 @@ namespace VR4300
 	{
 		/* Return From Exception;
 		   Returns from an exception, interrupt, or error trap. */
+		/* TODO */
+		AdvancePipeline(1);
 	}
 
 
@@ -147,6 +159,8 @@ namespace VR4300
 		const u8 base = instr_code >> 21 & 0x1F;
 		const u64 virt_addr = gpr[base] + offset;
 		const u64 phys_addr = VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(virt_addr);
+		/* TODO */
+		AdvancePipeline(1);
 	}
 
 

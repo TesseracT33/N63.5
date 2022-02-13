@@ -194,6 +194,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			LL_bit = 1;
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -307,6 +309,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			static_assert(false, "\"Store\" template function called, but no matching store instruction was found.");
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -424,7 +428,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			static_assert(false, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
 		}
 
-		p_cycle_counter += 1;
+		AdvancePipeline(1);
 	}
 
 	template<CPU_Instruction instr>
@@ -568,7 +572,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			static_assert(false, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
 		}
 
-		p_cycle_counter += 1;
+		AdvancePipeline(1);
 	}
 
 
@@ -717,6 +721,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}());
 
 		gpr.Set(rd, result);
+		AdvancePipeline(1);
 	}
 
 
@@ -835,13 +840,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			static_assert(false, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}
 
-		p_cycle_counter += [&] {
+		AdvancePipeline( [&] {
 			     if constexpr (instr == MULT  || instr == MULTU)  return 5;
 			else if constexpr (instr == DMULT || instr == DMULTU) return 8;
 			else if constexpr (instr == DIV   || instr == DIVU)   return 37;
 			else if constexpr (instr == DDIV  || instr == DDIVU)  return 69;
 			else static_assert(false, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
-		}();
+		}());
 	}
 
 
@@ -869,7 +874,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const u64 target = [&] {
 			if constexpr (instr == J || instr == JAL)
 			{
-				return pc & 0xFFFF'FFFF'F000'0000 | u64(instr_code & 0x3FFFFFF) << 2;
+				const u64 target = u64((instr_code & 0x3FFFFFF) << 2);
+				return pc & 0xFFFF'FFFF'F000'0000 | target;
 			}
 			else if constexpr (instr == JR || instr == JALR)
 			{
@@ -893,6 +899,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const u8 rd = instr_code >> 11 & 0x1F;
 			gpr.Set(rd, pc + 4);
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -949,6 +957,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			pc += 4; /* The instruction in the branch delay slot is discarded. */
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -1009,6 +1019,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		if (trap_cond)
 			TrapException();
+
+		AdvancePipeline(1);
 	}
 
 
@@ -1069,6 +1081,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		if (trap_cond)
 			TrapException();
+
+		AdvancePipeline(1);
 	}
 
 	void MFHI(const u32 instr_code)
@@ -1077,6 +1091,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Transfers the contents of special register HI to register rd. */
 		const u8 rd = instr_code >> 11 & 0x1F;
 		gpr.Set(rd, hi_reg);
+		AdvancePipeline(1);
 	}
 
 
@@ -1086,6 +1101,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Transfers the contents of special register LO to register rd. */
 		const u8 rd = instr_code >> 11 & 0x1F;
 		gpr.Set(rd, lo_reg);
+		AdvancePipeline(1);
 	}
 
 
@@ -1095,6 +1111,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Transfers the contents of register rs to special register HI. */
 		const u8 rs = instr_code >> 21 & 0x1F;
 		hi_reg = gpr[rs];
+		AdvancePipeline(1);
 	}
 
 
@@ -1104,6 +1121,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   Transfers the contents of register rs to special register LO. */
 		const u8 rs = instr_code >> 21 & 0x1F;
 		lo_reg = gpr[rs];
+		AdvancePipeline(1);
 	}
 
 
@@ -1111,10 +1129,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		/* Synchronize;
 		   Completes the Load/store instruction currently in the pipeline before the new
-		   Load/store instruction is executed. */
-
-		   /* TODO */
-		assert(false);
+		   Load/store instruction is executed. Is executed as a NOP on the VR4300. */
+		AdvancePipeline(1);
 	}
 
 
@@ -1122,9 +1138,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		/* System Call;
 		   Generates a system call exception and transfers control to the exception processing program. */
-
-		   /* TODO */
-		assert(false);
+		SignalException<Exception::Syscall>();
+		AdvancePipeline(1);
 	}
 
 
@@ -1132,9 +1147,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		/* Breakpoint;
 		   Generates a breakpoint exception and transfers control to the exception processing program. */
-
-		   /* TODO */
-		assert(false);
+		SignalException<Exception::Breakpoint>();
+		AdvancePipeline(1);
 	}
 
 

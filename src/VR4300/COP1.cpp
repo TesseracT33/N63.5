@@ -3,6 +3,7 @@ module VR4300:COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
+import :Operation;
 import :Registers;
 
 namespace VR4300
@@ -114,6 +115,8 @@ namespace VR4300
 			}
 		}();
 
+		AdvancePipeline(1);
+
 		if (exception_has_occurred)
 			return;
 
@@ -152,6 +155,8 @@ namespace VR4300
 		{
 			static_assert(false, "\"FPU_Store\" template function called, but no matching store instruction was found.");
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -204,6 +209,8 @@ namespace VR4300
 		{
 			static_assert(false, "\"FPU_Move\" template function called, but no matching move instruction was found.");
 		}
+
+		AdvancePipeline(1);
 	}
 
 
@@ -248,14 +255,14 @@ namespace VR4300
 			   CVT.W/CVT.L: Convert To Single/Long Fixed-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a 32/64-bit fixed-point format. Stores the rounded result to floating-point register fd. */
-
 			auto Convert = [&] <FPU_NumericType Input_Type>
 			{
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
 				auto Convert2 = [&] <FPU_NumericType From, FPU_NumericType To> // TODO think of a new lambda name ;)
 				{
 					const From source = fgr.Get<From>(fs);
-					const To conv = To(source); // TODO this instruction may have to put exactly between when exceptions are cleared and checked via std::fetestex. Also TODO is the rounding mode taken into account here?
+					exception_flags.clear_all();
+					const To conv = To(source); // TODO is the rounding mode taken into account here?
 					fgr.Set<To>(fd, conv);
 
 					exception_flags.unimplemented_operation =
@@ -263,6 +270,15 @@ namespace VR4300
 
 					/* Note: if the input and output formats are the same, the result is undefined,
 					   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995. */
+					/* TODO: the below is assuming that conv. between W and L takes 2 cycles.
+					   See footnote 2 in table 7-14, VR4300 manual */
+					AdvancePipeline([&] {
+						     if constexpr (std::is_same_v<From, To>)                             return 1;
+						else if constexpr (std::is_same_v<From, f32> && std::is_same_v<To, f64>) return 1;
+						else if constexpr (std::is_same_v<From, f64> && std::is_same_v<To, f32>) return 2;
+						else if constexpr (std::is_integral_v<From> && std::is_integral_v<To>)   return 2;
+						else                                                                     return 5;
+					}());
 				};
 
 				if constexpr (instr == CVT_S)
@@ -276,8 +292,6 @@ namespace VR4300
 				else
 					static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 			};
-
-			exception_flags.clear_all();
 
 			switch (fmt)
 			{
@@ -299,6 +313,8 @@ namespace VR4300
 
 			default:
 				exception_flags.unimplemented_operation = true; /* TODO other exception flags are cleared in this case, should they be? */
+				AdvancePipeline(2);
+				break;
 			}
 
 			exception_flags.test_and_signal_all();
@@ -311,32 +327,27 @@ namespace VR4300
 			   fixed-point format and converts them from the specified format (fmt). Stores the result to floating-point register fd. */
 
 			/* Interpret the source operand (as a float), and round it to an integer (s32 or s64). */
-			auto Round = [&] <std::floating_point Input_Float, std::signed_integral Output_Int>
+			auto Round = [&] <std::floating_point InputFloat, std::signed_integral OutputInt>
 			{
-				const Input_Float source = fgr.Get<Input_Float>(fs);
+				const InputFloat source = fgr.Get<InputFloat>(fs);
 
-				const Output_Int result = [&] {
-					if constexpr (instr == ROUND_W || instr == ROUND_L)
-						return Output_Int(std::round(source));
-					else if constexpr (instr == TRUNC_W || instr == TRUNC_L)
-						return Output_Int(std::trunc(source));
-					else if constexpr (instr == CEIL_W || instr == CEIL_L)
-						return Output_Int(std::ceil(source));
-					else if constexpr (instr == FLOOR_W || instr == FLOOR_L)
-						return Output_Int(std::floor(source));
-					else
-						static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+				const OutputInt result = [&] {
+					     if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::round(source));
+					else if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
+					else if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
+					else if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
+					else static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 				}();
 
 				exception_flags.unimplemented_operation =
-					test_unimplemented_exception_from_conversion.template operator () < Input_Float, Output_Int > (source);
+					test_unimplemented_exception_from_conversion.template operator () < InputFloat, OutputInt > (source);
 
 				/* If the invalid operation exception occurs, but the exception is not enabled, return INT_MAX */
-				fgr.Set<Output_Int>(fd, [&] {
+				fgr.Set<OutputInt>(fd, [&] {
 					if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I)
-						return std::numeric_limits<Output_Int>::max();
+						return std::numeric_limits<OutputInt>::max();
 					else return result;
-					}());
+				}());
 			};
 
 			exception_flags.clear_all();
@@ -351,6 +362,7 @@ namespace VR4300
 					Round.template operator() < f32 /* input format */, s32 /* output format */ > ();
 				else
 					Round.template operator() < f32, s64 > ();
+				AdvancePipeline(5);
 				break;
 
 			case NumericFormatID::float64:
@@ -358,6 +370,7 @@ namespace VR4300
 					Round.template operator() < f64, s32 > ();
 				else
 					Round.template operator() < f64, s64 > ();
+				AdvancePipeline(5);
 				break;
 
 			case NumericFormatID::int32:
@@ -366,10 +379,13 @@ namespace VR4300
 				   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995.
 				   For now, just don't do anything.
 				   TODO possibly change */
+				AdvancePipeline(1);
 				break;
 
 			default:
 				exception_flags.unimplemented_operation = true;
+				AdvancePipeline(2);
+				break;
 			}
 
 			exception_flags.test_and_signal_all();
@@ -404,17 +420,19 @@ namespace VR4300
 				const Float op2 = fgr.Get<Float>(ft);
 
 				const Float result = [&] {
-					if constexpr (instr == ADD)
-						return op1 + op2;
-					else if constexpr (instr == SUB)
-						return op1 - op2;
-					else if constexpr (instr == MUL)
-						return op1 * op2;
-					else if constexpr (instr == DIV)
-						return op1 / op2;
-					else
-						static_assert(false);
+					     if constexpr (instr == ADD) return op1 + op2;
+					else if constexpr (instr == SUB) return op1 - op2;
+					else if constexpr (instr == MUL) return op1 * op2;
+					else if constexpr (instr == DIV) return op1 / op2;
+					else                             static_assert(false);
 				}();
+
+				AdvancePipeline([&] {
+					     if constexpr (instr == ADD || instr == SUB) return 3;
+					else if constexpr (std::is_same_v<Float, f32>)   return 29;
+					else if constexpr (std::is_same_v<Float, f64>)   return 58;
+					else                                             static_assert(false);
+				}());
 
 				fgr.Set<Float>(fd, result);
 			};
@@ -434,7 +452,9 @@ namespace VR4300
 				break;
 
 			default:
+				AdvancePipeline(2);
 				exception_flags.unimplemented_operation = true;
+				break;
 			}
 
 			exception_flags.test_and_signal_all();
@@ -462,17 +482,22 @@ namespace VR4300
 				const Float op = fgr.Get<Float>(fs);
 
 				const Float result = [&] {
-					if constexpr (instr == ABS)
-						return std::abs(op);
-					else if constexpr (instr == MOV)
-						return op; /* This unnecessary copy from 'op' to 'result' should be optimized away. */
-					else if constexpr (instr == NEG)
-						return -op;
-					else if constexpr (instr == SQRT)
-						return std::sqrt(op);
-					else
-						static_assert(false);
+					     if constexpr (instr == ABS)  return std::abs(op);
+					else if constexpr (instr == MOV)  return op; 
+					else if constexpr (instr == NEG)  return -op;
+					else if constexpr (instr == SQRT) return std::sqrt(op);
+					else                              static_assert(false);
 				}();
+
+				AdvancePipeline([&] {
+					if constexpr (instr == SQRT)
+					{
+						     if constexpr (std::is_same_v<Float, f32>) return 29;
+						else if constexpr (std::is_same_v<Float, f64>) return 58;
+						else                                           static_assert(false);
+					}
+					else return 1;
+				}());
 
 				fgr.Set<Float>(fd, result);
 			};
@@ -494,7 +519,9 @@ namespace VR4300
 				break;
 
 			default:
+				AdvancePipeline(2);
 				exception_flags.unimplemented_operation = true;
+				break;
 			}
 
 			if constexpr (instr != MOV)
@@ -532,16 +559,13 @@ namespace VR4300
 		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
 
 		const s16 offset = instr_code & 0xFFFF;
-		const bool cond = true; // TODO: = COC[1]
-		const s64 target = s64(offset) << 2;
+		const bool cond = fcr31.C;
+		const s64 target = s64(offset << 2);
 
 		const bool branch_cond = [&] {
-			if constexpr (instr == BC1T || instr == BC1TL)
-				return cond;
-			else if constexpr (instr == BC1F || instr == BC1FL)
-				return !cond;
-			else
-				static_assert(false, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
+			     if constexpr (instr == BC1T || instr == BC1TL) return cond;
+			else if constexpr (instr == BC1F || instr == BC1FL) return !cond;
+			else static_assert(false, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
 		if (branch_cond)
@@ -550,8 +574,10 @@ namespace VR4300
 		}
 		else if constexpr (instr == BC1TL || instr == BC1FL)
 		{
-			pc += 4; /* The instruction in the branch delay slot is discarded. */
+			pc += 4; /* The instruction in the branch delay slot is discarded. TODO: manual says "invalidated" */
 		}
+
+		AdvancePipeline(1); /* TODO: not if 2? */
 	}
 
 
@@ -586,7 +612,7 @@ namespace VR4300
 				}
 			}();
 
-			fcr31.C = comp_result; /* TODO: also set 'COC1' to result*/
+			fcr31.C = comp_result; /* TODO: also set 'COC1' to result? Or is COC1 the same as fcr31.C? */
 		};
 
 		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */
@@ -596,15 +622,19 @@ namespace VR4300
 		case NumericFormatID::float32:
 			Compare.template operator() < f32 > ();
 			exception_flags.unimplemented_operation = false;
+			AdvancePipeline(1);
 			break;
 
 		case NumericFormatID::float64:
 			Compare.template operator() < f64 > ();
 			exception_flags.unimplemented_operation = false;
+			AdvancePipeline(1);
 			break;
 
 		default:
 			exception_flags.unimplemented_operation = true;
+			AdvancePipeline(2);
+			break;
 		}
 
 		exception_flags.test_and_signal_invalid_exception();
