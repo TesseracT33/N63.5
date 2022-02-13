@@ -46,14 +46,14 @@ namespace VR4300
 	{
 		struct /* (0) */
 		{
-			s32 index : 6; /* Index to the TLB entry affected by the TLB Read (TLBR) and TLB Write (TLBW) instructions. */
+			s32 value : 6; /* Index to the TLB entry affected by the TLB Read (TLBR) and TLB Write (TLBW) instructions. */
 			s32 : 25;
 			s32 P : 1; /* Shows the success (0) or failure (1) of the last TLB Probe (TLBP) instruction executed. */
 		} index{};
 
 		struct /* (1) */
 		{
-			s32 random : 5; /* Decrements every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
+			s32 value : 5; /* Decrements every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
 			s32 : 1; /* R/W, but has no function. */
 			s32 : 26;
 		} random{};

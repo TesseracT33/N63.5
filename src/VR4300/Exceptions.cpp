@@ -283,7 +283,7 @@ bit of the Cause register is set.*/
 		cop0_reg.status.ERL = cop0_reg.status.BEV = 1;
 		cop0_reg.config.EP = 0;
 		cop0_reg.config.BE = 1;
-		cop0_reg.random.random = 31;
+		cop0_reg.random.value = 31;
 
 		cop0_reg.status.NotifyCpuAfterWrite();
 		cop0_reg.config.NotifyCpuAfterWrite();

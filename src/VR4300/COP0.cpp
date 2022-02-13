@@ -71,7 +71,7 @@ namespace VR4300
 		}
 		else
 		{
-			cop0_reg.index.index = std::distance(std::begin(TLB_entries), TLB_index);
+			cop0_reg.index.value = std::distance(std::begin(TLB_entries), TLB_index);
 			cop0_reg.index.P = 0;
 		}
 
@@ -85,7 +85,7 @@ namespace VR4300
 		   The EntryHi and EntryLo registers are loaded with the contents of the TLB entry
 		   pointed at by the contents of the Index register. The G bit (which controls ASID matching)
 		   read from the TLB is written into both of the EntryLo0 and EntryLo1 registers. */
-		const unsigned TLB_index = cop0_reg.index.index & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
 		const std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
 		std::memcpy(&cop0_reg.entry_lo_0, arr, 4);
 		std::memcpy(&cop0_reg.entry_lo_1, arr + 4, 4);
@@ -104,7 +104,7 @@ namespace VR4300
 		   The TLB entry pointed at by the Index register is loaded with the contents of the
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
-		const unsigned TLB_index = cop0_reg.index.index & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
 		std::byte* arr = (std::byte*)(&TLB_entries[TLB_index]);
 		std::memcpy(arr, &cop0_reg.entry_lo_0, 4);
 		std::memcpy(arr + 4, &cop0_reg.entry_lo_1, 4);
@@ -123,7 +123,7 @@ namespace VR4300
 		   the EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
 		   The 'wired' register determines which TLB entries cannot be overwritten. */
-		const unsigned TLB_index = cop0_reg.random.random & 0x1F; /* bit 5 is not used */
+		const unsigned TLB_index = cop0_reg.random.value & 0x1F; /* bit 5 is not used */
 		const unsigned TLB_wired_index = cop0_reg.wired.value & 0x1F;
 		if (TLB_index < TLB_wired_index) /* TODO: <= ? */
 			return;
