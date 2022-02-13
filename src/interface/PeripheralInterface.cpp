@@ -75,6 +75,19 @@ namespace PeripheralInterface
 	}
 
 
+	void WriteToStatus(const u8 data)
+	{
+		if (data & 1)
+		{ /* Reset the DMA controller and stop any transfer being done */
+			/* TODO */
+		}
+		if (data & 2)
+		{ /* Clear Interrupt (DMA completed) flag (bit 3 of STATUS) */
+			ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
+		}
+	}
+
+
 	template<StatusFlag status_flag>
 	void SetStatusFlag()
 	{
@@ -157,41 +170,48 @@ namespace PeripheralInterface
 
 		case PI_RD_LEN + 1:
 			WriteToRdLen<1, number_of_bytes>(data);
+			if constexpr (number_of_bytes == 8)
+				WriteToStatus(u8(data >> 56));
 			break;
 
 		case PI_RD_LEN + 2:
 			WriteToRdLen<2, number_of_bytes>(data);
+			if constexpr (number_of_bytes >= 7)
+				WriteToStatus(u8(data >> 48));
 			break;
 
 		case PI_RD_LEN + 3:
 			WriteToRdLen<3, number_of_bytes>(data);
+			if constexpr (number_of_bytes >= 6)
+				WriteToStatus(u8(data >> 40));
 			break;
 
 		case PI_WR_LEN:
 			WriteToWrLen<0, number_of_bytes>(data);
+			if constexpr (number_of_bytes >= 5)
+				WriteToStatus(u8(data >> 32));
 			break;
 
 		case PI_WR_LEN + 1:
 			WriteToWrLen<1, number_of_bytes>(data);
+			if constexpr (number_of_bytes >= 4)
+				WriteToStatus(u8(data >> 24));
 			break;
 
 		case PI_WR_LEN + 2:
 			WriteToWrLen<2, number_of_bytes>(data);
+			if constexpr (number_of_bytes >= 3)
+				WriteToStatus(u8(data >> 16));
 			break;
 
 		case PI_WR_LEN + 3:
 			WriteToWrLen<3, number_of_bytes>(data);
+			if constexpr (number_of_bytes >= 2)
+				WriteToStatus(u8(data >> 8));
 			break;
 
 		case PI_STATUS:
-			if (data & 1)
-			{ /* Reset the DMA controller and stop any transfer being done */
-				/* TODO */
-			}
-			if (data & 2)
-			{ /* Clear Interrupt (DMA completed) flag (bit 3 of STATUS) */
-				ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
-			}
+			WriteToStatus(data);
 			break;
 
 		default: /* TODO */

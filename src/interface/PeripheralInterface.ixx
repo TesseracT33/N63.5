@@ -18,6 +18,8 @@ namespace PeripheralInterface
 	template<std::size_t start, std::size_t number_of_bytes>
 	void WriteToWrLen(const auto data);
 
+	void WriteToStatus(const u8 data);
+
 	export
 	{
 		enum class StatusFlag : u8
