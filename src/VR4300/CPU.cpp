@@ -963,6 +963,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			const s32 offset = s32(instr_code & 0xFFFF) << 2;
 			PrepareJump(pc + offset);
+			pc_is_inside_branch_delay_slot = true;
 		}
 		else if constexpr (instr == BEQL || instr == BNEL || instr == BLEZL || instr == BGTZL ||
 			instr == BEQL || instr == BLTZL || instr == BGEZL || instr == BLTZALL || instr == BGEZALL)
@@ -1169,6 +1170,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		jump_is_pending = true;
 		instructions_until_jump = 1;
 		addr_to_jump_to = target_address;
+		pc_is_inside_branch_delay_slot = true;
 	}
 
 

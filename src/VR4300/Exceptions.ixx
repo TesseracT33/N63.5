@@ -75,6 +75,7 @@ namespace VR4300
 	int occurred_exception_priority = -1;
 	u64 exception_vector;
 	u32 exception_cause_code;
+	unsigned coprocessor_unusable_source; /* 0 if COP0 signaled the exception, 1 if COP1 did it. */
 	ExceptionHandlerFun exception_handler_fun;
 
 	template<Exception exception, MemoryAccess::Operation operation>

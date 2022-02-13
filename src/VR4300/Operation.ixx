@@ -41,6 +41,8 @@ namespace VR4300
 	unsigned p_cycle_counter = 0;
 	unsigned cop0_count_cycle_remainder = 0;
 
+	bool pc_is_inside_branch_delay_slot = false;
+
 	void HLE_PIF();
 
 	void AdvancePipeline(const unsigned number_of_cycles);

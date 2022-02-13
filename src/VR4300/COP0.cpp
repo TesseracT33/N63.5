@@ -143,7 +143,17 @@ namespace VR4300
 	{
 		/* Return From Exception;
 		   Returns from an exception, interrupt, or error trap. */
-		/* TODO */
+		if (cop0_reg.status.ERL == 0)
+		{
+			pc = cop0_reg.epc.value;
+			cop0_reg.status.EXL = 0;
+		}
+		else
+		{
+			pc = cop0_reg.error_epc.value;
+			cop0_reg.status.ERL = 0;
+		}
+		LL_bit = 0;
 		AdvancePipeline(1);
 	}
 

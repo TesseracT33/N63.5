@@ -22,6 +22,7 @@ namespace VR4300
 				{
 					pc = addr_to_jump_to;
 					jump_is_pending = false;
+					pc_is_inside_branch_delay_slot = false;
 				}
 				else instructions_until_jump--;
 			}
@@ -62,8 +63,6 @@ namespace VR4300
 
 	void ExecuteInstruction() /* todo: bad name for now */
 	{
-
-
 		const u32 instr_code = FetchInstruction(pc);
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);

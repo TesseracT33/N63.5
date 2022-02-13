@@ -161,7 +161,7 @@ namespace VR4300
 
 		struct /* (14) */
 		{
-			u64 value;
+			u64 value; /* Contains the address at which processing resumes after an exception has been serviced. */
 		} epc{};
 
 		struct /* (15) */

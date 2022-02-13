@@ -32,6 +32,19 @@ namespace VR4300
 
 	void HandleException()
 	{
+		cop0_reg.cause.bd = pc_is_inside_branch_delay_slot;
+		cop0_reg.cause.exc_code = exception_cause_code;
+		cop0_reg.cause.ce = coprocessor_unusable_source; /* Undefined if a Coprocessor Unusable exception did not occur. Thus, fine to always do this assignment. */
+		if (cop0_reg.status.EXL == 0)
+		{
+			/* If the instruction was executing in a branch delay slot, the CPU loads the EPC register
+			to the address of the branch instruction immediately preceding the branch delay slot. */
+			cop0_reg.epc.value = pc_is_inside_branch_delay_slot ? pc - 4 : pc;
+			cop0_reg.status.EXL = 1;
+			SetActiveVirtualToPhysicalFunctions();
+		}
+		pc = exception_vector;
+
 		std::invoke(exception_handler_fun);
 		exception_has_occurred = false;
 	}
