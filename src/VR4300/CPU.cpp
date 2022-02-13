@@ -164,6 +164,9 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			result <<= bits_from_last_boundary;
 			const s32 untouched_gpr = s32(gpr.Get(rt) & ((1 << bits_from_last_boundary) - 1));
 			gpr.Set(rt, result | untouched_gpr);
+			/* To access data not aligned at a boundary, an additional 1P cycle is necessary as compared when accessing data aligned at a boundary. */
+			if (bits_from_last_boundary > 0)
+				AdvancePipeline(1);
 		}
 		else if constexpr (instr == LDL)
 		{
@@ -171,6 +174,9 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			result <<= bits_from_last_boundary;
 			const u64 untouched_gpr = gpr.Get(rt) & ((1ll << bits_from_last_boundary) - 1);
 			gpr.Set(rt, result | untouched_gpr);
+
+			if (bits_from_last_boundary > 0)
+				AdvancePipeline(1);
 		}
 		else if constexpr (instr == LWR)
 		{
@@ -178,6 +184,9 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			result >>= 8 * (3 - bytes_from_last_boundary);
 			const s32 untouched_gpr = s32(gpr.Get(rt) & right_load_mask[bytes_from_last_boundary]);
 			gpr.Set(rt, result | untouched_gpr);
+
+			if (bytes_from_last_boundary > 0)
+				AdvancePipeline(1);
 		}
 		else if constexpr (instr == LDR)
 		{
@@ -185,6 +194,9 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			result >>= 8 * (7 - bytes_from_last_boundary);
 			const u64 untouched_gpr = gpr.Get(rt) & right_load_mask[bytes_from_last_boundary];
 			gpr.Set(rt, result | untouched_gpr);
+
+			if (bytes_from_last_boundary > 0)
+				AdvancePipeline(1);
 		}
 		else /* Aligned read */
 		{

@@ -1,6 +1,7 @@
 module VR4300:COP0;
 
 import :CPU;
+import :Operation;
 import :Registers;
 import :MMU;
 
