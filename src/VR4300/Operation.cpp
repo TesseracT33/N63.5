@@ -76,9 +76,47 @@ namespace VR4300
 	}
 
 
+	void CheckInterrupts()
+	{
+		const bool interrupts_are_enabled = cop0_reg.status.IE;
+		if (!interrupts_are_enabled)
+			return;
+
+		const bool currently_handling_exception = cop0_reg.status.EXL;
+		if (currently_handling_exception)
+			return;
+
+		const bool currently_handling_error = cop0_reg.status.ERL;
+		if (currently_handling_error)
+			return;
+
+		const s32 interrupt_pending = cop0_reg.cause.IP;
+		const s32 interrupt_enable_mask = cop0_reg.status.IM;
+		const bool interrupts_are_pending = interrupt_pending & interrupt_enable_mask & 0xFF; /* TODO: Unsure if $FF is needed */
+		if (interrupts_are_pending)
+			SignalException<Exception::Interrupt>();
+	}
+
+
 	void DisableInterrupts()
 	{
 
+	}
+
+
+	/* Devices external to the CPU (e.g. the console's reset button) use this function to tell the CPU about interrupts. */
+	template<ExternalInterruptSource interrupt>
+	void ClearInterruptPending()
+	{
+		cop0_reg.cause.IP &= ~static_cast<u8>(interrupt);
+	}
+
+
+	template<ExternalInterruptSource interrupt>
+	void SetInterruptPending()
+	{
+		cop0_reg.cause.IP |= static_cast<u8>(interrupt);
+		CheckInterrupts();
 	}
 
 
@@ -108,12 +146,25 @@ namespace VR4300
 
 		/* This register is incremented every other PCycle. */
 		cop0_reg.count.value += number_of_cycles >> 1;
+		cop0_count_cycle_remainder += number_of_cycles & 2; /* TODO */
 		if (cop0_reg.count.value == cop0_reg.compare.value)
 		{
-			cop0_reg.cause.ip7 = 1;
-			/* TODO: fire interrupt */
+			cop0_reg.cause.IP |= 0x80;
+			CheckInterrupts();
 		}
 
 		/* TODO: decrement the 'random' register */
 	}
+
+
+	template void ClearInterruptPending<ExternalInterruptSource::MI>();
+	template void ClearInterruptPending<ExternalInterruptSource::Cartridge>();
+	template void ClearInterruptPending<ExternalInterruptSource::Reset>();
+	template void ClearInterruptPending<ExternalInterruptSource::IndyRead>();
+	template void ClearInterruptPending<ExternalInterruptSource::IndyWrite>();
+	template void SetInterruptPending<ExternalInterruptSource::MI>();
+	template void SetInterruptPending<ExternalInterruptSource::Cartridge>();
+	template void SetInterruptPending<ExternalInterruptSource::Reset>();
+	template void SetInterruptPending<ExternalInterruptSource::IndyRead>();
+	template void SetInterruptPending<ExternalInterruptSource::IndyWrite>();
 }

@@ -123,7 +123,7 @@ namespace VR4300
 			s32 UX : 1; /* Enables 64-bit addressing and operations in User mode (0: 32-bit; 1: 64-bit) */
 			s32 SX : 1; /* Enables 64-bit addressing and operations in Supervisor mode (0: 32-bit; 1: 64-bit) */
 			s32 KX : 1; /* Enables 64-bit addressing in Kernel mode (0: 32-bit; 1: 64-bit) */
-			s32 IM : 8; /* Interrupt Mask field */
+			s32 IM : 8; /* Interrupt Mask fields (0: disabled; 1: enabled). Software interrupt (IM0-IM1); External normal interrupts (IM2-IM6); Timer interrupt (IM7). */
 			s32 DE : 1;
 			s32 CE : 1;
 			s32 CH : 1;
@@ -145,24 +145,18 @@ namespace VR4300
 			void NotifyCpuAfterWrite();
 		} status{};
 
-		struct /* (13) */
+		struct CauseRegister /* (13) */
 		{
 			s32 : 2;
 			s32 exc_code : 5; /* Exception code field; written to when an exception is signaled. */
 			s32 : 1;
-			/* Indicates that an interrupt is pending (0: no interrupt; 1: interrupt pending). */
-			s32 ip0 : 1; /* Software interrupt (IP0-IP1). Only these bits can cause an interrupt exception when they are set to 1 by software. */
-			s32 ip1 : 1;
-			s32 ip2 : 1; /* External normal interrupts (IP2-IP6). */
-			s32 ip3 : 1;
-			s32 ip4 : 1;
-			s32 ip5 : 1;
-			s32 ip6 : 1;
-			s32 ip7 : 1; /* Timer interrupt */
+			s32 IP : 8; /* Interrupt is pending (0: no interrupt; 1: interrupt pending). Software interrupt (IM0-IM1); External normal interrupts (IM2-IM6); Timer interrupt (IM7). */
 			s32 : 12;
 			s32 ce : 2; /* Coprocessor unit number referenced when a Coprocessor Unusable exception has occurred. */
 			s32 : 1;
 			s32 bd : 1; /* Indicates whether the last exception occurred has been executed in a branch delay slot (0: normal; 1: delay slot). */
+
+			void NotifyCpuAfterWrite();
 		} cause{};
 
 		struct /* (14) */

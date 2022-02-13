@@ -6,9 +6,15 @@ import :Operation;
 
 namespace VR4300
 {
+	void COP0Registers::CauseRegister::NotifyCpuAfterWrite()
+	{
+		CheckInterrupts();
+	}
+
+
 	void COP0Registers::CompareRegister::NotifyCpuAfterWrite()
 	{
-		cop0_reg.cause.ip7 = 0; /* TODO: not sure if anything else needs to be done? */
+		cop0_reg.cause.IP &= ~0x80; /* TODO: not sure if anything else needs to be done? */
 	}
 
 
@@ -20,48 +26,60 @@ namespace VR4300
 
 	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()
 	{
-		SetActiveVirtualToPhysicalFunctions();
 		fpu_is_enabled = cop0_reg.status.CU1;
+		SetActiveVirtualToPhysicalFunctions();
+		CheckInterrupts();
 	}
 
 
 	u64 COP0Registers::Get(const size_t register_index) const
 	{
-		auto StructToIntegral = [](const auto& struct_) -> u64 /* Non-UB type punning between a struct register and an u64. */
+		/* Non-UB type punning between a struct register and an u64. */
+		auto StructToInt = [](const auto* struct_) -> u64
 		{
-			if constexpr (sizeof struct_ == 8)
-				return std::bit_cast<u64, std::remove_reference_t<decltype(struct_)>>(struct_);
-			else if constexpr (sizeof struct_ == 4)
-				return static_cast<u64>(std::bit_cast<s32, std::remove_reference_t<decltype(struct_)>>(struct_));
+			if constexpr (sizeof(*struct_) == 4)
+			{
+				s32 ret; /* s32 for sign extension purposes */
+				std::memcpy(&ret, struct_, 4);
+				return static_cast<u64>(ret);
+			}
+			else if constexpr (sizeof(*struct_) == 8)
+			{
+				u64 ret;
+				std::memcpy(&ret, struct_, 8);
+				return ret;
+			}
 			else
+			{
 				static_assert(false, "Incorrectly sized struct given.");
+			}
 		};
 
 		switch (register_index)
 		{
-		case 0: return StructToIntegral(index);
-		case 1: return StructToIntegral(random);
-		case 2: return StructToIntegral(entry_lo_0);
-		case 3: return StructToIntegral(entry_lo_1);
-		case 4: return StructToIntegral(context);
-		case 5: return StructToIntegral(page_mask);
-		case 6: return StructToIntegral(wired);
-		case 8: return StructToIntegral(bad_v_addr);
-		case 9: return StructToIntegral(count);
-		case 10: return StructToIntegral(entry_hi);
-		case 11: return StructToIntegral(compare);
-		case 12: return StructToIntegral(status);
-		case 13: return StructToIntegral(cause);
-		case 14: return StructToIntegral(epc);
-		case 15: return StructToIntegral(pr_id);
-		case 16: return StructToIntegral(config);
-		case 17: return StructToIntegral(LL_addr);
-		case 18: return StructToIntegral(watch_lo);
-		case 19: return StructToIntegral(watch_hi);
-		case 20: return StructToIntegral(x_context);
-		case 26: return StructToIntegral(parity_error);
-		case 28: return StructToIntegral(tag_lo);
-		case 30: return StructToIntegral(error_epc);
+		case 0: return StructToInt(&index);
+		case 1: return StructToInt(&random);
+		case 2: return StructToInt(&entry_lo_0);
+		case 3: return StructToInt(&entry_lo_1);
+		case 4: return StructToInt(&context);
+		case 5: return StructToInt(&page_mask);
+		case 6: return StructToInt(&wired);
+		case 8: return StructToInt(&bad_v_addr);
+		case 9: return StructToInt(&count);
+		case 10: return StructToInt(&entry_hi);
+		case 11: return StructToInt(&compare);
+		case 12: return StructToInt(&status);
+		case 13: return StructToInt(&cause);
+		case 14: return StructToInt(&epc);
+		case 15: return StructToInt(&pr_id);
+		case 16: return StructToInt(&config);
+		case 17: return StructToInt(&LL_addr);
+		case 18: return StructToInt(&watch_lo);
+		case 19: return StructToInt(&watch_hi);
+		case 20: return StructToInt(&x_context);
+		case 26: return StructToInt(&parity_error);
+		case 28: return StructToInt(&tag_lo);
+		case 30: return StructToInt(&error_epc);
 		default: return 0;
 		}
 	}
@@ -69,44 +87,77 @@ namespace VR4300
 
 	void COP0Registers::Set(const size_t register_index, const u64 value)
 	{
-		auto SetStructFromIntegral = [](auto& struct_, const u64 value) -> void /* Non-UB type punning between a struct register and an u32/u64. */
+		/* Non-UB type punning between a struct register and an u64. */
+		auto SetStructFromInt = [](auto* struct_, const u64 value) -> void 
 		{
-			if constexpr (sizeof struct_ == 8)
-				struct_ = std::bit_cast<std::remove_reference_t<decltype(struct_)>, u64>(value);
-			else if constexpr (sizeof struct_ == 4)
-				struct_ = std::bit_cast<std::remove_reference_t<decltype(struct_)>, u32>(static_cast<u32>(value));
+			if constexpr (sizeof(*struct_) == 4)
+			{
+				u32 value_to_write = static_cast<u32>(value);
+				std::memcpy(struct_, &value_to_write, 4);
+			}
+			else if constexpr (sizeof(*struct_) == 8)
+			{
+				std::memcpy(struct_, &value, 8);
+			}
 			else
+			{
 				static_assert(false, "Incorrectly sized struct given.");
+			}
 
 			/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
 			if constexpr (notifies_cpu_on_write<decltype(struct_)>)
 				struct_.NotifyCpuAfterWrite();
 		};
 
-		switch (register_index)
+		auto SetStructFromIntMasked = [](auto* struct_, const u64 value, const u64 write_mask) -> void
 		{
-		break; case 0: SetStructFromIntegral(index, value & 0x800000CF);
-		break; case 1: SetStructFromIntegral(random, value & 0x3F);
-		break; case 2: SetStructFromIntegral(entry_lo_0, value & 0xCFFFFFFF);
-		break; case 3: SetStructFromIntegral(entry_lo_1, value & 0xCFFFFFFF);
-		break; case 4: SetStructFromIntegral(context, value & 0xFFFFFFF0);
-		break; case 5: SetStructFromIntegral(page_mask, value & 0x01FFE000);
-		break; case 6: SetStructFromIntegral(wired, value);
-		break; case 8: SetStructFromIntegral(bad_v_addr, value);
-		break; case 9: SetStructFromIntegral(count, value);
-		break; case 10: SetStructFromIntegral(entry_hi, value & 0xC00000FFFFFFE0FF);
-		break; case 11: SetStructFromIntegral(compare, value);
-		break; case 12: SetStructFromIntegral(status, value);
-		break; case 13: SetStructFromIntegral(cause, value & 0xB000FF7C);
-		break; case 14: SetStructFromIntegral(epc, value);
-		break; case 16: SetStructFromIntegral(config, value & 0x7F00800F | 0xC6460);
-		break; case 17: SetStructFromIntegral(LL_addr, value);
-		break; case 18: SetStructFromIntegral(watch_lo, value & 0xFFFFFFFB);
-		break; case 19: SetStructFromIntegral(watch_hi, value);
-		break; case 20: SetStructFromIntegral(x_context, value & 0xFFFFFFFF'FFFFFFF0);
-		break; case 26: SetStructFromIntegral(parity_error, value);
-		break; case 28: SetStructFromIntegral(tag_lo, value & 0x0FFFFFC0);
-		break; case 30: SetStructFromIntegral(error_epc, value);
+			if constexpr (sizeof(*struct_) == 4)
+			{
+				u32 struct_int;
+				std::memcpy(&struct_int, struct_, 4);
+				u32 value_to_write = value & write_mask | struct_int & ~write_mask;
+				std::memcpy(struct_, &value_to_write, 4);
+			}
+			else if constexpr (sizeof(*struct_) == 8)
+			{
+				u64 struct_int;
+				std::memcpy(&struct_int, struct_, 8);
+				u64 value_to_write = value & write_mask | struct_int & ~write_mask;
+				std::memcpy(struct_, &value_to_write, 8);
+			}
+			else
+			{
+				static_assert(false, "Incorrectly sized struct given.");
+			}
+
+			if constexpr (notifies_cpu_on_write<decltype(struct_)>)
+				struct_.NotifyCpuAfterWrite();
+		};
+
+		switch (register_index)
+		{ /* Masks are used for bits that are non-writeable. TODO: doublecheck these; some are definitely wrong. */
+		break; case 0: SetStructFromInt(&index, value & 0x800000CF);
+		break; case 1: SetStructFromInt(&random, value & 0x3F);
+		break; case 2: SetStructFromInt(&entry_lo_0, value & 0xCFFFFFFF);
+		break; case 3: SetStructFromInt(&entry_lo_1, value & 0xCFFFFFFF);
+		break; case 4: SetStructFromInt(&context, value & 0xFFFFFFF0);
+		break; case 5: SetStructFromInt(&page_mask, value & 0x01FFE000);
+		break; case 6: SetStructFromInt(&wired, value);
+		break; case 8: SetStructFromInt(&bad_v_addr, value);
+		break; case 9: SetStructFromInt(&count, value);
+		break; case 10: SetStructFromInt(&entry_hi, value & 0xC00000FFFFFFE0FF);
+		break; case 11: SetStructFromInt(&compare, value);
+		break; case 12: SetStructFromInt(&status, value);
+		break; case 13: SetStructFromInt(&cause, value & 0x300);
+		break; case 14: SetStructFromInt(&epc, value);
+		break; case 16: SetStructFromInt(&config, value & 0x7F00800F | 0xC6460);
+		break; case 17: SetStructFromInt(&LL_addr, value);
+		break; case 18: SetStructFromInt(&watch_lo, value & 0xFFFFFFFB);
+		break; case 19: SetStructFromInt(&watch_hi, value);
+		break; case 20: SetStructFromInt(&x_context, value & 0xFFFFFFFF'FFFFFFF0);
+		break; case 26: SetStructFromInt(&parity_error, value);
+		break; case 28: SetStructFromInt(&tag_lo, value & 0x0FFFFFC0);
+		break; case 30: SetStructFromInt(&error_epc, value);
 		}
 	}
 

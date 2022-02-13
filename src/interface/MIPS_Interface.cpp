@@ -20,7 +20,7 @@ namespace MIPS_Interface
 		mem[MI_INTERRUPT] |= interrupt_type_mask;
 		if (mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_type_mask)
 		{
-			/* TODO: tell the cpu about interrupt */
+			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
 	}
 
@@ -30,17 +30,18 @@ namespace MIPS_Interface
 	{
 		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT] &= ~interrupt_type_mask;
+		/* TODO: Call VR4300::ClearInterruptPending if !(mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_type_mask) ??? */
 	}
 
 
 	template<InterruptType interrupt_type>
 	void SetInterruptMask()
 	{
-		const u8 interrupt_mask = static_cast<u8>(interrupt_type);
-		mem[MI_MASK] |= interrupt_mask;
-		if (mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_mask)
+		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
+		mem[MI_MASK] |= interrupt_type_mask;
+		if (mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_type_mask)
 		{
-			/* TODO: tell the cpu about interrupt */
+			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
 	}
 
@@ -48,8 +49,8 @@ namespace MIPS_Interface
 	template<InterruptType interrupt_type>
 	void ClearInterruptMask()
 	{
-		const u8 interrupt_mask = static_cast<u8>(interrupt_type);
-		mem[MI_INTERRUPT] &= ~interrupt_mask;
+		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
+		mem[MI_INTERRUPT] &= ~interrupt_type_mask;
 	}
 
 
