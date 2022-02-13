@@ -233,7 +233,7 @@ namespace VR4300
 
 	static void EnterException()
 	{
-		cop0_reg.epc = pc;
+		cop0_reg.epc.value = pc;
 		exception_context.SaveContext();
 		EnterKernelMode();
 		DisableInterrupts();
@@ -242,8 +242,8 @@ namespace VR4300
 
 	void AddressErrorException()
 	{
-		cop0_reg.bad_v_addr = bad_virt_addr;
-		cop0_reg.epc = pc - 4;
+		cop0_reg.bad_v_addr.value = bad_virt_addr;
+		cop0_reg.epc.value = pc - 4;
 		/* TODO The EPC register contains the address of the instruction that caused the exception,
 unless this instruction is in a branch delay slot. If it is in a branch delay slot, the
 EPC register contains the address of the preceding branch instruction and the BD
@@ -341,7 +341,7 @@ bit of the Cause register is set.*/
 
 	void SoftResetException()
 	{
-		pc = cop0_reg.status.ERL == 0 ? cop0_reg.error_epc : exception_vector;
+		pc = cop0_reg.status.ERL == 0 ? cop0_reg.error_epc.value : exception_vector;
 		cop0_reg.status.RP = cop0_reg.status.TS = 0;
 		cop0_reg.status.BEV = cop0_reg.status.ERL = cop0_reg.status.SR = 1;
 	}
@@ -367,7 +367,7 @@ bit of the Cause register is set.*/
 		cop0_reg.context.bad_vpn2 = bad_VPN2;
 		/* TODO: context.PTEBase */
 
-		cop0_reg.bad_v_addr = bad_virt_addr; /* TODO arg is u32, dest is u64 */
+		cop0_reg.bad_v_addr.value = bad_virt_addr; /* TODO arg is u32, dest is u64 */
 
 		cop0_reg.cause.exc_code = exception_cause_code;
 	}

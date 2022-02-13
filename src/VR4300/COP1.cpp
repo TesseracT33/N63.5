@@ -191,7 +191,7 @@ namespace VR4300
 		{
 			/* Move Control Word From FPU;
 			   Transfers the contents of FPU control register fs to CPU general purpose register rt. */
-			gpr.Set(rt, fpu_control.Get(fs));
+			gpr.Set(rt, s32(fpu_control.Get(fs)));
 		}
 		else if constexpr (instr == DMTC1)
 		{
@@ -577,7 +577,7 @@ namespace VR4300
 			pc += 4; /* The instruction in the branch delay slot is discarded. TODO: manual says "invalidated" */
 		}
 
-		AdvancePipeline(1); /* TODO: not if 2? */
+		AdvancePipeline(1); /* TODO: not 2? */
 	}
 
 

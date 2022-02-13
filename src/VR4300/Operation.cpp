@@ -16,12 +16,23 @@ namespace VR4300
 
 		while (p_cycle_counter < cycles_to_run)
 		{
+			if (jump_is_pending)
+			{
+				if (instructions_until_jump == 0)
+				{
+					pc = addr_to_jump_to;
+					jump_is_pending = false;
+				}
+				else instructions_until_jump--;
+			}
+
 			ExecuteInstruction();
-			DecrementRandomRegister();
+
 			if (exception_has_occurred)
 				HandleException();
 		}
 	}
+
 
 	void Reset()
 	{
@@ -30,6 +41,7 @@ namespace VR4300
 		SignalException<Exception::SoftReset>();
 		HandleException();
 	}
+
 
 	void PowerOn(const bool hle_pif)
 	{
@@ -47,32 +59,28 @@ namespace VR4300
 		}
 	}
 
+
 	void ExecuteInstruction() /* todo: bad name for now */
 	{
-		if (jump_is_pending)
-		{
-			if (instructions_until_jump == 0)
-			{
-				pc = addr_to_jump_to;
-				jump_is_pending = false;
-			}
-			else instructions_until_jump--;
-		}
+
 
 		const u32 instr_code = FetchInstruction(pc);
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
 
+
 	void EnterKernelMode()
 	{
 
 	}
 
+
 	void DisableInterrupts()
 	{
 
 	}
+
 
 	void HLE_PIF()
 	{
@@ -91,5 +99,21 @@ namespace VR4300
 			WriteVirtual<u32>(0xA400'0000 + i, ReadVirtual<u32>(0xB000'0000 + i));
 
 		pc = 0xA400'0040;
+	}
+
+
+	void AdvancePipeline(const unsigned number_of_cycles)
+	{
+		p_cycle_counter += number_of_cycles;
+
+		/* This register is incremented every other PCycle. */
+		cop0_reg.count.value += number_of_cycles >> 1;
+		if (cop0_reg.count.value == cop0_reg.compare.value)
+		{
+			cop0_reg.cause.ip7 = 1;
+			/* TODO: fire interrupt */
+		}
+
+		/* TODO: decrement the 'random' register */
 	}
 }

@@ -26,12 +26,5 @@ namespace VR4300
 
 	void HLE_PIF();
 
-	void StallPipeline(const unsigned number_of_cycles)
-	{
-
-	}
-	void AdvancePipeline(const unsigned number_of_cycles)
-	{
-		p_cycle_counter += number_of_cycles;
-	}
+	void AdvancePipeline(const unsigned number_of_cycles);
 }

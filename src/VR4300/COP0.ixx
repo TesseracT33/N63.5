@@ -28,9 +28,4 @@ namespace VR4300
 	void TLBP();
 	void ERET();
 	void CACHE(const u32 instr_code);
-
-	void DecrementRandomRegister()
-	{
-		/* TODO */
-	}
 }

@@ -1,7 +1,7 @@
 module VR4300:COP0;
 
 import :CPU;
-import :Operation;
+import :Operation; 
 import :Registers;
 import :MMU;
 
@@ -124,7 +124,7 @@ namespace VR4300
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
 		   The 'wired' register determines which TLB entries cannot be overwritten. */
 		const unsigned TLB_index = cop0_reg.random.random & 0x1F; /* bit 5 is not used */
-		const unsigned TLB_wired_index = cop0_reg.wired & 0x1F;
+		const unsigned TLB_wired_index = cop0_reg.wired.value & 0x1F;
 		if (TLB_index < TLB_wired_index) /* TODO: <= ? */
 			return;
 
