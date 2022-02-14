@@ -1,6 +1,7 @@
 module DMA;
 
 import Cartridge;
+import PI;
 import RDRAM;
 
 import <algorithm>;
@@ -18,6 +19,8 @@ namespace DMA
 		const size_t number_of_bytes_to_copy = std::min(length, std::min(bytes_until_source_end, bytes_until_dest_end));
 
 		std::memcpy(dest_start_ptr, source_start_ptr, number_of_bytes_to_copy);
+
+		PI::SetStatusFlag<PI::StatusFlag::DMA_BUSY>();
 
 		/* TODO; timing */
 	}

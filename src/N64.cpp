@@ -1,7 +1,7 @@
 module N64;
 
 import Memory;
-import MIPS_Interface;
+import MI;
 import VR4300;
 
 namespace N64
@@ -16,7 +16,7 @@ namespace N64
 		if (!success)
 			return false;
 
-		MIPS_Interface::Initialize();
+		MI::Initialize();
 		VR4300::PowerOn(true);
 
 		return true;

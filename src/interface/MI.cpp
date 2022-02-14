@@ -1,4 +1,4 @@
-module MIPS_Interface;
+module MI;
 
 import Memory;
 import VR4300;
@@ -11,7 +11,7 @@ import VR4300;
 #define MI_INTERRUPT 0x8 /* R   */
 #define MI_MASK      0xC /* R/W */
 
-namespace MIPS_Interface
+namespace MI
 {
 	template<InterruptType interrupt_type>
 	void SetInterruptFlag()

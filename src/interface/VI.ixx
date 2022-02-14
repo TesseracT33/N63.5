@@ -1,11 +1,11 @@
-export module VideoInterface;
+export module VI; /* Video Interface */
 
 import NumericalTypes;
 
 import <array>;
 import <concepts>;
 
-namespace VideoInterface
+namespace VI
 {
 	std::array<u8, 0x38> mem{};
 

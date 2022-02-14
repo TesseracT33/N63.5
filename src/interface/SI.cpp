@@ -1,4 +1,4 @@
-module SerialInterface;
+module SI;
 
 import Memory;
 
@@ -11,7 +11,7 @@ import Memory;
 #define SI_PIF_ADDR_RD4B  0x14
 #define SI_STATUS         0x18
 
-namespace SerialInterface
+namespace SI
 {
 	template<StatusFlag status_flag>
 	void SetStatusFlag()

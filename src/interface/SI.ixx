@@ -1,11 +1,11 @@
-export module SerialInterface;
+export module SI; /* Serial Interface */
 
 import NumericalTypes;
 
 import <array>;
 import <concepts>;
 
-namespace SerialInterface
+namespace SI
 {
 	std::array<u8, 0x1C> mem{};
 

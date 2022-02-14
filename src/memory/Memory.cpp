@@ -2,12 +2,12 @@ module Memory;
 
 import Cartridge;
 import HostSystem;
-import MIPS_Interface;
-import PeripheralInterface;
+import MI;
+import PI;
 import RDRAM;
 import RSP;
-import SerialInterface;
-import VideoInterface;
+import SI;
+import VI;
 import VR4300;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
@@ -80,24 +80,23 @@ namespace Memory
 			return Int(0);
 
 		case 0x043:
-			return MIPS_Interface::Read<Int>(physical_address);
+			return MI::Read<Int>(physical_address);
 
 		case 0x044:
-			return VideoInterface::Read<Int>(physical_address);
+			return VI::Read<Int>(physical_address);
 
 		case 0x045:
 			assert(false);
 			return Int(0);
 
 		case 0x046:
-			return PeripheralInterface::Read<Int>(physical_address);
+			return PI::Read<Int>(physical_address);
 
 		case 0x047:
-			assert(false);
 			return Int(0);
 
 		case 0x048:
-			return SerialInterface::Read<Int>(physical_address);
+			return SI::Read<Int>(physical_address);
 
 		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
 		case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
@@ -210,11 +209,11 @@ namespace Memory
 			break;
 
 		case 0x043:
-			MIPS_Interface::Write<number_of_bytes>(physical_address, data);
+			MI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x044:
-			VideoInterface::Write<number_of_bytes>(physical_address, data);
+			VI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x045:
@@ -222,15 +221,14 @@ namespace Memory
 			break;
 
 		case 0x046:
-			PeripheralInterface::Write<number_of_bytes>(physical_address, data);
+			PI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x047:
-			assert(false);
 			break;
 
 		case 0x048:
-			SerialInterface::Write<number_of_bytes>(physical_address, data);
+			SI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:

@@ -1,11 +1,11 @@
-export module MIPS_Interface;
+export module MI; /* MIPS Interface */
 
 import NumericalTypes;
 
 import <array>;
 import <concepts>;
 
-namespace MIPS_Interface
+namespace MI
 {
 	export enum class InterruptType : u8
 	{

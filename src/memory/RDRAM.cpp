@@ -10,6 +10,14 @@ namespace RDRAM
 	{
 		RDRAM.resize(rdram_expanded_size);
 		std::fill(RDRAM.begin() + rdram_standard_size, RDRAM.end(), 0);
+		rdram_read_mask = rdram_expanded_size - 1;
+	}
+
+
+	void DeallocateExpansionPackRam()
+	{
+		RDRAM.resize(rdram_standard_size);
+		rdram_read_mask = rdram_standard_size - 1;
 	}
 
 
@@ -70,13 +78,13 @@ namespace RDRAM
 
 	u8* GetPointer(const u32 addr)
 	{
-		return RDRAM.data() + (addr & (RDRAM.size() - 1)); /* AND with either $3FFFFF or $7FFFFF. */
+		return RDRAM.data() + (addr & rdram_read_mask); /* AND with either $3FFFFF or $7FFFFF. */
 	}
 
 
 	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr)
 	{
-		return RDRAM.size() - (start_addr & (RDRAM.size() - 1));
+		return RDRAM.size() - (start_addr & rdram_read_mask);
 	}
 
 

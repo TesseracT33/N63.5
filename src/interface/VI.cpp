@@ -1,4 +1,4 @@
-module VideoInterface;
+module VI;
 
 import Memory;
 
@@ -7,7 +7,7 @@ import Memory;
 #define VI_CTRL   0x00
 #define VI_ORIGIN 0x04
 
-namespace VideoInterface
+namespace VI
 {
 	void WriteToControl0(const u8 data)
 	{

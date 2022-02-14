@@ -1,11 +1,11 @@
-export module PeripheralInterface;
+export module PI; /* Peripheral Interface */
 
 import NumericalTypes;
 
 import <array>;
 import <concepts>;
 
-namespace PeripheralInterface
+namespace PI
 {
 	std::array<u8, 0x34> mem{};
 

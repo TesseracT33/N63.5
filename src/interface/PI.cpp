@@ -1,4 +1,4 @@
-module PeripheralInterface;
+module PI;
 
 import DMA;
 import Memory;
@@ -20,7 +20,7 @@ import Memory;
 #define PI_BSD_DOM2_PGS 0x2C /* R/W */
 #define PI_BSD_DOM2_RLS 0x30 /* R/W */
 
-namespace PeripheralInterface
+namespace PI
 {
 	template<std::size_t start, std::size_t number_of_bytes /* how many bytes we want to write */>
 	void WriteToDramCartAddr(const auto data)
@@ -211,7 +211,7 @@ namespace PeripheralInterface
 			break;
 
 		case PI_STATUS:
-			WriteToStatus(data);
+			WriteToStatus(u8(data));
 			break;
 
 		default: /* TODO */
@@ -220,6 +220,15 @@ namespace PeripheralInterface
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, const u32);
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, const u32);
+
+	template void ClearStatusFlag<StatusFlag::DMA_BUSY>();
+	template void ClearStatusFlag<StatusFlag::IO_BUSY>();
+	template void ClearStatusFlag<StatusFlag::DMA_ERROR>();
+	template void ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
+	template void SetStatusFlag<StatusFlag::DMA_BUSY>();
+	template void SetStatusFlag<StatusFlag::IO_BUSY>();
+	template void SetStatusFlag<StatusFlag::DMA_ERROR>();
+	template void SetStatusFlag<StatusFlag::DMA_COMPLETED>();
 }
