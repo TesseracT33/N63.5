@@ -136,27 +136,27 @@ namespace VR4300
 
 		switch (register_index)
 		{ /* Masks are used for bits that are non-writeable. TODO: doublecheck these; some are definitely wrong. */
-		break; case 0: SetStructFromIntMasked(&index, value, 0x800000CF);
+		break; case 0: SetStructFromIntMasked(&index, value, 0x8000'003F);
 		break; case 1: SetStructFromIntMasked(&random, value, 0x3F);
-		break; case 2: SetStructFromIntMasked(&entry_lo_0, value, 0xCFFFFFFF);
-		break; case 3: SetStructFromIntMasked(&entry_lo_1, value, 0xCFFFFFFF);
-		break; case 4: SetStructFromIntMasked(&context, value, 0xFFFFFFF0);
-		break; case 5: SetStructFromIntMasked(&page_mask, value, 0x01FFE000);
-		break; case 6: SetStructFromInt(&wired, value);
+		break; case 2: SetStructFromIntMasked(&entry_lo_0, value, 0x03FF'FFFF);
+		break; case 3: SetStructFromIntMasked(&entry_lo_1, value, 0x03FF'FFFF);
+		break; case 4: SetStructFromIntMasked(&context, value, 0xFFFF'FFFF'FFFF'FFF0);
+		break; case 5: SetStructFromIntMasked(&page_mask, value, 0x01FF'E000);
+		break; case 6: SetStructFromIntMasked(&wired, value, 0x3F);
 		break; case 8: SetStructFromInt(&bad_v_addr, value);
 		break; case 9: SetStructFromInt(&count, value);
-		break; case 10: SetStructFromIntMasked(&entry_hi, value, 0xC00000FFFFFFE0FF);
+		break; case 10: SetStructFromIntMasked(&entry_hi, value, 0xC000'00FF'FFFF'E0FF);
 		break; case 11: SetStructFromInt(&compare, value);
-		break; case 12: SetStructFromInt(&status, value);
+		break; case 12: SetStructFromIntMasked(&status, value, 0xFF57'FFFF); /* TODO: unsure about upper four bits */
 		break; case 13: SetStructFromIntMasked(&cause, value, 0x300);
 		break; case 14: SetStructFromInt(&epc, value);
-		//break; case 16: SetStructFromIntMasked(&config, value & 0x7F00800F | 0xC6460);
+		break; case 16: SetStructFromIntMasked(&config, value, 0x7F00'800F);
 		break; case 17: SetStructFromInt(&LL_addr, value);
 		break; case 18: SetStructFromIntMasked(&watch_lo, value, 0xFFFFFFFB);
 		break; case 19: SetStructFromInt(&watch_hi, value);
-		break; case 20: SetStructFromIntMasked(&x_context, value, 0xFFFFFFFF'FFFFFFF0);
-		break; case 26: SetStructFromInt(&parity_error, value);
-		break; case 28: SetStructFromIntMasked(&tag_lo, value, 0x0FFFFFC0);
+		break; case 20: SetStructFromIntMasked(&x_context, value, 0xFFFF'FFFF'FFFF'FFF0);
+		break; case 26: SetStructFromIntMasked(&parity_error, value, 0xFF);
+		break; case 28: SetStructFromIntMasked(&tag_lo, value, 0x0FFF'FFC0);
 		break; case 30: SetStructFromInt(&error_epc, value);
 		}
 	}

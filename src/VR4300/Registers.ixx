@@ -175,9 +175,13 @@ namespace VR4300
 		{
 			s32 k0 : 3; /* Sets coherency algorithm of kseg0 (010 => cache is not used; else => cache is used). */
 			s32 cu : 1; /* RFU. However, can be read or written by software. */
-			s32 : 11; /* Returns 11001000110 when read. */
+		private:
+			s32 padding_0 : 11 = 0b11001000110; /* Returns 11001000110 when read. */
+		public:
 			s32 be : 1; /* Sets endianness (0 => little endian; 1 => big endian (default on cold reset). */
-			s32 : 8; /* Returns 00000110 when read. */
+		private:
+			s32 padding_1 : 8 = 0b00000110; /* Returns 00000110 when read. */
+		public:
 			s32 ep : 4; /* Sets transfer data pattern (single/block write request) (0 => D (default on cold reset); 6 => DxxDxx (2 doublewords/six cycles). */
 			s32 ec : 3; /* Operating frequency ratio (read-only). */
 			s32 : 1; /* Returns 0 when read. */
