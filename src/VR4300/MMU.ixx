@@ -16,25 +16,26 @@ namespace VR4300
 
 	struct TLB_Entry
 	{
+		/* EntryLo0, EntryLo1 */
 		struct
 		{
 			u64     :  1;
-			u64 V   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
-			u64 D   :  1; /* Dirty. If this bit is set, the page is marked as writeable. */
-			u64 C   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
-			u64 PFN : 20; /* Page frame number; the high-order bits of the physical address. */
+			u64 v   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
+			u64 d   :  1; /* Dirty. If this bit is set, the page is marked as writeable. */
+			u64 c   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
+			u64 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
 			u64     : 38;
 		} lo_0{}, lo_1{};
-
-		u64 ASID :  8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
+		/* EntryHi */
+		u64 asid :  8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
 		u64      :  4;
-		u64 G    :  1; /* Global. If this bit is set, the processor ignores the ASID during TLB lookup. */
-		u64 VPN2 : 27; /* Virtual page number divided by two (maps to two pages). */
+		u64 g    :  1; /* Global. If this bit is set, the processor ignores the ASID during TLB lookup. */
+		u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
 		u64      : 22;
-		u64 R    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
-
+		u64 r    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
+		/* PageMask */
 		u64      : 13;
-		u64 MASK : 12; /* Determines the virtual page size of the corresponding entry. */
+		u64 mask : 12; /* Determines the virtual page size of the corresponding entry. */
 		u64      : 39;
 	};
 
@@ -65,5 +66,13 @@ namespace VR4300
 
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read = nullptr;
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write = nullptr;
+
+	struct TLB_Failure
+	{
+		u64 bad_virt_addr;
+		u32 bad_vpn2;
+		u32 bad_asid;
+
+	} tlb_failure;
 }
 

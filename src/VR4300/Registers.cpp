@@ -14,7 +14,7 @@ namespace VR4300
 
 	void COP0Registers::CompareRegister::NotifyCpuAfterWrite()
 	{
-		cop0_reg.cause.IP &= ~0x80; /* TODO: not sure if anything else needs to be done? */
+		cop0_reg.cause.ip &= ~0x80; /* TODO: not sure if anything else needs to be done? */
 	}
 
 
@@ -26,7 +26,7 @@ namespace VR4300
 
 	void COP0Registers::StatusRegister::NotifyCpuAfterWrite()
 	{
-		fpu_is_enabled = cop0_reg.status.CU1;
+		fpu_is_enabled = cop0_reg.status.cu1;
 		SetActiveVirtualToPhysicalFunctions();
 		CheckInterrupts();
 	}
@@ -115,7 +115,7 @@ namespace VR4300
 			{
 				u32 struct_int;
 				std::memcpy(&struct_int, struct_, 4);
-				u32 value_to_write = value & write_mask | struct_int & ~write_mask;
+				u32 value_to_write = u32(value & write_mask | struct_int & ~write_mask);
 				std::memcpy(struct_, &value_to_write, 4);
 			}
 			else if constexpr (sizeof(*struct_) == 8)
@@ -136,27 +136,27 @@ namespace VR4300
 
 		switch (register_index)
 		{ /* Masks are used for bits that are non-writeable. TODO: doublecheck these; some are definitely wrong. */
-		break; case 0: SetStructFromInt(&index, value & 0x800000CF);
-		break; case 1: SetStructFromInt(&random, value & 0x3F);
-		break; case 2: SetStructFromInt(&entry_lo_0, value & 0xCFFFFFFF);
-		break; case 3: SetStructFromInt(&entry_lo_1, value & 0xCFFFFFFF);
-		break; case 4: SetStructFromInt(&context, value & 0xFFFFFFF0);
-		break; case 5: SetStructFromInt(&page_mask, value & 0x01FFE000);
+		break; case 0: SetStructFromIntMasked(&index, value, 0x800000CF);
+		break; case 1: SetStructFromIntMasked(&random, value, 0x3F);
+		break; case 2: SetStructFromIntMasked(&entry_lo_0, value, 0xCFFFFFFF);
+		break; case 3: SetStructFromIntMasked(&entry_lo_1, value, 0xCFFFFFFF);
+		break; case 4: SetStructFromIntMasked(&context, value, 0xFFFFFFF0);
+		break; case 5: SetStructFromIntMasked(&page_mask, value, 0x01FFE000);
 		break; case 6: SetStructFromInt(&wired, value);
 		break; case 8: SetStructFromInt(&bad_v_addr, value);
 		break; case 9: SetStructFromInt(&count, value);
-		break; case 10: SetStructFromInt(&entry_hi, value & 0xC00000FFFFFFE0FF);
+		break; case 10: SetStructFromIntMasked(&entry_hi, value, 0xC00000FFFFFFE0FF);
 		break; case 11: SetStructFromInt(&compare, value);
 		break; case 12: SetStructFromInt(&status, value);
-		break; case 13: SetStructFromInt(&cause, value & 0x300);
+		break; case 13: SetStructFromIntMasked(&cause, value, 0x300);
 		break; case 14: SetStructFromInt(&epc, value);
-		break; case 16: SetStructFromInt(&config, value & 0x7F00800F | 0xC6460);
+		//break; case 16: SetStructFromIntMasked(&config, value & 0x7F00800F | 0xC6460);
 		break; case 17: SetStructFromInt(&LL_addr, value);
-		break; case 18: SetStructFromInt(&watch_lo, value & 0xFFFFFFFB);
+		break; case 18: SetStructFromIntMasked(&watch_lo, value, 0xFFFFFFFB);
 		break; case 19: SetStructFromInt(&watch_hi, value);
-		break; case 20: SetStructFromInt(&x_context, value & 0xFFFFFFFF'FFFFFFF0);
+		break; case 20: SetStructFromIntMasked(&x_context, value, 0xFFFFFFFF'FFFFFFF0);
 		break; case 26: SetStructFromInt(&parity_error, value);
-		break; case 28: SetStructFromInt(&tag_lo, value & 0x0FFFFFC0);
+		break; case 28: SetStructFromIntMasked(&tag_lo, value, 0x0FFFFFC0);
 		break; case 30: SetStructFromInt(&error_epc, value);
 		}
 	}
@@ -167,7 +167,7 @@ namespace VR4300
 		/* TODO */
 		/* after updating RM... */
 		const int new_rounding_mode = [&] {
-			switch (RM)
+			switch (rm)
 			{
 			case 0b00: return FE_TONEAREST;  /* RN */
 			case 0b01: return FE_TOWARDZERO; /* RZ */
@@ -183,26 +183,25 @@ namespace VR4300
 
 	s32 FCR31::Get() const
 	{
-		return std::bit_cast<u32, std::remove_reference_t<decltype(*this)>>(*this);
+		return std::bit_cast<s32, std::remove_reference_t<decltype(*this)>>(*this);
 	}
 
 
 	s32 FPUControl::Get(const size_t index) const
 	{
+		static constexpr s32 fcr0 = 0; /* TODO */
 		if (index == 0)
-			return 0;
+			return fcr0;
 		else if (index == 31)
 			return fcr31.Get();
 		else
-			return 0; /* TODO ??? */
+			return 0; /* Only #0 and #31 are "valid". */
 	}
 
 
 	void FPUControl::Set(const size_t index, const s32 data)
 	{
-		if (index == 0)
-			;
-		else if (index == 31)
+		if (index == 31)
 			fcr31.Set(data);
 	}
 
@@ -216,7 +215,7 @@ namespace VR4300
 			return std::bit_cast<f32, s32>(s32(fgr[index]));
 		else if constexpr (std::is_same_v<FPU_NumericType, s64>)
 		{
-			if (cop0_reg.status.FR)
+			if (cop0_reg.status.fr)
 				return fgr[index];
 			else
 			{ /* If the index is odd, then the result is undefined. */
@@ -226,7 +225,7 @@ namespace VR4300
 		}
 		else if constexpr (std::is_same_v<FPU_NumericType, f64>)
 		{
-			if (cop0_reg.status.FR)
+			if (cop0_reg.status.fr)
 				return std::bit_cast<f64, s64>(fgr[index]);
 			else
 			{ /* If the index is odd, then the result is undefined. */
@@ -248,7 +247,7 @@ namespace VR4300
 			fgr[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
 		else if constexpr (std::is_same_v<FPU_NumericType, s64>)
 		{
-			if (cop0_reg.status.FR)
+			if (cop0_reg.status.fr)
 				fgr[index] = data;
 			else
 			{ /* If the index is odd, then the result is undefined. */
@@ -259,7 +258,7 @@ namespace VR4300
 		}
 		else if constexpr (std::is_same_v<FPU_NumericType, f64>)
 		{
-			if (cop0_reg.status.FR)
+			if (cop0_reg.status.fr)
 				fgr[index] = std::bit_cast<s64, f64>(data);
 			else
 			{ /* If the index is odd, then the result is undefined. */

@@ -62,17 +62,17 @@ namespace VR4300
 		   matches is not found, sets the most significant bit of the index register. */
 		const auto TLB_index = std::find_if(std::begin(TLB_entries), std::end(TLB_entries),
 			[&](const auto& entry) {
-				return entry.ASID == cop0_reg.entry_hi.ASID && entry.VPN2 == cop0_reg.entry_hi.VPN2 && entry.R == cop0_reg.entry_hi.R;
+				return entry.asid == cop0_reg.entry_hi.asid && entry.vpn2 == cop0_reg.entry_hi.vpn2 && entry.r == cop0_reg.entry_hi.r;
 			});
 
 		if (TLB_index == std::end(TLB_entries))
 		{
-			cop0_reg.index.P = 1;
+			cop0_reg.index.p = 1;
 		}
 		else
 		{
 			cop0_reg.index.value = std::distance(std::begin(TLB_entries), TLB_index);
-			cop0_reg.index.P = 0;
+			cop0_reg.index.p = 0;
 		}
 
 		AdvancePipeline(1);
@@ -92,7 +92,7 @@ namespace VR4300
 		std::memcpy(&cop0_reg.entry_hi, arr + 8, 4);
 		std::memcpy(&cop0_reg.page_mask, arr + 12, 4);
 		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
-		cop0_reg.entry_lo_0.G = cop0_reg.entry_lo_1.G = TLB_entries[TLB_index].G;
+		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = TLB_entries[TLB_index].g;
 
 		AdvancePipeline(1);
 	}
@@ -110,7 +110,7 @@ namespace VR4300
 		std::memcpy(arr + 4, &cop0_reg.entry_lo_1, 4);
 		std::memcpy(arr + 8, &cop0_reg.entry_hi, 4);
 		std::memcpy(arr + 12, &cop0_reg.page_mask, 4);
-		TLB_entries[TLB_index].G = cop0_reg.entry_lo_0.G && cop0_reg.entry_lo_1.G;
+		TLB_entries[TLB_index].g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 
 		AdvancePipeline(1);
 	}
@@ -133,7 +133,7 @@ namespace VR4300
 		std::memcpy(arr + 4, &cop0_reg.entry_lo_1, 4);
 		std::memcpy(arr + 8, &cop0_reg.entry_hi, 4);
 		std::memcpy(arr + 12, &cop0_reg.page_mask, 4);
-		TLB_entries[TLB_index].G = cop0_reg.entry_lo_0.G && cop0_reg.entry_lo_1.G;
+		TLB_entries[TLB_index].g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 
 		AdvancePipeline(1);
 	}
@@ -143,15 +143,15 @@ namespace VR4300
 	{
 		/* Return From Exception;
 		   Returns from an exception, interrupt, or error trap. */
-		if (cop0_reg.status.ERL == 0)
+		if (cop0_reg.status.erl == 0)
 		{
 			pc = cop0_reg.epc.value;
-			cop0_reg.status.EXL = 0;
+			cop0_reg.status.exl = 0;
 		}
 		else
 		{
 			pc = cop0_reg.error_epc.value;
-			cop0_reg.status.ERL = 0;
+			cop0_reg.status.erl = 0;
 		}
 		LL_bit = 0;
 		AdvancePipeline(1);

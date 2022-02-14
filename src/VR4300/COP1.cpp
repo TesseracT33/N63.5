@@ -44,27 +44,27 @@ namespace VR4300
 			fcr31.cause_E = unimplemented_operation;
 
 			if (fcr31.enable_I)
-				InexactOperationException();
+				;// InexactOperationException();
 			else
 				fcr31.flag_I = true;
 
 			if (fcr31.enable_U)
-				UnderflowException();
+				;// UnderflowException();
 			else
 				fcr31.flag_U = true;
 
 			if (fcr31.enable_O)
-				OverflowException();
+				;// OverflowException();
 			else
 				fcr31.flag_O = true;
 
 			if (fcr31.enable_Z)
-				DivisionByZeroException();
+				;// DivisionByZeroException();
 			else
 				fcr31.flag_Z = true;
 
 			if (fcr31.enable_V)
-				InvalidOperationException();
+				;// InvalidOperationException();
 			else
 				fcr31.flag_V = true;
 		}
@@ -559,7 +559,7 @@ namespace VR4300
 		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
 
 		const s16 offset = instr_code & 0xFFFF;
-		const bool cond = fcr31.C;
+		const bool cond = fcr31.c;
 		const s64 target = s64(offset << 2);
 
 		const bool branch_cond = [&] {
@@ -612,7 +612,7 @@ namespace VR4300
 				}
 			}();
 
-			fcr31.C = comp_result; /* TODO: also set 'COC1' to result? Or is COC1 the same as fcr31.C? */
+			fcr31.c = comp_result; /* TODO: also set 'COC1' to result? Or is COC1 the same as fcr31.C? */
 		};
 
 		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */

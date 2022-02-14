@@ -1150,8 +1150,17 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	void SYSCALL(const u32 instr_code)
 	{
 		/* System Call;
-		   Generates a system call exception and transfers control to the exception processing program. */
-		SignalException<Exception::Syscall>();
+		   Generates a system call exception and transfers control to the exception processing program.
+		   If a SYSCALL instruction is in a branch delay slot, the branch instruction is decoded to
+		   branch and re-execute. */
+		if (pc_is_inside_branch_delay_slot)
+		{
+			pc -= 8;
+		}
+		else
+		{
+			SignalException<Exception::Syscall>();
+		}
 		AdvancePipeline(1);
 	}
 

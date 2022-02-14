@@ -77,20 +77,20 @@ namespace VR4300
 
 	void CheckInterrupts()
 	{
-		const bool interrupts_are_enabled = cop0_reg.status.IE;
+		const bool interrupts_are_enabled = cop0_reg.status.ie;
 		if (!interrupts_are_enabled)
 			return;
 
-		const bool currently_handling_exception = cop0_reg.status.EXL;
+		const bool currently_handling_exception = cop0_reg.status.exl;
 		if (currently_handling_exception)
 			return;
 
-		const bool currently_handling_error = cop0_reg.status.ERL;
+		const bool currently_handling_error = cop0_reg.status.erl;
 		if (currently_handling_error)
 			return;
 
-		const s32 interrupt_pending = cop0_reg.cause.IP;
-		const s32 interrupt_enable_mask = cop0_reg.status.IM;
+		const s32 interrupt_pending = cop0_reg.cause.ip;
+		const s32 interrupt_enable_mask = cop0_reg.status.im;
 		const bool interrupts_are_pending = interrupt_pending & interrupt_enable_mask & 0xFF; /* TODO: Unsure if $FF is needed */
 		if (interrupts_are_pending)
 			SignalException<Exception::Interrupt>();
@@ -107,14 +107,14 @@ namespace VR4300
 	template<ExternalInterruptSource interrupt>
 	void ClearInterruptPending()
 	{
-		cop0_reg.cause.IP &= ~static_cast<u8>(interrupt);
+		cop0_reg.cause.ip &= ~static_cast<u8>(interrupt);
 	}
 
 
 	template<ExternalInterruptSource interrupt>
 	void SetInterruptPending()
 	{
-		cop0_reg.cause.IP |= static_cast<u8>(interrupt);
+		cop0_reg.cause.ip |= static_cast<u8>(interrupt);
 		CheckInterrupts();
 	}
 
@@ -148,7 +148,7 @@ namespace VR4300
 		cop0_count_cycle_remainder += number_of_cycles & 2; /* TODO */
 		if (cop0_reg.count.value == cop0_reg.compare.value)
 		{
-			cop0_reg.cause.IP |= 0x80;
+			cop0_reg.cause.ip |= 0x80;
 			CheckInterrupts();
 		}
 

@@ -10,9 +10,9 @@ namespace VR4300
 {
 	void SetActiveVirtualToPhysicalFunctions()
 	{
-		if (cop0_reg.status.KSU == 0b00 || cop0_reg.status.ERL == 1 || cop0_reg.status.EXL == 1) /* Kernel mode */
+		if (cop0_reg.status.ksu == 0b00 || cop0_reg.status.erl == 1 || cop0_reg.status.exl == 1) /* Kernel mode */
 		{
-			if (cop0_reg.status.KX == 0)
+			if (cop0_reg.status.kx == 0)
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>;
@@ -23,9 +23,9 @@ namespace VR4300
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>;
 			}
 		}
-		else if (cop0_reg.status.KSU == 0b01) /* Supervisor mode */
+		else if (cop0_reg.status.ksu == 0b01) /* Supervisor mode */
 		{
-			if (cop0_reg.status.SX == 0)
+			if (cop0_reg.status.sx == 0)
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>;
@@ -36,9 +36,9 @@ namespace VR4300
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>;
 			}
 		}
-		else if (cop0_reg.status.KSU == 0b10) /* User mode */
+		else if (cop0_reg.status.ksu == 0b10) /* User mode */
 		{
-			if (cop0_reg.status.UX == 0)
+			if (cop0_reg.status.ux == 0)
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>;
@@ -66,7 +66,7 @@ namespace VR4300
 		}
 		else
 		{
-			SignalException<Exception::AddressError, operation>();
+			SignalAddressErrorException<operation>(virt_addr);
 			return 0;
 		}
 	}
@@ -81,7 +81,7 @@ namespace VR4300
 		}
 		else
 		{
-			SignalException<Exception::AddressError, operation>();
+			SignalAddressErrorException<operation>(virt_addr);
 			return 0;
 		}
 	}
@@ -93,7 +93,7 @@ namespace VR4300
 		virt_addr &= 0xFFFFFFFF;
 		if ((virt_addr & 1 << 31) && (virt_addr & 0b11 << 29) != 0b10 << 29) /* $8000'0000-$BFFF'FFFF; $E000'0000-$FFFF'FFFF */
 		{
-			SignalException<Exception::AddressError, operation>();
+			SignalAddressErrorException<operation>(virt_addr);
 			return 0;
 		}
 		else /* 0-$7FFF'FFFF; $C000'0000-$DFFF'FFFF */
@@ -115,7 +115,7 @@ namespace VR4300
 			}
 			else
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
@@ -126,7 +126,7 @@ namespace VR4300
 			}
 			else
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
@@ -137,12 +137,12 @@ namespace VR4300
 			}
 			else /* $F000'0000'0000'0000 -- $FFFF'FFFF'BFFF'FFFF; $FFFF'FFFF'E000'0000 -- $FFFF'FFFF'FFFF'FFFF */
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
 		default:
-			SignalException<Exception::AddressError, operation>();
+			SignalAddressErrorException<operation>(virt_addr);
 			return 0;
 		}
 	}
@@ -173,7 +173,7 @@ namespace VR4300
 			}
 			else
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
@@ -184,7 +184,7 @@ namespace VR4300
 			}
 			else
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
@@ -200,7 +200,7 @@ namespace VR4300
 			}
 			else
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
@@ -211,7 +211,7 @@ namespace VR4300
 			}
 			else
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
@@ -231,12 +231,12 @@ namespace VR4300
 			}
 			else [[unlikely]]
 			{
-				SignalException<Exception::AddressError, operation>();
+				SignalAddressErrorException<operation>(virt_addr);
 				return 0;
 			}
 
 		default:
-			SignalException<Exception::AddressError, operation>();
+			SignalAddressErrorException<operation>(virt_addr);
 			return 0;
 		}
 	}
@@ -247,7 +247,7 @@ namespace VR4300
 	{
 		/* Used for extracting the VPN from the virtual address;
 		   given the page mask register in a TLB entry, tells by how many positions the virtual address needs to be shifted to the left. */
-		static constexpr std::array page_mask_to_vaddr_VPN_shift_count = [] {
+		static constexpr std::array page_size_to_vaddr_vpn_shift_count = [] {
 			std::array<u8, 4096> table{};
 			for (int i = 0; i < table.size(); i++) {
 				table[i] = [&] {
@@ -265,7 +265,7 @@ namespace VR4300
 
 		/* Used for extracting the offset from the virtual address;
 		   given the page mask register in a TLB entry, tells what the virtual address need to be masked with. */
-		static constexpr std::array page_mask_to_vaddr_offset_mask = [] {
+		static constexpr std::array page_size_to_vaddr_offset_mask = [] {
 			std::array<u32, 4096> table{};
 			for (int i = 0; i < table.size(); i++) {
 				table[i] = [&] {
@@ -285,40 +285,51 @@ namespace VR4300
 correctly executed. In this case, the TLB-Shutdown (TS) bit of the status register
 is set to 1, and then the TLB cannot be used. */
 
-		u32 addr_VPN2 = 0;
+		u32 addr_vpn2 = 0;
 
 		for (const TLB_Entry& entry : TLB_entries)
 		{
-			const u32 addr_VPN = virt_addr >> page_mask_to_vaddr_VPN_shift_count[entry.MASK] & 0xFFF'FFFF; /* VPN is at most 28 bits */
-			addr_VPN2 = addr_VPN >> 1; /* VPN divided by two */
+			const auto virtual_page_size = entry.mask;
+			const u32 addr_vpn = virt_addr >> page_size_to_vaddr_vpn_shift_count[virtual_page_size] & 0xFFF'FFFF; /* VPN is at most 28 bits */
+			addr_vpn2 = addr_vpn >> 1; /* VPN divided by two */
 
-			/* For a TLB hit to occur, the virtual page number of the virtual address must coincide with the one in the TLB entry. */
-			if (entry.VPN2 != addr_VPN2 || (!entry.G && entry.ASID != cop0_reg.entry_hi.ASID))
+			/* For a TLB hit to occur, the virtual page number of the virtual address must coincide with the one in the TLB entry.
+			   Also, if the global bit is clear, the entry's ASID (Address space ID field) must coincide with the one in the EntryHi register. */
+			if (entry.vpn2 != addr_vpn2 || (!entry.g && entry.asid != cop0_reg.entry_hi.asid))
 				continue;
 
 			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */
-			const auto& entry_reg = (addr_VPN & 1) ? entry.lo_1 : entry.lo_0;
+			const auto& entry_reg = (addr_vpn & 1) ? entry.lo_1 : entry.lo_0;
 
-			if (!entry_reg.V) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
+			if (!entry_reg.v) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
 			{
 				SignalException<Exception::TLB_Invalid, operation>();
+				tlb_failure.bad_virt_addr = virt_addr;
+				tlb_failure.bad_vpn2 = addr_vpn2;
+				tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
 				return 0;
 			}
 			if constexpr (operation == MemoryAccess::Operation::Write)
 			{
-				if (!entry_reg.D) /* If the "Dirty" bit is clear, writing is disallowed. */
+				if (!entry_reg.d) /* If the "Dirty" bit is clear, writing is disallowed. */
 				{
 					SignalException<Exception::TLB_Modification, operation>();
+					tlb_failure.bad_virt_addr = virt_addr;
+					tlb_failure.bad_vpn2 = addr_vpn2;
+					tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
 					return 0;
 				}
 			}
-			const u32 virt_addr_offset = virt_addr & page_mask_to_vaddr_offset_mask[entry.MASK];
-			const u32 phys_addr = u32(virt_addr_offset | entry_reg.PFN << page_mask_to_vaddr_VPN_shift_count[entry.MASK]);
+			const u32 virt_addr_offset = virt_addr & page_size_to_vaddr_offset_mask[virtual_page_size];
+			const u32 phys_addr = u32(virt_addr_offset | entry_reg.pfn << page_size_to_vaddr_vpn_shift_count[virtual_page_size]);
 			/* TODO 'C' (0-7) is the page coherency attribute. Cache is not used if C == 2, else, it is used. */
 			return phys_addr;
 		}
 
 		SignalException<Exception::TLB_Miss, operation>(); /* todo: distinguish between 32 and 64 bit */
+		tlb_failure.bad_virt_addr = virt_addr;
+		tlb_failure.bad_vpn2 = addr_vpn2;
+		tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
 		return 0;
 	}
 
@@ -326,20 +337,22 @@ is set to 1, and then the TLB cannot be used. */
 	template<std::integral Int, MemoryAccess::Alignment alignment, MemoryAccess::Operation operation>
 	Int ReadVirtual(u64 virtual_address)
 	{
-		if constexpr (sizeof Int > 1)
+		/* For aligned accesses, check if the address is misaligned. There is no need to do this for */
+		/* instruction fetches; we know that the PC will always be a multiple of four. */
+		if constexpr (sizeof Int > 1 && operation != MemoryAccess::Operation::InstrFetch)
 		{
 			if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			{
 				if (virtual_address & (sizeof Int - 1))
 				{
-					SignalException<Exception::AddressError, operation>();
+					SignalAddressErrorException<operation>(virtual_address);
 					return Int(0);
 				}
 			}
 			else
 			{
-				/* For unaligned accesses, always read from the last boundary, with the number of bytes being sizeof T.
-				   Shifting/masking is done by the function which handles the load instruction. */
+				/* For unaligned accesses, always read from the last boundary, with the number of bytes being sizeof Int.
+				   The rest is taken care of by the function which handles the load instruction. */
 				virtual_address &= ~(sizeof Int - 1);
 			}
 		}
@@ -348,7 +361,7 @@ is set to 1, and then the TLB cannot be used. */
 			return Int(0);
 
 		const Int value = Memory::ReadPhysical<Int>(physical_address);
-		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian, does nothing */
+		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian (same as N64), does nothing */
 		return byteswapped_value;
 	}
 
@@ -360,7 +373,7 @@ is set to 1, and then the TLB cannot be used. */
 		{
 			if (virtual_address & (sizeof Int - 1))
 			{
-				SignalException<Exception::AddressError, MemoryAccess::Operation::Write>();
+				SignalAddressErrorException<MemoryAccess::Operation::Write>(virtual_address);
 				return;
 			}
 		}
@@ -368,15 +381,16 @@ is set to 1, and then the TLB cannot be used. */
 		if (exception_has_occurred)
 			return;
 
-		const Int byteswapped_data = Memory::Byteswap(data); /* If the host is big endian, does nothing */
+		const Int byteswapped_data = Memory::Byteswap(data);
 
+		/* Find out how many bytes to write. */
 		if constexpr (sizeof Int == 1)
 			Memory::WritePhysical<1>(physical_address, byteswapped_data);
 		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			Memory::WritePhysical<sizeof Int>(physical_address, byteswapped_data);
 		else
 		{
-			/* The result will different from sizeof(T) only for unaligned memory accesses. */
+			/* The result will different from sizeof(Int) only for unaligned memory accesses. */
 			const std::size_t number_of_bytes = [&] {
 				if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft) /* Store (Double)Word Left */
 					return sizeof Int - (physical_address & (sizeof Int - 1)); 
@@ -472,8 +486,6 @@ is set to 1, and then the TLB cannot be used. */
 	template u32 VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>(const u64);
 	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>(const u64);
 	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>(const u64);
-	template u32 VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Write>(const u64);
-	template u32 VirtualToPhysicalAddressInvalid<MemoryAccess::Operation::Read>(const u64);
 
 	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(const u64);
 	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Write>(const u64);

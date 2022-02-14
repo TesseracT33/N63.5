@@ -9,7 +9,7 @@ import NumericalTypes;
 
 namespace VR4300
 {
-	static void DecodeSpecialInstruction(const u32 instr_code)
+	void DecodeSpecialInstruction(const u32 instr_code)
 	{
 		const u8 sub_op_code = instr_code & 0x3F;
 
@@ -80,7 +80,7 @@ namespace VR4300
 	}
 
 
-	static void DecodeRegimmInstruction(const u32 instr_code)
+	void DecodeRegimmInstruction(const u32 instr_code)
 	{
 		const u8 sub_op_code = instr_code >> 16 & 0x1F;
 
@@ -108,7 +108,7 @@ namespace VR4300
 	}
 
 
-	static void DecodeCOP0Instruction(const u32 instr_code)
+	void DecodeCOP0Instruction(const u32 instr_code)
 	{
 		const u8 sub_op_code = instr_code >> 21 & 0x1F;
 
@@ -143,7 +143,7 @@ namespace VR4300
 	}
 
 
-	static void DecodeCOP1Instruction(const u32 instr_code)
+	void DecodeCOP1Instruction(const u32 instr_code)
 	{
 		if (!fpu_is_enabled)
 		{
@@ -209,8 +209,8 @@ namespace VR4300
 				case 0b001001: FPU_Convert<FPU_Instruction::TRUNC_L>(instr_code); break;
 				case 0b001101: FPU_Convert<FPU_Instruction::TRUNC_W>(instr_code); break;
 
-				default:
-					UnimplementedOperationException(); // TODO: also set flags in FCR31
+				default: /* TODO: Reserved instruction exception?? */
+					; // UnimplementedOperationException(); // TODO: also set flags in FCR31
 				}
 			}
 		}
