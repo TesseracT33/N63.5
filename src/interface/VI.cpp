@@ -1,6 +1,8 @@
 module VI;
 
 import Memory;
+import RDRAM;
+import Renderer;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
@@ -9,6 +11,13 @@ import Memory;
 
 namespace VI
 {
+	void Initialize()
+	{
+		mem.fill(0);
+		Renderer::SetFramebufferPtr(RDRAM::GetPointer(0));
+	}
+
+
 	void WriteToControl0(const u8 data)
 	{
 		/* TODO */
@@ -27,6 +36,11 @@ namespace VI
 		constexpr std::size_t number_of_bytes_to_write = /* how many bytes we will actually write (we cannot go past the end of this memory region) */
 			number_of_bytes <= 3 - start ? number_of_bytes : 3 - start;
 		Memory::GenericWrite<number_of_bytes_to_write>(&mem[VI_ORIGIN + start], shifted_data);
+
+		u32 origin;
+		std::memcpy(&origin, &mem[VI_ORIGIN], 4);
+		origin = Memory::Byteswap(origin);
+		Renderer::SetFramebufferPtr(RDRAM::GetPointer(origin));
 	}
 
 

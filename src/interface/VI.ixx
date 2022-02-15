@@ -18,6 +18,8 @@ namespace VI
 
 	export
 	{
+		void Initialize();
+
 		template<std::integral Int>
 		Int Read(const u32 addr);
 

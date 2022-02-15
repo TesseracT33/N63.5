@@ -166,6 +166,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Renderer.cpp" />
+    <ClCompile Include="src\Renderer.ixx" />
     <ClCompile Include="src\RSP\RSP.cpp" />
     <ClCompile Include="src\RSP\RSP.ixx" />
     <ClCompile Include="src\Utils\BitUtils.ixx" />
@@ -211,6 +213,7 @@
     <ClCompile Include="src\VR4300\VR4300.ixx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\DebugOptions.h" />
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

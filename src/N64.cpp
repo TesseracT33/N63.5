@@ -1,7 +1,9 @@
 module N64;
 
-import Memory;
+import Cartridge;
 import MI;
+import Renderer;
+import VI;
 import VR4300;
 
 namespace N64
@@ -17,13 +19,30 @@ namespace N64
 			return false;
 
 		MI::Initialize();
+		VI::Initialize();
 		VR4300::PowerOn(true);
+
+		Renderer::SetRenderer(renderer);
+		Renderer::SetWindowSize(window_width, window_height);
 
 		return true;
 	}
 
+
 	void Run()
 	{
-		VR4300::Run(100);
+		static constexpr int cycles_per_update = 1000;
+
+		while (true)
+		{
+			VR4300::Run(cycles_per_update);
+			Renderer::Render();
+		}
+	}
+
+
+	void EnqueueEvent(Event event, int cycles_until_fire )
+	{
+		
 	}
 }

@@ -11,6 +11,7 @@ import VI;
 import VR4300;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../DebugOptions.h"
 
 namespace Memory
 {
@@ -72,11 +73,15 @@ namespace Memory
 			return RSP::ReadMemory<Int>(physical_address);
 
 		case 0x041:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			return Int(0);
 
 		case 0x042:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			return Int(0);
 
 		case 0x043:
@@ -86,13 +91,18 @@ namespace Memory
 			return VI::Read<Int>(physical_address);
 
 		case 0x045:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			return Int(0);
 
 		case 0x046:
 			return PI::Read<Int>(physical_address);
 
 		case 0x047:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
+			assert(false);
+#endif
 			return Int(0);
 
 		case 0x048:
@@ -100,14 +110,18 @@ namespace Memory
 
 		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
 		case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			return Int(0);
 
 		case 0x060: case 0x061: case 0x062: case 0x063: case 0x064: case 0x065: case 0x066: case 0x067:
 		case 0x068: case 0x069: case 0x06A: case 0x06B: case 0x06C: case 0x06D: case 0x06E: case 0x06F:
 		case 0x070: case 0x071: case 0x072: case 0x073: case 0x074: case 0x075: case 0x076: case 0x077:
 		case 0x078: case 0x079: case 0x07A: case 0x07B: case 0x07C: case 0x07D: case 0x07E: case 0x07F:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			return Int(0);
 
 		case 0x080: case 0x081: case 0x082: case 0x083: case 0x084: case 0x085: case 0x086: case 0x087:
@@ -163,7 +177,9 @@ namespace Memory
 			return Cartridge::ReadROM<Int>(physical_address);
 
 		case 0x1FC:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			if (physical_address <= 0x1FC007BF)
 				return Int(0);
 			else if (physical_address <= 0x1FC007FF)
@@ -172,7 +188,9 @@ namespace Memory
 				return Int(0);
 
 		default:
+#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
 			assert(false);
+#endif
 			return Int(0);
 		}
 	}

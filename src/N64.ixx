@@ -2,14 +2,20 @@ export module N64;
 
 import <SDL.h>;
 
-import Cartridge;
-
+import <list>;
+import <queue>;
 import <string>;
+
+import NumericalTypes;
 
 namespace N64
 {
 	export
 	{
+		enum class Event {
+			PI_DMA_FINISH
+		};
+
 		bool PowerOn(
 			const std::string& rom_path,
 			SDL_Renderer* renderer,
@@ -17,5 +23,7 @@ namespace N64
 			const unsigned window_height);
 
 		void Run();
+
+		void EnqueueEvent(Event event, int cycles_until_fire);
 	}
 }

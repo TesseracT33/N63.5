@@ -44,8 +44,11 @@
     <ClCompile Include="src\interface\VI.cpp" />
     <ClCompile Include="src\RSP\RSP.ixx" />
     <ClCompile Include="src\RSP\RSP.cpp" />
+    <ClCompile Include="src\Renderer.ixx" />
+    <ClCompile Include="src\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
+    <ClInclude Include="src\DebugOptions.h" />
   </ItemGroup>
 </Project>
