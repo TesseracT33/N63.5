@@ -26,15 +26,7 @@ namespace Memory
 		}
 		else
 		{
-			/* TODO: C++23 feature, to be used very soon */
-			//return std::byteswap(value);
-			/* TEMP */
-			if constexpr (sizeof Int == 2)
-				return static_cast<Int>(_byteswap_ushort(static_cast<u16>(value)));
-			else if constexpr (sizeof Int == 4)
-				return static_cast<Int>(_byteswap_ulong(static_cast<u32>(value)));
-			else
-				return static_cast<Int>(_byteswap_uint64(static_cast<u64>(value)));
+			return std::byteswap(value);
 		}
 	}
 
