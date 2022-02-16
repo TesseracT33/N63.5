@@ -11,7 +11,7 @@ import VI;
 import VR4300;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
-#include "../DebugOptions.h"
+#include "../debug/DebugOptions.h"
 
 namespace Memory
 {

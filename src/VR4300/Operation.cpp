@@ -6,7 +6,11 @@ import :Exceptions;
 import :MMU;
 import :Registers;
 
+import Logging;
+
 import <cassert>;
+
+#include "../debug/DebugOptions.h"
 
 namespace VR4300
 {
@@ -64,6 +68,11 @@ namespace VR4300
 	void ExecuteInstruction() /* todo: bad name for now */
 	{
 		const u32 instr_code = FetchInstruction(pc);
+
+#ifdef LOG_VR4300
+		Logging::LogVR4300Instruction(pc, instr_code, p_cycle_counter);
+#endif
+
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
@@ -135,7 +144,7 @@ namespace VR4300
 		for (unsigned i = 0; i < 0x1000; i += 4) /* no clue if some kind of DMA */
 			WriteVirtual<u32>(0xA400'0000 + i, ReadVirtual<u32>(0xB000'0000 + i));
 
-		pc = 0xA400'0040;
+		pc = 0xFFFF'FFFF'A400'0040;
 	}
 
 

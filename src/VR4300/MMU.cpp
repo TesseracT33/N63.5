@@ -4,7 +4,10 @@ import :COP0;
 import :Exceptions;
 import :Registers;
 
+import Logging;
 import Memory;
+
+#include "../debug/DebugOptions.h"
 
 namespace VR4300
 {
@@ -362,6 +365,11 @@ is set to 1, and then the TLB cannot be used. */
 
 		const Int value = Memory::ReadPhysical<Int>(physical_address);
 		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian (same as N64), does nothing */
+
+#ifdef LOG_VR4300
+		Logging::LogMemoryRead(physical_address, byteswapped_value);
+#endif
+
 		return byteswapped_value;
 	}
 
@@ -382,6 +390,10 @@ is set to 1, and then the TLB cannot be used. */
 			return;
 
 		const Int byteswapped_data = Memory::Byteswap(data);
+
+#ifdef LOG_VR4300
+		Logging::LogMemoryWrite(physical_address, byteswapped_data);
+#endif
 
 		/* Find out how many bytes to write. */
 		if constexpr (sizeof Int == 1)
