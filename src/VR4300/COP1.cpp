@@ -111,7 +111,7 @@ namespace VR4300
 			}
 			else
 			{
-				static_assert(false, "\"FPU_Load\" template function called, but no matching load instruction was found.");
+				static_assert(instr != instr, "\"FPU_Load\" template function called, but no matching load instruction was found.");
 			}
 		}();
 
@@ -153,7 +153,7 @@ namespace VR4300
 		}
 		else
 		{
-			static_assert(false, "\"FPU_Store\" template function called, but no matching store instruction was found.");
+			static_assert(instr != instr, "\"FPU_Store\" template function called, but no matching store instruction was found.");
 		}
 
 		AdvancePipeline(1);
@@ -207,7 +207,7 @@ namespace VR4300
 		}
 		else
 		{
-			static_assert(false, "\"FPU_Move\" template function called, but no matching move instruction was found.");
+			static_assert(instr != instr, "\"FPU_Move\" template function called, but no matching move instruction was found.");
 		}
 
 		AdvancePipeline(1);
@@ -290,7 +290,7 @@ namespace VR4300
 				else if constexpr (instr == CVT_L)
 					Convert2.template operator() < Input_Type, s64 > ();
 				else
-					static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+					static_assert(instr != instr, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 			};
 
 			switch (fmt)
@@ -336,7 +336,7 @@ namespace VR4300
 					else if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
 					else if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
 					else if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
-					else static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+					else static_assert(instr != instr, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 				}();
 
 				exception_flags.unimplemented_operation =
@@ -392,7 +392,7 @@ namespace VR4300
 		}
 		else
 		{
-			static_assert(false, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+			static_assert(instr != instr, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 		}
 	}
 
@@ -424,14 +424,14 @@ namespace VR4300
 					else if constexpr (instr == SUB) return op1 - op2;
 					else if constexpr (instr == MUL) return op1 * op2;
 					else if constexpr (instr == DIV) return op1 / op2;
-					else                             static_assert(false);
+					else                             static_assert(instr != instr);
 				}();
 
 				AdvancePipeline([&] {
 					     if constexpr (instr == ADD || instr == SUB) return 3;
 					else if constexpr (std::is_same_v<Float, f32>)   return 29;
 					else if constexpr (std::is_same_v<Float, f64>)   return 58;
-					else                                             static_assert(false);
+					else                                             static_assert(instr != instr);
 				}());
 
 				fgr.Set<Float>(fd, result);
@@ -486,7 +486,7 @@ namespace VR4300
 					else if constexpr (instr == MOV)  return op; 
 					else if constexpr (instr == NEG)  return -op;
 					else if constexpr (instr == SQRT) return std::sqrt(op);
-					else                              static_assert(false);
+					else                              static_assert(instr != instr);
 				}();
 
 				AdvancePipeline([&] {
@@ -494,7 +494,7 @@ namespace VR4300
 					{
 						     if constexpr (std::is_same_v<Float, f32>) return 29;
 						else if constexpr (std::is_same_v<Float, f64>) return 58;
-						else                                           static_assert(false);
+						else                                           static_assert(instr != instr);
 					}
 					else return 1;
 				}());
@@ -531,7 +531,7 @@ namespace VR4300
 		}
 		else
 		{
-			static_assert(false, "\"FPU_Compute\" template function called, but no matching compute instruction was found.");
+			static_assert(instr != instr, "\"FPU_Compute\" template function called, but no matching compute instruction was found.");
 		}
 	}
 
@@ -565,7 +565,7 @@ namespace VR4300
 		const bool branch_cond = [&] {
 			     if constexpr (instr == BC1T || instr == BC1TL) return cond;
 			else if constexpr (instr == BC1F || instr == BC1FL) return !cond;
-			else static_assert(false, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
+			else static_assert(instr != instr, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
 		if (branch_cond)

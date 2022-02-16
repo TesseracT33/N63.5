@@ -115,7 +115,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			}
 			else
 			{
-				static_assert(false, "\"Load\" template function called, but no matching load instruction was found.");
+				static_assert(instr != instr, "\"Load\" template function called, but no matching load instruction was found.");
 			}
 		}();
 
@@ -319,7 +319,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}
 		else
 		{
-			static_assert(false, "\"Store\" template function called, but no matching store instruction was found.");
+			static_assert(instr != instr, "\"Store\" template function called, but no matching store instruction was found.");
 		}
 
 		AdvancePipeline(1);
@@ -437,7 +437,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}
 		else
 		{
-			static_assert(false, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
+			static_assert(instr != instr, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
 		}
 
 		AdvancePipeline(1);
@@ -581,7 +581,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}
 		else
 		{
-			static_assert(false, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
+			static_assert(instr != instr, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
 		}
 
 		AdvancePipeline(1);
@@ -728,7 +728,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			}
 			else
 			{
-				static_assert(false, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
+				static_assert(instr != instr, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
 			}
 		}());
 
@@ -804,7 +804,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			lo_reg = product & 0xFFFFFFFF'FFFFFFFF;
 			hi_reg = product >> 64;
 #else
-			static_assert(false);
+			/* TODO */
 #endif
 		}
 		else if constexpr (instr == DMULTU)
@@ -822,7 +822,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			lo_reg = product & 0xFFFFFFFF'FFFFFFFF;
 			hi_reg = product >> 64;
 #else
-			static_assert(false);
+			/* TODO */
 #endif
 		}
 		else if constexpr (instr == DDIV)
@@ -849,7 +849,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}
 		else
 		{
-			static_assert(false, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+			static_assert(instr != instr, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}
 
 		AdvancePipeline( [&] {
@@ -857,7 +857,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else if constexpr (instr == DMULT || instr == DMULTU) return 8;
 			else if constexpr (instr == DIV   || instr == DIVU)   return 37;
 			else if constexpr (instr == DDIV  || instr == DDIVU)  return 69;
-			else static_assert(false, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+			else static_assert(instr != instr, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}());
 	}
 
@@ -896,7 +896,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			}
 			else
 			{
-				static_assert(false, "\"Jump\" template function called, but no matching jump instruction was found.");
+				static_assert(instr != instr, "\"Jump\" template function called, but no matching jump instruction was found.");
 			}
 		}();
 
@@ -956,7 +956,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else if constexpr (instr == BGEZAL || instr == BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
 				return s64(gpr[rs]) >= 0;
 			else
-				static_assert(false, "\"Branch\" template function called, but no matching branch instruction was found.");
+				static_assert(instr != instr, "\"Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
 		if (branch_cond)
@@ -1026,7 +1026,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			}
 			else
 			{
-				static_assert(false, "\"Trap_ThreeOperand\" template function called, but no matching trap instruction was found.");
+				static_assert(instr != instr, "\"Trap_ThreeOperand\" template function called, but no matching trap instruction was found.");
 			}
 		}();
 
@@ -1088,7 +1088,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			}
 			else
 			{
-				static_assert(false, "\"Trap_Immediate\" template function called, but no matching trap instruction was found.");
+				static_assert(instr != instr, "\"Trap_Immediate\" template function called, but no matching trap instruction was found.");
 			}
 		}();
 

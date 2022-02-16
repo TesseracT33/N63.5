@@ -233,8 +233,6 @@ namespace VR4300
 				return std::bit_cast<f64, s64>(fgr[aligned_index] & 0xFFFFFFFF | fgr[aligned_index + 1] << 32);
 			}
 		}
-		else
-			static_assert(false);
 	}
 
 
@@ -268,8 +266,6 @@ namespace VR4300
 				fgr[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 			}
 		}
-		else
-			static_assert(false);
 	}
 
 

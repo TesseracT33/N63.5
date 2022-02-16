@@ -1,7 +1,7 @@
 module DMA;
 
 import Cartridge;
-import PI;
+import N64;
 import RDRAM;
 
 import <algorithm>;
@@ -20,9 +20,9 @@ namespace DMA
 
 		std::memcpy(dest_start_ptr, source_start_ptr, number_of_bytes_to_copy);
 
-		PI::SetStatusFlag<PI::StatusFlag::DMA_BUSY>();
-
-		/* TODO; timing */
+		static constexpr size_t cycles_per_byte_pi_dma = 9;
+		const size_t cycles_until_finish = number_of_bytes_to_copy * cycles_per_byte_pi_dma;
+		N64::EnqueueEvent(N64::Event::PI_DMA_FINISH, cycles_until_finish);
 	}
 
 
@@ -33,8 +33,6 @@ namespace DMA
 			return RDRAM::GetPointer(addr);
 		else if constexpr (location == Location::Cartridge)
 			return Cartridge::GetPointerToROM(addr);
-		else
-			static_assert(false);
 	}
 
 
@@ -45,8 +43,6 @@ namespace DMA
 			return RDRAM::GetNumberOfBytesUntilRegionEnd(addr);
 		else if constexpr (location == Location::Cartridge)
 			return Cartridge::GetNumberOfBytesUntilRegionEnd(addr);
-		else
-			static_assert(false);
 	}
 
 

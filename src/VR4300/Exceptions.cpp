@@ -116,7 +116,7 @@ namespace VR4300
 			return 2;
 		}
 		else {
-			static_assert(false);
+			static_assert(exception != exception);
 		}
 	}
 
@@ -145,7 +145,7 @@ namespace VR4300
 		else if constexpr (exception == Trap)                return TrapException;
 		else if constexpr (exception == Watch)               return WatchException;
 		else if constexpr (exception == XTLB_Miss)           return XTLB_MissException<operation>;
-		else static_assert(false);
+		else static_assert(exception != exception);
 	}
 
 

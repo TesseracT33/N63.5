@@ -47,7 +47,7 @@ namespace VR4300
 		}
 		else
 		{
-			static_assert(false, "\"CP0_Move\" template function called, but no matching move instruction was found.");
+			static_assert(instr != instr, "\"CP0_Move\" template function called, but no matching move instruction was found.");
 		}
 
 		AdvancePipeline(1);

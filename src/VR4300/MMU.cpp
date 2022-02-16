@@ -394,10 +394,8 @@ is set to 1, and then the TLB cannot be used. */
 			const std::size_t number_of_bytes = [&] {
 				if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft) /* Store (Double)Word Left */
 					return sizeof Int - (physical_address & (sizeof Int - 1)); 
-				else if constexpr (alignment == MemoryAccess::Alignment::UnalignedRight) /* Store (Double)Word Right */
+				else /* UnalignedRight; Store (Double)Word Right */
 					return (physical_address & (sizeof Int - 1)) + 1;
-				else
-					static_assert(false);
 			}();
 			/* This branch will be worth it; the fact that we can pass the number of bytes to access
 			   as a template argument means that, among other things, memcpy will be optimized away
