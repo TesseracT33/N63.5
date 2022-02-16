@@ -961,7 +961,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		if (branch_cond)
 		{
-			const s32 offset = s32(instr_code & 0xFFFF) << 2;
+			const s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 			PrepareJump(pc + offset);
 			pc_is_inside_branch_delay_slot = true;
 		}
