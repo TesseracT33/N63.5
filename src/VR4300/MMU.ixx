@@ -74,5 +74,8 @@ namespace VR4300
 		u32 bad_asid;
 
 	} tlb_failure;
+
+	/* Used for logging. Set when memory is read during an instruction fetch. */
+	u32 last_physical_address_on_instr_fetch;
 }
 

@@ -367,7 +367,10 @@ is set to 1, and then the TLB cannot be used. */
 		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian (same as N64), does nothing */
 
 #ifdef LOG_VR4300
-		Logging::LogMemoryRead(physical_address, byteswapped_value);
+		if constexpr (operation != MemoryAccess::Operation::InstrFetch)
+			Logging::LogMemoryRead(physical_address, byteswapped_value);
+		else
+			last_physical_address_on_instr_fetch = physical_address;
 #endif
 
 		return byteswapped_value;

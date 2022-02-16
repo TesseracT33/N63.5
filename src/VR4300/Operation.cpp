@@ -70,7 +70,7 @@ namespace VR4300
 		const u32 instr_code = FetchInstruction(pc);
 
 #ifdef LOG_VR4300
-		Logging::LogVR4300Instruction(pc, instr_code, p_cycle_counter);
+		Logging::LogVR4300Instruction(pc, instr_code, last_physical_address_on_instr_fetch, p_cycle_counter);
 #endif
 
 		pc += 4;
