@@ -30,15 +30,17 @@ namespace VR4300
 
 		template<ExternalInterruptSource interrupt>
 		void SetInterruptPending();
+
+		void CheckInterrupts();
+
+		unsigned p_cycle_counter = 0;
 	}
 
-	void CheckInterrupts();
 	void ExecuteInstruction();
 	void DecodeAndExecuteInstruction(const u32 instr_code);
 	void EnterKernelMode();
 	void DisableInterrupts();
 
-	unsigned p_cycle_counter = 0;
 	unsigned cop0_count_cycle_remainder = 0;
 
 	bool pc_is_inside_branch_delay_slot = false;

@@ -31,7 +31,7 @@ namespace N64
 
 	void Run()
 	{
-		static constexpr int cycles_per_update = 1000;
+		static constexpr int cycles_per_update = 10000;
 
 		while (true)
 		{
@@ -41,8 +41,40 @@ namespace N64
 	}
 
 
-	void EnqueueEvent(Event event, int cycles_until_fire )
+	void EnqueueEvent(Event event, int cycles_until_fire, int cycles_into_update)
 	{
-		
+		EventItem new_item = { event, cycles_until_fire };
+		bool item_inserted = false;
+
+		for (auto it = event_queue.begin(); it != event_queue.end(); it++) {
+			EventItem& item = *it;
+			item.time -= cycles_into_update;
+			if (item.time <= 0)
+			{
+				ExecuteEvent(item.event);
+				event_queue.erase(it);
+			}
+			else if (!item_inserted && item.time > new_item.time)
+			{
+				event_queue.insert(it, new_item);
+				item_inserted = true;
+			}
+		}
+		if (!item_inserted)
+		{
+			event_queue.push_back(new_item);
+		}
+	}
+
+
+	void ExecuteEvent(Event event)
+	{
+		switch (event)
+		{
+		case Event::PI_DMA_FINISH:
+			MI::SetInterruptFlag<MI::InterruptType::PI>();
+			VR4300::CheckInterrupts();
+			break;
+		}
 	}
 }

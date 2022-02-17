@@ -50,6 +50,7 @@ namespace PI
 		std::memcpy(&cart_start_addr, &mem[PI_CART_ADDR], 3);
 
 		DMA::Init<DMA::Location::RDRAM, DMA::Location::Cartridge>(dma_length, rdram_start_addr, cart_start_addr);
+		SetStatusFlag<StatusFlag::DMA_BUSY>();
 	}
 
 
@@ -72,6 +73,7 @@ namespace PI
 		std::memcpy(&rdram_start_addr, &mem[PI_DRAM_ADDR], 3);
 
 		DMA::Init<DMA::Location::Cartridge, DMA::Location::RDRAM>(dma_length, cart_start_addr, rdram_start_addr);
+		SetStatusFlag<StatusFlag::DMA_BUSY>();
 	}
 
 
@@ -79,6 +81,7 @@ namespace PI
 	{
 		if (data & 1)
 		{ /* Reset the DMA controller and stop any transfer being done */
+			mem[PI_STATUS] = 0;
 			/* TODO */
 		}
 		if (data & 2)

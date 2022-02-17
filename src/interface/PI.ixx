@@ -9,7 +9,7 @@ namespace PI
 {
 	std::array<u8, 0x34> mem{};
 
-	template<std::size_t start, std::size_t number_of_bytes /* how many bytes we want to write */>
+	template<std::size_t start, std::size_t number_of_bytes>
 	void WriteToDramCartAddr(const auto data);
 
 	template<std::size_t start, std::size_t number_of_bytes>
@@ -24,9 +24,9 @@ namespace PI
 	{
 		enum class StatusFlag : u8
 		{
-			DMA_BUSY = 1 << 0,
-			IO_BUSY = 1 << 1,
-			DMA_ERROR = 1 << 2,
+			DMA_BUSY      = 1 << 0,
+			IO_BUSY       = 1 << 1,
+			DMA_ERROR     = 1 << 2,
 			DMA_COMPLETED = 1 << 3
 		};
 

@@ -208,4 +208,17 @@ namespace MI
 
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, const u32);
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, const u32);
+
+	template void ClearInterruptFlag<InterruptType::SP>();
+	template void ClearInterruptFlag<InterruptType::SI>();
+	template void ClearInterruptFlag<InterruptType::AI>();
+	template void ClearInterruptFlag<InterruptType::VI>();
+	template void ClearInterruptFlag<InterruptType::PI>();
+	template void ClearInterruptFlag<InterruptType::DP>();
+	template void SetInterruptFlag<InterruptType::SP>();
+	template void SetInterruptFlag<InterruptType::SI>();
+	template void SetInterruptFlag<InterruptType::AI>();
+	template void SetInterruptFlag<InterruptType::VI>();
+	template void SetInterruptFlag<InterruptType::PI>();
+	template void SetInterruptFlag<InterruptType::DP>();
 }

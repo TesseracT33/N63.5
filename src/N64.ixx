@@ -3,7 +3,6 @@ export module N64;
 import <SDL.h>;
 
 import <list>;
-import <queue>;
 import <string>;
 
 import NumericalTypes;
@@ -24,6 +23,16 @@ namespace N64
 
 		void Run();
 
-		void EnqueueEvent(Event event, int cycles_until_fire);
+		void EnqueueEvent(Event event, int cycles_until_fire, int cycles_into_update);
 	}
+
+	void ExecuteEvent(Event event);
+
+	struct EventItem
+	{
+		Event event;
+		int time;
+	};
+
+	std::list<EventItem> event_queue{};
 }
