@@ -38,14 +38,14 @@ namespace SI
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
-		return Memory::GenericRead<Int>(&mem[addr % mem.size()]);
+		return Memory::GenericRead<Int>(&mem[addr & 0x1F]);  /* TODO: number of register bytes is 0x1C.. */
 	}
 
 
 	template<std::size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		switch (addr % mem.size())
+		switch (addr & 0x1F) /* TODO: number of register bytes is 0x1C.. */
 		{
 		case SI_DRAM_ADDR:
 			Memory::GenericWrite

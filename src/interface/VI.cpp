@@ -47,14 +47,14 @@ namespace VI
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
-		return Memory::GenericRead<Int>(&mem[addr % mem.size()]);
+		return Memory::GenericRead<Int>(&mem[addr & 0x3F]); /* TODO: number of register bytes is 0x38.. */
 	}
 
 
 	template<std::size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		switch (addr % mem.size())
+		switch (addr & 0x3F) /* TODO: number of register bytes is 0x38.. */
 		{
 		case VI_CTRL:
 			WriteToControl0(u8(data));

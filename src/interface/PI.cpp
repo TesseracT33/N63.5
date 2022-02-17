@@ -108,7 +108,7 @@ namespace PI
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
-		return Memory::GenericRead<Int>(&mem[addr % mem.size()]);
+		return Memory::GenericRead<Int>(&mem[addr & 0x3F]); /* TODO: number of bytes for registers is 0x34 */
 	}
 
 
@@ -117,7 +117,7 @@ namespace PI
 	{
 		/* A single branch, and 'number_of_bytes' being passed as a template argument
 		   to 'WriteToDramCartAddr' etc means that memcpy will be optimized to mov. */
-		switch (addr % mem.size())
+		switch (addr & 0x3F) /* TODO: number of bytes for registers is 0x34 */
 		{
 		case PI_DRAM_ADDR:
 			WriteToDramCartAddr<0, number_of_bytes>(data);
