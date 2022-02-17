@@ -31,6 +31,9 @@ namespace Memory
 		void GenericWrite(void* destination, const auto data);
 
 		template<std::integral Int>
+		Int ByteswappedGenericRead(const void* source);
+
+		template<std::integral Int>
 		Int Byteswap(const Int value);
 	}
 }

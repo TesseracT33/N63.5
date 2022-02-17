@@ -339,10 +339,20 @@ namespace Memory
 	}
 
 
+	template<std::integral Int>
+	Int ByteswappedGenericRead(const void* source)
+	{
+		Int ret = 0;
+		std::memcpy(&ret, source, sizeof Int);
+		return Byteswap<Int>(ret);
+	}
+
+
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadPhysical, const u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WritePhysical, const u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(GenericRead, const void*)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(GenericWrite, void*)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ByteswappedGenericRead, const void*)
 
 	template u8 Byteswap<u8>(u8);
 	template s8 Byteswap<s8>(s8);
