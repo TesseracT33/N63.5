@@ -34,11 +34,11 @@ namespace VR4300
 	/* CPU general-purpose registers */
 	struct GPR
 	{
-		u64 Get(const size_t index) const { return gpr[index]; }
-		void Set(const size_t index, const u64 data) { if (index != 0) gpr[index] = data; }
-		u64 operator[](const size_t index) { return gpr[index]; } /* returns by value so that assignments have to made through function "Set". */
+		s64 Get(const size_t index) const { return gpr[index]; }
+		void Set(const size_t index, const s64 data) { if (index != 0) gpr[index] = data; }
+		s64 operator[](const size_t index) { return gpr[index]; } /* returns by value so that assignments have to made through function "Set". */
 	private:
-		std::array<u64, 32> gpr{};
+		std::array<s64, 32> gpr{};
 	} gpr;
 
 	/* COP0 registers. Used for exception handling and memory management. */

@@ -363,6 +363,9 @@ is set to 1, and then the TLB cannot be used. */
 		if (exception_has_occurred)
 			return Int(0);
 
+		if (store_physical_address_on_load) /* TODO: what if TLB miss? */
+			cop0_reg.LL_addr.p_addr = physical_address;
+
 		const Int value = Memory::ReadPhysical<Int>(physical_address);
 		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian (same as N64), does nothing */
 

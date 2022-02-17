@@ -75,6 +75,8 @@ namespace VR4300
 
 	} tlb_failure;
 
+	bool store_physical_address_on_load = false; /* For LL and LLD instructions; the phys addr is stored to the LLAddr register. */
+
 	/* Used for logging. Set when memory is read during an instruction fetch. */
 	u32 last_physical_address_on_instr_fetch;
 }

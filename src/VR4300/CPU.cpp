@@ -103,15 +103,24 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else if constexpr (instr == LL)
 			{
 				/* Load Linked;
-				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-				return ReadVirtual<s32>(address);
-				/* TODO the specified physical address of the memory is stored to the LLAddr register */
+				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1.
+				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
+				LL_bit = 1;
+				store_physical_address_on_load = true;
+				const s32 ret = ReadVirtual<s32>(address);
+				store_physical_address_on_load = false;
+				return ret;
 			}
 			else if constexpr (instr == LLD)
 			{
 				/* Load Linked Doubleword;
-				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1. */
-				return ReadVirtual<u64>(address);
+				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1.
+				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
+				LL_bit = 1;
+				store_physical_address_on_load = true;
+				const s64 ret = ReadVirtual<s64>(address);
+				store_physical_address_on_load = false;
+				return ret;
 			}
 			else
 			{
@@ -202,10 +211,6 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			gpr.Set(rt, result);
 		}
-		if constexpr (instr == LL || instr == LLD)
-		{
-			LL_bit = 1;
-		}
 
 		AdvancePipeline(1);
 	}
@@ -227,19 +232,19 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			WriteVirtual<u8>(address, u8(gpr[rt]));
+			WriteVirtual<s8>(address, s8(gpr[rt]));
 		}
 		else if constexpr (instr == SH)
 		{
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			WriteVirtual<u16>(address, u16(gpr[rt]));
+			WriteVirtual<s16>(address, s16(gpr[rt]));
 		}
 		else if constexpr (instr == SW)
 		{
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			WriteVirtual<u32>(address, u32(gpr[rt]));
+			WriteVirtual<s32>(address, s32(gpr[rt]));
 		}
 		else if constexpr (instr == SWL)
 		{
@@ -247,8 +252,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			const u32 data_to_write = u32(gpr[rt] & ~((1 << (8 * (address & 3))) - 1));
-			WriteVirtual<u32, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
+			const s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (address & 3))) - 1));
+			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
 		}
 		else if constexpr (instr == SWR)
 		{
@@ -256,14 +261,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			const u32 data_to_write = u32(gpr[rt] << (8 * (3 - (address & 3))));
-			WriteVirtual<u32, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
+			const s32 data_to_write = s32(gpr[rt] << (8 * (3 - (address & 3))));
+			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
 		}
 		else if constexpr (instr == SD)
 		{
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
-			WriteVirtual<u64>(address, gpr[rt]);
+			WriteVirtual<s64>(address, gpr[rt]);
 		}
 		else if constexpr (instr == SDL)
 		{
@@ -271,8 +276,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			const u64 data_to_write = gpr[rt] & ~((1ll << (8 * (address & 7))) - 1);
-			WriteVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
+			const s64 data_to_write = gpr[rt] & ~((1ll << (8 * (address & 7))) - 1);
+			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
 		}
 		else if constexpr (instr == SDR)
 		{
@@ -280,8 +285,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			const u64 data_to_write = gpr[rt] << (8 * (7 - (address & 7)));
-			WriteVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
+			const s64 data_to_write = gpr[rt] << (8 * (7 - (address & 7)));
+			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
 		}
 		else if constexpr (instr == SC)
 		{
@@ -292,7 +297,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL_bit == 1)
 			{
-				WriteVirtual<u32>(address, u32(gpr[rt]));
+				WriteVirtual<s32>(address, s32(gpr[rt]));
 				gpr.Set(rt, 1);
 			}
 			else
@@ -309,7 +314,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   rt to 0. */
 			if (LL_bit == 1)
 			{
-				WriteVirtual<u64>(address, gpr[rt]);
+				WriteVirtual<s64>(address, gpr[rt]);
 				gpr.Set(rt, 1);
 			}
 			else
@@ -335,10 +340,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const u8 rs = instr_code >> 21 & 0x1F;
 
 		const auto immediate = [&] {
-			if constexpr (instr == ADDI || instr == ADDIU || instr == SLTI || instr == SLTIU || instr == DADDI || instr == DADDIU)
-				return s16(instr_code & 0xFFFF);
-			else
+			if constexpr (instr == ANDI || instr == ORI || instr == XORI)
 				return u16(instr_code & 0xFFFF);
+			else
+				return s16(instr_code & 0xFFFF);
 		}();
 
 		if constexpr (instr == ADDI)
@@ -346,9 +351,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Add Immediate;
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the
 			   32-bit result to register rt (sign-extends the result in the 64-bit mode).
-			   Generates an exception if a 2's complement integer overflow occurs. */
+			   Generates an exception if a 2's complement integer overflow occurs.
+			   In that case, the contents of destination register rt are not modified */
 			const s32 sum = s32(gpr[rs] + immediate);
-			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x80000000;
+			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000;
 			if (overflow)
 				IntegerOverflowException();
 			else
@@ -369,7 +375,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Sign-extends the 16-bit immediate and compares it with register rs as a
 			   signed integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
-			gpr.Set(rt, s64(gpr[rs]) < immediate); /* TODO s32 in 32-bit mode */
+			gpr.Set(rt, gpr[rs] < immediate);
 		}
 		else if constexpr (instr == SLTIU)
 		{
@@ -377,8 +383,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Sign-extends the 16-bit immediate and compares it with register rs as an
 			   unsigned integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
-			   /* TODO */
-			gpr.Set(rt, gpr[rs] < immediate);
+			gpr.Set(rt, u64(gpr[rs]) < immediate);
 		}
 		else if constexpr (instr == ANDI)
 		{
@@ -416,11 +421,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Generates an exception if an integer overflow occurs. */
 
-			   /* todo This operation is only defined for the VR4300 operating in 64-bit mode and in 32-
+			   /* TODO This operation is only defined for the VR4300 operating in 64-bit mode and in 32-
 	   bit Kernel mode. Execution of this instruction in 32-bit User or Supervisor mode
 	   causes a reserved instruction exception*/
-			const s64 sum = (s64)gpr[rs] + immediate;
-			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x80000000'00000000;
+			const s64 sum = gpr[rs] + immediate;
+			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
 				IntegerOverflowException();
 			else
@@ -432,7 +437,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Does not generate an exception even if an
 			   integer overflow occurs. */
-			const s64 sum = (s64)gpr[rs] + immediate;
+			const s64 sum = gpr[rs] + immediate;
 			gpr.Set(rt, sum);
 		}
 		else
@@ -456,12 +461,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		{
 			/* Add;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
-			   the 32-bit result to register rd. Generates an exception if an integer overflow occurs. */
-
-			   /* TODO On 64-bit processors, if either GPR rt or GPR rs do not contain sign-extended 32-bit
-	   values (bits 63..31 equal), then the result of the operation is undefined.*/
-			const s32 sum = s32(gpr[rs]) + s32(gpr[rt]);
-			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x80000000;
+			   the 32-bit result to register rd. Generates an exception if an integer overflow occurs.
+			   In that case, the contents of the destination register rd are not modified.
+			   In 64-bit mode, the operands must be sign-extended, 32-bit values. */
+			const s32 sum = s32(gpr[rs] + gpr[rt]);
+			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
 			if (overflow)
 				IntegerOverflowException();
 			else
@@ -472,7 +476,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Add Unsigned;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
 			   the 32-bit result to register rd. Does not generate an exception even if an integer overflow occurs. */
-			const s32 sum = s32(gpr[rs]) + s32(gpr[rt]);
+			const s32 sum = s32(gpr[rs] + gpr[rt]);
 			gpr.Set(rd, sum);
 		}
 		else if constexpr (instr == SUB)
@@ -480,8 +484,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Subtract;
 			   Subtracts the contents of register rs from register rt, and stores (sign-extends
 			   in the 64-bit mode) the result to register rd. Generates an exception if an integer overflow occurs. */
-			const s32 sum = s32(gpr[rs]) - s32(gpr[rt]);
-			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x80000000;
+			const s32 sum = gpr[rs] - gpr[rt];
+			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
 			if (overflow)
 				IntegerOverflowException();
 			else
@@ -493,24 +497,24 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Subtracts the contents of register rt from register rs, and stores (sign-extends
 			   in the 64-bit mode) the 32-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs.*/
-			const s32 sum = s32(gpr[rs]) - s32(gpr[rt]);
+			const s32 sum = gpr[rs] - gpr[rt];
 			gpr.Set(rd, sum);
 		}
 		else if constexpr (instr == SLT)
 		{
 			/* Set On Less Than;
-			   Compares the contents of registers rs and rt as signed integers.
+			   Compares the contents of registers rs and rt as 64-bit signed integers.
 			   If the contents of register rs are less than those of rt, stores 1 to register rd;
 			   otherwise, stores 0 to rd. */
-			gpr.Set(rd, s64(gpr[rs]) < s64(gpr[rt])); /* todo: is it 32 bit comparison or not? */
+			gpr.Set(rd, gpr[rs] < gpr[rt]);
 		}
 		else if constexpr (instr == SLTU)
 		{
 			/* Set On Less Than Unsigned;
-			   Compares the contents of registers rs and rt as unsigned integers.
+			   Compares the contents of registers rs and rt as 64-bit unsigned integers.
 			   If the contents of register rs are less than those of rt, stores 1 to register rd;
 			   otherwise, stores 0 to rd. */
-			gpr.Set(rd, gpr[rs] < gpr[rt]);
+			gpr.Set(rd, u64(gpr[rs]) < u64(gpr[rt]));
 		}
 		else if constexpr (instr == AND)
 		{
@@ -544,8 +548,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 			   /* TODO Execution of this instruction in 32-bit User or Supervisor mode
 	   causes a reserved instruction exception.*/
-			const u64 sum = gpr[rs] + gpr[rt];
-			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x80000000'00000000;
+			const s64 sum = gpr[rs] + gpr[rt];
+			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
 				IntegerOverflowException();
 			else
@@ -556,7 +560,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Doubleword Add Unsigned;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
-			const u64 sum = gpr[rs] + gpr[rt];
+			const s64 sum = gpr[rs] + gpr[rt];
 			gpr.Set(rd, sum);
 		}
 		else if constexpr (instr == DSUB)
@@ -564,8 +568,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Doubleword Subtract;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit
 			   result to register rd. Generates an exception if an integer overflow occurs. */
-			const u64 sum = gpr[rs] - gpr[rt];
-			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x80000000'00000000;
+			const s64 sum = gpr[rs] - gpr[rt];
+			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
 				IntegerOverflowException();
 			else
@@ -576,7 +580,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Doubleword Subtract Unsigned;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
-			const u64 sum = gpr[rs] - gpr[rt];
+			const s64 sum = gpr[rs] - gpr[rt];
 			gpr.Set(rd, sum);
 		}
 		else
@@ -621,7 +625,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s32(gpr[rt] >> sa);
+				return s32(u32(gpr[rt]) >> sa);
 			}
 			else if constexpr (instr == SRA)
 			{
@@ -646,7 +650,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 5 bits of register rs.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s32(gpr[rt] >> (gpr[rs] & 0x1F));
+				return s32(u32(gpr[rt]) >> (gpr[rs] & 0x1F));
 			}
 			else if constexpr (instr == SRAV)
 			{
@@ -669,14 +673,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Doubleword Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
-				return gpr[rt] >> sa;
+				return u64(gpr[rt]) >> sa;
 			}
 			else if constexpr (instr == DSRA)
 			{
 				/* Doubleword Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Stores the 64-bit result to register rd. */
-				return s64(gpr[rt]) >> sa;
+				return gpr[rt] >> sa;
 			}
 			else if constexpr (instr == DSLLV)
 			{
@@ -692,18 +696,16 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Doubleword Shift Right Logical Variable;
 				   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
 				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 6 bits of register rs.
-				   Sign-extends the 64-bit result and stores it to register rd. */
-				return gpr[rt] >> (gpr[rs] & 0x3F); /* TODO sign-extends the 64-bit result? */
+				   specified by the low-order 6 bits of register rs. */
+				return u64(gpr[rt]) >> (gpr[rs] & 0x3F);
 			}
 			else if constexpr (instr == DSRAV)
 			{
 				/* Doubleword Shift Right Arithmetic Variable;
 				   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
 				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 6 bits of register rs.
-				   Sign-extends the 64-bit result and stores it to register rd. */
-				return s64(gpr[rt]) >> (gpr[rs] & 0x3F);
+				   specified by the low-order 6 bits of register rs.  */
+				return gpr[rt] >> (gpr[rs] & 0x3F);
 			}
 			else if constexpr (instr == DSLL32)
 			{
@@ -717,14 +719,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Doubleword Shift Right Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
-				return gpr[rt] >> (sa + 32);
+				return u64(gpr[rt]) >> (sa + 32);
 			}
 			else if constexpr (instr == DSRA32)
 			{
 				/* Doubleword Shift Right Arithmetic + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and sign-extends the high-order bits.
 				   Stores the 64-bit result to register rd.*/
-				return s64(gpr[rt]) >> (sa + 32);
+				return gpr[rt] >> (sa + 32);
 			}
 			else
 			{
@@ -751,8 +753,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Multiplies the contents of register rs by the contents of register rt as a 32-bit
 			   signed integer. Sign-extends (in the 64-bit mode) and stores the 64-bit result
 			   to special registers HI and LO. */
-			const s64 result = s64(gpr[rs] & 0xFFFFFFFF) * s64(gpr[rt] & 0xFFFFFFFF);
-			lo_reg = s32(result & 0xFFFFFFFF);
+			const s64 result = (gpr[rs] & 0xFFFF'FFFF) * (gpr[rt] & 0xFFFF'FFFF);
+			lo_reg = s32(result);
 			hi_reg = result >> 32;
 		}
 		else if constexpr (instr == MULTU)
@@ -761,8 +763,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Multiplies the contents of register rs by the contents of register rt as a 32-bit
 			   unsigned integer. Sign-extends (in the 64-bit mode) and stores the 64-bit
 			   result to special registers HI and LO. */
-			const u64 result = (gpr[rs] & 0xFFFFFFFF) * (gpr[rt] & 0xFFFFFFFF);
-			lo_reg = s32(result & 0xFFFFFFFF);
+			const u64 result = u64(gpr[rs] & 0xFFFF'FFFF) * u64(gpr[rt] & 0xFFFF'FFFF);
+			lo_reg = s32(result);
 			hi_reg = s32(result >> 32);
 		}
 		else if constexpr (instr == DIV)
@@ -801,10 +803,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   hi_reg = high_product;
 #elif defined __clang__ || defined __GNUC__
 			const __int128 product = __int128(gpr[rs]) * __int128(gpr[rt]);
-			lo_reg = product & 0xFFFFFFFF'FFFFFFFF;
+			lo_reg = product & 0xFFFF'FFFF'FFFF'FFFF;
 			hi_reg = product >> 64;
 #else
 			/* TODO */
+			assert(false);
 #endif
 		}
 		else if constexpr (instr == DMULTU)
@@ -819,10 +822,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   hi_reg = high_product;
 #elif defined __clang__ || defined __GNUC__
 			const unsigned __int128 product = unsigned __int128(gpr[rs]) * unsigned __int128(gpr[rt]);
-			lo_reg = product & 0xFFFFFFFF'FFFFFFFF;
+			lo_reg = product & 0xFFFF'FFFF'FFFF'FFFF;
 			hi_reg = product >> 64;
 #else
 			/* TODO */
+			assert(false);
 #endif
 		}
 		else if constexpr (instr == DDIV)
@@ -831,8 +835,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as a signed integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-			const s64 quotient = (s64)gpr[rs] / (s64)gpr[rt];
-			const s64 remainder = (s64)gpr[rs] % (s64)gpr[rt];
+			const s64 quotient = gpr[rs] / gpr[rt];
+			const s64 remainder = gpr[rs] % gpr[rt];
 			lo_reg = quotient;
 			hi_reg = remainder;
 		}
@@ -842,8 +846,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as an unsigned integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-			const u64 quotient = gpr[rs] / gpr[rt];
-			const u64 remainder = gpr[rs] % gpr[rt];
+			const u64 quotient = u64(gpr[rs]) / u64(gpr[rt]);
+			const u64 remainder = u64(gpr[rs]) % u64(gpr[rt]);
 			lo_reg = quotient;
 			hi_reg = remainder;
 		}
@@ -944,17 +948,17 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			else if constexpr (instr == BNE || instr == BNEL) /* Branch On Not Equal (Likely) */
 				return gpr[rs] != gpr[rt];
 			else if constexpr (instr == BLEZ || instr == BLEZL) /* Branch On Less Than Or Equal To Zero (Likely) */
-				return s64(gpr[rs]) <= 0;
+				return gpr[rs] <= 0;
 			else if constexpr (instr == BGTZ || instr == BGTZL) /* Branch On Greater Than Zero (Likely) */
-				return s64(gpr[rs]) > 0;
+				return gpr[rs] > 0;
 			else if constexpr (instr == BLTZ || instr == BLTZL) /* Branch On Less Than Zero (Likely) */
-				return s64(gpr[rs]) < 0;
+				return gpr[rs] < 0;
 			else if constexpr (instr == BGEZ || instr == BGEZL) /* Branch On Greater Than or Equal To Zero (Likely) */
-				return s64(gpr[rs]) >= 0;
+				return gpr[rs] >= 0;
 			else if constexpr (instr == BLTZAL || instr == BLTZALL) /* Branch On Less Than Zero and Link (Likely) */
-				return s64(gpr[rs]) < 0;
+				return gpr[rs] < 0;
 			else if constexpr (instr == BGEZAL || instr == BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
-				return s64(gpr[rs]) >= 0;
+				return gpr[rs] >= 0;
 			else
 				static_assert(instr != instr, "\"Branch\" template function called, but no matching branch instruction was found.");
 		}();
@@ -989,28 +993,28 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Trap If Greater Than Or Equal;
 				   Compares registers rs and rt as signed integers.
 				   If register rs is greater than rt, generates an exception. */
-				return s64(gpr[rs]) > s64(gpr[rt]);
+				return gpr[rs] > gpr[rt];
 			}
 			else if constexpr (instr == TGEU)
 			{
 				/* Trap If Greater Than Or Equal Unsigned;
 				   Compares registers rs and rt as unsigned integers.
 				   If register rs is greater than rt, generates an exception. */
-				return gpr[rs] > gpr[rt];
+				return u64(gpr[rs]) > u64(gpr[rt]);
 			}
 			else if constexpr (instr == TLT)
 			{
 				/* Trap If Less Than;
 				   Compares registers rs and rt as signed integers.
 				   If register rs is less than rt, generates an exception. */
-				return s64(gpr[rs]) < s64(gpr[rt]);
+				return gpr[rs] < gpr[rt];
 			}
 			else if constexpr (instr == TLTU)
 			{
 				/* Trap If Less Than Unsigned;
 				   Compares registers rs and rt as unsigned integers.
 				   If register rs is less than rt, generates an exception. */
-				return gpr[rs] < gpr[rt];
+				return u64(gpr[rs]) < u64(gpr[rt]);
 			}
 			else if constexpr (instr == TEQ)
 			{
@@ -1042,8 +1046,13 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		using enum CPU_Instruction;
 
-		const s16 immedate = instr_code & 0xFFFF;
 		const u8 rs = instr_code >> 21 & 0x1F;
+		const auto immediate = [&] {
+			if constexpr (instr == TGEI || instr == TLTI)
+				return s16(instr_code & 0xFFFF);
+			else
+				return u16(instr_code & 0xFFFF);
+		}();
 
 		const bool trap_cond = [&] {
 			if constexpr (instr == TGEI)
@@ -1051,40 +1060,40 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Trap If Greater Than Or Equal Immediate;
 				   Compares the contents of register rs with 16-bit sign-extended immediate as a
 				   signed integer. If rs contents are greater than the immediate, generates an exception. */
-				return s64(gpr[rs]) > immedate;
+				return gpr[rs] > immediate;
 			}
 			else if constexpr (instr == TGEIU)
 			{
 				/* Trap If Greater Than Or Equal Immediate Unsigned;
 				   Compares the contents of register rs with 16-bit zero-extended immediate as an
 				   unsigned integer. If rs contents are greater than the immediate, generates an exception. */
-				return gpr[rs] > immedate;
+				return u64(gpr[rs]) > immediate;
 			}
 			else if constexpr (instr == TLTI)
 			{
 				/* Trap If Less Than Immediate;
 				   Compares the contents of register rs with 16-bit sign-extended immediate as a
 				   signed integer. If rs contents are less than the immediate, generates an exception. */
-				return s64(gpr[rs]) < immedate;
+				return gpr[rs] < immediate;
 			}
 			else if constexpr (instr == TLTIU)
 			{
 				/* Trap If Less Than Immediate Unsigned;
 				   Compares the contents of register rs with 16-bit zero-extended immediate as an
 				   unsigned integer. If rs contents are less than the immediate, generates an exception. */
-				return gpr[rs] < immedate;
+				return u64(gpr[rs]) < immediate;
 			}
 			else if constexpr (instr == TEQI)
 			{
 				/* Trap If Equal Immediate;
 				   Generates an exception if the contents of register rs are equal to immediate. */
-				return s64(gpr[rs]) == immedate; /* TODO: should we really cast to s64? */
+				return s64(gpr[rs]) == immediate; /* TODO: should we really cast to s64? */
 			}
 			else if constexpr (instr == TNEI)
 			{
 				/* Trap If Not Equal Immediate;
 				   Generates an exception if the contents of register rs are not equal to immediate. */
-				return s64(gpr[rs]) != immedate;
+				return s64(gpr[rs]) != immediate;
 			}
 			else
 			{
