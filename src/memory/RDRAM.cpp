@@ -44,7 +44,6 @@ namespace RDRAM
 	template<std::integral Int>
 	Int ReadRegisterRegion(const u32 address)
 	{
-		assert(false);
 		return Int(0);
 	}
 
@@ -62,8 +61,6 @@ namespace RDRAM
 	void WriteExpandedRegion(const u32 address, const auto data)
 	{
 		if (RDRAM.size() == rdram_expanded_size)
-			return;
-		else
 			Memory::GenericWrite<number_of_bytes>(&RDRAM[address], data);
 	}
 
@@ -72,7 +69,7 @@ namespace RDRAM
 	template<std::size_t number_of_bytes>
 	void WriteRegisterRegion(const u32 address, const auto data)
 	{
-		assert(false);
+
 	}
 
 
