@@ -13,6 +13,20 @@ import VR4300;
 
 namespace MI
 {
+	void Initialize()
+	{
+		mem.fill(0);
+		constexpr static u8 rsp_version = 0x02; /* https://n64brew.dev/wiki/MIPS_Interface */
+		constexpr static u8 rdp_version = 0x01;
+		constexpr static u8 rac_version = 0x02;
+		constexpr static u8 io_version = 0x02;
+		mem[MI_VERSION] = io_version;
+		mem[MI_VERSION + 1] = rac_version;
+		mem[MI_VERSION + 2] = rdp_version;
+		mem[MI_VERSION + 3] = rsp_version;
+	}
+
+
 	template<InterruptType interrupt_type>
 	void SetInterruptFlag()
 	{
@@ -64,6 +78,8 @@ namespace MI
 	void WriteToMiMode1(const u8 data)
 	{
 		mem[MI_MODE + 1] = mem[MI_MODE + 1] & 0xC0 | data & 0x3F;
+		if (data & 0x08)
+			ClearInterruptFlag<InterruptType::DP>();
 		/* todo */
 	}
 
@@ -104,20 +120,6 @@ namespace MI
 			ClearInterruptMask<InterruptType::DP>();
 		else if (data & 0x08)
 			SetInterruptMask<InterruptType::DP>();
-	}
-
-
-	void Initialize()
-	{
-		mem.fill(0);
-		constexpr static u8 rsp_version = 0x02; /* https://n64brew.dev/wiki/MIPS_Interface */
-		constexpr static u8 rdp_version = 0x02;
-		constexpr static u8 rac_version = 0x01;
-		constexpr static u8 io_version = 0x02;
-		mem[MI_VERSION] = io_version;
-		mem[MI_VERSION + 2] = rac_version;
-		mem[MI_VERSION + 3] = rdp_version;
-		mem[MI_VERSION + 4] = rsp_version; /* TODO: endianness? */
 	}
 
 

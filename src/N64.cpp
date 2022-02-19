@@ -35,28 +35,52 @@ namespace N64
 
 		while (true)
 		{
+			cycles_to_update_queue = cycles_per_update;
 			VR4300::Run(cycles_per_update);
 			Renderer::Render();
+			CheckEventQueue();
+		}
+	}
+
+
+	void CheckEventQueue()
+	{
+		for (auto it = event_queue.begin(); it != event_queue.end(); it++)
+		{
+			EventItem& item = *it;
+			item.time -= cycles_to_update_queue;
+			if (item.time <= 0)
+			{
+				ExecuteEvent(item.event);
+				it = event_queue.erase(it);
+				if (it == event_queue.end())
+					break;
+			}
 		}
 	}
 
 
 	void EnqueueEvent(Event event, int cycles_until_fire, int cycles_into_update)
 	{
+		cycles_to_update_queue -= cycles_into_update;
+
 		EventItem new_item = { event, cycles_until_fire };
 		bool item_inserted = false;
 
-		for (auto it = event_queue.begin(); it != event_queue.end(); it++) {
+		for (auto it = event_queue.begin(); it != event_queue.end(); it++)
+		{
 			EventItem& item = *it;
 			item.time -= cycles_into_update;
 			if (item.time <= 0)
 			{
 				ExecuteEvent(item.event);
-				event_queue.erase(it);
+				it = event_queue.erase(it);
+				if (it == event_queue.end())
+					break;
 			}
 			else if (!item_inserted && item.time > new_item.time)
 			{
-				event_queue.insert(it, new_item);
+				it = event_queue.insert(it, new_item);
 				item_inserted = true;
 			}
 		}

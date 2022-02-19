@@ -26,6 +26,7 @@ namespace N64
 		void EnqueueEvent(Event event, int cycles_until_fire, int cycles_into_update);
 	}
 
+	void CheckEventQueue();
 	void ExecuteEvent(Event event);
 
 	struct EventItem
@@ -35,4 +36,6 @@ namespace N64
 	};
 
 	std::list<EventItem> event_queue{};
+
+	int cycles_to_update_queue;
 }
