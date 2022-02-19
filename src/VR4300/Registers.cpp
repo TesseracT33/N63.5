@@ -39,7 +39,7 @@ namespace VR4300
 		{
 			if constexpr (sizeof(*struct_) == 4)
 			{
-				s32 ret; /* s32 for sign extension purposes */
+				u32 ret;
 				std::memcpy(&ret, struct_, 4);
 				return static_cast<u64>(ret);
 			}
@@ -162,7 +162,7 @@ namespace VR4300
 	}
 
 
-	void FCR31::Set(const s32 data)
+	void FCR31::Set(const u32 data)
 	{
 		/* TODO */
 		/* after updating RM... */
@@ -181,13 +181,13 @@ namespace VR4300
 	}
 
 
-	s32 FCR31::Get() const
+	u32 FCR31::Get() const
 	{
 		return std::bit_cast<s32, std::remove_reference_t<decltype(*this)>>(*this);
 	}
 
 
-	s32 FPUControl::Get(const size_t index) const
+	u32 FPUControl::Get(const size_t index) const
 	{
 		static constexpr s32 fcr0 = 0; /* TODO */
 		if (index == 0)
@@ -199,7 +199,7 @@ namespace VR4300
 	}
 
 
-	void FPUControl::Set(const size_t index, const s32 data)
+	void FPUControl::Set(const size_t index, const u32 data)
 	{
 		if (index == 31)
 			fcr31.Set(data);
