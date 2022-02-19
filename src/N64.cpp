@@ -22,7 +22,7 @@ namespace N64
 		VI::Initialize();
 		VR4300::PowerOn(true);
 
-		Renderer::SetRenderer(renderer);
+		Renderer::Initialize(renderer);
 		Renderer::SetWindowSize(window_width, window_height);
 
 		return true;

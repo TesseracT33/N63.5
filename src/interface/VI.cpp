@@ -15,12 +15,32 @@ namespace VI
 	{
 		mem.fill(0);
 		Renderer::SetFramebufferPtr(RDRAM::GetPointer(0));
+		WriteToControl0(0x03); /* TODO: default video size? Currently: 8/8/8/8 */
 	}
 
 
 	void WriteToControl0(const u8 data)
 	{
 		/* TODO */
+		/* Video pixel size */
+		switch (data & 0x03)
+		{
+		case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
+			Renderer::SetColourFormat(0, 0, 0, 0);
+			break;
+
+		case 0b01: /* reserved */
+			assert(false);
+			break;
+
+		case 0b10: /* 5/5/5/3 */
+			Renderer::SetColourFormat(5, 5, 5, 3);
+			break;
+
+		case 0b11: /* 8/8/8/8 */
+			Renderer::SetColourFormat(8, 8, 8, 8);
+			break;
+		}
 	}
 
 

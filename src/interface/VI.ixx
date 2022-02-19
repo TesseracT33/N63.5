@@ -3,6 +3,7 @@ export module VI; /* Video Interface */
 import NumericalTypes;
 
 import <array>;
+import <cassert>;
 import <concepts>;
 
 namespace VI
