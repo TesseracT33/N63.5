@@ -41,11 +41,13 @@ namespace VR4300
 	void EnterKernelMode();
 	void DisableInterrupts();
 
-	unsigned cop0_count_cycle_remainder = 0;
-
 	bool pc_is_inside_branch_delay_slot = false;
 
 	void HLE_PIF();
 
-	void AdvancePipeline(const unsigned number_of_cycles);
+	template<u64 number_of_cycles>
+	void AdvancePipeline();
+
+	template<u64 number_of_cycles>
+	void IncrementCountRegister();
 }

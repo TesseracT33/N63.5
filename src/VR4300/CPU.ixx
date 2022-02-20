@@ -86,7 +86,7 @@ namespace VR4300
 			auto values = { reg_indeces... };
 			auto element_index = std::find(std::begin(values), std::end(values), last_load_target_reg);
 			if (element_index == std::end(values))
-				AdvancePipeline(1);
+				AdvancePipeline<1>;
 		}
 	}
 }

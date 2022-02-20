@@ -72,7 +72,6 @@ namespace VR4300
 #ifdef LOG_VR4300
 		Logging::LogVR4300Instruction(pc, instr_code, last_physical_address_on_instr_fetch, p_cycle_counter);
 #endif
-
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}
@@ -148,20 +147,80 @@ namespace VR4300
 	}
 
 
-	void AdvancePipeline(const unsigned number_of_cycles)
+	template<u64 number_of_cycles>
+	void AdvancePipeline()
 	{
-		p_cycle_counter += number_of_cycles;
+		static_assert(number_of_cycles > 0);
 
-		/* This register is incremented every other PCycle. */
-		cop0_reg.count.value += number_of_cycles >> 1;
-		cop0_count_cycle_remainder += number_of_cycles & 2; /* TODO */
-		if (cop0_reg.count.value == cop0_reg.compare.value)
-		{
+		p_cycle_counter += number_of_cycles;
+		IncrementCountRegister<number_of_cycles>();
+	}
+
+
+	template<u64 number_of_cycles>
+	void IncrementCountRegister()
+	{
+		static_assert(number_of_cycles > 0);
+
+		/* The 32-bit 'count' register is supposed to be incremented every other PCycle, and then compared against the 32-bit 'compare' register.
+		   If they match, and interrupt is fired. Here, we make both registers 64 bits, and increment 'count' every PCycle. */
+
+		auto SetInterrupt = [&] {
 			cop0_reg.cause.ip |= 0x80;
 			CheckInterrupts();
-		}
+		};
 
-		/* TODO: decrement the 'random' register */
+		auto CheckCompareReg = [&] {
+			if (cop0_reg.count.value == cop0_reg.compare.value)
+				SetInterrupt();
+		};
+
+		if constexpr (number_of_cycles == 1)
+		{
+			cop0_reg.count.value = (cop0_reg.count.value + 1) & 0x1'FFFF'FFFF;
+			CheckCompareReg();
+		}
+		else if constexpr (number_of_cycles == 2)
+		{
+			cop0_reg.count.value = (cop0_reg.count.value + 1) & 0x1'FFFF'FFFF;
+			CheckCompareReg();
+			cop0_reg.count.value = (cop0_reg.count.value + 1) & 0x1'FFFF'FFFF;
+			CheckCompareReg();
+		}
+		else
+		{
+			if (cop0_reg.count.value + number_of_cycles <= 0x1'FFFF'FFFF) [[likely]]
+			{
+				if (cop0_reg.count.value > cop0_reg.compare.value)
+				{
+					cop0_reg.count.value += number_of_cycles;
+				}
+				else
+				{
+					cop0_reg.count.value += number_of_cycles;
+					if (cop0_reg.count.value >= cop0_reg.compare.value)
+					{
+						SetInterrupt();
+					}
+				}
+			}
+			else
+			{
+				if (cop0_reg.count.value > cop0_reg.compare.value)
+				{
+					cop0_reg.count.value = number_of_cycles - (0x1'FFFF'FFFF - cop0_reg.count.value + 1);
+					if (cop0_reg.count.value >= cop0_reg.compare.value)
+					{
+						SetInterrupt();
+					}
+				}
+				else
+				{
+					cop0_reg.count.value = (cop0_reg.count.value + number_of_cycles) & 0x1'FFFF'FFFF;
+					SetInterrupt();
+				}
+			}
+		}
 	}
 
 
@@ -175,4 +234,26 @@ namespace VR4300
 	template void SetInterruptPending<ExternalInterruptSource::Reset>();
 	template void SetInterruptPending<ExternalInterruptSource::IndyRead>();
 	template void SetInterruptPending<ExternalInterruptSource::IndyWrite>();
+
+	template void AdvancePipeline<1>();
+	template void AdvancePipeline<2>();
+	template void AdvancePipeline<3>();
+	template void AdvancePipeline<5>();
+	template void AdvancePipeline<8>();
+	template void AdvancePipeline<29>();
+	template void AdvancePipeline<37>();
+	template void AdvancePipeline<58>();
+	template void AdvancePipeline<66>();
+	template void AdvancePipeline<69>();
+
+	template void IncrementCountRegister<1>();
+	template void IncrementCountRegister<2>();
+	template void IncrementCountRegister<3>();
+	template void IncrementCountRegister<5>();
+	template void IncrementCountRegister<8>();
+	template void IncrementCountRegister<29>();
+	template void IncrementCountRegister<37>();
+	template void IncrementCountRegister<58>();
+	template void IncrementCountRegister<66>();
+	template void IncrementCountRegister<69>();
 }

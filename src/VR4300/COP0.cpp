@@ -50,7 +50,7 @@ namespace VR4300
 			static_assert(instr != instr, "\"CP0_Move\" template function called, but no matching move instruction was found.");
 		}
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -75,7 +75,7 @@ namespace VR4300
 			cop0_reg.index.p = 0;
 		}
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -94,7 +94,7 @@ namespace VR4300
 		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
 		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = TLB_entries[TLB_index].g;
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -112,7 +112,7 @@ namespace VR4300
 		std::memcpy(arr + 12, &cop0_reg.page_mask, 4);
 		TLB_entries[TLB_index].g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -135,7 +135,7 @@ namespace VR4300
 		std::memcpy(arr + 12, &cop0_reg.page_mask, 4);
 		TLB_entries[TLB_index].g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -154,7 +154,7 @@ namespace VR4300
 			cop0_reg.status.erl = 0;
 		}
 		LL_bit = 0;
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -165,13 +165,13 @@ namespace VR4300
 		   generate a virtual address. The virtual address is converted into a physical
 		   address by using the TLB, and a cache operation indicated by a 5-bit sub op
 		   code is executed to that address. */
-		const s16 offset = instr_code & 0xFFFF;
-		const u8 op = instr_code >> 16 & 0x1F;
-		const u8 base = instr_code >> 21 & 0x1F;
-		const u64 virt_addr = gpr[base] + offset;
-		const u64 phys_addr = VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(virt_addr);
+		//const s16 offset = instr_code & 0xFFFF;
+		//const u8 op = instr_code >> 16 & 0x1F;
+		//const u8 base = instr_code >> 21 & 0x1F;
+		//const u64 virt_addr = gpr[base] + offset;
+		//const u64 phys_addr = VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(virt_addr);
 		/* TODO */
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 

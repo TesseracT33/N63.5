@@ -32,6 +32,12 @@ namespace VR4300
 	}
 
 
+	void COP0Registers::WiredRegister::NotifyCpuAfterWrite()
+	{
+		random_generator.SetLowerBound(cop0_reg.wired.value);
+	}
+
+
 	u64 COP0Registers::Get(const size_t register_index) const
 	{
 		/* Non-UB type punning between a struct register and an u64. */
@@ -58,16 +64,16 @@ namespace VR4300
 		switch (register_index)
 		{
 		case 0: return StructToInt(&index);
-		case 1: return StructToInt(&random);
+		case 1: return random_generator.Generate(); /* Generate a random number in the interval [wired, 31] */
 		case 2: return StructToInt(&entry_lo_0);
 		case 3: return StructToInt(&entry_lo_1);
 		case 4: return StructToInt(&context);
 		case 5: return StructToInt(&page_mask);
 		case 6: return StructToInt(&wired);
 		case 8: return StructToInt(&bad_v_addr);
-		case 9: return StructToInt(&count);
+		case 9: return u32(count.value >> 1); /* See the declaration of 'count' */
 		case 10: return StructToInt(&entry_hi);
-		case 11: return StructToInt(&compare);
+		case 11: return u32(compare.value >> 1); /* See the declaration of 'compare' */
 		case 12: return StructToInt(&status);
 		case 13: return StructToInt(&cause);
 		case 14: return StructToInt(&epc);
@@ -135,18 +141,17 @@ namespace VR4300
 		};
 
 		switch (register_index)
-		{ /* Masks are used for bits that are non-writeable. TODO: doublecheck these; some are definitely wrong. */
+		{ /* Masks are used for bits that are non-writeable. */
 		break; case 0: SetStructFromIntMasked(&index, value, 0x8000'003F);
-		break; case 1: SetStructFromIntMasked(&random, value, 0x3F);
 		break; case 2: SetStructFromIntMasked(&entry_lo_0, value, 0x03FF'FFFF);
 		break; case 3: SetStructFromIntMasked(&entry_lo_1, value, 0x03FF'FFFF);
 		break; case 4: SetStructFromIntMasked(&context, value, 0xFFFF'FFFF'FFFF'FFF0);
 		break; case 5: SetStructFromIntMasked(&page_mask, value, 0x01FF'E000);
 		break; case 6: SetStructFromIntMasked(&wired, value, 0x3F);
 		break; case 8: SetStructFromInt(&bad_v_addr, value);
-		break; case 9: SetStructFromInt(&count, value);
+		break; case 9: SetStructFromInt(&count, value << 1); /* See the declaration of 'count' */
 		break; case 10: SetStructFromIntMasked(&entry_hi, value, 0xC000'00FF'FFFF'E0FF);
-		break; case 11: SetStructFromInt(&compare, value);
+		break; case 11: SetStructFromInt(&compare, value << 1); /* See the declaration of 'compare' */
 		break; case 12: SetStructFromIntMasked(&status, value, 0xFF57'FFFF); /* TODO: unsure about upper four bits */
 		break; case 13: SetStructFromIntMasked(&cause, value, 0x300);
 		break; case 14: SetStructFromInt(&epc, value);

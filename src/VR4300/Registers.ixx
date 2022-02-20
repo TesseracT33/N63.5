@@ -7,6 +7,7 @@ import <bit>;
 import <cfenv>;
 import <concepts>;
 import <limits>;
+import <random>;
 import <type_traits>;
 
 namespace VR4300
@@ -28,7 +29,7 @@ namespace VR4300
 	u64 pc{}; /* Program counter */
 
 	u64 hi_reg{}, lo_reg{}; /* Contain the result of a double-word multiplication or division. */
-
+	
 	bool LL_bit{}; /* Read from / written to by load linked and store conditional instructions. */
 
 	/* CPU general-purpose registers */
@@ -82,10 +83,12 @@ namespace VR4300
 			u32 : 7;
 		} page_mask{};
 
-		struct /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
+		struct WiredRegister /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
 		{
 			u32 value : 6;
 			u32 : 26;
+
+			void NotifyCpuAfterWrite();
 		} wired{};
 
 		struct /* (8) */
@@ -94,8 +97,9 @@ namespace VR4300
 		} bad_v_addr{};
 
 		struct /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
-		{
-			u32 value; 
+		{ /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
+		     When we read from it, we shift it right one bit and then return it. When we write to it, we set it to the data shifted left one bit. */
+			u64 value; 
 		} count{};
 
 		struct /* (10) */
@@ -108,8 +112,8 @@ namespace VR4300
 		} entry_hi{}; /* TODO can be 32 bits large with different lengths of VPN2 etc */
 
 		struct CompareRegister /* (11); When equal to the Count register, interrupt bit IP(7) in the Cause register is set. Writes to this register clear said interrupt. */
-		{
-			u32 value;
+		{ /* On real HW, this register is 32 bits. Here, we make it 64 bits. See the description of the 'Count' register. */
+			u64 value;
 
 			void NotifyCpuAfterWrite();
 		} compare{};
@@ -301,4 +305,20 @@ namespace VR4300
 	private:
 		std::array<s64, 32> fgr{};
 	} fgr;
+
+
+	/* Used to generate random numbers in the interval [wired, 31], when the 'random' register is read. */
+	class RandomGenerator
+	{
+		std::random_device rd;  // Will be used to obtain a seed for the random number engine
+		std::mt19937 gen{ rd() }; // Standard mersenne_twister_engine seeded with rd()
+		std::uniform_int_distribution<u32> distrib{ 0, 0x1F };
+	public:
+		u32 Generate() {
+			return distrib(gen);
+		}
+		void SetLowerBound(u32 min) {
+			distrib = { min, 0x1F };
+		}
+	} random_generator{};
 }

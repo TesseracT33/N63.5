@@ -115,7 +115,7 @@ namespace VR4300
 			}
 		}();
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 
 		if (exception_has_occurred)
 			return;
@@ -156,7 +156,7 @@ namespace VR4300
 			static_assert(instr != instr, "\"FPU_Store\" template function called, but no matching store instruction was found.");
 		}
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -210,7 +210,7 @@ namespace VR4300
 			static_assert(instr != instr, "\"FPU_Move\" template function called, but no matching move instruction was found.");
 		}
 
-		AdvancePipeline(1);
+		AdvancePipeline<1>();
 	}
 
 
@@ -272,13 +272,13 @@ namespace VR4300
 					   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995. */
 					/* TODO: the below is assuming that conv. between W and L takes 2 cycles.
 					   See footnote 2 in table 7-14, VR4300 manual */
-					AdvancePipeline([&] {
+					AdvancePipeline<[&] {
 						     if constexpr (std::is_same_v<From, To>)                             return 1;
 						else if constexpr (std::is_same_v<From, f32> && std::is_same_v<To, f64>) return 1;
 						else if constexpr (std::is_same_v<From, f64> && std::is_same_v<To, f32>) return 2;
 						else if constexpr (std::is_integral_v<From> && std::is_integral_v<To>)   return 2;
 						else                                                                     return 5;
-					}());
+					}()>();
 				};
 
 				if constexpr (instr == CVT_S)
@@ -313,7 +313,7 @@ namespace VR4300
 
 			default:
 				exception_flags.unimplemented_operation = true; /* TODO other exception flags are cleared in this case, should they be? */
-				AdvancePipeline(2);
+				AdvancePipeline<2>();
 				break;
 			}
 
@@ -362,7 +362,7 @@ namespace VR4300
 					Round.template operator() < f32 /* input format */, s32 /* output format */ > ();
 				else
 					Round.template operator() < f32, s64 > ();
-				AdvancePipeline(5);
+				AdvancePipeline<5>();
 				break;
 
 			case NumericFormatID::float64:
@@ -370,7 +370,7 @@ namespace VR4300
 					Round.template operator() < f64, s32 > ();
 				else
 					Round.template operator() < f64, s64 > ();
-				AdvancePipeline(5);
+				AdvancePipeline<5>();
 				break;
 
 			case NumericFormatID::int32:
@@ -379,12 +379,12 @@ namespace VR4300
 				   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995.
 				   For now, just don't do anything.
 				   TODO possibly change */
-				AdvancePipeline(1);
+				AdvancePipeline<1>();
 				break;
 
 			default:
 				exception_flags.unimplemented_operation = true;
-				AdvancePipeline(2);
+				AdvancePipeline<2>();
 				break;
 			}
 
@@ -427,12 +427,12 @@ namespace VR4300
 					else                             static_assert(instr != instr);
 				}();
 
-				AdvancePipeline([&] {
+				AdvancePipeline<[&] {
 					     if constexpr (instr == ADD || instr == SUB) return 3;
 					else if constexpr (std::is_same_v<Float, f32>)   return 29;
 					else if constexpr (std::is_same_v<Float, f64>)   return 58;
 					else                                             static_assert(instr != instr);
-				}());
+				}()>();
 
 				fgr.Set<Float>(fd, result);
 			};
@@ -452,7 +452,7 @@ namespace VR4300
 				break;
 
 			default:
-				AdvancePipeline(2);
+				AdvancePipeline<2>();
 				exception_flags.unimplemented_operation = true;
 				break;
 			}
@@ -489,7 +489,7 @@ namespace VR4300
 					else                              static_assert(instr != instr);
 				}();
 
-				AdvancePipeline([&] {
+				AdvancePipeline<[&] {
 					if constexpr (instr == SQRT)
 					{
 						     if constexpr (std::is_same_v<Float, f32>) return 29;
@@ -497,7 +497,7 @@ namespace VR4300
 						else                                           static_assert(instr != instr);
 					}
 					else return 1;
-				}());
+				}()>();
 
 				fgr.Set<Float>(fd, result);
 			};
@@ -519,7 +519,7 @@ namespace VR4300
 				break;
 
 			default:
-				AdvancePipeline(2);
+				AdvancePipeline<2>();
 				exception_flags.unimplemented_operation = true;
 				break;
 			}
@@ -577,7 +577,7 @@ namespace VR4300
 			pc += 4; /* The instruction in the branch delay slot is discarded. TODO: manual says "invalidated" */
 		}
 
-		AdvancePipeline(1); /* TODO: not 2? */
+		AdvancePipeline<1>(); /* TODO: not 2? */
 	}
 
 
@@ -622,18 +622,18 @@ namespace VR4300
 		case NumericFormatID::float32:
 			Compare.template operator() < f32 > ();
 			exception_flags.unimplemented_operation = false;
-			AdvancePipeline(1);
+			AdvancePipeline<1>();
 			break;
 
 		case NumericFormatID::float64:
 			Compare.template operator() < f64 > ();
 			exception_flags.unimplemented_operation = false;
-			AdvancePipeline(1);
+			AdvancePipeline<1>();
 			break;
 
 		default:
 			exception_flags.unimplemented_operation = true;
-			AdvancePipeline(2);
+			AdvancePipeline<2>();
 			break;
 		}
 
