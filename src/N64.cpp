@@ -1,6 +1,7 @@
 module N64;
 
 import Cartridge;
+import Input;
 import MI;
 import Renderer;
 import VI;
@@ -36,9 +37,11 @@ namespace N64
 		while (true)
 		{
 			cycles_to_update_queue = cycles_per_update;
+
 			VR4300::Run(cycles_per_update);
 			Renderer::Render();
 			CheckEventQueue();
+			Input::Poll();
 		}
 	}
 
