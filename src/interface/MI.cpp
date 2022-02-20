@@ -32,7 +32,7 @@ namespace MI
 	{
 		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT] |= interrupt_type_mask;
-		if (mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_type_mask)
+		if (mem[MI_INTERRUPT] & mem[MI_MASK])
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
@@ -44,7 +44,10 @@ namespace MI
 	{
 		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT] &= ~interrupt_type_mask;
-		/* TODO: Call VR4300::ClearInterruptPending if !(mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_type_mask) ??? */
+		if (!(mem[MI_INTERRUPT] & mem[MI_MASK]))
+		{
+			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
+		}
 	}
 
 
@@ -53,7 +56,7 @@ namespace MI
 	{
 		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_MASK] |= interrupt_type_mask;
-		if (mem[MI_INTERRUPT] & mem[MI_MASK] & interrupt_type_mask)
+		if (mem[MI_INTERRUPT] & mem[MI_MASK])
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
@@ -64,7 +67,11 @@ namespace MI
 	void ClearInterruptMask()
 	{
 		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
-		mem[MI_INTERRUPT] &= ~interrupt_type_mask;
+		mem[MI_MASK] &= ~interrupt_type_mask;
+		if (!(mem[MI_INTERRUPT] & mem[MI_MASK]))
+		{
+			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
+		}
 	}
 
 
