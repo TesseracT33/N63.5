@@ -20,10 +20,6 @@ namespace Cartridge
 		/* Compute the rom file size and resize the rom vector */
 		ifs.seekg(0, ifs.end);
 		const std::size_t rom_size = ifs.tellg();
-		rom_size_mask = u32( [&] {
-			if (rom_size <= rom_region_size) return rom_size - 1; /* TODO: can we assume that N64 rom sizes are always a power of 2? */
-			else return rom_region_size;
-		}());
 		rom.resize(rom_size);
 
 		/* Read the file */
@@ -36,20 +32,22 @@ namespace Cartridge
 
 	u8* GetPointerToROM(const u32 addr)
 	{
-		return rom.data() + (addr % rom.size());
+		const u32 rom_offset = (addr & 0x0FFF'FFFF) % rom.size();
+		return rom.data() + rom_offset;
 	}
 
 
-	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr)
+	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 addr)
 	{
-		return rom.size() - (start_addr % rom.size());
+		const u32 rom_offset = (addr & 0x0FFF'FFFF) % rom.size();
+		return rom.size() - rom_offset;
 	}
 
 
 	template<std::integral Int>
 	Int ReadROM(const u32 addr)
 	{
-		const u32 read_offset = addr & rom_size_mask;
+		const u32 read_offset = (addr & 0x0FFF'FFFF) % rom.size();
 		return Memory::GenericRead<Int>(rom.data() + read_offset);
 	}
 
@@ -59,7 +57,7 @@ namespace Cartridge
 	{
 		if (sram.size() == 0)
 			return 0;
-		const u32 read_offset = addr & sram_size_mask;
+		const u32 read_offset = (addr & 0x0FFF'FFFF) % sram.size();
 		return Memory::GenericRead<Int>(sram.data() + read_offset);
 	}
 
@@ -76,7 +74,7 @@ namespace Cartridge
 	{
 		if (sram.size() == 0)
 			return;
-		const u32 write_offset = addr & sram_size_mask;
+		const u32 write_offset = (addr & 0x0FFF'FFFF) % sram.size();
 		Memory::GenericWrite<number_of_bytes>(sram.data() + write_offset, data);
 	}
 
