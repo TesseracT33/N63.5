@@ -1,6 +1,7 @@
 module SI;
 
 import Memory;
+import MI;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
@@ -45,20 +46,37 @@ namespace SI
 	template<std::size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		switch (addr & 0x1F) /* TODO: number of register bytes is 0x1C.. */
+		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
+		const u32 offset = addr & 0x1C;
+		const auto word = static_cast<u32>(data);
+		switch (offset)
 		{
 		case SI_DRAM_ADDR:
-			Memory::GenericWrite
-				<number_of_bytes <= 3 ? number_of_bytes : 3>(&mem[SI_DRAM_ADDR], data);
+			/* TODO */
 			break;
 
-		case SI_DRAM_ADDR + 1:
-			Memory::GenericWrite
-				<number_of_bytes <= 2 ? number_of_bytes : 2>(&mem[SI_DRAM_ADDR + 1], data);
+		case SI_PIF_ADDR_RD64B:
+			/* TODO */
 			break;
 
-		case SI_DRAM_ADDR + 2:
-			Memory::GenericWrite<1>(&mem[SI_DRAM_ADDR + 2], data);
+		case SI_PIF_ADDR_WR4B:
+			/* TODO */
+			break;
+
+		case SI_PIF_ADDR_WR64B:
+			/* TODO */
+			break;
+
+		case SI_PIF_ADDR_RD4B:
+			/* TODO */
+			break;
+
+		case SI_STATUS:
+			/* Writing any value to SI_STATUS clears bit 12 (SI Interrupt flag), not only here,
+			   but also in the RCP Interrupt Cause register and in MI. */
+			mem[SI_STATUS + 2] &= ~0x10;
+			MI::ClearInterruptFlag<MI::InterruptType::SI>();
+			// TODO: RCP flag
 			break;
 
 		default: /* TODO */

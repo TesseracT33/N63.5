@@ -1,5 +1,6 @@
 module MI;
 
+import HostSystem;
 import Memory;
 import VR4300;
 
@@ -16,10 +17,10 @@ namespace MI
 	void Initialize()
 	{
 		mem.fill(0);
-		constexpr static u8 rsp_version = 0x02; /* https://n64brew.dev/wiki/MIPS_Interface */
-		constexpr static u8 rdp_version = 0x01;
-		constexpr static u8 rac_version = 0x02;
-		constexpr static u8 io_version = 0x02;
+		static constexpr u8 rsp_version = 0x02; /* https://n64brew.dev/wiki/MIPS_Interface */
+		static constexpr u8 rdp_version = 0x01;
+		static constexpr u8 rac_version = 0x02;
+		static constexpr u8 io_version = 0x02;
 		mem[MI_VERSION] = io_version;
 		mem[MI_VERSION + 1] = rac_version;
 		mem[MI_VERSION + 2] = rdp_version;
@@ -30,7 +31,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void SetInterruptFlag()
 	{
-		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
+		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT] |= interrupt_type_mask;
 		if (mem[MI_INTERRUPT] & mem[MI_MASK])
 		{
@@ -42,7 +43,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptFlag()
 	{
-		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
+		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT] &= ~interrupt_type_mask;
 		if (!(mem[MI_INTERRUPT] & mem[MI_MASK]))
 		{
@@ -54,7 +55,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void SetInterruptMask()
 	{
-		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
+		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_MASK] |= interrupt_type_mask;
 		if (mem[MI_INTERRUPT] & mem[MI_MASK])
 		{
@@ -66,67 +67,12 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptMask()
 	{
-		const u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
+		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_MASK] &= ~interrupt_type_mask;
 		if (!(mem[MI_INTERRUPT] & mem[MI_MASK]))
 		{
 			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
 		}
-	}
-
-
-	void WriteToMiMode0(const u8 data)
-	{
-		mem[MI_MODE] = data;
-		/* todo */
-	}
-
-
-	void WriteToMiMode1(const u8 data)
-	{
-		mem[MI_MODE + 1] = mem[MI_MODE + 1] & 0xC0 | data & 0x3F;
-		if (data & 0x08)
-			ClearInterruptFlag<InterruptType::DP>();
-		/* todo */
-	}
-
-
-	void WriteToMask0(const u8 data)
-	{
-		/* TODO: unclear what would happen if two adjacent bits would be set */
-		if (data & 0x01)
-			ClearInterruptMask<InterruptType::SP>();
-		else if (data & 0x02)
-			SetInterruptMask<InterruptType::SP>();
-
-		if (data & 0x04)
-			ClearInterruptMask<InterruptType::SI>();
-		else if (data & 0x08)
-			SetInterruptMask<InterruptType::SI>();
-
-		if (data & 0x10)
-			ClearInterruptMask<InterruptType::AI>();
-		else if (data & 0x20)
-			SetInterruptMask<InterruptType::AI>();
-
-		if (data & 0x40)
-			ClearInterruptMask<InterruptType::VI>();
-		else if (data & 0x80)
-			SetInterruptMask<InterruptType::VI>();
-	}
-
-
-	void WriteToMask1(const u8 data)
-	{
-		if (data & 0x01)
-			ClearInterruptMask<InterruptType::PI>();
-		else if (data & 0x02)
-			SetInterruptMask<InterruptType::PI>();
-
-		if (data & 0x04)
-			ClearInterruptMask<InterruptType::DP>();
-		else if (data & 0x08)
-			SetInterruptMask<InterruptType::DP>();
 	}
 
 
@@ -140,77 +86,60 @@ namespace MI
 	template<std::size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		switch (addr & 0xF)
+		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
+		const u32 offset = addr & 0xC;
+		const u32 word = static_cast<u32>(data);
+		if (offset == MI_MODE)
 		{
-		case MI_MODE:
-			WriteToMiMode0(u8(data));
-			if constexpr (number_of_bytes > 1)
-				WriteToMiMode1(u8(data >> 8));
-			break;
+			std::memcpy(&mem[MI_MODE], &word, 4);
+		}
+		else if (offset == MI_MASK)
+		{
+			/* The below values will byteswap only if host system is little endian. */
+			static constexpr u32 test = std::byteswap<u32>(0);
+			static constexpr s32 clear_sp_mask = Memory::ByteswapOnLittleEndian<s32>(0x01);
+			static constexpr s32   set_sp_mask = Memory::ByteswapOnLittleEndian<s32>(0x02);
+			static constexpr s32 clear_si_mask = Memory::ByteswapOnLittleEndian<s32>(0x04);
+			static constexpr s32   set_si_mask = Memory::ByteswapOnLittleEndian<s32>(0x08);
+			static constexpr s32 clear_ai_mask = Memory::ByteswapOnLittleEndian<s32>(0x10);
+			static constexpr s32   set_ai_mask = Memory::ByteswapOnLittleEndian<s32>(0x20);
+			static constexpr s32 clear_vi_mask = Memory::ByteswapOnLittleEndian<s32>(0x40);
+			static constexpr s32   set_vi_mask = Memory::ByteswapOnLittleEndian<s32>(0x80);
+			static constexpr s32 clear_pi_mask = Memory::ByteswapOnLittleEndian<s32>(0x100);
+			static constexpr s32   set_pi_mask = Memory::ByteswapOnLittleEndian<s32>(0x200);
+			static constexpr s32 clear_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x400);
+			static constexpr s32   set_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x800);
+			
+			/* TODO: unclear what would happen if two adjacent bits would be set */
+			if (data & clear_sp_mask)
+				ClearInterruptMask<InterruptType::SP>();
+			else if (data & set_sp_mask)
+				SetInterruptMask<InterruptType::SP>();
 
-		case MI_MODE + 1:
-			WriteToMiMode1(u8(data));
-			break;
+			if (data & clear_si_mask)
+				ClearInterruptMask<InterruptType::SI>();
+			else if (data & set_si_mask)
+				SetInterruptMask<InterruptType::SI>();
 
-		case MI_VERSION + 1:
-			if constexpr (number_of_bytes == 8)
-				WriteToMask0(u8(data >> 56));
-			break;
+			if (data & clear_ai_mask)
+				ClearInterruptMask<InterruptType::AI>();
+			else if (data & set_ai_mask)
+				SetInterruptMask<InterruptType::AI>();
 
-		case MI_VERSION + 2:
-			if constexpr (number_of_bytes >= 7)
-				WriteToMask0(u8(data >> 48));
-			if constexpr (number_of_bytes == 8)
-				WriteToMask1(u8(data >> 56));
-			break;
+			if (data & clear_vi_mask)
+				ClearInterruptMask<InterruptType::VI>();
+			else if (data & set_vi_mask)
+				SetInterruptMask<InterruptType::VI>();
 
-		case MI_VERSION + 3:
-			if constexpr (number_of_bytes >= 6)
-				WriteToMask0(u8(data >> 40));
-			if constexpr (number_of_bytes >= 7)
-				WriteToMask1(u8(data >> 48));
-			break;
+			if (data & clear_pi_mask)
+				ClearInterruptMask<InterruptType::PI>();
+			else if (data & set_pi_mask)
+				SetInterruptMask<InterruptType::PI>();
 
-		case MI_INTERRUPT:
-			if constexpr (number_of_bytes >= 5)
-				WriteToMask0(u8(data >> 32));
-			if constexpr (number_of_bytes >= 6)
-				WriteToMask1(u8(data >> 40));
-			break;
-
-		case MI_INTERRUPT + 1:
-			if constexpr (number_of_bytes >= 4)
-				WriteToMask0(u8(data >> 24));
-			if constexpr (number_of_bytes >= 5)
-				WriteToMask1(u8(data >> 32));
-			break;
-
-		case MI_INTERRUPT + 2:
-			if constexpr (number_of_bytes >= 3)
-				WriteToMask0(u8(data >> 16));
-			if constexpr (number_of_bytes >= 4)
-				WriteToMask1(u8(data >> 24));
-			break;
-
-		case MI_INTERRUPT + 3:
-			if constexpr (number_of_bytes >= 2)
-				WriteToMask0(u8(data >> 8));
-			if constexpr (number_of_bytes >= 3)
-				WriteToMask1(u8(data >> 16));
-			break;
-
-		case MI_MASK:
-			WriteToMask0(u8(data));
-			if constexpr (number_of_bytes >= 2)
-				WriteToMask1(u8(data >> 8));
-			break;
-
-		case MI_MASK + 1:
-			WriteToMask1(u8(data));
-			break;
-
-		default:
-			break;
+			if (data & clear_dp_mask)
+				ClearInterruptMask<InterruptType::DP>();
+			else if (data & set_dp_mask)
+				SetInterruptMask<InterruptType::DP>();
 		}
 	}
 

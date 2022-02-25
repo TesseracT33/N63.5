@@ -2,6 +2,7 @@ export module PI; /* Peripheral Interface */
 
 import NumericalTypes;
 
+import <algorithm>;
 import <array>;
 import <concepts>;
 
@@ -9,16 +10,8 @@ namespace PI
 {
 	std::array<u8, 0x34> mem{};
 
-	template<std::size_t start, std::size_t number_of_bytes>
-	void WriteToDramCartAddr(const auto data);
-
-	template<std::size_t start, std::size_t number_of_bytes>
-	void WriteToRdLen(const auto data);
-
-	template<std::size_t start, std::size_t number_of_bytes>
-	void WriteToWrLen(const auto data);
-
-	void WriteToStatus(const u8 data);
+	void ApplyWriteToRdLen();
+	void ApplyWriteToWrLen();
 
 	export
 	{

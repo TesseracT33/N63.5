@@ -15,15 +15,16 @@ namespace VI
 	{
 		mem.fill(0);
 		Renderer::SetFramebufferPtr(RDRAM::GetPointer(0));
-		WriteToControl0(0x03); /* TODO: default video size? Currently: 8/8/8/8 */
+		mem[VI_CTRL + 3] |= 0x03; /* TODO: default video size? Currently: 8/8/8/8 */
+		ApplyWriteToControl();
 	}
 
 
-	void WriteToControl0(const u8 data)
+	void ApplyWriteToControl()
 	{
 		/* TODO */
 		/* Video pixel size */
-		switch (data & 0x03)
+		switch (mem[VI_CTRL + 3] & 0x03)
 		{
 		case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
 			Renderer::SetColourFormat(0, 0, 0, 0);
@@ -44,26 +45,6 @@ namespace VI
 	}
 
 
-	void WriteToControl1(const u8 data)
-	{
-		/* TODO */
-	}
-
-
-	template<std::size_t start, std::size_t number_of_bytes /* how many bytes we want to write */>
-	void WriteToOrigin(const auto shifted_data)
-	{
-		constexpr std::size_t number_of_bytes_to_write = /* how many bytes we will actually write (we cannot go past the end of this memory region) */
-			number_of_bytes <= 3 - start ? number_of_bytes : 3 - start;
-		Memory::GenericWrite<number_of_bytes_to_write>(&mem[VI_ORIGIN + start], shifted_data);
-
-		u32 origin;
-		std::memcpy(&origin, &mem[VI_ORIGIN], 4);
-		origin = Memory::Byteswap(origin);
-		Renderer::SetFramebufferPtr(RDRAM::GetPointer(origin));
-	}
-
-
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
@@ -74,43 +55,24 @@ namespace VI
 	template<std::size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		switch (addr & 0x3F) /* TODO: number of register bytes is 0x38.. */
+		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
+		const u32 offset = addr & 0x3C; /* TODO: number of register bytes is 0x38.. */
+		const u32 word = static_cast<u32>(data);
+		switch (offset)
 		{
 		case VI_CTRL:
-			WriteToControl0(u8(data));
-			if constexpr (number_of_bytes >= 2)
-				WriteToControl1(u8(data >> 8));
-			if constexpr (number_of_bytes >= 5)
-				WriteToOrigin<0, number_of_bytes - 4>(data >> 32);
-			break;
-
-		case VI_CTRL + 1:
-			WriteToControl1(u8(data));
-			if constexpr (number_of_bytes >= 4)
-				WriteToOrigin<0, number_of_bytes - 3>(data >> 24);
-			break;
-
-		case VI_CTRL + 2:
-			if constexpr (number_of_bytes >= 3)
-				WriteToOrigin<0, number_of_bytes - 2>(data >> 16);
-			break;
-
-		case VI_CTRL + 3:
-			if constexpr (number_of_bytes >= 2)
-				WriteToOrigin<0, number_of_bytes - 1>(data >> 8);
+			std::memcpy(&mem[VI_CTRL], &word, 4);
+			ApplyWriteToControl();
 			break;
 
 		case VI_ORIGIN:
-			WriteToOrigin<0, number_of_bytes>(data);
+		{
+			std::memcpy(&mem[VI_ORIGIN], &word, 4);
+			u32 framebuffer_origin = Memory::ByteswapOnLittleEndian<u32>(word);
+			Renderer::SetFramebufferPtr(RDRAM::GetPointer(framebuffer_origin));
 			break;
-
-		case VI_ORIGIN + 1:
-			WriteToOrigin<1, number_of_bytes>(data);
-			break;
-
-		case VI_ORIGIN + 2:
-			WriteToOrigin<2, number_of_bytes>(data);
-			break;
+		}
+			
 
 		default: /* TODO */
 			break;

@@ -1,36 +1,18 @@
 module Memory;
 
 import Cartridge;
-import HostSystem;
 import MI;
 import PI;
 import RDRAM;
 import RSP;
 import SI;
 import VI;
-import VR4300;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 #include "../debug/DebugOptions.h"
 
 namespace Memory
 {
-	/* Use this function to do a conversion between little and big endian if necessary,
-	   before the value is read back / written. */
-	template<std::integral Int>
-	Int Byteswap(const Int value)
-	{
-		if constexpr (sizeof Int == 1 || HostSystem::endianness == VR4300::endianness)
-		{ /* No conversion necessary. */
-			return value;
-		}
-		else
-		{
-			return std::byteswap(value);
-		}
-	}
-
-
 	template<std::integral Int>
 	Int InvalidRead(const u32 addr)
 	{
@@ -344,7 +326,7 @@ namespace Memory
 	{
 		Int ret = 0;
 		std::memcpy(&ret, source, sizeof Int);
-		return Byteswap<Int>(ret);
+		return ByteswapOnLittleEndian<Int>(ret);
 	}
 
 
@@ -354,12 +336,12 @@ namespace Memory
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(GenericWrite, void*)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ByteswappedGenericRead, const void*)
 
-	template u8 Byteswap<u8>(u8);
-	template s8 Byteswap<s8>(s8);
-	template u16 Byteswap<u16>(u16);
-	template s16 Byteswap<s16>(s16);
-	template u32 Byteswap<u32>(u32);
-	template s32 Byteswap<s32>(s32);
-	template u64 Byteswap<u64>(u64);
-	template s64 Byteswap<s64>(s64);
+	template u8 ByteswapOnLittleEndian<u8>(const u8);
+	template s8 ByteswapOnLittleEndian<s8>(const s8);
+	template u16 ByteswapOnLittleEndian<u16>(const u16);
+	template s16 ByteswapOnLittleEndian<s16>(const s16);
+	template u32 ByteswapOnLittleEndian<u32>(const u32);
+	template s32 ByteswapOnLittleEndian<s32>(const s32);
+	template u64 ByteswapOnLittleEndian<u64>(const u64);
+	template s64 ByteswapOnLittleEndian<s64>(const s64);
 }

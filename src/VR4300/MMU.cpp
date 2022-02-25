@@ -367,7 +367,7 @@ is set to 1, and then the TLB cannot be used. */
 			cop0_reg.LL_addr.p_addr = physical_address;
 
 		const Int value = Memory::ReadPhysical<Int>(physical_address);
-		const Int byteswapped_value = Memory::Byteswap(value); /* If the host is big endian (same as N64), does nothing */
+		const Int byteswapped_value = Memory::ByteswapOnLittleEndian(value); /* If the host is big endian (same as N64), does nothing */
 
 #ifdef LOG_VR4300
 		if constexpr (operation != MemoryAccess::Operation::InstrFetch)
@@ -395,7 +395,7 @@ is set to 1, and then the TLB cannot be used. */
 		if (exception_has_occurred)
 			return;
 
-		const Int byteswapped_data = Memory::Byteswap(data);
+		const Int byteswapped_data = Memory::ByteswapOnLittleEndian(data);
 
 #ifdef LOG_VR4300
 		Logging::LogMemoryWrite(physical_address, byteswapped_data);

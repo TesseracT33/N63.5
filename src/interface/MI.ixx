@@ -25,11 +25,6 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptMask();
 
-	void WriteToMiMode0(const u8 data);
-	void WriteToMiMode1(const u8 data);
-	void WriteToMask0(const u8 data);
-	void WriteToMask1(const u8 data);
-
 	export
 	{
 		void Initialize();

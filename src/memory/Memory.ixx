@@ -1,5 +1,7 @@
 export module Memory;
 
+import HostSystem;
+import VR4300;
 import NumericalTypes;
 
 import <array>;
@@ -18,6 +20,21 @@ namespace Memory
 
 	export
 	{
+		/* Use this function to do a conversion between little and big endian if necessary,
+		   before the value is read back / written. */
+		template<std::integral Int>
+		constexpr Int ByteswapOnLittleEndian(const Int value)
+		{
+			if constexpr (sizeof Int == 1 || HostSystem::endianness == VR4300::endianness)
+			{ /* No conversion necessary. */
+				return value;
+			}
+			else
+			{
+				return std::byteswap(value);
+			}
+		}
+
 		template<std::integral Int>
 		Int ReadPhysical(const u32 physical_address);
 
@@ -32,8 +49,5 @@ namespace Memory
 
 		template<std::integral Int>
 		Int ByteswappedGenericRead(const void* source);
-
-		template<std::integral Int>
-		Int Byteswap(const Int value);
 	}
 }
