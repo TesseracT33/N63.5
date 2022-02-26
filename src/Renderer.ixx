@@ -12,7 +12,7 @@ namespace Renderer
 	u8* framebuffer_ptr{};
 	SDL_Renderer* renderer{};
 
-	u8 maskR, maskG, maskB, maskA;
+	s32 maskR{}, maskG{}, maskB{}, maskA{};
 
 	export
 	{
