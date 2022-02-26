@@ -3,6 +3,7 @@ module N64;
 import Cartridge;
 import Input;
 import MI;
+import PI;
 import Renderer;
 import VI;
 import VR4300;
@@ -100,6 +101,8 @@ namespace N64
 		{
 		case Event::PI_DMA_FINISH:
 			MI::SetInterruptFlag<MI::InterruptType::PI>();
+			PI::SetStatusFlag<PI::StatusFlag::DMA_COMPLETED>();
+			PI::ClearStatusFlag<PI::StatusFlag::DMA_BUSY>();
 			VR4300::CheckInterrupts();
 			break;
 		}
