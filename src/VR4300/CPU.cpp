@@ -607,7 +607,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}();
 
 		const u8 sa = [&] {
-			if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == DSLL || instr == DSRL || instr == DSRA || instr == DSLL32 || instr == DSRL32)
+			if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == DSLL ||
+				          instr == DSRL || instr == DSRA || instr == DSRA32 || instr == DSLL32 || instr == DSRL32)
 				return instr_code >> 6 & 0x1F;
 			else return 0;
 		}();
