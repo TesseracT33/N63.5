@@ -633,7 +633,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s32(gpr[rt]) >> sa;
+				return s32(gpr[rt] >> sa);
 			}
 			else if constexpr (instr == SLLV)
 			{
@@ -660,7 +660,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 5 bits of register rs.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s32(gpr[rt]) >> (gpr[rs] & 0x1F);
+				return s32(gpr[rt] >> (gpr[rs] & 0x1F));
 			}
 			else if constexpr (instr == DSLL)
 			{
