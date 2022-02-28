@@ -608,7 +608,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 
 		const u8 sa = [&] {
 			if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == DSLL || instr == DSRL || instr == DSRA || instr == DSLL32 || instr == DSRL32)
-				return instr_code & 0x1F;
+				return instr_code >> 6 & 0x1F;
 			else return 0;
 		}();
 
@@ -886,16 +886,19 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		   JALR: Jump And Link Register;
 		   Jumps to the address of register rs, delayed by one instruction.
 		   Stores the address of the instruction following the delay slot to register rd. */
-
 		const u64 target = [&] {
 			if constexpr (instr == J || instr == JAL)
 			{
-				const u64 target = u64((instr_code & 0x3FFFFFF) << 2);
+				const u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
 				return pc & 0xFFFF'FFFF'F000'0000 | target;
 			}
 			else if constexpr (instr == JR || instr == JALR)
 			{
 				const u8 rs = instr_code >> 21 & 0x1F;
+				if (gpr[rs] & 3)
+				{
+					SignalException<Exception::AddressError>();
+				}
 				return gpr[rs];
 			}
 			else
