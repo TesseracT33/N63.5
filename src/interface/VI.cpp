@@ -27,19 +27,19 @@ namespace VI
 		switch (mem[VI_CTRL + 3] & 0x03)
 		{
 		case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
-			Renderer::SetColourFormat(0, 0, 0, 0);
+			Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
 			break;
 
 		case 0b01: /* reserved */
-			assert(false);
+			Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
 			break;
 
 		case 0b10: /* 5/5/5/3 */
-			Renderer::SetColourFormat(5, 5, 5, 3);
+			Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA5553>();
 			break;
 
 		case 0b11: /* 8/8/8/8 */
-			Renderer::SetColourFormat(8, 8, 8, 8);
+			Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA8888>();
 			break;
 		}
 	}
@@ -72,7 +72,6 @@ namespace VI
 			Renderer::SetFramebufferPtr(RDRAM::GetPointer(framebuffer_origin));
 			break;
 		}
-			
 
 		default: /* TODO */
 			break;

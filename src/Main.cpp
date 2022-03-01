@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 	/* Create SDL window and renderer */
 	const std::string window_title = "N63.5 | " + rom_path;
 	SDL_Window* sdl_window = SDL_CreateWindow(window_title.c_str(),
-		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320, 240,
+		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480,
 		SDL_WINDOW_OPENGL | SDL_WINDOW_INPUT_FOCUS);
 
 	if (sdl_window == nullptr)

@@ -1,5 +1,6 @@
 export module Renderer;
 
+import HostSystem;
 import NumericalTypes;
 
 import <SDL.h>;
@@ -9,18 +10,35 @@ import <cassert>;
 
 namespace Renderer
 {
-	u8* framebuffer_ptr{};
 	SDL_Renderer* renderer{};
+	SDL_Texture* texture{};
 
-	s32 maskR{}, maskG{}, maskB{}, maskA{};
+	struct Framebuffer
+	{
+		u8* src_ptr{};
+		int width = 320, height = 240, pitch = 320 * 4;
+		int bytes_per_pixel = 4;
+		uint pixel_format = [] {
+			if constexpr (HostSystem::endianness == std::endian::little)
+				return SDL_PIXELFORMAT_ABGR8888;
+			else return SDL_PIXELFORMAT_RGBA8888;
+		}();
+	} framebuffer{};
+
+	void RecreateTexture();
 
 	export
 	{
+		enum class PixelFormat { Blank, RGBA5553, RGBA8888 };
+
+		template<PixelFormat pixel_format>
+		void SetPixelFormat();
+
 		void Initialize(SDL_Renderer* renderer = nullptr);
 		void Render();
-		void SetColourFormat(unsigned num_red_bits, unsigned num_green_bits, unsigned num_blue_bits, unsigned num_alpha_bits);
 		void SetFramebufferPtr(u8* ptr);
+		void SetFramebufferSize(unsigned width, unsigned height);
 		void SetRenderer(SDL_Renderer* renderer);
-		void SetWindowSize(int width, int height);
+		void SetWindowSize(unsigned width, unsigned height);
 	}
 }

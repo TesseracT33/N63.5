@@ -6,53 +6,94 @@ namespace Renderer
 {
 	void Initialize(SDL_Renderer* renderer)
 	{
+		assert(renderer != nullptr);
 		Renderer::renderer = renderer;
+		RecreateTexture();
 	}
 
 
 	void Render()
 	{
-		int width = 320;
-		int height = 240;
-		int depth = 8 * 4;
-		int pitch = width * 4;
-		SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(framebuffer_ptr, width, height, depth, pitch, maskR, maskG, maskB, maskA);
+		void* locked_pixels = nullptr;
+		int locked_pixels_pitch = 0;
+		SDL_LockTexture(texture, nullptr, &locked_pixels, &locked_pixels_pitch);
 
-		SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+		SDL_ConvertPixels(
+			framebuffer.width,        /* framebuffer width  */
+			framebuffer.height,       /* framebuffer height */
+			framebuffer.pixel_format, /* source format      */
+			framebuffer.src_ptr,      /* source             */
+			framebuffer.pitch,        /* source pitch       */
+			framebuffer.pixel_format, /* destination format */
+			locked_pixels,            /* destination        */
+			framebuffer.pitch         /* destination pitch  */
+		);
 
+		SDL_UnlockTexture(texture);
+
+		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-
 		SDL_RenderPresent(renderer);
-
-		SDL_FreeSurface(surface);
-		SDL_DestroyTexture(texture);
 	}
 
 
-	void SetColourFormat(unsigned num_red_bits, unsigned num_green_bits, unsigned num_blue_bits, unsigned num_alpha_bits)
+	void RecreateTexture()
 	{
-		assert(num_red_bits <= 8 && num_green_bits <= 8 && num_blue_bits <= 8 && num_alpha_bits <= 8);
+		SDL_DestroyTexture(texture);
+		texture = SDL_CreateTexture(
+			renderer,
+			framebuffer.pixel_format,
+			SDL_TEXTUREACCESS_STREAMING,
+			framebuffer.width,
+			framebuffer.height
+		);
+	}
 
-		if constexpr (HostSystem::endianness == std::endian::little)
+
+	template<PixelFormat pixel_format>
+	void SetPixelFormat()
+	{
+		if constexpr (pixel_format == PixelFormat::Blank)
 		{
-			maskR = num_red_bits   > 0 ? ((1 << num_red_bits  ) - 1) << 24 : 0;
-			maskG = num_green_bits > 0 ? ((1 << num_green_bits) - 1) << 16 : 0;
-			maskB = num_blue_bits  > 0 ? ((1 << num_blue_bits ) - 1) <<  8 : 0;
-			maskA = num_alpha_bits > 0 ? ((1 << num_alpha_bits) - 1)       : 0;
+			/* TODO: not sure what to do here yet. */
+		}
+		else if constexpr (pixel_format == PixelFormat::RGBA5553)
+		{
+			/* Treat this as RGBA5551 */
+			framebuffer.pixel_format = [] {
+				if constexpr (HostSystem::endianness == std::endian::big) return SDL_PIXELFORMAT_RGBA5551;
+				else                                                      return SDL_PIXELFORMAT_ABGR1555;
+			}();
+			framebuffer.bytes_per_pixel = 2;
+		}
+		else if constexpr (pixel_format == PixelFormat::RGBA8888)
+		{
+			framebuffer.pixel_format = [] {
+				if constexpr (HostSystem::endianness == std::endian::big) return SDL_PIXELFORMAT_RGBA8888;
+				else                                                      return SDL_PIXELFORMAT_ABGR8888;
+			}();
+			framebuffer.bytes_per_pixel = 4;
 		}
 		else
 		{
-			maskR = num_red_bits   > 0 ? ((1 << num_red_bits  ) - 1)       : 0;
-			maskG = num_green_bits > 0 ? ((1 << num_green_bits) - 1) <<  8 : 0;
-			maskB = num_blue_bits  > 0 ? ((1 << num_blue_bits ) - 1) << 16 : 0;
-			maskA = num_alpha_bits > 0 ? ((1 << num_alpha_bits) - 1) << 24 : 0;
+			static_assert(pixel_format != pixel_format);
 		}
+		framebuffer.pitch = framebuffer.width * framebuffer.bytes_per_pixel;
 	}
 
 
 	void SetFramebufferPtr(u8* ptr)
 	{
-		framebuffer_ptr = ptr;
+		framebuffer.src_ptr = ptr;
+	}
+
+
+	void SetFramebufferSize(unsigned width, unsigned height)
+	{
+		assert(width > 0 && height > 0);
+		framebuffer.width = width;
+		framebuffer.height = height;
+		framebuffer.pitch = width * framebuffer.bytes_per_pixel;
 	}
 
 
@@ -62,9 +103,14 @@ namespace Renderer
 	}
 
 
-	void SetWindowSize(int width, int height)
+	void SetWindowSize(unsigned width, unsigned height)
 	{
 		assert(width > 0 && height > 0);
 		SDL_RenderSetLogicalSize(renderer, width, height);
 	}
+
+
+	template void SetPixelFormat<PixelFormat::Blank>();
+	template void SetPixelFormat<PixelFormat::RGBA5553>();
+	template void SetPixelFormat<PixelFormat::RGBA8888>();
 }
