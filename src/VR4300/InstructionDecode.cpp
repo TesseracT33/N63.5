@@ -75,7 +75,7 @@ namespace VR4300
 		case 0b001100: SYSCALL(instr_code); break;
 
 		default:
-			ReservedInstructionException();
+			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 
@@ -103,7 +103,7 @@ namespace VR4300
 		case 0b01110: Trap_Immediate<CPU_Instruction::TNEI>(instr_code); break;
 
 		default:
-			ReservedInstructionException();
+			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 
@@ -138,7 +138,7 @@ namespace VR4300
 		case 0b00100: CP0_Move<CP0_Instruction::MTC0>(instr_code); break;
 
 		default:
-			ReservedInstructionException();
+			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 
@@ -158,15 +158,15 @@ namespace VR4300
 		case 0b01000:
 		{
 			const u8 sub_op_code = instr_code >> 16 & 0x1F;
-			switch (sub_op_code) /* Todo possibly put into FPU_Branch instr itself to avoid so many nested switches*/
+			switch (sub_op_code)
 			{
 			case 0b00000: FPU_Branch<FPU_Instruction::BC1F>(instr_code); break;
 			case 0b00010: FPU_Branch<FPU_Instruction::BC1FL>(instr_code); break;
 			case 0b00001: FPU_Branch<FPU_Instruction::BC1T>(instr_code); break;
-			case 0b01000: FPU_Branch<FPU_Instruction::BC1TL>(instr_code); break;
+			case 0b00011: FPU_Branch<FPU_Instruction::BC1TL>(instr_code); break;
 
 			default:
-				ReservedInstructionException();
+				SignalException<Exception::ReservedInstruction>();
 			}
 		}
 		break;
@@ -319,7 +319,7 @@ namespace VR4300
 			break;
 
 		default:
-			ReservedInstructionException();
+			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 }
