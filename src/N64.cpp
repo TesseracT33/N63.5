@@ -25,7 +25,7 @@ namespace N64
 		VR4300::PowerOn(true);
 
 		Renderer::Initialize(renderer);
-		Renderer::SetFramebufferWidth(320);
+		Renderer::SetWindowSize(window_width, window_height);
 
 		return true;
 	}
@@ -33,15 +33,21 @@ namespace N64
 
 	void Run()
 	{
-		static constexpr int cycles_per_update = 10000;
+		static constexpr int cpu_clocks_per_second = 97'750'000;
+		static constexpr int cpu_cycles_per_second = cpu_clocks_per_second / 2;
+		static constexpr int cpu_cycles_per_frame = 781'250; /* 781,250 */
+		static constexpr int event_checks_per_frame = 50;
+		static constexpr int cpu_cycles_per_event_check = cpu_cycles_per_frame / event_checks_per_frame; /* 15625 */
 
 		while (true)
 		{
-			cycles_to_update_queue = cycles_per_update;
-
-			VR4300::Run(cycles_per_update);
+			for (int i = 0; i < event_checks_per_frame; ++i)
+			{
+				cpu_cycles_until_update_queue = cpu_cycles_per_event_check;
+				VR4300::Run(cpu_cycles_per_event_check);
+				CheckEventQueue();
+			}
 			Renderer::Render();
-			CheckEventQueue();
 			Input::Poll();
 		}
 	}
@@ -52,7 +58,7 @@ namespace N64
 		for (auto it = event_queue.begin(); it != event_queue.end(); it++)
 		{
 			EventItem& item = *it;
-			item.time -= cycles_to_update_queue;
+			item.time -= cpu_cycles_until_update_queue;
 			if (item.time <= 0)
 			{
 				ExecuteEvent(item.event);
@@ -66,7 +72,7 @@ namespace N64
 
 	void EnqueueEvent(Event event, int cycles_until_fire, int cycles_into_update)
 	{
-		cycles_to_update_queue -= cycles_into_update;
+		cpu_cycles_until_update_queue -= cycles_into_update;
 
 		EventItem new_item = { event, cycles_until_fire };
 		bool item_inserted = false;

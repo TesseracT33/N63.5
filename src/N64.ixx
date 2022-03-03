@@ -37,5 +37,5 @@ namespace N64
 
 	std::list<EventItem> event_queue{};
 
-	int cycles_to_update_queue;
+	int cpu_cycles_until_update_queue;
 }
