@@ -4,6 +4,7 @@ import NumericalTypes;
 
 import <format>;
 import <fstream>;
+import <type_traits>;
 
 namespace Logging
 {

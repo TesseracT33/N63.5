@@ -10,7 +10,8 @@ namespace Logging
 	{
 		const std::string output = std::format(
 			"READ;\t${:0X} from ${:08X}\n",
-			physical_address, memory_value
+			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
+			physical_address
 		);
 
 		instr_logging_ofs << output;
@@ -21,7 +22,8 @@ namespace Logging
 	{
 		const std::string output = std::format(
 			"WRITE;\t${:0X} to ${:08X}\n",
-			memory_value, physical_address
+			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
+			physical_address
 		);
 
 		instr_logging_ofs << output;
@@ -31,11 +33,11 @@ namespace Logging
 	void LogVR4300Instruction(u64 pc, u64 instr_code, u32 instr_phys_addr, unsigned p_cycle)
 	{
 		const std::string output = std::format(
-			"INSTR;\tPC: ${:016X} \t instr: ${:08X} \t origin: ${:08X} \t cycle: {}\n",
+			"INSTR;\tPC: ${:016X} \t instr: ${:08X} \t origin: ${:08X} \t cycle: {}",
 			pc, instr_code, instr_phys_addr, p_cycle
 		);
 
-		instr_logging_ofs << output;
+		instr_logging_ofs << output << std::endl;
 	}
 
 
