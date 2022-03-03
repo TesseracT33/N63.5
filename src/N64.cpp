@@ -33,10 +33,9 @@ namespace N64
 
 	void Run()
 	{
-		static constexpr int cpu_clocks_per_second = 97'750'000;
-		static constexpr int cpu_cycles_per_second = cpu_clocks_per_second / 2;
-		static constexpr int cpu_cycles_per_frame = 781'250; /* 781,250 */
-		static constexpr int event_checks_per_frame = 50;
+		static constexpr int cpu_cycles_per_second = 93'750'000;
+		static constexpr int cpu_cycles_per_frame = cpu_cycles_per_second / 60; /* 1,562,500 */
+		static constexpr int event_checks_per_frame = 100;
 		static constexpr int cpu_cycles_per_event_check = cpu_cycles_per_frame / event_checks_per_frame; /* 15625 */
 
 		while (true)
