@@ -6,8 +6,22 @@ import Renderer;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
-#define VI_CTRL   0x00
-#define VI_ORIGIN 0x04
+#define VI_CTRL        0x00
+#define VI_ORIGIN      0x04
+#define VI_WIDTH       0x08
+#define VI_V_INTR      0x0C
+#define VI_V_CURRENT   0x10
+#define VI_BURST       0x14
+#define VI_V_SYNC      0x18
+#define VI_H_SYNC      0x1C
+#define VI_H_SYNC_LEAP 0x20
+#define VI_H_VIDEO     0x24
+#define VI_V_VIDEO     0x28
+#define VI_V_BURST     0x2C
+#define VI_X_SCALE     0x30
+#define VI_Y_SCALE     0x34
+#define VI_TEST_ADDR   0x38
+#define VI_STAGED_DATA 0x3C
 
 namespace VI
 {
@@ -58,22 +72,68 @@ namespace VI
 		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
 		const u32 offset = addr & 0x3C; /* TODO: number of register bytes is 0x38.. */
 		const u32 word = static_cast<u32>(data);
+		std::memcpy(&mem[offset], &word, 4);
+
 		switch (offset)
 		{
 		case VI_CTRL:
-			std::memcpy(&mem[VI_CTRL], &word, 4);
 			ApplyWriteToControl();
 			break;
 
 		case VI_ORIGIN:
 		{
-			std::memcpy(&mem[VI_ORIGIN], &word, 4);
 			u32 framebuffer_origin = Memory::ByteswapOnLittleEndian<u32>(word);
 			Renderer::SetFramebufferPtr(RDRAM::GetPointer(framebuffer_origin));
 			break;
 		}
 
-		default: /* TODO */
+		case VI_WIDTH:
+		{
+			u32 framebuffer_width = Memory::ByteswapOnLittleEndian<u32>(word);
+			Renderer::SetFramebufferWidth(framebuffer_width);
+			break;
+		}
+
+		case VI_V_INTR:
+			break;
+
+		case VI_V_CURRENT:
+			break;
+
+		case VI_BURST:
+			break;
+
+		case VI_V_SYNC:
+			break;
+
+		case VI_H_SYNC:
+			break;
+
+		case VI_H_SYNC_LEAP:
+			break;
+
+		case VI_H_VIDEO:
+			break;
+
+		case VI_V_VIDEO:
+			break;
+
+		case VI_V_BURST:
+			break;
+
+		case VI_X_SCALE:
+			break;
+
+		case VI_Y_SCALE:
+			break;
+
+		case VI_TEST_ADDR:
+			break;
+
+		case VI_STAGED_DATA:
+			break;
+			
+		default:
 			break;
 		}
 	}

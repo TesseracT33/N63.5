@@ -25,7 +25,7 @@ namespace N64
 		VR4300::PowerOn(true);
 
 		Renderer::Initialize(renderer);
-		Renderer::SetWindowSize(window_width, window_height);
+		Renderer::SetFramebufferWidth(320);
 
 		return true;
 	}

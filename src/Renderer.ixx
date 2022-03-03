@@ -37,7 +37,7 @@ namespace Renderer
 		void Initialize(SDL_Renderer* renderer = nullptr);
 		void Render();
 		void SetFramebufferPtr(u8* ptr);
-		void SetFramebufferSize(unsigned width, unsigned height);
+		void SetFramebufferWidth(unsigned width);
 		void SetRenderer(SDL_Renderer* renderer);
 		void SetWindowSize(unsigned width, unsigned height);
 	}

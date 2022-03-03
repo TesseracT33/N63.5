@@ -88,12 +88,13 @@ namespace Renderer
 	}
 
 
-	void SetFramebufferSize(unsigned width, unsigned height)
+	void SetFramebufferWidth(unsigned width)
 	{
-		assert(width > 0 && height > 0);
+		assert(width > 0);
 		framebuffer.width = width;
-		framebuffer.height = height;
+		framebuffer.height = width * 3 / 4; /* 4:3 aspect ratio */
 		framebuffer.pitch = width * framebuffer.bytes_per_pixel;
+		RecreateTexture();
 	}
 
 
