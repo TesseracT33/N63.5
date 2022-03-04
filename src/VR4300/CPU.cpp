@@ -775,10 +775,23 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   is treated as a 32-bit signed integer. Sign-extends (in the 64-bit mode) and
 			   stores the 32-bit quotient to special register LO and the 32-bit remainder to
 			   special register HI. */
-			const s32 quotient = s32(gpr[rs]) / s32(gpr[rt]);
-			const s32 remainder = s32(gpr[rs]) % s32(gpr[rt]);
-			lo_reg = quotient;
-			hi_reg = remainder;
+			const s32 op1 = s32(gpr[rs]);
+			const s32 op2 = s32(gpr[rt]);
+			if (op2 == 0)
+			{ /* Peter Lemon N64 CPUTest>CPU>DIV */
+				lo_reg = op1 > 0 ? -1 : 1;
+				hi_reg = op1;
+			}
+			else if (op1 == std::numeric_limits<s32>::min() && op2 == -1)
+			{
+				lo_reg = op1;
+				hi_reg = 0;
+			}
+			else
+			{
+				lo_reg = op1 / op2;
+				hi_reg = op1 % op2;
+			}
 		}
 		else if constexpr (instr == DIVU)
 		{
@@ -787,10 +800,18 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   is treated as a 32-bit unsigned integer. Sign-extends (in the 64-bit mode) and
 			   stores the 32-bit quotient to special register LO and the 32-bit remainder to
 			   special register HI. */
-			const u32 quotient = u32(gpr[rs]) / u32(gpr[rt]);
-			const u32 remainder = u32(gpr[rs]) % u32(gpr[rt]);
-			lo_reg = s32(quotient);
-			hi_reg = s32(remainder);
+			const u32 op1 = u32(gpr[rs]);
+			const u32 op2 = u32(gpr[rt]);
+			if (op2 == 0)
+			{
+				lo_reg = -1;
+				hi_reg = op1;
+			}
+			else
+			{
+				lo_reg = s32(op1 / op2);
+				hi_reg = s32(op1 % op2);
+			}
 		}
 		else if constexpr (instr == DMULT)
 		{
@@ -836,10 +857,23 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as a signed integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-			const s64 quotient = gpr[rs] / gpr[rt];
-			const s64 remainder = gpr[rs] % gpr[rt];
-			lo_reg = quotient;
-			hi_reg = remainder;
+			const s64 op1 = gpr[rs];
+			const s64 op2 = gpr[rt];
+			if (op2 == 0)
+			{ /* Peter Lemon N64 CPUTest>CPU>DDIV */
+				lo_reg = op1 > 0 ? -1 : 1;
+				hi_reg = op1;
+			}
+			else if (op1 == std::numeric_limits<s64>::min() && op2 == -1)
+			{
+				lo_reg = op1;
+				hi_reg = 0;
+			}
+			else
+			{
+				lo_reg = op1 / op2;
+				hi_reg = op1 % op2;
+			}
 		}
 		else if constexpr (instr == DDIVU)
 		{
@@ -847,10 +881,18 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as an unsigned integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-			const u64 quotient = u64(gpr[rs]) / u64(gpr[rt]);
-			const u64 remainder = u64(gpr[rs]) % u64(gpr[rt]);
-			lo_reg = quotient;
-			hi_reg = remainder;
+			const u64 op1 = u64(gpr[rs]);
+			const u64 op2 = u64(gpr[rt]);
+			if (op2 == 0)
+			{
+				lo_reg = -1;
+				hi_reg = op1;
+			}
+			else
+			{
+				lo_reg = op1 / op2;
+				hi_reg = op1 % op2;
+			}
 		}
 		else
 		{

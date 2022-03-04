@@ -5,6 +5,7 @@ import :Operation;
 import NumericalTypes;
 
 import <array>;
+import <limits>;
 
 #ifdef _MSC_VER
 import <intrin.h>;
