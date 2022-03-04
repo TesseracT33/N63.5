@@ -129,7 +129,6 @@ namespace VR4300
 		cop0_reg.Set(15, 0x0000'0B00); /* pr_id */
 		cop0_reg.Set(16, 0x0006'E463); /* config */
 		cop0_reg.status.NotifyCpuAfterWrite();
-		cop0_reg.config.NotifyCpuAfterWrite();
 
 		for (unsigned i = 0; i < 0x1000; i += 4) /* no clue if some kind of DMA */
 			WriteVirtual<u32>(0xA400'0000 + i, ReadVirtual<u32>(0xB000'0000 + i));

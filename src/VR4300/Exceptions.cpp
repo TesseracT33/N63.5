@@ -5,12 +5,14 @@ import :MMU;
 import :Operation;
 import :Registers;
 
+#include "../debug/DebugOptions.h"
+
 namespace VR4300
 {
 	template<Exception exception, MemoryAccess::Operation operation>
 	void SignalException()
 	{
-		constexpr int new_exception_priority = GetExceptionPriority<exception, operation>();
+		constexpr static int new_exception_priority = GetExceptionPriority<exception, operation>();
 		if (exception_has_occurred)
 		{
 			/* Compare exception priorities; return if the new exception has a lower priority than an already occured one. */
@@ -145,7 +147,7 @@ namespace VR4300
 		else if constexpr (exception == Trap)                return TrapException;
 		else if constexpr (exception == Watch)               return WatchException;
 		else if constexpr (exception == XTLB_Miss)           return XTLB_MissException<operation>;
-		else static_assert(exception != exception);
+		else                                                 static_assert(exception != exception);
 	}
 
 
@@ -218,7 +220,6 @@ namespace VR4300
 		cop0_reg.random.value = 31;
 
 		cop0_reg.status.NotifyCpuAfterWrite();
-		cop0_reg.config.NotifyCpuAfterWrite();
 
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
