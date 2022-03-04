@@ -33,5 +33,7 @@ namespace VR4300
 	template<FPU_Instruction instr> void FPU_Branch(const u32 instr_code);
 	void FPU_Compare(const u32 instr_code);
 
+	void Initialize_FPU();
+
 	bool fpu_is_enabled = false; /* Equal to bit 29 of the status register. If clear, all fpu instructions throw exceptions. */
 }

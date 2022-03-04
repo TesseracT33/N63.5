@@ -189,8 +189,6 @@ namespace VR4300
 			u32 ep : 4; /* Sets transfer data pattern (single/block write request) (0 => D (default on cold reset); 6 => DxxDxx (2 doublewords/six cycles). */
 			u32 ec : 3; /* Operating frequency ratio (read-only). */
 			u32 : 1; /* Returns 0 when read. */
-
-			void NotifyCpuAfterWrite();
 		} config{};
 
 		struct /* (17); Contains the physical address read by the most recent Load Linked instruction. */
@@ -256,7 +254,7 @@ namespace VR4300
 	/* Floating point control register #31 */
 	struct FCR31
 	{
-		u32 rm : 2;
+		u32 rm : 2; /* Rounding mode */
 
 		u32 flag_I : 1; /* Inexact Operation */
 		u32 flag_U : 1; /* Underflow */
@@ -278,8 +276,8 @@ namespace VR4300
 		u32 cause_E : 1; /* Unimplemented Operation */
 
 		u32 : 5;
-		u32 c : 1;
-		u32 fs : 1;
+		u32 c : 1; /* Condition bit; set/cleared by the Compare instruction (or CTC1). */
+		u32 fs : 1; /* TODO */
 		u32 : 7;
 
 		void Set(const u32 data);
@@ -303,8 +301,8 @@ namespace VR4300
 		void Set(const size_t index, const FPU_NumericType data);
 
 	private:
-		std::array<s64, 32> fgr{};
-	} fgr;
+		std::array<s64, 32> fpr{};
+	} fpr;
 
 
 	/* Used to generate random numbers in the interval [wired, 31], when the 'random' register is read. */

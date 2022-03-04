@@ -1,6 +1,7 @@
 module VR4300:Operation;
 
 import :COP0;
+import :COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
@@ -53,6 +54,8 @@ namespace VR4300
 		exception_has_occurred = false;
 		jump_is_pending = false;
 
+		Initialize_FPU();
+
 		if (hle_pif)
 		{
 			HLE_PIF();
@@ -77,12 +80,6 @@ namespace VR4300
 	}
 
 
-	void EnterKernelMode()
-	{
-
-	}
-
-
 	void CheckInterrupts()
 	{
 		const bool interrupts_are_enabled = cop0_reg.status.ie;
@@ -102,12 +99,6 @@ namespace VR4300
 		const bool interrupts_are_pending = interrupt_pending & interrupt_enable_mask & 0xFF; /* TODO: Unsure if $FF is needed */
 		if (interrupts_are_pending)
 			SignalException<Exception::Interrupt>();
-	}
-
-
-	void DisableInterrupts()
-	{
-
 	}
 
 

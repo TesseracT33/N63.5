@@ -180,7 +180,7 @@ namespace VR4300
 
 		default:
 		{
-			if ((instr_code & 0b110000) == 0b110000)
+			if ((instr_code & 0x30) == 0x30)
 				FPU_Compare(instr_code);
 			else
 			{
