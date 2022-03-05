@@ -583,8 +583,7 @@ namespace VR4300
 		   If the FPU condition line is false, branches to the target address (delay of one instruction).
 		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
 
-		const s16 offset = instr_code & 0xFFFF;
-		const s64 target = s64(offset << 2);
+		const s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 
 		const bool branch_cond = [&] {
 			     if constexpr (instr == BC1T || instr == BC1TL) return fcr31.c;
