@@ -13,6 +13,8 @@ namespace Renderer
 	SDL_Renderer* renderer{};
 	SDL_Texture* texture{};
 
+	bool rendering_is_enabled = false; /* set to false if VI.CTRL.TYPE != 0 */
+
 	struct Framebuffer
 	{
 		u8* src_ptr{};

@@ -15,6 +15,9 @@ namespace N64
 			PI_DMA_FINISH
 		};
 
+		static constexpr int cpu_cycles_per_second = 93'750'000;
+		static constexpr int cpu_cycles_per_frame = cpu_cycles_per_second / 60; /* 1,562,500 */
+
 		bool PowerOn(
 			const std::string& rom_path,
 			SDL_Renderer* renderer,

@@ -21,5 +21,12 @@ namespace VI
 
 		template<std::size_t number_of_bytes>
 		void Write(const u32 addr, const auto data);
+
+		void CheckVideoInterrupt();
+		void SetCurrentHalfline(u32 halfline);
+
+		int num_fields;
+		int num_halflines;
+		int cpu_cycles_per_halfline;
 	}
 }

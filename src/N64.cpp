@@ -33,21 +33,29 @@ namespace N64
 
 	void Run()
 	{
-		static constexpr int cpu_cycles_per_second = 93'750'000;
-		static constexpr int cpu_cycles_per_frame = cpu_cycles_per_second / 60; /* 1,562,500 */
-		static constexpr int event_checks_per_frame = 100;
-		static constexpr int cpu_cycles_per_event_check = cpu_cycles_per_frame / event_checks_per_frame; /* 15625 */
-
 		while (true)
 		{
-			for (int i = 0; i < event_checks_per_frame; ++i)
+			for (int field = 0; field < VI::num_fields; ++field)
 			{
-				cpu_cycles_until_update_queue = cpu_cycles_per_event_check;
-				VR4300::Run(cpu_cycles_per_event_check);
-				CheckEventQueue();
+				int cpu_cycles_taken_this_frame = 0;
+				for (int line = 0; line < VI::num_halflines; ++line)
+				{
+					VI::SetCurrentHalfline((line << 1) + field);
+					/* If num_halflines == 262, the number of cycles to update becomes 5963. */
+					cpu_cycles_until_update_queue = VI::cpu_cycles_per_halfline;
+					VR4300::Run(VI::cpu_cycles_per_halfline);
+					CheckEventQueue();
+					cpu_cycles_taken_this_frame += VI::cpu_cycles_per_halfline;
+				}
+				/* Run a few extra cycles if cpu_cycles_per_frame % num_halflines != 0 (quotient is equal to cycles_per_halfline). */
+				if (cpu_cycles_taken_this_frame < cpu_cycles_per_frame)
+				{
+					VR4300::Run(cpu_cycles_per_frame - cpu_cycles_taken_this_frame);
+					CheckEventQueue();
+				}
+				Renderer::Render();
+				Input::Poll();
 			}
-			Renderer::Render();
-			Input::Poll();
 		}
 	}
 

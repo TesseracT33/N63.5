@@ -9,25 +9,9 @@ import SI;
 import VI;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
-#include "../debug/DebugOptions.h"
 
 namespace Memory
 {
-	template<std::integral Int>
-	Int InvalidRead(const u32 addr)
-	{
-		assert(false);
-		return Int();
-	}
-
-
-	template<std::integral Int>
-	void InvalidWrite(const u32 addr, const Int data)
-	{
-		assert(false);
-	}
-
-
 	template<std::integral Int>
 	Int ReadPhysical(const u32 physical_address)
 	{
@@ -47,15 +31,9 @@ namespace Memory
 			return RSP::ReadMemory<Int>(physical_address);
 
 		case 0x041:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 
 		case 0x042:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 
 		case 0x043:
@@ -65,18 +43,12 @@ namespace Memory
 			return VI::Read<Int>(physical_address);
 
 		case 0x045:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 
 		case 0x046:
 			return PI::Read<Int>(physical_address);
 
 		case 0x047:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 
 		case 0x048:
@@ -84,18 +56,12 @@ namespace Memory
 
 		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
 		case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 
 		case 0x060: case 0x061: case 0x062: case 0x063: case 0x064: case 0x065: case 0x066: case 0x067:
 		case 0x068: case 0x069: case 0x06A: case 0x06B: case 0x06C: case 0x06D: case 0x06E: case 0x06F:
 		case 0x070: case 0x071: case 0x072: case 0x073: case 0x074: case 0x075: case 0x076: case 0x077:
 		case 0x078: case 0x079: case 0x07A: case 0x07B: case 0x07C: case 0x07D: case 0x07E: case 0x07F:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 
 		case 0x080: case 0x081: case 0x082: case 0x083: case 0x084: case 0x085: case 0x086: case 0x087:
@@ -151,9 +117,6 @@ namespace Memory
 			return Cartridge::ReadROM<Int>(physical_address);
 
 		case 0x1FC:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			if (physical_address <= 0x1FC007BF)
 				return Int(0);
 			else if (physical_address <= 0x1FC007FF)
@@ -162,9 +125,6 @@ namespace Memory
 				return Int(0);
 
 		default:
-#ifdef BREAK_ON_INVALID_MEMORY_ACCESS
-			assert(false);
-#endif
 			return Int(0);
 		}
 	}
@@ -193,11 +153,9 @@ namespace Memory
 			break;
 
 		case 0x041:
-			assert(false);
 			break;
 
 		case 0x042:
-			assert(false);
 			break;
 
 		case 0x043:
@@ -209,7 +167,6 @@ namespace Memory
 			break;
 
 		case 0x045:
-			assert(false);
 			break;
 
 		case 0x046:
@@ -225,14 +182,12 @@ namespace Memory
 
 		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
 		case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
-			assert(false);
 			break;
 
 		case 0x060: case 0x061: case 0x062: case 0x063: case 0x064: case 0x065: case 0x066: case 0x067:
 		case 0x068: case 0x069: case 0x06A: case 0x06B: case 0x06C: case 0x06D: case 0x06E: case 0x06F:
 		case 0x070: case 0x071: case 0x072: case 0x073: case 0x074: case 0x075: case 0x076: case 0x077:
 		case 0x078: case 0x079: case 0x07A: case 0x07B: case 0x07C: case 0x07D: case 0x07E: case 0x07F:
-			assert(false);
 			break;
 
 		case 0x080: case 0x081: case 0x082: case 0x083: case 0x084: case 0x085: case 0x086: case 0x087:
@@ -290,7 +245,6 @@ namespace Memory
 			break;
 
 		case 0x1FC:
-			assert(false);
 			if (physical_address <= 0x1FC007BF)
 				;
 			else if (physical_address <= 0x1FC007FF)
@@ -300,7 +254,7 @@ namespace Memory
 			break;
 
 		default:
-			assert(false);
+			break;
 		}
 	}
 
@@ -330,11 +284,20 @@ namespace Memory
 	}
 
 
+	template<std::size_t number_of_bytes>
+	void ByteswappedGenericWrite(void* destination, const auto data)
+	{
+		const auto byteswapped_data = std::byteswap(data);
+		std::memcpy(destination, &byteswapped_data, sizeof data);
+	}
+
+
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadPhysical, const u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WritePhysical, const u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(GenericRead, const void*)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(GenericWrite, void*)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ByteswappedGenericRead, const void*)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(ByteswappedGenericWrite, void*)
 
 	template u8 ByteswapOnLittleEndian<u8>(const u8);
 	template s8 ByteswapOnLittleEndian<s8>(const s8);

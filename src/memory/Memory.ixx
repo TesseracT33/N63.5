@@ -12,12 +12,6 @@ import <cstring>;
 
 namespace Memory
 {
-	template<std::integral Int>
-	Int InvalidRead(const u32 addr);
-
-	template<std::integral Int>
-	void InvalidWrite(const u32 addr, const Int data);
-
 	export
 	{
 		/* Use this function to do a conversion between little and big endian if necessary,
@@ -49,5 +43,8 @@ namespace Memory
 
 		template<std::integral Int>
 		Int ByteswappedGenericRead(const void* source);
+
+		template<std::size_t number_of_bytes>
+		void ByteswappedGenericWrite(void* destination, const auto data);
 	}
 }

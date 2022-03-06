@@ -9,11 +9,15 @@ namespace Renderer
 		assert(renderer != nullptr);
 		Renderer::renderer = renderer;
 		RecreateTexture();
+		rendering_is_enabled = false;
 	}
 
 
 	void Render()
 	{
+		if (!rendering_is_enabled)
+			return;
+
 		void* locked_pixels = nullptr;
 		int locked_pixels_pitch = 0;
 		SDL_LockTexture(texture, nullptr, &locked_pixels, &locked_pixels_pitch);
@@ -55,7 +59,7 @@ namespace Renderer
 	{
 		if constexpr (pixel_format == PixelFormat::Blank)
 		{
-			/* TODO: not sure what to do here yet. */
+			rendering_is_enabled = false;
 		}
 		else if constexpr (pixel_format == PixelFormat::RGBA5553)
 		{
@@ -65,6 +69,7 @@ namespace Renderer
 				else                                                      return SDL_PIXELFORMAT_ABGR1555;
 			}();
 			framebuffer.bytes_per_pixel = 2;
+			rendering_is_enabled = true;
 		}
 		else if constexpr (pixel_format == PixelFormat::RGBA8888)
 		{
@@ -73,6 +78,7 @@ namespace Renderer
 				else                                                      return SDL_PIXELFORMAT_ABGR8888;
 			}();
 			framebuffer.bytes_per_pixel = 4;
+			rendering_is_enabled = true;
 		}
 		else
 		{
