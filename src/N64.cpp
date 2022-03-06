@@ -50,7 +50,9 @@ namespace N64
 				/* Run a few extra cycles if cpu_cycles_per_frame % num_halflines != 0 (quotient is equal to cycles_per_halfline). */
 				if (cpu_cycles_taken_this_frame < cpu_cycles_per_frame)
 				{
-					VR4300::Run(cpu_cycles_per_frame - cpu_cycles_taken_this_frame);
+					const int extra_cycles = cpu_cycles_per_frame - cpu_cycles_taken_this_frame;
+					cpu_cycles_until_update_queue = extra_cycles;
+					VR4300::Run(extra_cycles);
 					CheckEventQueue();
 				}
 				Renderer::Render();
