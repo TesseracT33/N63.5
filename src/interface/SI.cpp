@@ -19,9 +19,9 @@ namespace SI
 	{
 		constexpr u8 status_flag_mask = static_cast<u8>(status_flag);
 		if constexpr (status_flag == StatusFlag::INTERRUPT)
-			mem[SI_STATUS + 1] |= status_flag_mask;
+			mem[SI_STATUS + 2] |= status_flag_mask;
 		else
-			mem[SI_STATUS] |= status_flag_mask;
+			mem[SI_STATUS + 3] |= status_flag_mask;
 	}
 
 
@@ -30,9 +30,9 @@ namespace SI
 	{
 		constexpr u8 status_flag_mask = static_cast<u8>(status_flag);
 		if constexpr (status_flag == StatusFlag::INTERRUPT)
-			mem[SI_STATUS + 1] &= ~status_flag_mask;
+			mem[SI_STATUS + 2] &= ~status_flag_mask;
 		else
-			mem[SI_STATUS] &= ~status_flag_mask;
+			mem[SI_STATUS + 3] &= ~status_flag_mask;
 	}
 
 
