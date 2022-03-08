@@ -33,7 +33,7 @@ namespace MI
 	{
 		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT + 3] |= interrupt_type_mask;
-		if (mem[MI_INTERRUPT + 3] & mem[MI_MASK])
+		if (mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3])
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
@@ -45,7 +45,7 @@ namespace MI
 	{
 		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
 		mem[MI_INTERRUPT + 3] &= ~interrupt_type_mask;
-		if (!(mem[MI_INTERRUPT + 3] & mem[MI_MASK]))
+		if (!(mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3]))
 		{
 			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
 		}
@@ -110,34 +110,34 @@ namespace MI
 			static constexpr s32   set_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x800);
 			
 			/* TODO: unclear what would happen if two adjacent bits would be set */
-			if (data & clear_sp_mask)
+			if (word & clear_sp_mask)
 				ClearInterruptMask<InterruptType::SP>();
-			else if (data & set_sp_mask)
+			else if (word & set_sp_mask)
 				SetInterruptMask<InterruptType::SP>();
 
-			if (data & clear_si_mask)
+			if (word & clear_si_mask)
 				ClearInterruptMask<InterruptType::SI>();
-			else if (data & set_si_mask)
+			else if (word & set_si_mask)
 				SetInterruptMask<InterruptType::SI>();
 
-			if (data & clear_ai_mask)
+			if (word & clear_ai_mask)
 				ClearInterruptMask<InterruptType::AI>();
-			else if (data & set_ai_mask)
+			else if (word & set_ai_mask)
 				SetInterruptMask<InterruptType::AI>();
 
-			if (data & clear_vi_mask)
+			if (word & clear_vi_mask)
 				ClearInterruptMask<InterruptType::VI>();
-			else if (data & set_vi_mask)
+			else if (word & set_vi_mask)
 				SetInterruptMask<InterruptType::VI>();
 
-			if (data & clear_pi_mask)
+			if (word & clear_pi_mask)
 				ClearInterruptMask<InterruptType::PI>();
-			else if (data & set_pi_mask)
+			else if (word & set_pi_mask)
 				SetInterruptMask<InterruptType::PI>();
 
-			if (data & clear_dp_mask)
+			if (word & clear_dp_mask)
 				ClearInterruptMask<InterruptType::DP>();
-			else if (data & set_dp_mask)
+			else if (word & set_dp_mask)
 				SetInterruptMask<InterruptType::DP>();
 		}
 	}
