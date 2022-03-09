@@ -6,6 +6,75 @@ import :Operation;
 
 namespace VR4300
 {
+	/* Non-UB type punning between a struct register (COP0 register) and an u64. */
+	u64 StructToInt(const auto* struct_)
+	{
+		static_assert(sizeof(*struct_) == 4 || sizeof(*struct_) == 8, "Incorrectly sized struct given.");
+
+		if constexpr (sizeof(*struct_) == 4)
+		{
+			u32 ret;
+			std::memcpy(&ret, struct_, 4);
+			return static_cast<u64>(ret);
+		}
+		else
+		{
+			u64 ret;
+			std::memcpy(&ret, struct_, 8);
+			return ret;
+		}
+	}
+
+
+	void SetStructFromInt(auto* struct_, const u64 value)
+	{
+		static_assert(sizeof(*struct_) == 4 || sizeof(*struct_) == 8, "Incorrectly sized struct given.");
+
+		if constexpr (sizeof(*struct_) == 4)
+		{
+			u32 value_to_write = static_cast<u32>(value);
+			std::memcpy(struct_, &value_to_write, 4);
+		}
+		else
+		{
+			std::memcpy(struct_, &value, 8);
+		}
+
+		/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
+		if constexpr (notifies_cpu_on_write<decltype(*struct_)>)
+			struct_->NotifyCpuAfterWrite();
+	};
+
+	void SetStructFromIntMasked(auto* struct_, const u64 value, const u64 write_mask)
+	{
+		static_assert(sizeof(*struct_) == 4 || sizeof(*struct_) == 8, "Incorrectly sized struct given.");
+
+		if constexpr (sizeof(*struct_) == 4)
+		{
+			u32 struct_int;
+			std::memcpy(&struct_int, struct_, 4);
+			u32 value_to_write = u32(value & write_mask | struct_int & ~write_mask);
+			std::memcpy(struct_, &value_to_write, 4);
+		}
+		else
+		{
+			u64 struct_int;
+			std::memcpy(&struct_int, struct_, 8);
+			u64 value_to_write = value & write_mask | struct_int & ~write_mask;
+			std::memcpy(struct_, &value_to_write, 8);
+		}
+
+		if constexpr (notifies_cpu_on_write<decltype(*struct_)>)
+			struct_->NotifyCpuAfterWrite();
+	};
+
+
+	void InitializeRegisters()
+	{
+		cop0_reg.SetRaw(13, 0xB000'007F); /* cause register */
+	}
+
+
 	void COP0Registers::CauseRegister::NotifyCpuAfterWrite()
 	{
 		CheckInterrupts();
@@ -34,27 +103,6 @@ namespace VR4300
 
 	u64 COP0Registers::Get(const size_t register_index) const
 	{
-		/* Non-UB type punning between a struct register and an u64. */
-		auto StructToInt = [](const auto* struct_) -> u64
-		{
-			if constexpr (sizeof(*struct_) == 4)
-			{
-				u32 ret;
-				std::memcpy(&ret, struct_, 4);
-				return static_cast<u64>(ret);
-			}
-			else if constexpr (sizeof(*struct_) == 8)
-			{
-				u64 ret;
-				std::memcpy(&ret, struct_, 8);
-				return ret;
-			}
-			else
-			{
-				static_assert(false, "Incorrectly sized struct given.");
-			}
-		};
-
 		switch (register_index)
 		{
 		case 0: return StructToInt(&index);
@@ -87,56 +135,10 @@ namespace VR4300
 
 	void COP0Registers::Set(const size_t register_index, const u64 value)
 	{
-		/* Non-UB type punning between a struct register and an u64. */
-		auto SetStructFromInt = [](auto* struct_, const u64 value) -> void 
-		{
-			if constexpr (sizeof(*struct_) == 4)
-			{
-				u32 value_to_write = static_cast<u32>(value);
-				std::memcpy(struct_, &value_to_write, 4);
-			}
-			else if constexpr (sizeof(*struct_) == 8)
-			{
-				std::memcpy(struct_, &value, 8);
-			}
-			else
-			{
-				static_assert(false, "Incorrectly sized struct given.");
-			}
-
-			/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
-			if constexpr (notifies_cpu_on_write<decltype(struct_)>)
-				struct_.NotifyCpuAfterWrite();
-		};
-
-		auto SetStructFromIntMasked = [](auto* struct_, const u64 value, const u64 write_mask) -> void
-		{
-			if constexpr (sizeof(*struct_) == 4)
-			{
-				u32 struct_int;
-				std::memcpy(&struct_int, struct_, 4);
-				u32 value_to_write = u32(value & write_mask | struct_int & ~write_mask);
-				std::memcpy(struct_, &value_to_write, 4);
-			}
-			else if constexpr (sizeof(*struct_) == 8)
-			{
-				u64 struct_int;
-				std::memcpy(&struct_int, struct_, 8);
-				u64 value_to_write = value & write_mask | struct_int & ~write_mask;
-				std::memcpy(struct_, &value_to_write, 8);
-			}
-			else
-			{
-				static_assert(false, "Incorrectly sized struct given.");
-			}
-
-			if constexpr (notifies_cpu_on_write<decltype(struct_)>)
-				struct_.NotifyCpuAfterWrite();
-		};
-
 		switch (register_index)
 		{ /* Masks are used for bits that are non-writeable. */
 		break; case 0: SetStructFromIntMasked(&index, value, 0x8000'003F);
+		break; case 1: SetStructFromIntMasked(&random, value, 0x0000'0040);
 		break; case 2: SetStructFromIntMasked(&entry_lo_0, value, 0x03FF'FFFF);
 		break; case 3: SetStructFromIntMasked(&entry_lo_1, value, 0x03FF'FFFF);
 		break; case 4: SetStructFromIntMasked(&context, value, 0xFFFF'FFFF'FFFF'FFF0);
@@ -156,6 +158,36 @@ namespace VR4300
 		break; case 20: SetStructFromIntMasked(&x_context, value, 0xFFFF'FFFF'FFFF'FFF0);
 		break; case 26: SetStructFromIntMasked(&parity_error, value, 0xFF);
 		break; case 28: SetStructFromIntMasked(&tag_lo, value, 0x0FFF'FFC0);
+		break; case 30: SetStructFromInt(&error_epc, value);
+		}
+	}
+
+
+	void COP0Registers::SetRaw(const size_t register_index, const u64 value)
+	{
+		switch (register_index)
+		{
+		break; case 0: SetStructFromInt(&index, value);
+		break; case 1: SetStructFromInt(&random, value);
+		break; case 2: SetStructFromInt(&entry_lo_0, value);
+		break; case 3: SetStructFromInt(&entry_lo_1, value);
+		break; case 4: SetStructFromInt(&context, value);
+		break; case 5: SetStructFromInt(&page_mask, value);
+		break; case 6: SetStructFromInt(&wired, value);
+		break; case 8: SetStructFromInt(&bad_v_addr, value);
+		break; case 9: SetStructFromInt(&count, value << 1); /* See the declaration of 'count' */
+		break; case 10: SetStructFromInt(&entry_hi, value);
+		break; case 11: SetStructFromInt(&compare, value << 1); /* See the declaration of 'compare' */
+		break; case 12: SetStructFromInt(&status, value);
+		break; case 13: SetStructFromInt(&cause, value);
+		break; case 14: SetStructFromInt(&epc, value);
+		break; case 16: SetStructFromInt(&config, value);
+		break; case 17: SetStructFromInt(&LL_addr, value);
+		break; case 18: SetStructFromInt(&watch_lo, value);
+		break; case 19: SetStructFromInt(&watch_hi, value);
+		break; case 20: SetStructFromInt(&x_context, value);
+		break; case 26: SetStructFromInt(&parity_error, value);
+		break; case 28: SetStructFromInt(&tag_lo, value);
 		break; case 30: SetStructFromInt(&error_epc, value);
 		}
 	}
@@ -216,7 +248,7 @@ namespace VR4300
 				return fpr[index];
 			else
 			{ /* If the index is odd, then the result is undefined.
-			     The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
 				const auto aligned_index = (index + (index & 1)) & 0x1F;
 				return fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32;
 			}
@@ -227,7 +259,7 @@ namespace VR4300
 				return std::bit_cast<f64, s64>(fpr[index]);
 			else
 			{ /* If the index is odd, then the result is undefined.
-			     The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
 				const auto aligned_index = (index + (index & 1)) & 0x1F;
 				return std::bit_cast<f64, s64>(fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32);
 			}
@@ -248,7 +280,7 @@ namespace VR4300
 				fpr[index] = data;
 			else
 			{ /* If the index is odd, then the result is undefined.
-			     The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
 				const auto aligned_index = (index + (index & 1)) & 0x1F;
 				fpr[aligned_index] = data & 0xFFFFFFFF;
 				fpr[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
@@ -260,7 +292,7 @@ namespace VR4300
 				fpr[index] = std::bit_cast<s64, f64>(data);
 			else
 			{ /* If the index is odd, then the result is undefined.
-			     The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
 				const auto aligned_index = (index + (index & 1)) & 0x1F;
 				const s64 conv = std::bit_cast<s64, f64>(data);
 				fpr[aligned_index] = conv & 0xFFFFFFFF;

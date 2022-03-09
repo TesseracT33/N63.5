@@ -29,7 +29,7 @@ namespace VR4300
 	u64 pc{}; /* Program counter */
 
 	u64 hi_reg{}, lo_reg{}; /* Contain the result of a double-word multiplication or division. */
-	
+
 	bool LL_bit{}; /* Read from / written to by load linked and store conditional instructions. */
 
 	/* CPU general-purpose registers */
@@ -98,8 +98,8 @@ namespace VR4300
 
 		struct /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
 		{ /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
-		     When we read from it, we shift it right one bit and then return it. When we write to it, we set it to the data shifted left one bit. */
-			u64 value; 
+			 When we read from it, we shift it right one bit and then return it. When we write to it, we set it to the data shifted left one bit. */
+			u64 value;
 		} count{};
 
 		struct /* (10) */
@@ -170,7 +170,7 @@ namespace VR4300
 
 		struct /* (15) */
 		{
-			u32 rev : 8; /* Processor revision number */
+			u32 rev : 8 = 0x00; /* Processor revision number */
 			u32 imp : 8 = 0x0B; /* Processor ID number */
 			u32 : 16;
 		} const pr_id{};
@@ -225,7 +225,7 @@ namespace VR4300
 		} parity_error{};
 
 		struct /* (27); Always returns 0 when read. */
-		{ 
+		{
 			u32 value = 0;
 		} const cache_error;
 
@@ -249,6 +249,7 @@ namespace VR4300
 
 		u64 Get(const size_t register_index) const;
 		void Set(const size_t register_index, const u64 value);
+		void SetRaw(const size_t register_index, const u64 value);
 	} cop0_reg{};
 
 	/* Floating point control register #31 */
@@ -319,4 +320,7 @@ namespace VR4300
 			distrib = { min, 0x1F };
 		}
 	} random_generator{};
+
+
+	void InitializeRegisters();
 }
