@@ -1211,6 +1211,8 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		if (pc_is_inside_branch_delay_slot)
 		{
 			pc -= 8;
+			pc_is_inside_branch_delay_slot = false;
+			jump_is_pending = false;
 		}
 		else
 		{

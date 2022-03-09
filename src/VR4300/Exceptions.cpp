@@ -1,6 +1,7 @@
 module VR4300:Exceptions;
 
 import :COP0;
+import :CPU;
 import :MMU;
 import :Operation;
 import :Registers;
@@ -40,19 +41,23 @@ namespace VR4300
 
 	void HandleException()
 	{
+		exception_has_occurred = false;
+
 		cop0_reg.cause.bd = pc_is_inside_branch_delay_slot;
 		if (cop0_reg.status.exl == 0)
 		{
-			/* If the instruction was executing in a branch delay slot, the CPU loads the EPC register
-			to the address of the branch instruction immediately preceding the branch delay slot. */
-			cop0_reg.epc.value = pc_is_inside_branch_delay_slot ? pc - 4 : pc;
+			/* Store to the EPC register the address of the instruction causing the exception.
+			   If the instruction was executing in a branch delay slot, the CPU loads the EPC register
+			   to the address of the branch instruction immediately preceding the branch delay slot. */
+			cop0_reg.epc.value = pc - 4 * (1 + pc_is_inside_branch_delay_slot);
 			cop0_reg.status.exl = 1;
 			SetActiveVirtualToPhysicalFunctions();
 		}
 		pc = exception_vector;
+		pc_is_inside_branch_delay_slot = false;
+		jump_is_pending = false;
 
 		std::invoke(exception_handler_fun);
-		exception_has_occurred = false;
 	}
 
 

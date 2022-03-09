@@ -23,13 +23,12 @@ namespace VR4300
 		{
 			if (jump_is_pending)
 			{
-				if (instructions_until_jump == 0)
+				if (instructions_until_jump-- == 0)
 				{
 					pc = addr_to_jump_to;
 					jump_is_pending = false;
 					pc_is_inside_branch_delay_slot = false;
 				}
-				else instructions_until_jump--;
 			}
 
 			ExecuteInstruction();
