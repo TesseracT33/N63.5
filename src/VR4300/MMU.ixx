@@ -14,9 +14,10 @@ namespace VR4300
 {
 	typedef u32(*VirtualToPhysicalAddressFun)(u64); /* Used in both 32-bit and 64-bit mode */
 
+	enum class AddressingMode { _32bit, _64bit } addressing_mode;
+
 	struct TLB_Entry
 	{
-		/* EntryLo0, EntryLo1 */
 		struct
 		{
 			u64     :  1;
@@ -25,21 +26,49 @@ namespace VR4300
 			u64 c   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
 			u64 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
 			u64     : 38;
-		} lo_0{}, lo_1{};
-		/* EntryHi */
-		u64 asid :  8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
-		u64      :  4;
-		u64 g    :  1; /* Global. If this bit is set, the processor ignores the ASID during TLB lookup. */
-		u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
-		u64      : 22;
-		u64 r    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
-		/* PageMask */
-		u64      : 13;
-		u64 mask : 12; /* Determines the virtual page size of the corresponding entry. */
-		u64      : 39;
+		} entry_lo[2]{};
+
+		struct
+		{
+			u64 asid :  8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
+			u64      :  4;
+			u64 g    :  1; /* Global. If this bit is set, the processor ignores the ASID during TLB lookup. */
+			u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
+			u64      : 22;
+			u64 r    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
+		} entry_hi{};
+
+		struct
+		{
+			u64       : 13;
+			u64 value : 12; /* Determines the virtual page size of the corresponding entry. */
+			u64       : 39;
+		} page_mask{};
+
+		u64 vpn2_shifted;
+		u64 address_vpn2_mask;
+		u64 address_offset_mask;
+		u64 address_vpn_even_odd_mask;
 	};
 
-	std::array<TLB_Entry, 32> TLB_entries{};
+	std::array<TLB_Entry, 32> tlb_entries{};
+
+	/* Given a TLB entry page size, how many bits is the virtual/physical address offset? */
+	static constexpr std::array page_size_to_addr_offset_bit_length = [] {
+		std::array<u8, 4096> table{};
+		for (int i = 0; i < table.size(); i++) {
+			table[i] = [&] {
+				if (i == 0) return 12;
+				if (i <= 3) return 14;
+				if (i <= 15) return 16;
+				if (i <= 63) return 18;
+				if (i <= 255) return 20;
+				if (i <= 1023) return 22;
+				return 24;
+			}();
+		}
+		return table;
+	}();
 
 	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode32(u64);
 	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode64(u64);
@@ -49,7 +78,7 @@ namespace VR4300
 	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressKernelMode64(u64);
 
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddress(const u64 virt_addr);
+	u32 VirtualToPhysicalAddress(u64 virt_addr);
 
 	void SetActiveVirtualToPhysicalFunctions();
 
@@ -72,7 +101,6 @@ namespace VR4300
 		u64 bad_virt_addr;
 		u32 bad_vpn2;
 		u32 bad_asid;
-
 	} tlb_failure;
 
 	bool store_physical_address_on_load = false; /* For LL and LLD instructions; the phys addr is stored to the LLAddr register. */

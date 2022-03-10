@@ -79,7 +79,7 @@ namespace VR4300
 		struct /* (5) */
 		{
 			u32 : 13;
-			u32 mask : 12; /* Sets the page size for each TLB entry. 0 => 4 KB; 3 => 16 KB; 15 => 64 KB; 63 => 256 KB; 255 => 1 MB; 1023 => 4 MB; 4095 => 16 MB. Else, the operation of the TLB is undefined. */
+			u32 value : 12; /* Sets the page size for each TLB entry. 0 => 4 KB; 3 => 16 KB; 15 => 64 KB; 63 => 256 KB; 255 => 1 MB; 1023 => 4 MB; 4095 => 16 MB. Else, the operation of the TLB is undefined. */
 			u32 : 7;
 		} page_mask{};
 
@@ -109,7 +109,7 @@ namespace VR4300
 			u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
 			u64 : 22;
 			u64 r : 2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
-		} entry_hi{}; /* TODO can be 32 bits large with different lengths of VPN2 etc */
+		} entry_hi{};
 
 		struct CompareRegister /* (11); When equal to the Count register, interrupt bit IP(7) in the Cause register is set. Writes to this register clear said interrupt. */
 		{ /* On real HW, this register is 32 bits. Here, we make it 64 bits. See the description of the 'Count' register. */

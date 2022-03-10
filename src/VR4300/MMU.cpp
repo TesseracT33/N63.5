@@ -13,17 +13,21 @@ namespace VR4300
 {
 	void SetActiveVirtualToPhysicalFunctions()
 	{
+		using enum AddressingMode;
+
 		if (cop0_reg.status.ksu == 0b00 || cop0_reg.status.erl == 1 || cop0_reg.status.exl == 1) /* Kernel mode */
 		{
 			if (cop0_reg.status.kx == 0)
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>;
+				addressing_mode = _32bit;
 			}
 			else
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>;
+				addressing_mode = _64bit;
 			}
 		}
 		else if (cop0_reg.status.ksu == 0b01) /* Supervisor mode */
@@ -32,11 +36,13 @@ namespace VR4300
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>;
+				addressing_mode = _32bit;
 			}
 			else
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>;
+				addressing_mode = _64bit;
 			}
 		}
 		else if (cop0_reg.status.ksu == 0b10) /* User mode */
@@ -45,11 +51,13 @@ namespace VR4300
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>;
+				addressing_mode = _32bit;
 			}
 			else
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Write>;
+				addressing_mode = _64bit;
 			}
 		}
 		else /* Unknown?! */
@@ -246,92 +254,54 @@ namespace VR4300
 
 
 	template<MemoryAccess::Operation operation>
-	u32 VirtualToPhysicalAddress(const u64 virt_addr)
+	u32 VirtualToPhysicalAddress(u64 virt_addr)
 	{
-		/* Used for extracting the VPN from the virtual address;
-		   given the page mask register in a TLB entry, tells by how many positions the virtual address needs to be shifted to the left. */
-		static constexpr std::array page_size_to_vaddr_vpn_shift_count = [] {
-			std::array<u8, 4096> table{};
-			for (int i = 0; i < table.size(); i++) {
-				table[i] = [&] {
-					if (i == 0) return 12;
-					if (i <= 3) return 14;
-					if (i <= 15) return 16;
-					if (i <= 63) return 18;
-					if (i <= 255) return 20;
-					if (i <= 1023) return 22;
-					return 24;
-				}();
-			}
-			return table;
-		}();
+		if (addressing_mode == AddressingMode::_32bit)
+			virt_addr &= 0xFFFF'FFFF;
 
-		/* Used for extracting the offset from the virtual address;
-		   given the page mask register in a TLB entry, tells what the virtual address need to be masked with. */
-		static constexpr std::array page_size_to_vaddr_offset_mask = [] {
-			std::array<u32, 4096> table{};
-			for (int i = 0; i < table.size(); i++) {
-				table[i] = [&] {
-					if (i == 0) return 0xFFF;
-					if (i <= 3) return 0x3FFF;
-					if (i <= 15) return 0xFFFF;
-					if (i <= 63) return 0x3FFFF;
-					if (i <= 255) return 0xFFFFF;
-					if (i <= 1023) return 0x3FFFFF;
-					return 0xFFFFFF;
-				}();
-			}
-			return table;
-		}();
-
-		/* TODO If there are two or more TLB entries that coincide, the TLB operation is not
-correctly executed. In this case, the TLB-Shutdown (TS) bit of the status register
-is set to 1, and then the TLB cannot be used. */
-
-		u32 addr_vpn2 = 0;
-
-		for (const TLB_Entry& entry : TLB_entries)
+		for (const TLB_Entry& entry : tlb_entries)
 		{
-			const auto virtual_page_size = entry.mask;
-			const u32 addr_vpn = virt_addr >> page_size_to_vaddr_vpn_shift_count[virtual_page_size] & 0xFFF'FFFF; /* VPN is at most 28 bits */
-			addr_vpn2 = addr_vpn >> 1; /* VPN divided by two */
+			/* Compare the virtual page number (divided by two) (VPN2) of the entry with the VPN2 of the virtual address */
+			if ((virt_addr & entry.address_vpn2_mask) != entry.vpn2_shifted)
+				continue;
 
-			/* For a TLB hit to occur, the virtual page number of the virtual address must coincide with the one in the TLB entry.
-			   Also, if the global bit is clear, the entry's ASID (Address space ID field) must coincide with the one in the EntryHi register. */
-			if (entry.vpn2 != addr_vpn2 || (!entry.g && entry.asid != cop0_reg.entry_hi.asid))
+			/* If the global bit is clear, the entry's ASID (Address space ID field) must coincide with the one in the EntryHi register. */
+			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0_reg.entry_hi.asid)
 				continue;
 
 			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */
-			const auto& entry_reg = (addr_vpn & 1) ? entry.lo_1 : entry.lo_0;
+			const bool entry_reg_offset = virt_addr & entry.address_vpn_even_odd_mask;
 
-			if (!entry_reg.v) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
+			if (!entry.entry_lo[entry_reg_offset].v) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
 			{
 				SignalException<Exception::TLB_Invalid, operation>();
 				tlb_failure.bad_virt_addr = virt_addr;
-				tlb_failure.bad_vpn2 = addr_vpn2;
+				tlb_failure.bad_vpn2 = entry.entry_hi.vpn2;
 				tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
 				return 0;
 			}
 			if constexpr (operation == MemoryAccess::Operation::Write)
 			{
-				if (!entry_reg.d) /* If the "Dirty" bit is clear, writing is disallowed. */
+				if (!entry.entry_lo[entry_reg_offset].d) /* If the "Dirty" bit is clear, writing is disallowed. */
 				{
 					SignalException<Exception::TLB_Modification, operation>();
 					tlb_failure.bad_virt_addr = virt_addr;
-					tlb_failure.bad_vpn2 = addr_vpn2;
+					tlb_failure.bad_vpn2 = entry.entry_hi.vpn2;
 					tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
 					return 0;
 				}
 			}
-			const u32 virt_addr_offset = virt_addr & page_size_to_vaddr_offset_mask[virtual_page_size];
-			const u32 phys_addr = u32(virt_addr_offset | entry_reg.pfn << page_size_to_vaddr_vpn_shift_count[virtual_page_size]);
-			/* TODO 'C' (0-7) is the page coherency attribute. Cache is not used if C == 2, else, it is used. */
-			return phys_addr;
+
+			const u32 physical_address = entry.entry_lo[entry_reg_offset].pfn | virt_addr & entry.address_offset_mask;
+			return physical_address;
 		}
 
-		SignalException<Exception::TLB_Miss, operation>(); /* todo: distinguish between 32 and 64 bit */
+		if (addressing_mode == AddressingMode::_32bit)
+			SignalException<Exception::TLB_Miss, operation>();
+		else
+			SignalException<Exception::XTLB_Miss, operation>();
 		tlb_failure.bad_virt_addr = virt_addr;
-		tlb_failure.bad_vpn2 = addr_vpn2;
+		tlb_failure.bad_vpn2 = virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
 		tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
 		return 0;
 	}
@@ -503,6 +473,6 @@ is set to 1, and then the TLB cannot be used. */
 	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>(const u64);
 	template u32 VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>(const u64);
 
-	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(const u64);
-	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Write>(const u64);
+	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Read>(u64);
+	template u32 VirtualToPhysicalAddress<MemoryAccess::Operation::Write>(u64);
 }
