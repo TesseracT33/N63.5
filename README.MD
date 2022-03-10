@@ -1,5 +1,5 @@
 # Summary
-An experimental, work-in-progress N64 emulator. Does not boot any games or show any graphical output, yet.
+An experimental, work-in-progress N64 emulator. Does not boot any games yet, but can run test roms.
 
 # Running
 The path to the rom file used is supplied as the first command-line argument.
@@ -17,3 +17,8 @@ Linker -- Input -- Additional Dependencies:
 SDL2.lib; SDL2main.lib; glew32.lib; Opengl32.lib
 
 In addition: SDL2.dll and glew32.dll.
+
+# Tests
+| Test  | Status |
+| ----- | ------ |
+| Dillon's CPU tests | :white_check_mark: |
