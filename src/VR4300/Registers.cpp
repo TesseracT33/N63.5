@@ -71,7 +71,7 @@ namespace VR4300
 
 	void InitializeRegisters()
 	{
-		cop0_reg.SetRaw(13, 0xB000'007F); /* cause register */
+		cop0_reg.SetRaw(13, 0xB000'007C); /* cause register */
 	}
 
 
@@ -137,28 +137,28 @@ namespace VR4300
 	{
 		switch (register_index)
 		{ /* Masks are used for bits that are non-writeable. */
-		break; case 0: SetStructFromIntMasked(&index, value, 0x8000'003F);
-		break; case 1: SetStructFromIntMasked(&random, value, 0x0000'0040);
-		break; case 2: SetStructFromIntMasked(&entry_lo_0, value, 0x03FF'FFFF);
-		break; case 3: SetStructFromIntMasked(&entry_lo_1, value, 0x03FF'FFFF);
-		break; case 4: SetStructFromIntMasked(&context, value, 0xFFFF'FFFF'FFFF'FFF0);
-		break; case 5: SetStructFromIntMasked(&page_mask, value, 0x01FF'E000);
-		break; case 6: SetStructFromIntMasked(&wired, value, 0x3F);
-		break; case 8: SetStructFromInt(&bad_v_addr, value);
-		break; case 9: SetStructFromInt(&count, value << 1); /* See the declaration of 'count' */
-		break; case 10: SetStructFromIntMasked(&entry_hi, value, 0xC000'00FF'FFFF'E0FF);
-		break; case 11: SetStructFromInt(&compare, value << 1); /* See the declaration of 'compare' */
-		break; case 12: SetStructFromIntMasked(&status, value, 0xFF57'FFFF); /* TODO: unsure about upper four bits */
-		break; case 13: SetStructFromIntMasked(&cause, value, 0x300);
-		break; case 14: SetStructFromInt(&epc, value);
-		break; case 16: SetStructFromIntMasked(&config, value, 0x7F00'800F);
-		break; case 17: SetStructFromInt(&LL_addr, value);
-		break; case 18: SetStructFromIntMasked(&watch_lo, value, 0xFFFFFFFB);
-		break; case 19: SetStructFromInt(&watch_hi, value);
-		break; case 20: SetStructFromIntMasked(&x_context, value, 0xFFFF'FFFF'FFFF'FFF0);
+		break; case  0: SetStructFromIntMasked(&index      , value, 0x8000'003F);
+		break; case  1: SetStructFromIntMasked(&random     , value, 0x0000'0040);
+		break; case  2: SetStructFromIntMasked(&entry_lo_0 , value, 0x03FF'FFFF);
+		break; case  3: SetStructFromIntMasked(&entry_lo_1 , value, 0x03FF'FFFF);
+		break; case  4: SetStructFromIntMasked(&context    , value, 0xFFFF'FFFF'FFFF'FFF0);
+		break; case  5: SetStructFromIntMasked(&page_mask  , value, 0x01FF'E000);
+		break; case  6: SetStructFromIntMasked(&wired      , value, 0x3F);
+		break; case  8: SetStructFromInt      (&bad_v_addr , value);
+		break; case  9: SetStructFromInt      (&count      , value << 1); /* See the declaration of 'count' */
+		break; case 10: SetStructFromIntMasked(&entry_hi    , value, 0xC000'00FF'FFFF'E0FF);
+		break; case 11: SetStructFromInt      (&compare     , value << 1); /* See the declaration of 'compare' */
+		break; case 12: SetStructFromIntMasked(&status      , value, 0xFF57'FFFF);
+		break; case 13: SetStructFromIntMasked(&cause       , value, 0x300);
+		break; case 14: SetStructFromInt      (&epc         , value);
+		break; case 16: SetStructFromIntMasked(&config      , value, 0x7F00'800F);
+		break; case 17: SetStructFromInt      (&LL_addr     , value);
+		break; case 18: SetStructFromIntMasked(&watch_lo    , value, 0xFFFF'FFFB);
+		break; case 19: SetStructFromInt      (&watch_hi    , value);
+		break; case 20: SetStructFromIntMasked(&x_context   , value, 0xFFFF'FFFF'FFFF'FFF0);
 		break; case 26: SetStructFromIntMasked(&parity_error, value, 0xFF);
-		break; case 28: SetStructFromIntMasked(&tag_lo, value, 0x0FFF'FFC0);
-		break; case 30: SetStructFromInt(&error_epc, value);
+		break; case 28: SetStructFromIntMasked(&tag_lo      , value, 0x0FFF'FFC0);
+		break; case 30: SetStructFromInt      (&error_epc   , value);
 		}
 	}
 
@@ -167,28 +167,28 @@ namespace VR4300
 	{
 		switch (register_index)
 		{
-		break; case 0: SetStructFromInt(&index, value);
-		break; case 1: SetStructFromInt(&random, value);
-		break; case 2: SetStructFromInt(&entry_lo_0, value);
-		break; case 3: SetStructFromInt(&entry_lo_1, value);
-		break; case 4: SetStructFromInt(&context, value);
-		break; case 5: SetStructFromInt(&page_mask, value);
-		break; case 6: SetStructFromInt(&wired, value);
-		break; case 8: SetStructFromInt(&bad_v_addr, value);
-		break; case 9: SetStructFromInt(&count, value << 1); /* See the declaration of 'count' */
-		break; case 10: SetStructFromInt(&entry_hi, value);
-		break; case 11: SetStructFromInt(&compare, value << 1); /* See the declaration of 'compare' */
-		break; case 12: SetStructFromInt(&status, value);
-		break; case 13: SetStructFromInt(&cause, value);
-		break; case 14: SetStructFromInt(&epc, value);
-		break; case 16: SetStructFromInt(&config, value);
-		break; case 17: SetStructFromInt(&LL_addr, value);
-		break; case 18: SetStructFromInt(&watch_lo, value);
-		break; case 19: SetStructFromInt(&watch_hi, value);
-		break; case 20: SetStructFromInt(&x_context, value);
+		break; case  0: SetStructFromInt(&index       , value);
+		break; case  1: SetStructFromInt(&random      , value);
+		break; case  2: SetStructFromInt(&entry_lo_0  , value);
+		break; case  3: SetStructFromInt(&entry_lo_1  , value);
+		break; case  4: SetStructFromInt(&context     , value);
+		break; case  5: SetStructFromInt(&page_mask   , value);
+		break; case  6: SetStructFromInt(&wired       , value);
+		break; case  8: SetStructFromInt(&bad_v_addr  , value);
+		break; case  9: SetStructFromInt(&count       , value << 1); /* See the declaration of 'count' */
+		break; case 10: SetStructFromInt(&entry_hi    , value);
+		break; case 11: SetStructFromInt(&compare     , value << 1); /* See the declaration of 'compare' */
+		break; case 12: SetStructFromInt(&status      , value);
+		break; case 13: SetStructFromInt(&cause       , value);
+		break; case 14: SetStructFromInt(&epc         , value);
+		break; case 16: SetStructFromInt(&config      , value);
+		break; case 17: SetStructFromInt(&LL_addr     , value);
+		break; case 18: SetStructFromInt(&watch_lo    , value);
+		break; case 19: SetStructFromInt(&watch_hi    , value);
+		break; case 20: SetStructFromInt(&x_context   , value);
 		break; case 26: SetStructFromInt(&parity_error, value);
-		break; case 28: SetStructFromInt(&tag_lo, value);
-		break; case 30: SetStructFromInt(&error_epc, value);
+		break; case 28: SetStructFromInt(&tag_lo      , value);
+		break; case 30: SetStructFromInt(&error_epc   , value);
 		}
 	}
 
@@ -204,6 +204,7 @@ namespace VR4300
 			case 0b01: return FE_TOWARDZERO; /* RZ */
 			case 0b10: return FE_UPWARD;     /* RP */
 			case 0b11: return FE_DOWNWARD;   /* RM */
+			default: assert(false);
 			}
 		}();
 		std::fesetround(new_rounding_mode);
