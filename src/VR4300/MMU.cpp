@@ -11,6 +11,18 @@ import Memory;
 
 namespace VR4300
 {
+	void InitializeMMU()
+	{
+		for (TLB_Entry& entry : tlb_entries)
+		{
+			entry.entry_hi.asid = 0xFF;
+			entry.entry_hi.g = 1;
+			entry.entry_hi.vpn2 = 0x07FF'FFFF;
+			entry.vpn2_shifted = 0xFFFF'FFFF'FFFF'FFFF;
+		}
+	}
+
+
 	void SetActiveVirtualToPhysicalFunctions()
 	{
 		using enum AddressingMode;

@@ -66,14 +66,14 @@ namespace VR4300
 					entry.entry_hi.vpn2 == cop0_reg.entry_hi.vpn2 &&
 					entry.entry_hi.r == cop0_reg.entry_hi.r;
 			});
-		if (tlb_index == std::end(tlb_entries))
+		if (tlb_index == tlb_entries.end())
 		{
 			cop0_reg.index.p = 1;
 		}
 		else
 		{
 			cop0_reg.index.p = 0;
-			cop0_reg.index.value = std::distance(std::begin(tlb_entries), tlb_index);
+			cop0_reg.index.value = std::distance(tlb_entries.begin(), tlb_index);
 		}
 
 		AdvancePipeline<1>();
@@ -87,10 +87,10 @@ namespace VR4300
 		   pointed at by the contents of the Index register. The G bit (which controls ASID matching)
 		   read from the TLB is written into both of the EntryLo0 and EntryLo1 registers. */
 		const auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
-		std::memcpy(&cop0_reg.entry_lo_0, &tlb_entries[tlb_index].entry_lo[0], 8);
-		std::memcpy(&cop0_reg.entry_lo_1, &tlb_entries[tlb_index].entry_lo[1], 8);
+		std::memcpy(&cop0_reg.entry_lo_0, &tlb_entries[tlb_index].entry_lo[0], 4);
+		std::memcpy(&cop0_reg.entry_lo_1, &tlb_entries[tlb_index].entry_lo[1], 4);
 		std::memcpy(&cop0_reg.entry_hi  , &tlb_entries[tlb_index].entry_hi   , 8);
-		std::memcpy(&cop0_reg.page_mask , &tlb_entries[tlb_index].page_mask  , 8);
+		std::memcpy(&cop0_reg.page_mask , &tlb_entries[tlb_index].page_mask  , 4);
 		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
 		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = tlb_entries[tlb_index].entry_hi.g;
 		AdvancePipeline<1>();
@@ -104,10 +104,10 @@ namespace VR4300
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
 		const auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 8);
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 8);
+		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
+		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_hi   , &cop0_reg.entry_hi  , 8);
-		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 8);
+		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 4);
 		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 		/* Compute things that will make the virtual-to-physical-address process faster. */
 		const auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
@@ -131,10 +131,10 @@ namespace VR4300
 		const auto tlb_wired_index = cop0_reg.wired.value & 0x1F;
 		if (tlb_index < tlb_wired_index) /* TODO: <= ? */
 			return;
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 8);
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 8);
+		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
+		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_hi   , &cop0_reg.entry_hi  , 8);
-		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 8);
+		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 4);
 		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 
 		const auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];

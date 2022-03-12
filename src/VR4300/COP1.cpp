@@ -22,7 +22,7 @@ namespace VR4300
 	};
 
 
-	void Initialize_FPU()
+	void InitializeFPU()
 	{
 		std::fesetround(FE_TONEAREST); /* corresponds to fcr31.rm == 0b00 */
 	}

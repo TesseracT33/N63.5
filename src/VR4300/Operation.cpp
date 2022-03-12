@@ -54,7 +54,8 @@ namespace VR4300
 		jump_is_pending = false;
 
 		InitializeRegisters();
-		Initialize_FPU();
+		InitializeFPU();
+		InitializeMMU();
 
 		if (hle_pif)
 		{
@@ -124,9 +125,8 @@ namespace VR4300
 		gpr.Set(20, 1);
 		gpr.Set(22, 0x3F);
 		gpr.Set(29, 0xA400'1FF0);
-		cop0_reg.SetRaw(1, 0x0000'001F); /* random */
-		cop0_reg.SetRaw(12, 0x7040'0004); /* status */
-		cop0_reg.SetRaw(16, 0x0006'E463); /* config */
+		cop0_reg.SetRaw(cop0_index_status, 0x7040'0004);
+		cop0_reg.SetRaw(cop0_index_config, 0x7006'E463);
 
 		for (unsigned i = 0; i < 0x1000; i += 4) /* no clue if some kind of DMA */
 			WriteVirtual<u32>(0xA400'0000 + i, ReadVirtual<u32>(0xB000'0000 + i));

@@ -20,12 +20,12 @@ namespace VR4300
 	{
 		struct
 		{
-			u64     :  1;
-			u64 v   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
-			u64 d   :  1; /* Dirty. If this bit is set, the page is marked as writeable. */
-			u64 c   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
-			u64 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
-			u64     : 38;
+			u32     :  1;
+			u32 v   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
+			u32 d   :  1; /* Dirty. If this bit is set, the page is marked as writeable. */
+			u32 c   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
+			u32 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
+			u32     :  6;
 		} entry_lo[2]{};
 
 		struct
@@ -40,9 +40,9 @@ namespace VR4300
 
 		struct
 		{
-			u64       : 13;
-			u64 value : 12; /* Determines the virtual page size of the corresponding entry. */
-			u64       : 39;
+			u32       : 13;
+			u32 value : 12; /* Determines the virtual page size of the corresponding entry. */
+			u32       :  7;
 		} page_mask{};
 
 		u64 vpn2_shifted;
@@ -51,7 +51,12 @@ namespace VR4300
 		u64 address_vpn_even_odd_mask;
 	};
 
-	std::array<TLB_Entry, 32> tlb_entries{};
+	struct TLB_Failure
+	{
+		u64 bad_virt_addr;
+		u64 bad_vpn2;
+		u64 bad_asid;
+	} tlb_failure;
 
 	/* Given a TLB entry page size, how many bits is the virtual/physical address offset? */
 	static constexpr std::array page_size_to_addr_offset_bit_length = [] {
@@ -69,6 +74,8 @@ namespace VR4300
 		}
 		return table;
 	}();
+
+	void InitializeMMU();
 
 	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode32(u64);
 	template<MemoryAccess::Operation operation> u32 VirtualToPhysicalAddressUserMode64(u64);
@@ -93,15 +100,10 @@ namespace VR4300
 
 	u32 FetchInstruction(u64 virtual_address);
 
+	std::array<TLB_Entry, 32> tlb_entries{};
+
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read = nullptr;
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write = nullptr;
-
-	struct TLB_Failure
-	{
-		u64 bad_virt_addr;
-		u32 bad_vpn2;
-		u32 bad_asid;
-	} tlb_failure;
 
 	bool store_physical_address_on_load = false; /* For LL and LLD instructions; the phys addr is stored to the LLAddr register. */
 

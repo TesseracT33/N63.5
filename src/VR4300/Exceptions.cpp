@@ -6,8 +6,6 @@ import :MMU;
 import :Operation;
 import :Registers;
 
-#include "../debug/DebugOptions.h"
-
 namespace VR4300
 {
 	template<Exception exception, MemoryAccess::Operation operation>
@@ -173,20 +171,6 @@ namespace VR4300
 		else
 			return vector_base_addr[cop0_reg.status.bev] | 0x0180;
 	}
-
-
-	struct ExceptionContext
-	{
-		OperatingMode operating_mode;
-		bool interrupts_enabled;
-		u64 pc;
-
-		void SaveContext()
-		{
-			this->operating_mode = VR4300::operating_mode;
-			this->pc = VR4300::pc;
-		}
-	} exception_context;
 
 
 	template<MemoryAccess::Operation operation>

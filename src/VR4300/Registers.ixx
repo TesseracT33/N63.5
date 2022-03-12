@@ -43,6 +43,30 @@ namespace VR4300
 	} gpr;
 
 	/* COP0 registers. Used for exception handling and memory management. */
+	constexpr static int cop0_index_index = 0;
+	constexpr static int cop0_index_random = 1;
+	constexpr static int cop0_index_entry_lo_0 = 2;
+	constexpr static int cop0_index_entry_lo_1 = 3;
+	constexpr static int cop0_index_context = 4;
+	constexpr static int cop0_index_page_mask = 5;
+	constexpr static int cop0_index_wired = 6;
+	constexpr static int cop0_index_bad_v_addr = 8;
+	constexpr static int cop0_index_count = 9;
+	constexpr static int cop0_index_entry_hi = 10;
+	constexpr static int cop0_index_compare = 11;
+	constexpr static int cop0_index_status = 12;
+	constexpr static int cop0_index_cause = 13;
+	constexpr static int cop0_index_epc = 14;
+	constexpr static int cop0_index_pr_id = 15;
+	constexpr static int cop0_index_config = 16;
+	constexpr static int cop0_index_ll_addr = 17;
+	constexpr static int cop0_index_watch_lo = 18;
+	constexpr static int cop0_index_watch_hi = 19;
+	constexpr static int cop0_index_x_context = 20;
+	constexpr static int cop0_index_parity_error = 26;
+	constexpr static int cop0_index_tag_lo = 28;
+	constexpr static int cop0_index_error_epc = 30;
+
 	struct COP0Registers
 	{
 		struct /* (0) */
@@ -128,15 +152,14 @@ namespace VR4300
 			u32 sx : 1; /* Enables 64-bit addressing and operations in Supervisor mode (0: 32-bit; 1: 64-bit) */
 			u32 kx : 1; /* Enables 64-bit addressing in Kernel mode (0: 32-bit; 1: 64-bit) */
 			u32 im : 8; /* Interrupt Mask fields (0: disabled; 1: enabled). Software interrupt (IM0-IM1); External normal interrupts (IM2-IM6); Timer interrupt (IM7). */
-			u32 de : 1;
-			u32 ce : 1;
-			u32 ch : 1;
+			u32 : 2;
+			u32 ch : 1; /* CP0 condition bit */
 			u32 : 1;
-			u32 sr : 1;
-			u32 ts : 1;
-			u32 bev : 1;
+			u32 sr : 1; /* Indicates whether a soft reset or NMI has occurred */
+			u32 ts : 1; /* Indicates that TLB shutdown has occurred (read-only) */
+			u32 bev : 1; /* Controls the location of TLB miss and general purpose exception vectors (0: normal; 1: bootstrap) */
 			u32 : 1;
-			u32 its : 1;
+			u32 its : 1; /* Enables instruction trace support */
 			u32 re : 1; /* Reverse-Endian bit, enables reverse of system endianness in User mode (0: disabled; 1: reversed) */
 			u32 fr : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
 			u32 rp : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
@@ -170,7 +193,7 @@ namespace VR4300
 
 		struct /* (15) */
 		{
-			u32 rev : 8 = 0x00; /* Processor revision number */
+			u32 rev : 8 = 0x22; /* Processor revision number */
 			u32 imp : 8 = 0x0B; /* Processor ID number */
 			u32 : 16;
 		} const pr_id{};
