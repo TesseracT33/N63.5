@@ -244,14 +244,14 @@ namespace VR4300
 	}
 
 
-	template<typename FPU_NumericType>
-	FPU_NumericType FGR::Get(const size_t index) const
+	template<typename FPUNumericType>
+	FPUNumericType FGR::Get(const size_t index) const
 	{
-		if constexpr (std::is_same_v<FPU_NumericType, s32>)
+		if constexpr (std::is_same_v<FPUNumericType, s32>)
 			return s32(fpr[index]);
-		else if constexpr (std::is_same_v<FPU_NumericType, f32>)
+		else if constexpr (std::is_same_v<FPUNumericType, f32>)
 			return std::bit_cast<f32, s32>(s32(fpr[index]));
-		else if constexpr (std::is_same_v<FPU_NumericType, s64>)
+		else if constexpr (std::is_same_v<FPUNumericType, s64>)
 		{
 			if (cop0_reg.status.fr)
 				return fpr[index];
@@ -262,7 +262,7 @@ namespace VR4300
 				return fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32;
 			}
 		}
-		else if constexpr (std::is_same_v<FPU_NumericType, f64>)
+		else if constexpr (std::is_same_v<FPUNumericType, f64>)
 		{
 			if (cop0_reg.status.fr)
 				return std::bit_cast<f64, s64>(fpr[index]);
@@ -276,14 +276,14 @@ namespace VR4300
 	}
 
 
-	template<typename FPU_NumericType>
-	void FGR::Set(const size_t index, const FPU_NumericType data)
+	template<typename FPUNumericType>
+	void FGR::Set(const size_t index, const FPUNumericType data)
 	{
-		if constexpr (std::is_same_v<FPU_NumericType, s32>)
+		if constexpr (std::is_same_v<FPUNumericType, s32>)
 			fpr[index] = data;
-		else if constexpr (std::is_same_v<FPU_NumericType, f32>)
+		else if constexpr (std::is_same_v<FPUNumericType, f32>)
 			fpr[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
-		else if constexpr (std::is_same_v<FPU_NumericType, s64>)
+		else if constexpr (std::is_same_v<FPUNumericType, s64>)
 		{
 			if (cop0_reg.status.fr)
 				fpr[index] = data;
@@ -295,7 +295,7 @@ namespace VR4300
 				fpr[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 			}
 		}
-		else if constexpr (std::is_same_v<FPU_NumericType, f64>)
+		else if constexpr (std::is_same_v<FPUNumericType, f64>)
 		{
 			if (cop0_reg.status.fr)
 				fpr[index] = std::bit_cast<s64, f64>(data);

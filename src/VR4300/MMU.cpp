@@ -304,7 +304,7 @@ namespace VR4300
 				}
 			}
 
-			const u32 physical_address = entry.entry_lo[entry_reg_offset].pfn | virt_addr & entry.address_offset_mask;
+			const u32 physical_address = u32(entry.entry_lo[entry_reg_offset].pfn | virt_addr & entry.address_offset_mask);
 			return physical_address;
 		}
 
@@ -348,17 +348,8 @@ namespace VR4300
 		if (store_physical_address_on_load) /* TODO: what if TLB miss? */
 			cop0_reg.LL_addr.p_addr = physical_address;
 
-		const Int value = Memory::ReadPhysical<Int>(physical_address);
-		const Int byteswapped_value = Memory::ByteswapOnLittleEndian(value); /* If the host is big endian (same as N64), does nothing */
-
-#ifdef LOG_VR4300
-		if constexpr (operation != MemoryAccess::Operation::InstrFetch)
-			Logging::LogMemoryRead(physical_address, byteswapped_value);
-		else
-			last_physical_address_on_instr_fetch = physical_address;
-#endif
-
-		return byteswapped_value;
+		const Int value = Memory::ReadPhysical<Int, operation>(physical_address);
+		return value;
 	}
 
 
@@ -377,17 +368,11 @@ namespace VR4300
 		if (exception_has_occurred)
 			return;
 
-		const Int byteswapped_data = Memory::ByteswapOnLittleEndian(data);
-
-#ifdef LOG_VR4300
-		Logging::LogMemoryWrite(physical_address, byteswapped_data);
-#endif
-
 		/* Find out how many bytes to write. */
 		if constexpr (sizeof Int == 1)
-			Memory::WritePhysical<1>(physical_address, byteswapped_data);
+			Memory::WritePhysical<1>(physical_address, data);
 		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
-			Memory::WritePhysical<sizeof Int>(physical_address, byteswapped_data);
+			Memory::WritePhysical<sizeof Int>(physical_address, data);
 		else
 		{
 			/* The result will different from sizeof(Int) only for unaligned memory accesses. */
@@ -402,14 +387,14 @@ namespace VR4300
 			   to 'mov' instructions, when we later go to actually access data. */
 			switch (number_of_bytes)
 			{
-			break; case 1: Memory::WritePhysical<1>(physical_address, byteswapped_data);
-			break; case 2: Memory::WritePhysical<2>(physical_address, byteswapped_data);
-			break; case 3: Memory::WritePhysical<3>(physical_address, byteswapped_data);
-			break; case 4: Memory::WritePhysical<4>(physical_address, byteswapped_data);
-			break; case 5: Memory::WritePhysical<5>(physical_address, byteswapped_data);
-			break; case 6: Memory::WritePhysical<6>(physical_address, byteswapped_data);
-			break; case 7: Memory::WritePhysical<7>(physical_address, byteswapped_data);
-			break; case 8: Memory::WritePhysical<8>(physical_address, byteswapped_data);
+			break; case 1: Memory::WritePhysical<1>(physical_address, data);
+			break; case 2: Memory::WritePhysical<2>(physical_address, data);
+			break; case 3: Memory::WritePhysical<3>(physical_address, data);
+			break; case 4: Memory::WritePhysical<4>(physical_address, data);
+			break; case 5: Memory::WritePhysical<5>(physical_address, data);
+			break; case 6: Memory::WritePhysical<6>(physical_address, data);
+			break; case 7: Memory::WritePhysical<7>(physical_address, data);
+			break; case 8: Memory::WritePhysical<8>(physical_address, data);
 			break; default: assert(false);
 			}
 		}

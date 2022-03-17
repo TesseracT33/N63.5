@@ -8,7 +8,7 @@ import <cstring>;
 
 namespace VR4300
 {
-	enum class CP0_Instruction
+	enum class COP0Instruction
 	{
 		/* Move instructions */
 		MTC0, MFC0, DMTC0, DMFC0,
@@ -21,11 +21,11 @@ namespace VR4300
 	};
 
 	/* COP0 instructions */
-	template<CP0_Instruction instr> void CP0_Move(const u32 instr_code);
+	template<COP0Instruction instr> void COP0Move(u32 instr_code);
 	void TLBR();
 	void TLBWI();
 	void TLBWR();
 	void TLBP();
 	void ERET();
-	void CACHE(const u32 instr_code);
+	void CACHE(u32 instr_code);
 }

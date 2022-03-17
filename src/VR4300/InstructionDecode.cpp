@@ -4,146 +4,169 @@ import :COP0;
 import :COP1;
 import :CPU;
 import :Exceptions;
+import :MMU;
+import :Registers;
 
+import Logging;
 import NumericalTypes;
+
+#include "../debug/DebugOptions.h"
+
+#ifdef LOG_CPU_INSTR
+#define EXEC_CPU_INSTR(INSTR)  { current_instr_name = #INSTR; ExecuteCPUInstruction<CPUInstruction::INSTR>(); }
+#define EXEC_COP0_INSTR(INSTR) { current_instr_name = #INSTR; ExecuteCOP0Instruction<COP0Instruction::INSTR>(); }
+#define EXEC_COP1_INSTR(INSTR) { current_instr_name = #INSTR; ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
+#else
+#define EXEC_CPU_INSTR(INSTR)  { ExecuteCPUInstruction<CPUInstruction::INSTR>(); }
+#define EXEC_COP0_INSTR(INSTR) { ExecuteCOP0Instruction<COP0Instruction::INSTR>(); }
+#define EXEC_COP1_INSTR(INSTR) { ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
+#endif
+	
 
 namespace VR4300
 {
-	void DecodeSpecialInstruction(const u32 instr_code)
+	u32 instr_code;
+
+
+	template<CPUInstruction instr> void ExecuteCPUInstruction();
+	template<COP0Instruction instr> void ExecuteCOP0Instruction();
+	template<COP1Instruction instr> void ExecuteCOP1Instruction();
+
+
+	void DecodeAndExecuteSpecialInstruction()
 	{
-		const u8 sub_op_code = instr_code & 0x3F;
+		const auto sub_op_code = instr_code & 0x3F;
 
 		switch (sub_op_code)
 		{
-		case 0b100000: ALU_ThreeOperand<CPU_Instruction::ADD>(instr_code); break;
-		case 0b100001: ALU_ThreeOperand<CPU_Instruction::ADDU>(instr_code); break;
-		case 0b100100: ALU_ThreeOperand<CPU_Instruction::AND>(instr_code); break;
-		case 0b101100: ALU_ThreeOperand<CPU_Instruction::DADD>(instr_code); break;
-		case 0b101101: ALU_ThreeOperand<CPU_Instruction::DADDU>(instr_code); break;
-		case 0b101110: ALU_ThreeOperand<CPU_Instruction::DSUB>(instr_code); break;
-		case 0b101111: ALU_ThreeOperand<CPU_Instruction::DSUBU>(instr_code); break;
-		case 0b100111: ALU_ThreeOperand<CPU_Instruction::NOR>(instr_code); break;
-		case 0b100101: ALU_ThreeOperand<CPU_Instruction::OR>(instr_code); break;
-		case 0b101010: ALU_ThreeOperand<CPU_Instruction::SLT>(instr_code); break;
-		case 0b101011: ALU_ThreeOperand<CPU_Instruction::SLTU>(instr_code); break;
-		case 0b100010: ALU_ThreeOperand<CPU_Instruction::SUB>(instr_code); break;
-		case 0b100011: ALU_ThreeOperand<CPU_Instruction::SUBU>(instr_code); break;
-		case 0b100110: ALU_ThreeOperand<CPU_Instruction::XOR>(instr_code); break;
+		break; case 0b100000: EXEC_CPU_INSTR(ADD); 
+		break; case 0b100001: EXEC_CPU_INSTR(ADDU);
+		break; case 0b100100: EXEC_CPU_INSTR(AND);
+		break; case 0b101100: EXEC_CPU_INSTR(DADD);
+		break; case 0b101101: EXEC_CPU_INSTR(DADDU);
+		break; case 0b101110: EXEC_CPU_INSTR(DSUB);
+		break; case 0b101111: EXEC_CPU_INSTR(DSUBU);
+		break; case 0b100111: EXEC_CPU_INSTR(NOR);
+		break; case 0b100101: EXEC_CPU_INSTR(OR);
+		break; case 0b101010: EXEC_CPU_INSTR(SLT);
+		break; case 0b101011: EXEC_CPU_INSTR(SLTU);
+		break; case 0b100010: EXEC_CPU_INSTR(SUB);
+		break; case 0b100011: EXEC_CPU_INSTR(SUBU);
+		break; case 0b100110: EXEC_CPU_INSTR(XOR);
 
-		case 0b111000: ALU_Shift<CPU_Instruction::DSLL>(instr_code); break;
-		case 0b010100: ALU_Shift<CPU_Instruction::DSLLV>(instr_code); break;
-		case 0b111100: ALU_Shift<CPU_Instruction::DSLL32>(instr_code); break;
-		case 0b111011: ALU_Shift<CPU_Instruction::DSRA>(instr_code); break;
-		case 0b010111: ALU_Shift<CPU_Instruction::DSRAV>(instr_code); break;
-		case 0b111111: ALU_Shift<CPU_Instruction::DSRA32>(instr_code); break;
-		case 0b111010: ALU_Shift<CPU_Instruction::DSRL>(instr_code); break;
-		case 0b010110: ALU_Shift<CPU_Instruction::DSRLV>(instr_code); break;
-		case 0b111110: ALU_Shift<CPU_Instruction::DSRL32>(instr_code); break;
-		case 0b000000: ALU_Shift<CPU_Instruction::SLL>(instr_code); break;
-		case 0b000100: ALU_Shift<CPU_Instruction::SLLV>(instr_code); break;
-		case 0b000011: ALU_Shift<CPU_Instruction::SRA>(instr_code); break;
-		case 0b000111: ALU_Shift<CPU_Instruction::SRAV>(instr_code); break;
-		case 0b000010: ALU_Shift<CPU_Instruction::SRL>(instr_code); break;
-		case 0b000110: ALU_Shift<CPU_Instruction::SRLV>(instr_code); break;
+		break; case 0b111000: EXEC_CPU_INSTR(DSLL);
+		break; case 0b010100: EXEC_CPU_INSTR(DSLLV);
+		break; case 0b111100: EXEC_CPU_INSTR(DSLL32);
+		break; case 0b111011: EXEC_CPU_INSTR(DSRA);
+		break; case 0b010111: EXEC_CPU_INSTR(DSRAV);
+		break; case 0b111111: EXEC_CPU_INSTR(DSRA32);
+		break; case 0b111010: EXEC_CPU_INSTR(DSRL);
+		break; case 0b010110: EXEC_CPU_INSTR(DSRLV);
+		break; case 0b111110: EXEC_CPU_INSTR(DSRL32);
+		break; case 0b000000: EXEC_CPU_INSTR(SLL);
+		break; case 0b000100: EXEC_CPU_INSTR(SLLV);
+		break; case 0b000011: EXEC_CPU_INSTR(SRA);
+		break; case 0b000111: EXEC_CPU_INSTR(SRAV);
+		break; case 0b000010: EXEC_CPU_INSTR(SRL);
+		break; case 0b000110: EXEC_CPU_INSTR(SRLV);
 
-		case 0b011110: ALU_MulDiv<CPU_Instruction::DDIV>(instr_code); break;
-		case 0b011111: ALU_MulDiv<CPU_Instruction::DDIVU>(instr_code); break;
-		case 0b011010: ALU_MulDiv<CPU_Instruction::DIV>(instr_code); break;
-		case 0b011011: ALU_MulDiv<CPU_Instruction::DIVU>(instr_code); break;
-		case 0b011100: ALU_MulDiv<CPU_Instruction::DMULT>(instr_code); break;
-		case 0b011101: ALU_MulDiv<CPU_Instruction::DMULTU>(instr_code); break;
-		case 0b011000: ALU_MulDiv<CPU_Instruction::MULT>(instr_code); break;
-		case 0b011001: ALU_MulDiv<CPU_Instruction::MULTU>(instr_code); break;
+		break; case 0b011110: EXEC_CPU_INSTR(DDIV);
+		break; case 0b011111: EXEC_CPU_INSTR(DDIVU);
+		break; case 0b011010: EXEC_CPU_INSTR(DIV);
+		break; case 0b011011: EXEC_CPU_INSTR(DIVU);
+		break; case 0b011100: EXEC_CPU_INSTR(DMULT);
+		break; case 0b011101: EXEC_CPU_INSTR(DMULTU);
+		break; case 0b011000: EXEC_CPU_INSTR(MULT);
+		break; case 0b011001: EXEC_CPU_INSTR(MULTU);
 
-		case 0b001001: Jump<CPU_Instruction::JALR>(instr_code); break;
-		case 0b001000: Jump<CPU_Instruction::JR>(instr_code); break;
+		break; case 0b001001: EXEC_CPU_INSTR(JALR);
+		break; case 0b001000: EXEC_CPU_INSTR(JR);
 
-		case 0b110100: Trap_ThreeOperand<CPU_Instruction::TEQ>(instr_code); break;
-		case 0b110000: Trap_ThreeOperand<CPU_Instruction::TGE>(instr_code); break;
-		case 0b110001: Trap_ThreeOperand<CPU_Instruction::TGEU>(instr_code); break;
-		case 0b110010: Trap_ThreeOperand<CPU_Instruction::TLT>(instr_code); break;
-		case 0b110011: Trap_ThreeOperand<CPU_Instruction::TLTU>(instr_code); break;
-		case 0b110110: Trap_ThreeOperand<CPU_Instruction::TNE>(instr_code); break;
+		break; case 0b110100: EXEC_CPU_INSTR(TEQ);
+		break; case 0b110000: EXEC_CPU_INSTR(TGE);
+		break; case 0b110001: EXEC_CPU_INSTR(TGEU);
+		break; case 0b110010: EXEC_CPU_INSTR(TLT);
+		break; case 0b110011: EXEC_CPU_INSTR(TLTU);
+		break; case 0b110110: EXEC_CPU_INSTR(TNE);
 
-		case 0b010000: MFHI(instr_code); break;
-		case 0b010010: MFLO(instr_code); break;
-		case 0b010001: MTHI(instr_code); break;
-		case 0b010011: MTLO(instr_code); break;
+		break; case 0b010000: EXEC_CPU_INSTR(MFHI);
+		break; case 0b010010: EXEC_CPU_INSTR(MFLO);
+		break; case 0b010001: EXEC_CPU_INSTR(MTHI);
+		break; case 0b010011: EXEC_CPU_INSTR(MTLO);
 
-		case 0b001101: BREAK(instr_code); break;
-		case 0b001111: SYNC(instr_code); break;
-		case 0b001100: SYSCALL(instr_code); break;
+		break; case 0b001101: EXEC_CPU_INSTR(BREAK);
+		break; case 0b001111: EXEC_CPU_INSTR(SYNC);
+		break; case 0b001100: EXEC_CPU_INSTR(SYSCALL);
 
-		default:
+		break; default:
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 
 
-	void DecodeRegimmInstruction(const u32 instr_code)
+	void DecodeAndExecuteRegimmInstruction()
 	{
-		const u8 sub_op_code = instr_code >> 16 & 0x1F;
+		const auto sub_op_code = instr_code >> 16 & 0x1F;
 
 		switch (sub_op_code)
 		{
-		case 0b00001: Branch<CPU_Instruction::BGEZ>(instr_code); break;
-		case 0b10001: Branch<CPU_Instruction::BGEZAL>(instr_code); break;
-		case 0b10011: Branch<CPU_Instruction::BGEZALL>(instr_code); break;
-		case 0b00011: Branch<CPU_Instruction::BGEZL>(instr_code); break;
-		case 0b00000: Branch<CPU_Instruction::BLTZ>(instr_code); break;
-		case 0b10000: Branch<CPU_Instruction::BLTZAL>(instr_code); break;
-		case 0b10010: Branch<CPU_Instruction::BLTZALL>(instr_code); break;
-		case 0b00010: Branch<CPU_Instruction::BLTZL>(instr_code); break;
+		break; case 0b00001: EXEC_CPU_INSTR(BGEZ);
+		break; case 0b10001: EXEC_CPU_INSTR(BGEZAL);
+		break; case 0b10011: EXEC_CPU_INSTR(BGEZALL);
+		break; case 0b00011: EXEC_CPU_INSTR(BGEZL);
+		break; case 0b00000: EXEC_CPU_INSTR(BLTZ);
+		break; case 0b10000: EXEC_CPU_INSTR(BLTZAL);
+		break; case 0b10010: EXEC_CPU_INSTR(BLTZALL);
+		break; case 0b00010: EXEC_CPU_INSTR(BLTZL);
 
-		case 0b01100: Trap_Immediate<CPU_Instruction::TEQI>(instr_code); break;
-		case 0b01000: Trap_Immediate<CPU_Instruction::TGEI>(instr_code); break;
-		case 0b01001: Trap_Immediate<CPU_Instruction::TGEIU>(instr_code); break;
-		case 0b01010: Trap_Immediate<CPU_Instruction::TLTI>(instr_code); break;
-		case 0b01011: Trap_Immediate<CPU_Instruction::TLTIU>(instr_code); break;
-		case 0b01110: Trap_Immediate<CPU_Instruction::TNEI>(instr_code); break;
+		break; case 0b01100: EXEC_CPU_INSTR(TEQI);
+		break; case 0b01000: EXEC_CPU_INSTR(TGEI);
+		break; case 0b01001: EXEC_CPU_INSTR(TGEIU);
+		break; case 0b01010: EXEC_CPU_INSTR(TLTI);
+		break; case 0b01011: EXEC_CPU_INSTR(TLTIU);
+		break; case 0b01110: EXEC_CPU_INSTR(TNEI);
 
-		default:
+		break; default:
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 
 
-	void DecodeCOP0Instruction(const u32 instr_code)
+	void DecodeAndExecuteCOP0Instruction()
 	{
-		const u8 sub_op_code = instr_code >> 21 & 0x1F;
+		const auto sub_op_code = instr_code >> 21 & 0x1F;
 
 		switch (sub_op_code)
 		{
-		case 0b10000:
+		break; case 0b10000:
 		{
-			const u8 sub_op_code = instr_code & 0x3F;
+			const auto sub_op_code = instr_code & 0x3F;
 			switch (sub_op_code)
 			{
-			case 0b011000: ERET(); break;
-			case 0b001000: TLBP(); break;
-			case 0b000001: TLBR(); break;
-			case 0b000010: TLBWI(); break;
-			case 0b000110: TLBWR(); break;
+			break; case 0b011000: EXEC_COP0_INSTR(ERET);
+			break; case 0b001000: EXEC_COP0_INSTR(TLBP);
+			break; case 0b000001: EXEC_COP0_INSTR(TLBR);
+			break; case 0b000010: EXEC_COP0_INSTR(TLBWI);
+			break; case 0b000110: EXEC_COP0_INSTR(TLBWR);
 
-			default:
+			break; default:
 				/* "Invalid", but does not cause a reserved instruction exception. */
 				assert(false); /* TODO what to do here */
 			}
-			break;
 		}
 
-		case 0b00001: CP0_Move<CP0_Instruction::DMFC0>(instr_code); break;
-		case 0b00101: CP0_Move<CP0_Instruction::DMTC0>(instr_code); break;
-		case 0b00000: CP0_Move<CP0_Instruction::MFC0>(instr_code); break;
-		case 0b00100: CP0_Move<CP0_Instruction::MTC0>(instr_code); break;
+		break; case 0b00001: EXEC_COP0_INSTR(DMFC0);
+		break; case 0b00101: EXEC_COP0_INSTR(DMTC0);
+		break; case 0b00000: EXEC_COP0_INSTR(MFC0);
+		break; case 0b00100: EXEC_COP0_INSTR(MTC0);
 
-		default:
+		break; default:
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}
 
 
-	void DecodeCOP1Instruction(const u32 instr_code)
+	void DecodeAndExecuteCOP1Instruction()
 	{
 		if (!fpu_is_enabled)
 		{
@@ -151,65 +174,66 @@ namespace VR4300
 			return;
 		}
 
-		const u8 sub_op_code = instr_code >> 21 & 0x1F;
+		const auto sub_op_code = instr_code >> 21 & 0x1F;
 
 		switch (sub_op_code)
 		{
-		case 0b01000:
+		break; case 0b01000:
 		{
-			const u8 sub_op_code = instr_code >> 16 & 0x1F;
+			const auto sub_op_code = instr_code >> 16 & 0x1F;
 			switch (sub_op_code)
 			{
-			case 0b00000: FPU_Branch<FPU_Instruction::BC1F>(instr_code); break;
-			case 0b00010: FPU_Branch<FPU_Instruction::BC1FL>(instr_code); break;
-			case 0b00001: FPU_Branch<FPU_Instruction::BC1T>(instr_code); break;
-			case 0b00011: FPU_Branch<FPU_Instruction::BC1TL>(instr_code); break;
+			break; case 0b00000: EXEC_COP1_INSTR(BC1F);
+			break; case 0b00010: EXEC_COP1_INSTR(BC1FL);
+			break; case 0b00001: EXEC_COP1_INSTR(BC1T);
+			break; case 0b00011: EXEC_COP1_INSTR(BC1TL);
 
-			default:
+			break; default:
 				SignalException<Exception::ReservedInstruction>();
 			}
 		}
-		break;
 
-		case 0b00010: FPU_Move<FPU_Instruction::CFC1>(instr_code); break;
-		case 0b00110: FPU_Move<FPU_Instruction::CTC1>(instr_code); break;
-		case 0b00001: FPU_Move<FPU_Instruction::DMFC1>(instr_code); break;
-		case 0b00101: FPU_Move<FPU_Instruction::DMTC1>(instr_code); break;
-		case 0b00000: FPU_Move<FPU_Instruction::MFC1>(instr_code); break;
-		case 0b00100: FPU_Move<FPU_Instruction::MTC1>(instr_code); break;
+		break; case 0b00010: EXEC_COP1_INSTR(CFC1);
+		break; case 0b00110: EXEC_COP1_INSTR(CTC1);
+		break; case 0b00001: EXEC_COP1_INSTR(DMFC1);
+		break; case 0b00101: EXEC_COP1_INSTR(DMTC1);
+		break; case 0b00000: EXEC_COP1_INSTR(MFC1);
+		break; case 0b00100: EXEC_COP1_INSTR(MTC1);
 
-		default:
+		break; default:
 		{
 			if ((instr_code & 0x30) == 0x30)
-				FPU_Compare(instr_code);
+			{
+				EXEC_COP1_INSTR(C);
+			}
 			else
 			{
-				const u8 sub_op_code = instr_code & 0x3F;
+				const auto sub_op_code = instr_code & 0x3F;
 				switch (sub_op_code)
 				{
-				case 0b000101: FPU_Compute<FPU_Instruction::ABS>(instr_code); break;
-				case 0b000000: FPU_Compute<FPU_Instruction::ADD>(instr_code); break;
-				case 0b000011: FPU_Compute<FPU_Instruction::DIV>(instr_code); break;
-				case 0b000110: FPU_Compute<FPU_Instruction::MOV>(instr_code); break;
-				case 0b000010: FPU_Compute<FPU_Instruction::MUL>(instr_code); break;
-				case 0b000111: FPU_Compute<FPU_Instruction::NEG>(instr_code); break;
-				case 0b000100: FPU_Compute<FPU_Instruction::SQRT>(instr_code); break;
-				case 0b000001: FPU_Compute<FPU_Instruction::SUB>(instr_code); break;
+				break; case 0b000101: EXEC_COP1_INSTR(ABS);
+				break; case 0b000000: EXEC_COP1_INSTR(ADD);
+				break; case 0b000011: EXEC_COP1_INSTR(DIV);
+				break; case 0b000110: EXEC_COP1_INSTR(MOV);
+				break; case 0b000010: EXEC_COP1_INSTR(MUL);
+				break; case 0b000111: EXEC_COP1_INSTR(NEG);
+				break; case 0b000100: EXEC_COP1_INSTR(SQRT);
+				break; case 0b000001: EXEC_COP1_INSTR(SUB);
 
-				case 0b001010: FPU_Convert<FPU_Instruction::CEIL_L>(instr_code); break;
-				case 0b001110: FPU_Convert<FPU_Instruction::CEIL_W>(instr_code); break;
-				case 0b100001: FPU_Convert<FPU_Instruction::CVT_D>(instr_code); break;
-				case 0b100101: FPU_Convert<FPU_Instruction::CVT_L>(instr_code); break;
-				case 0b100000: FPU_Convert<FPU_Instruction::CVT_S>(instr_code); break;
-				case 0b100100: FPU_Convert<FPU_Instruction::CVT_W>(instr_code); break;
-				case 0b001011: FPU_Convert<FPU_Instruction::FLOOR_L>(instr_code); break;
-				case 0b001111: FPU_Convert<FPU_Instruction::FLOOR_W>(instr_code); break;
-				case 0b001000: FPU_Convert<FPU_Instruction::ROUND_L>(instr_code); break;
-				case 0b001100: FPU_Convert<FPU_Instruction::ROUND_W>(instr_code); break;
-				case 0b001001: FPU_Convert<FPU_Instruction::TRUNC_L>(instr_code); break;
-				case 0b001101: FPU_Convert<FPU_Instruction::TRUNC_W>(instr_code); break;
+				break; case 0b001010: EXEC_COP1_INSTR(CEIL_L);
+				break; case 0b001110: EXEC_COP1_INSTR(CEIL_W);
+				break; case 0b100001: EXEC_COP1_INSTR(CVT_D);
+				break; case 0b100101: EXEC_COP1_INSTR(CVT_L);
+				break; case 0b100000: EXEC_COP1_INSTR(CVT_S);
+				break; case 0b100100: EXEC_COP1_INSTR(CVT_W);
+				break; case 0b001011: EXEC_COP1_INSTR(FLOOR_L);
+				break; case 0b001111: EXEC_COP1_INSTR(FLOOR_W);
+				break; case 0b001000: EXEC_COP1_INSTR(ROUND_L);
+				break; case 0b001100: EXEC_COP1_INSTR(ROUND_W);
+				break; case 0b001001: EXEC_COP1_INSTR(TRUNC_L);
+				break; case 0b001101: EXEC_COP1_INSTR(TRUNC_W);
 
-				default: /* TODO: Reserved instruction exception?? */
+				break; default: /* TODO: Reserved instruction exception?? */
 					; // UnimplementedOperationException(); // TODO: also set flags in FCR31
 				}
 			}
@@ -220,106 +244,250 @@ namespace VR4300
 
 	void DecodeAndExecuteInstruction(const u32 instr_code)
 	{
-		const u8 op_code = instr_code >> 26; /* (0-63) */
+		VR4300::instr_code = instr_code;
+
+		const auto op_code = instr_code >> 26; /* (0-63) */
 
 		switch (op_code)
 		{
-		case 0b000000: /* "SPECIAL" instructions */
-			DecodeSpecialInstruction(instr_code);
-			break;
+		break; case 0b000000: DecodeAndExecuteSpecialInstruction();
+		break; case 0b000001: DecodeAndExecuteRegimmInstruction();
+		break; case 0b010000: DecodeAndExecuteCOP0Instruction();
+		break; case 0b010001: DecodeAndExecuteCOP1Instruction();
 
-		case 0b000001: /* "REGIMM" instructions */
-			DecodeRegimmInstruction(instr_code);
-			break;
+		break; case 0b100000: EXEC_CPU_INSTR(LB);
+		break; case 0b100100: EXEC_CPU_INSTR(LBU);
+		break; case 0b110111: EXEC_CPU_INSTR(LD);
+		break; case 0b011010: EXEC_CPU_INSTR(LDL);
+		break; case 0b011011: EXEC_CPU_INSTR(LDR);
+		break; case 0b100001: EXEC_CPU_INSTR(LH);
+		break; case 0b100101: EXEC_CPU_INSTR(LHU);
+		break; case 0b110000: EXEC_CPU_INSTR(LL);
+		break; case 0b110100: EXEC_CPU_INSTR(LLD);
+		break; case 0b100011: EXEC_CPU_INSTR(LW);
+		break; case 0b100010: EXEC_CPU_INSTR(LWL);
+		break; case 0b100110: EXEC_CPU_INSTR(LWR);
+		break; case 0b100111: EXEC_CPU_INSTR(LWU);
 
-		case 0b010000: /* "COP0" instructions */
-			DecodeCOP0Instruction(instr_code);
-			break;
+		break; case 0b101000: EXEC_CPU_INSTR(SB);
+		break; case 0b111000: EXEC_CPU_INSTR(SC);
+		break; case 0b111100: EXEC_CPU_INSTR(SCD);
+		break; case 0b111111: EXEC_CPU_INSTR(SD);
+		break; case 0b101100: EXEC_CPU_INSTR(SDL);
+		break; case 0b101101: EXEC_CPU_INSTR(SDR);
+		break; case 0b101001: EXEC_CPU_INSTR(SH);
+		break; case 0b101011: EXEC_CPU_INSTR(SW);
+		break; case 0b101010: EXEC_CPU_INSTR(SWL);
+		break; case 0b101110: EXEC_CPU_INSTR(SWR);
 
-		case 0b010001: /* "COP1" instructions */
-			DecodeCOP1Instruction(instr_code);
-			break;
+		break; case 0b001000: EXEC_CPU_INSTR(ADDI);
+		break; case 0b001001: EXEC_CPU_INSTR(ADDIU);
+		break; case 0b001100: EXEC_CPU_INSTR(ANDI);
+		break; case 0b011000: EXEC_CPU_INSTR(DADDI);
+		break; case 0b011001: EXEC_CPU_INSTR(DADDIU);
+		break; case 0b001111: EXEC_CPU_INSTR(LUI);
+		break; case 0b001101: EXEC_CPU_INSTR(ORI);
+		break; case 0b001010: EXEC_CPU_INSTR(SLTI);
+		break; case 0b001011: EXEC_CPU_INSTR(SLTIU);
+		break; case 0b001110: EXEC_CPU_INSTR(XORI);
 
-		case 0b100000: Load<CPU_Instruction::LB>(instr_code); break;
-		case 0b100100: Load<CPU_Instruction::LBU>(instr_code); break;
-		case 0b110111: Load<CPU_Instruction::LD>(instr_code); break;
-		case 0b011010: Load<CPU_Instruction::LDL>(instr_code); break;
-		case 0b011011: Load<CPU_Instruction::LDR>(instr_code); break;
-		case 0b100001: Load<CPU_Instruction::LH>(instr_code); break;
-		case 0b100101: Load<CPU_Instruction::LHU>(instr_code); break;
-		case 0b110000: Load<CPU_Instruction::LL>(instr_code); break;
-		case 0b110100: Load<CPU_Instruction::LLD>(instr_code); break;
-		case 0b100011: Load<CPU_Instruction::LW>(instr_code); break;
-		case 0b100010: Load<CPU_Instruction::LWL>(instr_code); break;
-		case 0b100110: Load<CPU_Instruction::LWR>(instr_code); break;
-		case 0b100111: Load<CPU_Instruction::LWU>(instr_code); break;
+		break; case 0b000010: EXEC_CPU_INSTR(J);
+		break; case 0b000011: EXEC_CPU_INSTR(JAL);
 
-		case 0b101000: Store<CPU_Instruction::SB>(instr_code); break;
-		case 0b111000: Store<CPU_Instruction::SC>(instr_code); break;
-		case 0b111100: Store<CPU_Instruction::SCD>(instr_code); break;
-		case 0b111111: Store<CPU_Instruction::SD>(instr_code); break;
-		case 0b101100: Store<CPU_Instruction::SDL>(instr_code); break;
-		case 0b101101: Store<CPU_Instruction::SDR>(instr_code); break;
-		case 0b101001: Store<CPU_Instruction::SH>(instr_code); break;
-		case 0b101011: Store<CPU_Instruction::SW>(instr_code); break;
-		case 0b101010: Store<CPU_Instruction::SWL>(instr_code); break;
-		case 0b101110: Store<CPU_Instruction::SWR>(instr_code); break;
+		break; case 0b000100: EXEC_CPU_INSTR(BEQ);
+		break; case 0b010100: EXEC_CPU_INSTR(BEQL);
+		break; case 0b000111: EXEC_CPU_INSTR(BGTZ);
+		break; case 0b010111: EXEC_CPU_INSTR(BGTZL);
+		break; case 0b000110: EXEC_CPU_INSTR(BLEZ);
+		break; case 0b010110: EXEC_CPU_INSTR(BLEZL);
+		break; case 0b000101: EXEC_CPU_INSTR(BNE);
+		break; case 0b010101: EXEC_CPU_INSTR(BNEL);
 
-		case 0b001000: ALU_Immediate<CPU_Instruction::ADDI>(instr_code); break;
-		case 0b001001: ALU_Immediate<CPU_Instruction::ADDIU>(instr_code); break;
-		case 0b001100: ALU_Immediate<CPU_Instruction::ANDI>(instr_code); break;
-		case 0b011000: ALU_Immediate<CPU_Instruction::DADDI>(instr_code); break;
-		case 0b011001: ALU_Immediate<CPU_Instruction::DADDIU>(instr_code); break;
-		case 0b001111: ALU_Immediate<CPU_Instruction::LUI>(instr_code); break;
-		case 0b001101: ALU_Immediate<CPU_Instruction::ORI>(instr_code); break;
-		case 0b001010: ALU_Immediate<CPU_Instruction::SLTI>(instr_code); break;
-		case 0b001011: ALU_Immediate<CPU_Instruction::SLTIU>(instr_code); break;
-		case 0b001110: ALU_Immediate<CPU_Instruction::XORI>(instr_code); break;
+		break; case 0b101111: EXEC_COP0_INSTR(CACHE);
 
-		case 0b000010: Jump<CPU_Instruction::J>(instr_code); break;
-		case 0b000011: Jump<CPU_Instruction::JAL>(instr_code); break;
-
-		case 0b000100: Branch<CPU_Instruction::BEQ>(instr_code); break;
-		case 0b010100: Branch<CPU_Instruction::BEQL>(instr_code); break;
-		case 0b000111: Branch<CPU_Instruction::BGTZ>(instr_code); break;
-		case 0b010111: Branch<CPU_Instruction::BGTZL>(instr_code); break;
-		case 0b000110: Branch<CPU_Instruction::BLEZ>(instr_code); break;
-		case 0b010110: Branch<CPU_Instruction::BLEZL>(instr_code); break;
-		case 0b000101: Branch<CPU_Instruction::BNE>(instr_code); break;
-		case 0b010101: Branch<CPU_Instruction::BNEL>(instr_code); break;
-
-		case 0b101111: CACHE(instr_code); break;
-
-		case 0b110101:
+		break; case 0b110101:
 			if (!fpu_is_enabled)
 				SignalException<Exception::CoprocessorUnusable>();
 			else
-				FPU_Load<FPU_Instruction::LDC1>(instr_code);
-			break;
+				EXEC_COP1_INSTR(LDC1);
 
-		case 0b110001:
+		break; case 0b110001:
 			if (!fpu_is_enabled)
 				SignalException<Exception::CoprocessorUnusable>();
 			else
-				FPU_Load<FPU_Instruction::LWC1>(instr_code);
-			break;
+				EXEC_COP1_INSTR(LWC1);
 
-		case 0b111101:
+		break; case 0b111101:
 			if (!fpu_is_enabled)
 				SignalException<Exception::CoprocessorUnusable>();
 			else
-				FPU_Store<FPU_Instruction::SDC1>(instr_code);
-			break;
+				EXEC_COP1_INSTR(SDC1);
 
-		case 0b111001:
+		break; case 0b111001:
 			if (!fpu_is_enabled)
 				SignalException<Exception::CoprocessorUnusable>();
 			else
-				FPU_Store<FPU_Instruction::SWC1>(instr_code);
-			break;
+				EXEC_COP1_INSTR(SWC1);
 
-		default:
+		break; default:
 			SignalException<Exception::ReservedInstruction>();
 		}
+	}
+
+
+	template<CPUInstruction instr>
+	void ExecuteCPUInstruction()
+	{
+		using enum CPUInstruction;
+
+		if constexpr (instr == LB || instr == LBU || instr == LH || instr == LHU || instr == LW || instr == LWU || instr == LWL ||
+			instr == LWR || instr == LD || instr == LDL || instr == LDR || instr == LL || instr == LLD)
+		{
+			CPULoad<instr>(instr_code);
+		}
+
+		else if constexpr (instr == SB || instr == SH || instr == SW || instr == SWL || instr == SWR ||
+			instr == SC || instr == SCD || instr == SD || instr == SDL || instr == SDR)
+		{
+			CPUStore<instr>(instr_code);
+		}
+
+		else if constexpr (instr == ADDI || instr == ADDIU || instr == SLTI || instr == SLTIU || instr == ANDI ||
+			instr == ORI || instr == XORI || instr == LUI || instr == DADDI || instr == DADDIU)
+		{
+			ALUImmediate<instr>(instr_code);
+		}
+
+		else if constexpr (instr == ADD || instr == ADDU || instr == AND || instr == DADD || instr == DADDU || instr == DSUB || instr == DSUBU ||
+			instr == NOR || instr == OR || instr == SLT || instr == SLTU || instr == SUB || instr == SUBU || instr == XOR)
+		{
+			ALUThreeOperand<instr>(instr_code);
+		}
+
+		else if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLL ||
+			instr == DSRL || instr == DSRA || instr == DSLLV || instr == DSRLV || instr == DSRAV || instr == DSLL32 || instr == DSRL32 || instr == DSRA32)
+		{
+			ALUShift<instr>(instr_code);
+		}
+
+		else if constexpr (instr == MULT || instr == MULTU || instr == DIV || instr == DIVU ||
+			instr == DMULT || instr == DMULTU || instr == DDIV || instr == DDIVU)
+		{
+			ALUMulDiv<instr>(instr_code);
+		}
+
+		else if constexpr (instr == MFHI || instr == MFLO || instr == MTHI || instr == MTLO)
+		{
+			CPUMove<instr>(instr_code);
+		}
+
+		else if constexpr (instr == J || instr == JAL || instr == JR || instr == JALR)
+		{
+			Jump<instr>(instr_code);
+		}
+
+		else if constexpr (instr == BEQ || instr == BNE || instr == BLEZ || instr == BGTZ || instr == BLTZ || instr == BGEZ || instr == BLTZAL ||
+			instr == BGEZAL || instr == BEQL || instr == BNEL || instr == BLEZL || instr == BGTZL || instr == BLTZL || instr == BGEZL || instr == BLTZALL || instr == BGEZALL)
+		{
+			CPUBranch<instr>(instr_code);
+		}
+
+		else if constexpr (instr == TGE || instr == TGEU || instr == TLT || instr == TLTU || instr == TEQ || instr == TNE)
+		{
+			TrapThreeOperand<instr>(instr_code);
+		}
+
+		else if constexpr (instr == TGEI || instr == TGEIU || instr == TLTI || instr == TLTIU || instr == TEQI || instr == TNEI)
+		{
+			TrapImmediate<instr>(instr_code);
+		}
+
+		else if constexpr (instr == BREAK)
+		{
+			Break();
+		}
+		else if constexpr (instr == SYNC)
+		{
+			Sync();
+		}
+		else if constexpr (instr == SYSCALL)
+		{
+			Syscall();
+		}
+		else
+		{
+			static_assert(instr != instr);
+		}
+
+#ifdef LOG_CPU_INSTR
+		Logging::LogVR4300Instruction(pc, current_instr_log_output, last_instr_fetch_phys_addr);
+#endif
+	}
+
+
+	template<COP0Instruction instr>
+	void ExecuteCOP0Instruction()
+	{
+		if constexpr (instr == COP0Instruction::MTC0 || instr == COP0Instruction::MFC0 || instr == COP0Instruction::DMTC0 || instr == COP0Instruction::DMFC0)
+		{
+			COP0Move<instr>(instr_code);
+		}
+		else if constexpr (instr == COP0Instruction::TLBP) TLBP();
+		else if constexpr (instr == COP0Instruction::TLBR) TLBR();
+		else if constexpr (instr == COP0Instruction::TLBWI) TLBWI();
+		else if constexpr (instr == COP0Instruction::TLBWR) TLBWR();
+		else if constexpr (instr == COP0Instruction::ERET) ERET();
+		else if constexpr (instr == COP0Instruction::CACHE) CACHE(instr_code);
+		else static_assert(instr != instr);
+
+#ifdef LOG_CPU_INSTR
+		Logging::LogVR4300Instruction(pc, current_instr_log_output, last_instr_fetch_phys_addr);
+#endif
+	}
+
+
+	template<COP1Instruction instr>
+	void ExecuteCOP1Instruction()
+	{
+		using enum COP1Instruction;
+
+		if constexpr (instr == LWC1 || instr == LDC1)
+		{
+			FPULoad<instr>(instr_code);
+		}
+		else if constexpr (instr == SWC1 || instr == SDC1)
+		{
+			FPUStore<instr>(instr_code);
+		}
+		else if constexpr (instr == MTC1 || instr == MFC1 || instr == CTC1 || instr == CFC1 || instr == DMTC1 || instr == DMFC1)
+		{
+			FPUMove<instr>(instr_code);
+		}
+		else if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_L || instr == CVT_W || instr == ROUND_L || instr == ROUND_W ||
+			instr == TRUNC_L || instr == TRUNC_W || instr == CEIL_L || instr == CEIL_W || instr == FLOOR_L || instr == FLOOR_W)
+		{
+			FPUConvert<instr>(instr_code);
+		}
+		else if constexpr (instr == ADD || instr == SUB || instr == MUL || instr == DIV ||
+			instr == ABS || instr == MOV || instr == NEG || instr == SQRT)
+		{
+			FPUCompute<instr>(instr_code);
+		}
+		else if constexpr (instr == BC1T || instr == BC1F || instr == BC1TL || instr == BC1FL)
+		{
+			FPUBranch<instr>(instr_code);
+		}
+		else if constexpr (instr == C)
+		{
+			FPUCompare(instr_code);
+		}
+		else
+		{
+			static_assert(instr != instr);
+		}
+
+#ifdef LOG_CPU_INSTR
+		Logging::LogVR4300Instruction(pc, current_instr_log_output, last_instr_fetch_phys_addr);
+#endif
 	}
 }

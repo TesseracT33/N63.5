@@ -20,7 +20,7 @@ namespace VR4300
 	};
 
 	template<typename T>
-	concept FPU_NumericType =
+	concept FPUNumericType =
 		std::is_same_v<f32, typename std::remove_cv<T>::type> ||
 		std::is_same_v<f64, typename std::remove_cv<T>::type> ||
 		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
@@ -43,29 +43,29 @@ namespace VR4300
 	} gpr;
 
 	/* COP0 registers. Used for exception handling and memory management. */
-	constexpr static int cop0_index_index = 0;
-	constexpr static int cop0_index_random = 1;
-	constexpr static int cop0_index_entry_lo_0 = 2;
-	constexpr static int cop0_index_entry_lo_1 = 3;
-	constexpr static int cop0_index_context = 4;
-	constexpr static int cop0_index_page_mask = 5;
-	constexpr static int cop0_index_wired = 6;
-	constexpr static int cop0_index_bad_v_addr = 8;
-	constexpr static int cop0_index_count = 9;
-	constexpr static int cop0_index_entry_hi = 10;
-	constexpr static int cop0_index_compare = 11;
-	constexpr static int cop0_index_status = 12;
-	constexpr static int cop0_index_cause = 13;
-	constexpr static int cop0_index_epc = 14;
-	constexpr static int cop0_index_pr_id = 15;
-	constexpr static int cop0_index_config = 16;
-	constexpr static int cop0_index_ll_addr = 17;
-	constexpr static int cop0_index_watch_lo = 18;
-	constexpr static int cop0_index_watch_hi = 19;
-	constexpr static int cop0_index_x_context = 20;
-	constexpr static int cop0_index_parity_error = 26;
-	constexpr static int cop0_index_tag_lo = 28;
-	constexpr static int cop0_index_error_epc = 30;
+	constexpr int cop0_index_index = 0;
+	constexpr int cop0_index_random = 1;
+	constexpr int cop0_index_entry_lo_0 = 2;
+	constexpr int cop0_index_entry_lo_1 = 3;
+	constexpr int cop0_index_context = 4;
+	constexpr int cop0_index_page_mask = 5;
+	constexpr int cop0_index_wired = 6;
+	constexpr int cop0_index_bad_v_addr = 8;
+	constexpr int cop0_index_count = 9;
+	constexpr int cop0_index_entry_hi = 10;
+	constexpr int cop0_index_compare = 11;
+	constexpr int cop0_index_status = 12;
+	constexpr int cop0_index_cause = 13;
+	constexpr int cop0_index_epc = 14;
+	constexpr int cop0_index_pr_id = 15;
+	constexpr int cop0_index_config = 16;
+	constexpr int cop0_index_ll_addr = 17;
+	constexpr int cop0_index_watch_lo = 18;
+	constexpr int cop0_index_watch_hi = 19;
+	constexpr int cop0_index_x_context = 20;
+	constexpr int cop0_index_parity_error = 26;
+	constexpr int cop0_index_tag_lo = 28;
+	constexpr int cop0_index_error_epc = 30;
 
 	struct COP0Registers
 	{
@@ -318,11 +318,11 @@ namespace VR4300
 	/* General-purpose floating point registers. */
 	struct FGR
 	{
-		template<typename FPU_NumericType>
-		FPU_NumericType Get(const size_t index) const;
+		template<typename FPUNumericType>
+		FPUNumericType Get(const size_t index) const;
 
-		template<typename FPU_NumericType>
-		void Set(const size_t index, const FPU_NumericType data);
+		template<typename FPUNumericType>
+		void Set(const size_t index, const FPUNumericType data);
 
 	private:
 		std::array<s64, 32> fpr{};

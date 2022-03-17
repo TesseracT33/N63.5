@@ -6,6 +6,8 @@ import :MMU;
 import :Operation;
 import :Registers;
 
+import Logging;
+
 namespace VR4300
 {
 	template<Exception exception, MemoryAccess::Operation operation>
@@ -39,6 +41,10 @@ namespace VR4300
 
 	void HandleException()
 	{
+#ifdef LOG_CPU_EXCEPTIONS
+		Logging::LogException(ExceptionToString(occurred_exception));
+#endif
+
 		exception_has_occurred = false;
 
 		cop0_reg.cause.bd = pc_is_inside_branch_delay_slot;
@@ -330,6 +336,33 @@ namespace VR4300
 		cop0_reg.x_context.bad_vpn2 = tlb_failure.bad_vpn2;
 		cop0_reg.entry_hi.vpn2 = tlb_failure.bad_vpn2;
 		cop0_reg.entry_hi.asid = tlb_failure.bad_asid;
+	}
+
+
+	constexpr std::string_view ExceptionToString(const Exception exception)
+	{
+		switch (exception)
+		{
+		case Exception::AddressError: return "Address Error";
+		case Exception::Breakpoint: return "Breakpoint";
+		case Exception::BusError: return "Bus Error";
+		case Exception::ColdReset: return "Cold Reset";
+		case Exception::CoprocessorUnusable: return "Coprocessor Unusable";
+		case Exception::FloatingPoint: return "Floating Point";
+		case Exception::IntegerOverflow: return "Integer Overflow";
+		case Exception::Interrupt: return "Interrupt";
+		case Exception::NMI: return "NMI";
+		case Exception::ReservedInstruction: return "Reserved instruction";
+		case Exception::SoftReset: return "Soft Reset";
+		case Exception::Syscall: return "Syscall";
+		case Exception::TLB_Invalid: return "Invalid TLB";
+		case Exception::TLB_Miss: return "TLB Miss";
+		case Exception::TLB_Modification: return "TLB Modification";
+		case Exception::Trap: return "Trap";
+		case Exception::Watch: return "Watch";
+		case Exception::XTLB_Miss: return "XTLB Miss";
+		default: assert(false);
+		}
 	}
 
 

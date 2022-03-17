@@ -1,14 +1,16 @@
 export module Memory;
 
 import HostSystem;
-import VR4300;
+import MemoryAccess;
 import NumericalTypes;
+import VR4300;
 
 import <array>;
 import <bit>;
 import <cassert>;
 import <concepts>;
 import <cstring>;
+import <string_view>;
 
 namespace Memory
 {
@@ -29,7 +31,7 @@ namespace Memory
 			}
 		}
 
-		template<std::integral Int>
+		template<std::integral Int, MemoryAccess::Operation operation>
 		Int ReadPhysical(const u32 physical_address);
 
 		template<std::size_t number_of_bytes>

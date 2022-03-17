@@ -3,13 +3,14 @@ export module VR4300:COP1;
 import <cfenv>;
 import <cmath>;
 import <concepts>;
+import <string_view>;
 import <type_traits>;
 
 import NumericalTypes;
 
 namespace VR4300
 {
-	enum class FPU_Instruction
+	enum class COP1Instruction
 	{
 		/* Load/store/transfer instructions */
 		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1,
@@ -21,17 +22,20 @@ namespace VR4300
 		ADD, SUB, MUL, DIV, ABS, MOV, NEG, SQRT,
 
 		/* Branch instructions */
-		BC1T, BC1F, BC1TL, BC1FL
+		BC1T, BC1F, BC1TL, BC1FL,
+
+		/* Misc. */
+		C
 	};
 
 	/* COP1/FPU instructions */
-	template<FPU_Instruction instr> void FPU_Load(const u32 instr_code);
-	template<FPU_Instruction instr> void FPU_Store(const u32 instr_code);
-	template<FPU_Instruction instr> void FPU_Move(const u32 instr_code);
-	template<FPU_Instruction instr> void FPU_Convert(const u32 instr_code);
-	template<FPU_Instruction instr> void FPU_Compute(const u32 instr_code);
-	template<FPU_Instruction instr> void FPU_Branch(const u32 instr_code);
-	void FPU_Compare(const u32 instr_code);
+	template<COP1Instruction instr> void FPULoad(u32 instr_code);
+	template<COP1Instruction instr> void FPUStore(u32 instr_code);
+	template<COP1Instruction instr> void FPUMove(u32 instr_code);
+	template<COP1Instruction instr> void FPUConvert(u32 instr_code);
+	template<COP1Instruction instr> void FPUCompute(u32 instr_code);
+	template<COP1Instruction instr> void FPUBranch(u32 instr_code);
+	void FPUCompare(u32 instr_code);
 
 	void InitializeFPU();
 

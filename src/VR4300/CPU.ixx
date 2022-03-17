@@ -5,7 +5,10 @@ import :Operation;
 import NumericalTypes;
 
 import <array>;
+import <format>;
 import <limits>;
+import <string>;
+import <type_traits>;
 
 #ifdef _MSC_VER
 import <intrin.h>;
@@ -13,7 +16,7 @@ import <intrin.h>;
 
 namespace VR4300
 {
-	enum class CPU_Instruction
+	enum class CPUInstruction
 	{
 		/* Load instructions */
 		LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD,
@@ -59,23 +62,20 @@ namespace VR4300
 	void PrepareJump(const u64 target_address);
 
 	/* Main processor instructions */
-	template<CPU_Instruction instr> void Load(const u32 instr_code);
-	template<CPU_Instruction instr> void Store(const u32 instr_code);
-	template<CPU_Instruction instr> void ALU_Immediate(const u32 instr_code);
-	template<CPU_Instruction instr> void ALU_ThreeOperand(const u32 instr_code);
-	template<CPU_Instruction instr> void ALU_Shift(const u32 instr_code);
-	template<CPU_Instruction instr> void ALU_MulDiv(const u32 instr_code);
-	template<CPU_Instruction instr> void Jump(const u32 instr_code);
-	template<CPU_Instruction instr> void Branch(const u32 instr_code);
-	template<CPU_Instruction instr> void Trap_ThreeOperand(const u32 instr_code);
-	template<CPU_Instruction instr> void Trap_Immediate(const u32 instr_code);
-	void MFHI(const u32 instr_code);
-	void MFLO(const u32 instr_code);
-	void MTHI(const u32 instr_code);
-	void MTLO(const u32 instr_code);
-	void SYNC(const u32 instr_code);
-	void SYSCALL(const u32 instr_code);
-	void BREAK(const u32 instr_code);
+	template<CPUInstruction instr> void CPULoad(u32 instr_code);
+	template<CPUInstruction instr> void CPUStore(u32 instr_code);
+	template<CPUInstruction instr> void ALUImmediate(u32 instr_code);
+	template<CPUInstruction instr> void ALUThreeOperand(u32 instr_code);
+	template<CPUInstruction instr> void ALUShift(u32 instr_code);
+	template<CPUInstruction instr> void ALUMulDiv(u32 instr_code);
+	template<CPUInstruction instr> void Jump(u32 instr_code);
+	template<CPUInstruction instr> void CPUBranch(u32 instr_code);
+	template<CPUInstruction instr> void TrapThreeOperand(u32 instr_code);
+	template<CPUInstruction instr> void TrapImmediate(u32 instr_code);
+	template<CPUInstruction instr> void CPUMove(u32 instr_code);
+	void Sync();
+	void Syscall();
+	void Break();
 
 	/* Check if the previous instruction was a load instructions, and if any of the provided register indeces
 	   use the result that was loaded. If so, we we get a pipeline interlock count of 1 cycle. */

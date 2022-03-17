@@ -72,10 +72,6 @@ namespace VR4300
 	void ExecuteInstruction() /* todo: bad name for now */
 	{
 		const u32 instr_code = FetchInstruction(pc);
-
-#ifdef LOG_VR4300
-		Logging::LogVR4300Instruction(pc, instr_code, last_physical_address_on_instr_fetch, p_cycle_counter);
-#endif
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);
 	}

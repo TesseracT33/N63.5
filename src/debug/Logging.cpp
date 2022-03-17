@@ -9,11 +9,10 @@ namespace Logging
 	void LogMemoryRead(u32 physical_address, auto memory_value)
 	{
 		const std::string output = std::format(
-			"READ;\t${:0X} from ${:08X}\n",
+			"READ; ${:0X} from ${:08X}\n",
 			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
 			physical_address
 		);
-
 		instr_logging_ofs << output;
 	}
 
@@ -21,23 +20,57 @@ namespace Logging
 	void LogMemoryWrite(u32 physical_address, auto memory_value)
 	{
 		const std::string output = std::format(
-			"WRITE;\t${:0X} to ${:08X}\n",
+			"WRITE; ${:0X} to ${:08X}\n",
 			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
 			physical_address
 		);
-
 		instr_logging_ofs << output;
 	}
 
 
-	void LogVR4300Instruction(u64 pc, u64 instr_code, u32 instr_phys_addr, unsigned p_cycle)
+	void LogIORead(u32 physical_address, auto memory_value, const std::string_view location)
 	{
 		const std::string output = std::format(
-			"INSTR;\tPC: ${:016X} \t instr: ${:08X} \t origin: ${:08X} \t cycle: {}",
-			pc, instr_code, instr_phys_addr, p_cycle
+			"{} READ; ${:X} from ${:08X}\n",
+			location,
+			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
+			physical_address
 		);
+		instr_logging_ofs << output;
+	}
 
-		instr_logging_ofs << output << std::endl;
+
+	void LogIOWrite(u32 physical_address, auto memory_value, const std::string_view location)
+	{
+		const std::string output = std::format(
+			"{} WRITE; ${:X} to ${:08X}\n",
+			location,
+			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
+			physical_address
+		);
+		instr_logging_ofs << output;
+	}
+
+
+	void LogVR4300Instruction(u64 pc, const std::string& instr_output, u32 instr_phys_addr)
+	{
+		const std::string output = std::format(
+			"INSTR; ${:016X} \t origin: ${:08X} \t {}\n",
+			pc, instr_phys_addr, instr_output
+		);
+		instr_logging_ofs << output;
+	}
+
+
+	void LogDMA(const std::string& output)
+	{
+		instr_logging_ofs << "STARTED DMA; " << output;
+	}
+
+
+	void LogException(const std::string_view exception)
+	{
+		instr_logging_ofs << "EXCEPTION; " << exception;
 	}
 
 
@@ -57,4 +90,21 @@ namespace Logging
 	template void LogMemoryWrite(u32, s32);
 	template void LogMemoryWrite(u32, u64);
 	template void LogMemoryWrite(u32, s64);
+
+	template void LogIORead(u32, u8, std::string_view);
+	template void LogIORead(u32, s8, std::string_view);
+	template void LogIORead(u32, u16, std::string_view);
+	template void LogIORead(u32, s16, std::string_view);
+	template void LogIORead(u32, u32, std::string_view);
+	template void LogIORead(u32, s32, std::string_view);
+	template void LogIORead(u32, u64, std::string_view);
+	template void LogIORead(u32, s64, std::string_view);
+	template void LogIOWrite(u32, u8, std::string_view);
+	template void LogIOWrite(u32, s8, std::string_view);
+	template void LogIOWrite(u32, u16, std::string_view);
+	template void LogIOWrite(u32, s16, std::string_view);
+	template void LogIOWrite(u32, u32, std::string_view);
+	template void LogIOWrite(u32, s32, std::string_view);
+	template void LogIOWrite(u32, u64, std::string_view);
+	template void LogIOWrite(u32, s64, std::string_view);
 }

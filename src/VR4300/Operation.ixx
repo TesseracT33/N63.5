@@ -3,6 +3,8 @@ export module VR4300:Operation;
 import NumericalTypes;
 
 import <bit>;
+import <string>;
+import <string_view>;
 
 namespace VR4300
 {
@@ -19,7 +21,7 @@ namespace VR4300
 			IndyWrite = 0x40  /* ip6; Connected to the Indy dev kit’s RDB port. Set to 1 when a value is written. */
 		};
 
-		constexpr static std::endian endianness = std::endian::big;
+		constexpr std::endian endianness = std::endian::big;
 
 		void Run(const unsigned cycles_to_run);
 		void Reset();
@@ -47,4 +49,7 @@ namespace VR4300
 	void IncrementCountRegister();
 
 	bool pc_is_inside_branch_delay_slot = false;
+
+	std::string_view current_instr_name;
+	std::string current_instr_log_output;
 }

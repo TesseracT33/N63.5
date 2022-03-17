@@ -1,7 +1,10 @@
 export module VR4300:Exceptions;
 
 import <array>;
+import <cassert>;
+import <format>;
 import <functional>;
+import <string_view>;
 
 import MemoryAccess;
 import NumericalTypes;
@@ -75,6 +78,8 @@ namespace VR4300
 
 	template<Exception exception>
 	u64 GetExceptionVector();
+
+	constexpr std::string_view ExceptionToString(Exception exception);
 
 	Exception occurred_exception;
 	int occurred_exception_priority = -1;

@@ -59,7 +59,7 @@ namespace VR4300
 	} tlb_failure;
 
 	/* Given a TLB entry page size, how many bits is the virtual/physical address offset? */
-	static constexpr std::array page_size_to_addr_offset_bit_length = [] {
+	constexpr std::array page_size_to_addr_offset_bit_length = [] {
 		std::array<u8, 4096> table{};
 		for (int i = 0; i < table.size(); i++) {
 			table[i] = [&] {
@@ -108,6 +108,6 @@ namespace VR4300
 	bool store_physical_address_on_load = false; /* For LL and LLD instructions; the phys addr is stored to the LLAddr register. */
 
 	/* Used for logging. Set when memory is read during an instruction fetch. */
-	u32 last_physical_address_on_instr_fetch;
+	export u32 last_instr_fetch_phys_addr;
 }
 
