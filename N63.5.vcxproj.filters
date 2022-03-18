@@ -50,6 +50,7 @@
     <ClCompile Include="src\debug\Logging.cpp" />
     <ClCompile Include="src\Input.ixx" />
     <ClCompile Include="src\Input.cpp" />
+    <ClCompile Include="src\memory\PIF.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />

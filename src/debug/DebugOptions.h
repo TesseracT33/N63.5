@@ -13,3 +13,5 @@
 #endif
 
 #define LOG_PATH "F:\\n64.txt"
+
+//#define RUN_BOOT_ROM

@@ -23,9 +23,9 @@ namespace VR4300
 
 		constexpr std::endian endianness = std::endian::big;
 
-		void Run(const unsigned cycles_to_run);
+		void Run(unsigned cycles_to_run);
 		void Reset();
-		void PowerOn(const bool hle_pif);
+		void PowerOn(bool hle_pif);
 
 		template<ExternalInterruptSource interrupt>
 		void ClearInterruptPending();

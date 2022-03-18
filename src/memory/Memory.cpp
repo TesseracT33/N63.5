@@ -4,6 +4,7 @@ import Cartridge;
 import Logging;
 import MI;
 import PI;
+import PIF;
 import RDRAM;
 import RSP;
 import SI;
@@ -141,10 +142,10 @@ namespace Memory
 				return Cartridge::ReadROM<Int>(physical_address);
 
 			case 0x1FC:
-				if (physical_address <= 0x1FC007BF)
-					return Int(0);
-				else if (physical_address <= 0x1FC007FF)
-					return Int(0);
+				if (physical_address <= 0x1FC0'07BF)
+					return PIF::ReadROM<Int>(physical_address - 0x1FC0'0000);
+				else if (physical_address <= 0x1FC0'07FF)
+					return PIF::ReadRAM<Int>(physical_address - 0x1FC0'07C0);
 				else
 					return Int(0);
 
@@ -317,12 +318,8 @@ namespace Memory
 			break;
 
 		case 0x1FC:
-			if (physical_address <= 0x1FC007BF)
-				;
-			else if (physical_address <= 0x1FC007FF)
-				;
-			else
-				;
+			if (physical_address >= 0x1FC0'07C0 && physical_address <= 0x1FC0'07FF)
+				PIF::WriteRAM<number_of_bytes>(physical_address - 0x1FC0'07C0, byteswapped_data);
 			break;
 
 		default:

@@ -4,6 +4,7 @@ import Cartridge;
 import Input;
 import MI;
 import PI;
+import PIF;
 import Renderer;
 import VI;
 import VR4300;
@@ -12,6 +13,7 @@ namespace N64
 {
 	bool PowerOn(
 		const std::string& rom_path,
+		const std::optional<std::string>& ipl_path,
 		SDL_Renderer* renderer,
 		const unsigned window_width,
 		const unsigned window_height)
@@ -20,9 +22,16 @@ namespace N64
 		if (!success)
 			return false;
 
+		bool hle_ipl = true;
+		if (ipl_path.has_value())
+		{
+			success = PIF::LoadIPL12(ipl_path.value());
+			hle_ipl = !success;
+		}
+
 		MI::Initialize();
 		VI::Initialize();
-		VR4300::PowerOn(true);
+		VR4300::PowerOn(hle_ipl);
 
 		Renderer::Initialize(renderer);
 		Renderer::SetWindowSize(window_width, window_height);

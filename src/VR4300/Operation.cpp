@@ -41,6 +41,7 @@ namespace VR4300
 
 	void Reset()
 	{
+		exception_has_occurred = false;
 		jump_is_pending = false;
 
 		SignalException<Exception::SoftReset>();
@@ -63,8 +64,12 @@ namespace VR4300
 		}
 		else
 		{
+#ifdef RUN_BOOT_ROM
 			SignalException<Exception::ColdReset>();
 			HandleException();
+#else
+			HLE_PIF();
+#endif
 		}
 	}
 

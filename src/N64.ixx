@@ -3,6 +3,7 @@ export module N64;
 import <SDL.h>;
 
 import <list>;
+import <optional>;
 import <string>;
 
 import NumericalTypes;
@@ -20,13 +21,13 @@ namespace N64
 
 		bool PowerOn(
 			const std::string& rom_path,
+			const std::optional<std::string>& ipl_path,
 			SDL_Renderer* renderer,
-			const unsigned window_width,
-			const unsigned window_height);
-
-		void Run();
+			unsigned window_width,
+			unsigned window_height);
 
 		void EnqueueEvent(Event event, int cycles_until_fire, int cycles_into_update);
+		void Run();
 	}
 
 	void CheckEventQueue();
