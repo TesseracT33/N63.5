@@ -25,4 +25,4 @@ In addition: SDL2.dll and glew32.dll.
 | Peter Lemon's CPUTest/CP0 | :heavy_check_mark: |
 | Peter Lemon's CPUTest/CP1 | :x: |
 | Peter Lemon's CPUTest/CPU | :x: |
-| Peter Lemon's CPUTest/Exceptions | :x: |
+| Peter Lemon's CPUTest/Exceptions | :heavy_check_mark: |
