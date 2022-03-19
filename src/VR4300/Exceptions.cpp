@@ -209,6 +209,7 @@ namespace VR4300
 			else                                                       return 4;
 		}();
 		cop0_reg.bad_v_addr.value = bad_virt_addr;
+		cop0_reg.cause.ce = 0;
 	}
 
 
@@ -225,6 +226,7 @@ namespace VR4300
 			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 6;
 			else                                                            return 7;
 		}();
+		cop0_reg.cause.ce = 0;
 	}
 
 
@@ -252,18 +254,21 @@ namespace VR4300
 	void FloatingpointException()
 	{
 		cop0_reg.cause.exc_code = 15;
+		cop0_reg.cause.ce = 0;
 	}
 
 
 	void IntegerOverflowException()
 	{
 		cop0_reg.cause.exc_code = 12;
+		cop0_reg.cause.ce = 0;
 	}
 
 
 	void InterruptException()
 	{
 		cop0_reg.cause.exc_code = 0;
+		cop0_reg.cause.ce = 0;
 	}
 
 
@@ -272,12 +277,14 @@ namespace VR4300
 		pc = cop0_reg.error_epc.value;
 		cop0_reg.status.ts = 0;
 		cop0_reg.status.erl = cop0_reg.status.sr = cop0_reg.status.bev = 1;
+		cop0_reg.cause.ce = 0;
 	}
 
 
 	void ReservedInstructionException()
 	{
 		cop0_reg.cause.exc_code = 10;
+		cop0_reg.cause.ce = 0;
 	}
 
 
@@ -293,6 +300,7 @@ namespace VR4300
 	void SyscallException()
 	{
 		cop0_reg.cause.exc_code = 8;
+		cop0_reg.cause.ce = 0;
 	}
 
 
@@ -341,12 +349,14 @@ namespace VR4300
 	void TrapException()
 	{
 		cop0_reg.cause.exc_code = 13;
+		cop0_reg.cause.ce = 0;
 	}
 
 
 	void WatchException()
 	{
 		cop0_reg.cause.exc_code = 23;
+		cop0_reg.cause.ce = 0;
 	}
 
 
