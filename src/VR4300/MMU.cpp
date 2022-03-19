@@ -364,7 +364,7 @@ namespace VR4300
 				return;
 			}
 		}
-		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_write, virtual_address);
+		u32 physical_address = std::invoke(active_virtual_to_physical_fun_write, virtual_address);
 		if (exception_has_occurred)
 			return;
 
@@ -382,6 +382,8 @@ namespace VR4300
 				else /* UnalignedRight; Store (Double)Word Right */
 					return (physical_address & (sizeof Int - 1)) + 1;
 			}();
+			if constexpr (alignment == MemoryAccess::Alignment::UnalignedRight)
+				physical_address &= ~(sizeof Int - 1);
 			/* This branch will be worth it; the fact that we can pass the number of bytes to access
 			   as a template argument means that, among other things, memcpy will be optimized away
 			   to 'mov' instructions, when we later go to actually access data. */
