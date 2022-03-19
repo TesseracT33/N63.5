@@ -51,13 +51,6 @@ namespace VR4300
 		u64 address_vpn_even_odd_mask;
 	};
 
-	struct TLB_Failure
-	{
-		u64 bad_virt_addr;
-		u64 bad_vpn2;
-		u64 bad_asid;
-	} tlb_failure;
-
 	/* Given a TLB entry page size, how many bits is the virtual/physical address offset? */
 	constexpr std::array page_size_to_addr_offset_bit_length = [] {
 		std::array<u8, 4096> table{};

@@ -57,7 +57,10 @@ namespace VR4300
 	template<MemoryAccess::Operation operation>
 	void SignalAddressErrorException(const u64 bad_virt_addr)
 	{
-		VR4300::bad_virt_addr = bad_virt_addr;
+		SignalException<Exception::AddressError>();
+		address_failure.bad_virt_addr = bad_virt_addr;
+		address_failure.bad_vpn2 = bad_virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
+		address_failure.bad_asid = cop0_reg.entry_hi.asid;
 	}
 
 
@@ -208,7 +211,8 @@ namespace VR4300
 			if constexpr (operation == MemoryAccess::Operation::Write) return 5;
 			else                                                       return 4;
 		}();
-		cop0_reg.bad_v_addr.value = bad_virt_addr;
+		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.cause.ce = 0;
 	}
 
@@ -311,10 +315,10 @@ namespace VR4300
 			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
 			else                                                       return 2;
 		}();
-		cop0_reg.bad_v_addr.value = tlb_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = tlb_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
-		cop0_reg.entry_hi.vpn2 = tlb_failure.bad_vpn2; /* TODO: should this assignment be made? */
-		cop0_reg.entry_hi.asid = tlb_failure.bad_asid;
+		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
+		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0_reg.entry_hi.asid = address_failure.bad_asid;
 		cop0_reg.cause.ce = 0;
 		/* TODO: what about the R field in entry_hi? */
 	}
@@ -327,10 +331,10 @@ namespace VR4300
 			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
 			else                                                       return 2;
 		}();
-		cop0_reg.bad_v_addr.value = tlb_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = tlb_failure.bad_vpn2;
-		cop0_reg.entry_hi.vpn2 = tlb_failure.bad_vpn2; /* TODO: should this assignment be made? */
-		cop0_reg.entry_hi.asid = tlb_failure.bad_asid;
+		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0_reg.entry_hi.asid = address_failure.bad_asid;
 		cop0_reg.cause.ce = 0;
 	}
 
@@ -338,10 +342,10 @@ namespace VR4300
 	void TLB_ModException()
 	{
 		cop0_reg.cause.exc_code = 1;
-		cop0_reg.bad_v_addr.value = tlb_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = tlb_failure.bad_vpn2;
-		cop0_reg.entry_hi.vpn2 = tlb_failure.bad_vpn2; /* TODO: should this assignment be made? */
-		cop0_reg.entry_hi.asid = tlb_failure.bad_asid;
+		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0_reg.entry_hi.asid = address_failure.bad_asid;
 		cop0_reg.cause.ce = 0;
 	}
 
@@ -367,11 +371,11 @@ namespace VR4300
 			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
 			else                                                       return 2;
 		}();
-		cop0_reg.bad_v_addr.value = tlb_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = tlb_failure.bad_vpn2;
-		cop0_reg.x_context.bad_vpn2 = tlb_failure.bad_vpn2;
-		cop0_reg.entry_hi.vpn2 = tlb_failure.bad_vpn2;
-		cop0_reg.entry_hi.asid = tlb_failure.bad_asid;
+		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0_reg.x_context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2;
+		cop0_reg.entry_hi.asid = address_failure.bad_asid;
 		cop0_reg.cause.ce = 0;
 	}
 

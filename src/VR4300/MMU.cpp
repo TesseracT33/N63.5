@@ -287,9 +287,9 @@ namespace VR4300
 			if (!entry.entry_lo[entry_reg_offset].v) /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
 			{
 				SignalException<Exception::TLB_Invalid, operation>();
-				tlb_failure.bad_virt_addr = virt_addr;
-				tlb_failure.bad_vpn2 = entry.entry_hi.vpn2;
-				tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
+				address_failure.bad_virt_addr = virt_addr;
+				address_failure.bad_vpn2 = entry.entry_hi.vpn2;
+				address_failure.bad_asid = cop0_reg.entry_hi.asid;
 				return 0;
 			}
 			if constexpr (operation == MemoryAccess::Operation::Write)
@@ -297,9 +297,9 @@ namespace VR4300
 				if (!entry.entry_lo[entry_reg_offset].d) /* If the "Dirty" bit is clear, writing is disallowed. */
 				{
 					SignalException<Exception::TLB_Modification, operation>();
-					tlb_failure.bad_virt_addr = virt_addr;
-					tlb_failure.bad_vpn2 = entry.entry_hi.vpn2;
-					tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
+					address_failure.bad_virt_addr = virt_addr;
+					address_failure.bad_vpn2 = entry.entry_hi.vpn2;
+					address_failure.bad_asid = cop0_reg.entry_hi.asid;
 					return 0;
 				}
 			}
@@ -312,9 +312,9 @@ namespace VR4300
 			SignalException<Exception::TLB_Miss, operation>();
 		else
 			SignalException<Exception::XTLB_Miss, operation>();
-		tlb_failure.bad_virt_addr = virt_addr;
-		tlb_failure.bad_vpn2 = virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
-		tlb_failure.bad_asid = cop0_reg.entry_hi.asid;
+		address_failure.bad_virt_addr = virt_addr;
+		address_failure.bad_vpn2 = virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
+		address_failure.bad_asid = cop0_reg.entry_hi.asid;
 		return 0;
 	}
 

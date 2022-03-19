@@ -49,6 +49,14 @@ namespace VR4300
 	typedef void(*ExceptionHandlerFun)();
 	ExceptionHandlerFun exception_fun_to_call;
 
+	/* Details when a TLB Miss etc. or Address Error exception happens */
+	struct AddressFailure
+	{
+		u64 bad_virt_addr;
+		u64 bad_vpn2;
+		u64 bad_asid;
+	} address_failure;
+
 	template<Exception exception, MemoryAccess::Operation operation>
 	constexpr ExceptionHandlerFun GetExceptionHandlerFun();
 
@@ -64,6 +72,5 @@ namespace VR4300
 	int occurred_exception_priority = -1;
 	u64 exception_vector;
 	unsigned coprocessor_unusable_source; /* 0 if COP0 signaled the exception, 1 if COP1 did it. */
-	u64 bad_virt_addr; /* Assigned to when an Address Error exception is signalled. */
 	ExceptionHandlerFun exception_handler_fun;
 }
