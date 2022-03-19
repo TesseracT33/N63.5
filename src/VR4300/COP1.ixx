@@ -24,7 +24,7 @@ namespace VR4300
 		/* Branch instructions */
 		BC1T, BC1F, BC1TL, BC1FL,
 
-		/* Misc. */
+		/* Compare */
 		C
 	};
 

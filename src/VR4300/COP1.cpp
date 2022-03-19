@@ -406,7 +406,7 @@ namespace VR4300
 				std::feclearexcept(FE_ALL_EXCEPT);
 
 				const OutputInt result = [&] {
-					     if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::round(source));
+					     if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::nearbyint(source));
 					else if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
 					else if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
 					else if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
