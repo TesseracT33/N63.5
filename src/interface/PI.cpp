@@ -2,6 +2,7 @@ module PI;
 
 import DMA;
 import Memory;
+import MI;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
@@ -32,6 +33,7 @@ namespace PI
 		DMA::Init<DMA::Location::RDRAM, DMA::Location::Cartridge>(dma_length, rdram_start_addr, cart_start_addr);
 		SetStatusFlag<StatusFlag::DMA_BUSY>();
 		ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
+		MI::ClearInterruptFlag<MI::InterruptType::PI>();
 	}
 
 
@@ -45,6 +47,7 @@ namespace PI
 		DMA::Init<DMA::Location::Cartridge, DMA::Location::RDRAM>(dma_length, cart_start_addr, rdram_start_addr);
 		SetStatusFlag<StatusFlag::DMA_BUSY>();
 		ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
+		MI::ClearInterruptFlag<MI::InterruptType::PI>();
 	}
 
 
@@ -102,11 +105,13 @@ namespace PI
 			if (data & reset_dma_mask)
 			{ /* Reset the DMA controller and stop any transfer being done */
 				mem[PI_STATUS + 3] = 0;
-				/* TODO */
+				MI::ClearInterruptFlag<MI::InterruptType::PI>();
+
 			}
 			if (data & clear_interrupt_mask)
-			{ /* Clear Interrupt (DMA completed) flag (bit 3 of STATUS) */
+			{ /* Clear Interrupt */
 				ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
+				MI::ClearInterruptFlag<MI::InterruptType::PI>();
 			}
 			break;
 		}
