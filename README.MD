@@ -21,4 +21,8 @@ In addition: SDL2.dll and glew32.dll.
 # Tests
 | Test  | Status |
 | ----- | ------ |
-| Dillon's CPU tests | :white_check_mark: |
+| Dillon's CPU tests | :heavy_check_mark: |
+| Peter Lemon's CPUTest/CP0 | :heavy_check_mark: |
+| Peter Lemon's CPUTest/CP1 | :x: |
+| Peter Lemon's CPUTest/CPU | :x: |
+| Peter Lemon's CPUTest/Exceptions | :x: |

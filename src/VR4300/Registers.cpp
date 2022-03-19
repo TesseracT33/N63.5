@@ -71,7 +71,8 @@ namespace VR4300
 
 	void InitializeRegisters()
 	{
-		cop0_reg.SetRaw(cop0_index_index, 0x3F); 
+		cop0_reg.SetRaw(cop0_index_index, 0x3F);
+		cop0_reg.SetRaw(cop0_index_context, 0x007F'FFF0);
 		cop0_reg.SetRaw(cop0_index_bad_v_addr, 0xFFFF'FFFF'FFFF'FFFF);
 		cop0_reg.SetRaw(cop0_index_cause, 0xB000'007C);
 		cop0_reg.SetRaw(cop0_index_epc, 0xFFFF'FFFF'FFFF'FFFF);
