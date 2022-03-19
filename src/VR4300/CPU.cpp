@@ -588,7 +588,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit
 			   result to register rd. Generates an exception if an integer overflow occurs. */
 			const s64 sum = gpr[rs] - gpr[rt];
-			const bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'000;
+			const bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
 				SignalException<Exception::IntegerOverflow>();
 			else
