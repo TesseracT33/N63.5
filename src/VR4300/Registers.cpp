@@ -130,7 +130,7 @@ namespace VR4300
 		case 14: return StructToInt(&epc);
 		case 15: return StructToInt(&pr_id);
 		case 16: return StructToInt(&config);
-		case 17: return StructToInt(&LL_addr);
+		case 17: return StructToInt(&ll_addr);
 		case 18: return StructToInt(&watch_lo);
 		case 19: return StructToInt(&watch_hi);
 		case 20: return StructToInt(&x_context);
@@ -161,7 +161,7 @@ namespace VR4300
 		break; case 13: SetStructFromIntMasked(&cause       , value, 0x300);
 		break; case 14: SetStructFromInt      (&epc         , value);
 		break; case 16: SetStructFromIntMasked(&config      , value, 0x7F00'800F);
-		break; case 17: SetStructFromInt      (&LL_addr     , value);
+		break; case 17: SetStructFromInt      (&ll_addr     , value);
 		break; case 18: SetStructFromIntMasked(&watch_lo    , value, 0xFFFF'FFFB);
 		break; case 19: SetStructFromInt      (&watch_hi    , value);
 		break; case 20: SetStructFromIntMasked(&x_context   , value, 0xFFFF'FFFF'FFFF'FFF0);
@@ -191,7 +191,7 @@ namespace VR4300
 		break; case 13: SetStructFromInt(&cause       , value);
 		break; case 14: SetStructFromInt(&epc         , value);
 		break; case 16: SetStructFromInt(&config      , value);
-		break; case 17: SetStructFromInt(&LL_addr     , value);
+		break; case 17: SetStructFromInt(&ll_addr     , value);
 		break; case 18: SetStructFromInt(&watch_lo    , value);
 		break; case 19: SetStructFromInt(&watch_hi    , value);
 		break; case 20: SetStructFromInt(&x_context   , value);

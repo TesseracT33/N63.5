@@ -112,10 +112,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
-				LL_bit = 1;
 				store_physical_address_on_load = true;
 				const s32 ret = ReadVirtual<s32>(address);
 				store_physical_address_on_load = false;
+				ll_bit = 1;
 				return ret;
 			}
 			else if constexpr (instr == LLD)
@@ -123,10 +123,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				/* Load Linked Doubleword;
 				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
-				LL_bit = 1;
 				store_physical_address_on_load = true;
 				const s64 ret = ReadVirtual<s64>(address);
 				store_physical_address_on_load = false;
+				ll_bit = 1;
 				return ret;
 			}
 			else
@@ -306,7 +306,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   the memory specified by the address, and sets register rt to 1.
 			   If the LL bit is 0, does not store the contents of the word, and clears register
 			   rt to 0. */
-			if (LL_bit == 1)
+			if (ll_bit == 1)
 			{
 				WriteVirtual<s32>(address, s32(gpr[rt]));
 				gpr.Set(rt, 1);
@@ -323,7 +323,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   the address, and sets register rt to 1.
 			   If the LL bit is 0, does not store the contents of the register, and clears register
 			   rt to 0. */
-			if (LL_bit == 1)
+			if (ll_bit == 1)
 			{
 				WriteVirtual<s64>(address, gpr[rt]);
 				gpr.Set(rt, 1);
@@ -371,7 +371,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 sum = s32(gpr[rs] + immediate);
 			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000;
 			if (overflow)
-				IntegerOverflowException();
+				SignalException<Exception::IntegerOverflow>();
 			else
 				gpr.Set(rt, sum);
 		}
@@ -442,7 +442,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s64 sum = gpr[rs] + immediate;
 			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
-				IntegerOverflowException();
+				SignalException<Exception::IntegerOverflow>();
 			else
 				gpr.Set(rt, sum);
 		}
@@ -486,7 +486,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 sum = s32(gpr[rs] + gpr[rt]);
 			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
 			if (overflow)
-				IntegerOverflowException();
+				SignalException<Exception::IntegerOverflow>();
 			else
 				gpr.Set(rd, sum);
 		}
@@ -506,7 +506,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s32 sum = s32(gpr[rs] - gpr[rt]);
 			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
 			if (overflow)
-				IntegerOverflowException();
+				SignalException<Exception::IntegerOverflow>();
 			else
 				gpr.Set(rd, sum);
 		}
@@ -570,7 +570,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s64 sum = gpr[rs] + gpr[rt];
 			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
-				IntegerOverflowException();
+				SignalException<Exception::IntegerOverflow>();
 			else
 				gpr.Set(rd, sum);
 		}
@@ -590,7 +590,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const s64 sum = gpr[rs] - gpr[rt];
 			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
-				IntegerOverflowException();
+				SignalException<Exception::IntegerOverflow>();
 			else
 				gpr.Set(rd, sum);
 		}
@@ -1133,7 +1133,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}();
 
 		if (trap_cond)
-			TrapException();
+			SignalException<Exception::Trap>();
 
 		AdvancePipeline<1>();
 	}
@@ -1204,7 +1204,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}();
 
 		if (trap_cond)
-			TrapException();
+			SignalException<Exception::Trap>();
 
 		AdvancePipeline<1>();
 	}

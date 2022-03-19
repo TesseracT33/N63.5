@@ -49,27 +49,6 @@ namespace VR4300
 	typedef void(*ExceptionHandlerFun)();
 	ExceptionHandlerFun exception_fun_to_call;
 
-	/* Exception handlers */
-	template<MemoryAccess::Operation operation> void AddressErrorException();
-	template<MemoryAccess::Operation operation> void BusErrorException();
-	template<MemoryAccess::Operation operation> void TLB_InvalidException();
-	template<MemoryAccess::Operation operation> void TLB_MissException();
-	template<MemoryAccess::Operation operation> void XTLB_MissException();
-	void BreakPointException();
-	void BusErrorException();
-	void ColdResetException();
-	void CoprocessorUnusableException();
-	void FloatingpointException();
-	void IntegerOverflowException();
-	void InterruptException();
-	void NMI_Exception();
-	void ReservedInstructionException();
-	void SoftResetException();
-	void SyscallException();
-	void TLB_ModException();
-	void TrapException();
-	void WatchException();
-
 	template<Exception exception, MemoryAccess::Operation operation>
 	constexpr ExceptionHandlerFun GetExceptionHandlerFun();
 

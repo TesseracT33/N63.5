@@ -346,7 +346,7 @@ namespace VR4300
 			return Int(0);
 
 		if (store_physical_address_on_load) /* TODO: what if TLB miss? */
-			cop0_reg.LL_addr.p_addr = physical_address;
+			cop0_reg.ll_addr.p_addr = physical_address;
 
 		const Int value = Memory::ReadPhysical<Int, operation>(physical_address);
 		return value;

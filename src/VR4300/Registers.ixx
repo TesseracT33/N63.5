@@ -26,11 +26,11 @@ namespace VR4300
 		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
 		std::is_same_v<s64, typename std::remove_cv<T>::type>;
 
-	u64 pc{}; /* Program counter */
+	u64 pc; /* Program counter */
 
-	u64 hi_reg{}, lo_reg{}; /* Contain the result of a double-word multiplication or division. */
+	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
 
-	bool LL_bit{}; /* Read from / written to by load linked and store conditional instructions. */
+	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */
 
 	/* CPU general-purpose registers */
 	struct GPR
@@ -217,7 +217,7 @@ namespace VR4300
 		struct /* (17); Contains the physical address read by the most recent Load Linked instruction. */
 		{
 			u32 p_addr;
-		} LL_addr{};
+		} ll_addr{};
 
 		struct /* (18) */
 		{

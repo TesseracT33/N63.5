@@ -182,7 +182,7 @@ namespace VR4300
 			pc = cop0_reg.error_epc.value;
 			cop0_reg.status.erl = 0;
 		}
-		LL_bit = 0;
+		ll_bit = 0;
 		AdvancePipeline<1>();
 	}
 
