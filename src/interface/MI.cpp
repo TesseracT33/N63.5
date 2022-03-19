@@ -88,7 +88,7 @@ namespace MI
 	{
 		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
 		const u32 offset = addr & 0xC;
-		const u32 word = static_cast<u32>(data);
+		u32 word = static_cast<u32>(data);
 		if (offset == MI_MODE)
 		{
 			std::memcpy(&mem[MI_MODE], &word, 4);
@@ -108,7 +108,7 @@ namespace MI
 			static constexpr s32   set_pi_mask = Memory::ByteswapOnLittleEndian<s32>(0x200);
 			static constexpr s32 clear_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x400);
 			static constexpr s32   set_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x800);
-			
+
 			/* TODO: unclear what would happen if two adjacent bits would be set */
 			if (word & clear_sp_mask)
 				ClearInterruptMask<InterruptType::SP>();

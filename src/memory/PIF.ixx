@@ -18,13 +18,17 @@ namespace PIF
 	{
 		bool LoadIPL12(const std::string& path);
 
-		template<std::integral Int>
-		Int ReadROM(const u32 offset);
+		u8* GetPointerToRAM(u32 offset);
+
+		std::size_t GetNumberOfBytesUntilRAMEnd(u32 offset);
 
 		template<std::integral Int>
-		Int ReadRAM(const u32 offset);
+		Int ReadROM(u32 offset);
+
+		template<std::integral Int>
+		Int ReadRAM(u32 offset);
 
 		template<std::size_t number_of_bytes>
-		void WriteRAM(const u32 offset, const auto data);
+		void WriteRAM(u32 offset, auto data);
 	}
 }

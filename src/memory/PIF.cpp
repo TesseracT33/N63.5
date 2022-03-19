@@ -39,6 +39,18 @@ namespace PIF
 	}
 
 
+	u8* GetPointerToRAM(const u32 offset)
+	{
+		return pif_ram.data() + (offset & (pif_ram.size() - 1)); /* Size is 0x40 bytes */
+	}
+
+
+	std::size_t GetNumberOfBytesUntilRAMEnd(const u32 offset)
+	{
+		return pif_ram.size() - (offset & (pif_ram.size() - 1)); /* Size is 0x40 bytes */
+	}
+
+
 	template<std::integral Int>
 	Int ReadROM(const u32 offset)
 	{

@@ -30,7 +30,7 @@ namespace PI
 		u32 rdram_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[PI_DRAM_ADDR]);
 		u32 cart_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[PI_CART_ADDR]);
 
-		DMA::Init<DMA::Location::RDRAM, DMA::Location::Cartridge>(dma_length, rdram_start_addr, cart_start_addr);
+		DMA::Init<DMA::Type::PI, DMA::Location::RDRAM, DMA::Location::Cartridge>(dma_length, rdram_start_addr, cart_start_addr);
 		SetStatusFlag<StatusFlag::DMA_BUSY>();
 		ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
 		MI::ClearInterruptFlag<MI::InterruptType::PI>();
@@ -44,7 +44,7 @@ namespace PI
 		u32 rdram_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[PI_DRAM_ADDR]);
 		u32 cart_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[PI_CART_ADDR]);
 
-		DMA::Init<DMA::Location::Cartridge, DMA::Location::RDRAM>(dma_length, cart_start_addr, rdram_start_addr);
+		DMA::Init<DMA::Type::PI, DMA::Location::Cartridge, DMA::Location::RDRAM>(dma_length, cart_start_addr, rdram_start_addr);
 		SetStatusFlag<StatusFlag::DMA_BUSY>();
 		ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
 		MI::ClearInterruptFlag<MI::InterruptType::PI>();

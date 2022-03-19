@@ -17,7 +17,7 @@ namespace SI
 			IO_BUSY = 1 << 1, /* Set when either an IO read or write is in progress. */
 			READ_PENDING = 1 << 2, /* Set when an IO read occurs, while an IO or DMA write is in progress. */
 			DMA_ERROR = 1 << 3, /* Set when overlapping DMA requests occur. Can only be cleared with a power reset. */
-			INTERRUPT = 1 < 4 /* Copy of SI interrupt flag from MIPS Interface, which is also seen in the RCP Interrupt Cause register. Writing any value to SI_STATUS clears this bit in all three locations. */
+			INTERRUPT = 1 << 4 /* Copy of SI interrupt flag from MIPS Interface, which is also seen in the RCP Interrupt Cause register. Writing any value to SI_STATUS clears this bit in all three locations. */
 		};
 
 		template<StatusFlag status_flag>

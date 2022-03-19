@@ -1,5 +1,6 @@
 module SI;
 
+import DMA;
 import Memory;
 import MI;
 
@@ -52,24 +53,44 @@ namespace SI
 		switch (offset)
 		{
 		case SI_DRAM_ADDR:
-			/* TODO */
-			break;
-
-		case SI_PIF_ADDR_RD64B:
-			/* TODO */
-			break;
-
-		case SI_PIF_ADDR_WR4B:
-			/* TODO */
-			break;
-
-		case SI_PIF_ADDR_WR64B:
-			/* TODO */
+			std::memcpy(&mem[SI_DRAM_ADDR], &word, 4);
 			break;
 
 		case SI_PIF_ADDR_RD4B:
-			/* TODO */
+		{
+			std::memcpy(&mem[SI_PIF_ADDR_RD4B], &word, 4);
+			const u32 pif_ram_start_addr = Memory::ByteswapOnLittleEndian<u32>(word);
+			const u32 rdram_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[SI_DRAM_ADDR]);
+			DMA::Init<DMA::Type::SI, DMA::Location::PIF, DMA::Location::RDRAM>(4, pif_ram_start_addr, rdram_start_addr);
 			break;
+		}
+
+		case SI_PIF_ADDR_RD64B:
+		{
+			std::memcpy(&mem[SI_PIF_ADDR_RD64B], &word, 4);
+			const u32 pif_ram_start_addr = Memory::ByteswapOnLittleEndian<u32>(word);
+			const u32 rdram_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[SI_DRAM_ADDR]);
+			DMA::Init<DMA::Type::SI, DMA::Location::PIF, DMA::Location::RDRAM>(64, pif_ram_start_addr, rdram_start_addr);
+			break;
+		}
+
+		case SI_PIF_ADDR_WR4B:
+		{
+			std::memcpy(&mem[SI_PIF_ADDR_WR4B], &word, 4);
+			const u32 pif_ram_start_addr = Memory::ByteswapOnLittleEndian<u32>(word);
+			const u32 rdram_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[SI_DRAM_ADDR]);
+			DMA::Init<DMA::Type::SI, DMA::Location::RDRAM, DMA::Location::PIF>(4, rdram_start_addr, pif_ram_start_addr);
+			break;
+		}
+
+		case SI_PIF_ADDR_WR64B:
+		{
+			std::memcpy(&mem[SI_PIF_ADDR_WR64B], &word, 4);
+			const u32 pif_ram_start_addr = Memory::ByteswapOnLittleEndian<u32>(word);
+			const u32 rdram_start_addr = Memory::ByteswappedGenericRead<u32>(&mem[SI_DRAM_ADDR]);
+			DMA::Init<DMA::Type::SI, DMA::Location::RDRAM, DMA::Location::PIF>(64, rdram_start_addr, pif_ram_start_addr);
+			break;
+		}
 
 		case SI_STATUS:
 			/* Writing any value to SI_STATUS clears bit 12 (SI Interrupt flag), not only here,
@@ -85,6 +106,18 @@ namespace SI
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32)
+
+
+	template void ClearStatusFlag<StatusFlag::DMA_BUSY>();
+	template void ClearStatusFlag<StatusFlag::IO_BUSY>();
+	template void ClearStatusFlag<StatusFlag::READ_PENDING>();
+	template void ClearStatusFlag<StatusFlag::DMA_ERROR>();
+	template void ClearStatusFlag<StatusFlag::INTERRUPT>();
+	template void SetStatusFlag<StatusFlag::DMA_BUSY>();
+	template void SetStatusFlag<StatusFlag::IO_BUSY>();
+	template void SetStatusFlag<StatusFlag::READ_PENDING>();
+	template void SetStatusFlag<StatusFlag::DMA_ERROR>();
+	template void SetStatusFlag<StatusFlag::INTERRUPT>();
 }

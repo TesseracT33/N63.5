@@ -22,7 +22,7 @@ namespace Cartridge
 
 		u8* GetPointerToROM(const u32 addr);
 
-		std::size_t GetNumberOfBytesUntilRegionEnd(const u32 addr);
+		std::size_t GetNumberOfBytesUntilROMEnd(const u32 addr);
 
 		template<std::integral Int>
 		Int ReadROM(const u32 addr);

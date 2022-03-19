@@ -6,6 +6,7 @@ import MI;
 import PI;
 import PIF;
 import Renderer;
+import SI;
 import VI;
 import VR4300;
 
@@ -127,6 +128,13 @@ namespace N64
 			MI::SetInterruptFlag<MI::InterruptType::PI>();
 			PI::SetStatusFlag<PI::StatusFlag::DMA_COMPLETED>();
 			PI::ClearStatusFlag<PI::StatusFlag::DMA_BUSY>();
+			VR4300::CheckInterrupts();
+			break;
+
+		case Event::SI_DMA_FINISH:
+			MI::SetInterruptFlag<MI::InterruptType::SI>();
+			SI::SetStatusFlag<SI::StatusFlag::INTERRUPT>();
+			SI::ClearStatusFlag<SI::StatusFlag::DMA_BUSY>();
 			VR4300::CheckInterrupts();
 			break;
 		}

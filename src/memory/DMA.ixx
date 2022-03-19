@@ -11,20 +11,25 @@ namespace DMA
 {
 	export
 	{
-		enum class Location
+		enum class Type
 		{
-			RDRAM, Cartridge
+			PI, SI
 		};
 
-		template<Location source, Location dest>
-		void Init(size_t length, u32 source_start_addr, u32 dest_start_addr);
+		enum class Location
+		{
+			Cartridge, PIF, RDRAM
+		};
+
+		template<Type type, Location source, Location dest>
+		void Init(std::size_t length, u32 source_start_addr, u32 dest_start_addr);
 	}
 
 	template<Location location>
 	u8* GetPointerFromAddress(u32 addr);
 
 	template<Location location>
-	size_t GetNumberOfBytesUntilRegionEnd(u32 addr);
+	std::size_t GetNumberOfBytesUntilRegionEnd(u32 addr);
 
 	constexpr std::string_view LocationToString(Location loc);
 }
