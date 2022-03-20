@@ -50,6 +50,8 @@ namespace VR4300
 
 	bool pc_is_inside_branch_delay_slot = false;
 
+	/* Debugging */
+	u64 current_instr_pc;
 	std::string_view current_instr_name;
 	std::string current_instr_log_output;
 }

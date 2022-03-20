@@ -420,7 +420,7 @@ namespace VR4300
 		}
 
 #ifdef LOG_CPU_INSTR
-		Logging::LogVR4300Instruction(pc, current_instr_log_output, last_instr_fetch_phys_addr);
+		Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
 #endif
 	}
 
@@ -441,7 +441,7 @@ namespace VR4300
 		else static_assert(instr != instr);
 
 #ifdef LOG_CPU_INSTR
-		Logging::LogVR4300Instruction(pc, current_instr_log_output, last_instr_fetch_phys_addr);
+		Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
 #endif
 	}
 
@@ -487,7 +487,7 @@ namespace VR4300
 		}
 
 #ifdef LOG_CPU_INSTR
-		Logging::LogVR4300Instruction(pc, current_instr_log_output, last_instr_fetch_phys_addr);
+		Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
 #endif
 	}
 }

@@ -11,6 +11,15 @@ import MemoryAccess;
 
 namespace VR4300
 {
+	constexpr std::array cop0_reg_str_repr = {
+		"INDEX", "RANDOM", "ENTRY_LO_0", "ENTRY_LO_1", "CONTEXT", "PAGE_MASK", "WIRED", "COP0_7", "BAD_V_ADDR",
+		"COUNT", "ENTRY_HI", "COMPARE", "STATUS", "CAUSE", "EPC", "PR_ID", "CONFIG", "LL_ADDR", "WATCH_LO",
+		"WATCH_HI", "X_CONTEXT", "COP0_21", "COP0_22", "COP0_23", "COP0_24", "COP0_25", "PARITY_ERROR",
+		"COP0_27", "TAG_LO", "TAG_HI", "ERROR_EPC"
+	};
+	static_assert(cop0_reg_str_repr.size() == 31);
+
+
 	template<COP0Instruction instr>
 	void COP0Move(const u32 instr_code)
 	{
@@ -20,7 +29,7 @@ namespace VR4300
 		const auto rt = instr_code >> 16 & 0x1F;
 
 #ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, rd);
+		current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, cop0_reg_str_repr[rd]);
 #endif
 
 		if constexpr (instr == MTC0)
@@ -126,10 +135,10 @@ namespace VR4300
 		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 		/* Compute things that will make the virtual-to-physical-address process faster. */
 		const auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
-		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << (addr_offset_bit_length + 1) & 0xFF'FFFF'FFFF;
+		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << addr_offset_bit_length & 0xFF'FFFF'FFFF;
 		tlb_entries[tlb_index].address_offset_mask = (1 << addr_offset_bit_length) - 1;
 		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
-		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << (addr_offset_bit_length + 1);
+		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
 
 		AdvancePipeline<1>();
 	}
@@ -156,10 +165,10 @@ namespace VR4300
 		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
 
 		const auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
-		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << (addr_offset_bit_length + 1) & 0xFF'FFFF'FFFF;
+		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << addr_offset_bit_length & 0xFF'FFFF'FFFF;
 		tlb_entries[tlb_index].address_offset_mask = (1 << addr_offset_bit_length) - 1;
 		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
-		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << (addr_offset_bit_length + 1);
+		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
 
 		AdvancePipeline<1>();
 	}

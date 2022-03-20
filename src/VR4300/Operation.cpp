@@ -76,6 +76,9 @@ namespace VR4300
 
 	void ExecuteInstruction() /* todo: bad name for now */
 	{
+#ifdef LOG_CPU_INSTR
+		current_instr_pc = pc;
+#endif
 		const u32 instr_code = FetchInstruction(pc);
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);

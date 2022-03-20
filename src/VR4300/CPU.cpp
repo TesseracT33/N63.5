@@ -358,7 +358,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}();
 
 #ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, static_cast<std::make_unsigned<decltype(immediate)>::type>(immediate));
+		current_instr_log_output = [&] {
+			if constexpr (instr == LUI)
+				return std::format("{} {}, ${:X}", current_instr_name, rt, immediate);
+			return std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, immediate);
+		}();
 #endif
 
 		if constexpr (instr == ADDI)
@@ -1153,7 +1157,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		}();
 
 #ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, static_cast<std::make_unsigned<decltype(immediate)>::type>(immediate));
+		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
 #endif
 
 		const bool trap_cond = [&] {
