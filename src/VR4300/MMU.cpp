@@ -322,8 +322,9 @@ namespace VR4300
 	template<std::integral Int, MemoryAccess::Alignment alignment, MemoryAccess::Operation operation>
 	Int ReadVirtual(u64 virtual_address)
 	{
-		/* For aligned accesses, check if the address is misaligned. */
-		if constexpr (sizeof Int > 1)
+		/* For aligned accesses, check if the address is misaligned. No need to do it for instruction fetches.
+		   The PC can be misaligned after an ERET instruction, but we manually check there if the PC read from the EPC register is misaligned. */
+		if constexpr (sizeof Int > 1 && operation != MemoryAccess::Operation::InstrFetch)
 		{
 			if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			{

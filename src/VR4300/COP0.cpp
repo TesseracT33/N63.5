@@ -1,6 +1,7 @@
 module VR4300:COP0;
 
 import :CPU;
+import :Exceptions;
 import :Operation; 
 import :Registers;
 import :MMU;
@@ -192,6 +193,13 @@ namespace VR4300
 			cop0_reg.status.erl = 0;
 		}
 		ll_bit = 0;
+
+		/* Check if the pc is misaligned, and if so, signal an exception right away.
+		   Then, there is no need to check if the pc is misaligned every time an instruction is fetched
+		   (this is the only place where the pc can be set to anything, since epc and error_epc are writeable?). */
+		if (pc & 3)
+			SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
+
 		AdvancePipeline<1>();
 	}
 
