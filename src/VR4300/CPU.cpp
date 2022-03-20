@@ -351,7 +351,7 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const auto rs = instr_code >> 21 & 0x1F;
 
 		const auto immediate = [&] {
-			if constexpr (instr == ANDI || instr == ORI || instr == XORI)
+			if constexpr (instr == ANDI || instr == LUI || instr == ORI || instr == XORI)
 				return u16(instr_code & 0xFFFF);
 			else
 				return s16(instr_code & 0xFFFF);

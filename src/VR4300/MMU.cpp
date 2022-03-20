@@ -322,9 +322,8 @@ namespace VR4300
 	template<std::integral Int, MemoryAccess::Alignment alignment, MemoryAccess::Operation operation>
 	Int ReadVirtual(u64 virtual_address)
 	{
-		/* For aligned accesses, check if the address is misaligned. There is no need to do this for */
-		/* instruction fetches; we know that the PC will always be a multiple of four. */
-		if constexpr (sizeof Int > 1 && operation != MemoryAccess::Operation::InstrFetch)
+		/* For aligned accesses, check if the address is misaligned. */
+		if constexpr (sizeof Int > 1)
 		{
 			if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			{
