@@ -3,6 +3,7 @@ export module VR4300:Operation;
 import NumericalTypes;
 
 import <bit>;
+import <cassert>;
 import <string>;
 import <string_view>;
 

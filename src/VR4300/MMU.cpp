@@ -2,12 +2,10 @@ module VR4300:MMU;
 
 import :COP0;
 import :Exceptions;
+import :Operation;
 import :Registers;
 
-import Logging;
 import Memory;
-
-#include "../debug/DebugOptions.h"
 
 namespace VR4300
 {
@@ -26,6 +24,7 @@ namespace VR4300
 	void SetActiveVirtualToPhysicalFunctions()
 	{
 		using enum AddressingMode;
+		using enum OperatingMode;
 
 		if (cop0_reg.status.ksu == 0b00 || cop0_reg.status.erl == 1 || cop0_reg.status.exl == 1) /* Kernel mode */
 		{
@@ -33,12 +32,14 @@ namespace VR4300
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<MemoryAccess::Operation::Write>;
+				operating_mode = Kernel;
 				addressing_mode = _32bit;
 			}
 			else
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode64<MemoryAccess::Operation::Write>;
+				operating_mode = Kernel;
 				addressing_mode = _64bit;
 			}
 		}
@@ -48,12 +49,14 @@ namespace VR4300
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<MemoryAccess::Operation::Write>;
+				operating_mode = Supervisor;
 				addressing_mode = _32bit;
 			}
 			else
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode64<MemoryAccess::Operation::Write>;
+				operating_mode = Supervisor;
 				addressing_mode = _64bit;
 			}
 		}
@@ -63,12 +66,14 @@ namespace VR4300
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<MemoryAccess::Operation::Write>;
+				operating_mode = User;
 				addressing_mode = _32bit;
 			}
 			else
 			{
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode64<MemoryAccess::Operation::Write>;
+				operating_mode = User;
 				addressing_mode = _64bit;
 			}
 		}

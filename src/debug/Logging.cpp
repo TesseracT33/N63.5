@@ -1,8 +1,6 @@
 module Logging;
 
-#include "DebugOptions.h"
-
-std::ofstream instr_logging_ofs{ LOG_PATH };
+std::ofstream instr_logging_ofs{ "F:\\n64.txt" };
 
 namespace Logging
 {
@@ -64,13 +62,13 @@ namespace Logging
 
 	void LogDMA(const std::string& output)
 	{
-		instr_logging_ofs << "STARTED DMA; " << output;
+		instr_logging_ofs << "STARTED DMA; " << output << std::endl;
 	}
 
 
 	void LogException(const std::string_view exception)
 	{
-		instr_logging_ofs << "EXCEPTION; " << exception;
+		instr_logging_ofs << "EXCEPTION; " << exception << std::endl;
 	}
 
 

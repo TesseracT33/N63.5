@@ -6,9 +6,8 @@ import :Operation;
 import :Registers;
 import :MMU;
 
+import DebugOptions;
 import MemoryAccess;
-
-#include "../debug/DebugOptions.h"
 
 namespace VR4300
 {
@@ -29,9 +28,10 @@ namespace VR4300
 		const auto rd = instr_code >> 11 & 0x1F;
 		const auto rt = instr_code >> 16 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, cop0_reg_str_repr[rd]);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, cop0_reg_str_repr[rd]);
+		}
 
 		if constexpr (instr == MTC0)
 		{
@@ -76,9 +76,11 @@ namespace VR4300
 		   Searches a TLB entry that matches with the contents of the entry Hi register and
 		   sets the number of that TLB entry to the index register. If a TLB entry that
 		   matches is not found, sets the most significant bit of the index register. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
+
 		const auto tlb_index = std::find_if(tlb_entries.begin(), tlb_entries.end(),
 			[](const auto& entry) {
 				return entry.entry_hi.asid == cop0_reg.entry_hi.asid &&
@@ -105,9 +107,11 @@ namespace VR4300
 		   The EntryHi and EntryLo registers are loaded with the contents of the TLB entry
 		   pointed at by the contents of the Index register. The G bit (which controls ASID matching)
 		   read from the TLB is written into both of the EntryLo0 and EntryLo1 registers. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
+
 		const auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
 		std::memcpy(&cop0_reg.entry_lo_0, &tlb_entries[tlb_index].entry_lo[0], 4);
 		std::memcpy(&cop0_reg.entry_lo_1, &tlb_entries[tlb_index].entry_lo[1], 4);
@@ -125,9 +129,11 @@ namespace VR4300
 		   The TLB entry pointed at by the Index register is loaded with the contents of the
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
+
 		const auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
 		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
@@ -152,9 +158,11 @@ namespace VR4300
 		   the EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
 		   The 'wired' register determines which TLB entries cannot be overwritten. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
+
 		const auto tlb_index = cop0_reg.random.value & 0x1F; /* bit 5 is not used */
 		const auto tlb_wired_index = cop0_reg.wired.value & 0x1F;
 		if (tlb_index < tlb_wired_index) /* TODO: <= ? */
@@ -179,9 +187,11 @@ namespace VR4300
 	{
 		/* Return From Exception;
 		   Returns from an exception, interrupt, or error trap. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
+
 		if (cop0_reg.status.erl == 0)
 		{
 			pc = cop0_reg.epc.value;
@@ -212,9 +222,10 @@ namespace VR4300
 		   address by using the TLB, and a cache operation indicated by a 5-bit sub op
 		   code is executed to that address. */
 		/* Currently not emulated. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
 		AdvancePipeline<1>();
 	}
 

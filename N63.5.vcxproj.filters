@@ -51,9 +51,9 @@
     <ClCompile Include="src\Input.ixx" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\memory\PIF.cpp" />
+    <ClCompile Include="src\debug\DebugOptions.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
-    <ClInclude Include="src\debug\DebugOptions.h" />
   </ItemGroup>
 </Project>

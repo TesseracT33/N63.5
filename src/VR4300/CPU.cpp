@@ -5,12 +5,10 @@ import :MMU;
 import :Operation;
 import :Registers;
 
-import Logging;
+import DebugOptions;
 import MemoryAccess;
 
-#include "../debug/DebugOptions.h"
-
-namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32-bit mode (fig 16-1 in VR4300) */
+namespace VR4300
 {
 	template<CPUInstruction instr>
 	void CPULoad(const u32 instr_code)
@@ -20,15 +18,26 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const s16 offset = instr_code & 0xFFFF;
 		const auto rt = instr_code >> 16 & 0x1F;
 		const auto base = instr_code >> 21 & 0x1F;
-		const auto address = gpr[base] + offset;
+		auto address = gpr[base] + offset;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
-#endif
+		/* For all instructions:
+		   Generates an address by adding a sign-extended offset to the contents of register base.
+		   In the 32-bit Kernel mode, the high-order 32 bits are ignored during
+		   virtual address creation. */
+		if constexpr (instr == LD || instr == LDL || instr == LDR || instr == LLD)
+		{
+			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit)
+			{
+				address = s32(address & 0xFFFF'FFFF);
+			}
+		}
+
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+		}
 
 		auto result = [&] {
-			/* For all instructions:
-			   Generates an address by adding a sign-extended offset to the contents of register base. */
 			if constexpr (instr == LB)
 			{
 				/* Load Byte;
@@ -231,14 +240,25 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const s16 offset = instr_code & 0xFFFF;
 		const auto rt = instr_code >> 16 & 0x1F;
 		const auto base = instr_code >> 21 & 0x1F;
-		const auto address = gpr[base] + offset;
-
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
-#endif
+		auto address = gpr[base] + offset;
 
 		/* For all instructions:
-		   Generates an address by adding a sign-extended offset to the contents of register base. */
+		   Generates an address by adding a sign-extended offset to the contents of register base.
+		   For "doubleword instructions", in the 32-bit Kernel mode, the high-order 32 bits are ignored during
+		   virtual address creation. */
+		if constexpr (instr == SD || instr == SDL || instr == SDR || instr == SCD)
+		{
+			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit)
+			{
+				address = s32(address & 0xFFFF'FFFF);
+			}
+		}
+
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+		}
+
 		if constexpr (instr == SB)
 		{
 			/* Store Byte;
@@ -357,13 +377,14 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				return s16(instr_code & 0xFFFF);
 		}();
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = [&] {
-			if constexpr (instr == LUI)
-				return std::format("{} {}, ${:X}", current_instr_name, rt, immediate);
-			return std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, immediate);
-		}();
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = [&] {
+				if constexpr (instr == LUI)
+					return std::format("{} {}, ${:X}", current_instr_name, rt, immediate);
+				return std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, immediate);
+			}();
+		}
 
 		if constexpr (instr == ADDI)
 		{
@@ -439,10 +460,6 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Doubleword Add Immediate;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Generates an exception if an integer overflow occurs. */
-
-			   /* TODO This operation is only defined for the VR4300 operating in 64-bit mode and in 32-
-	   bit Kernel mode. Execution of this instruction in 32-bit User or Supervisor mode
-	   causes a reserved instruction exception*/
 			const s64 sum = gpr[rs] + immediate;
 			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
@@ -476,9 +493,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const auto rt = instr_code >> 16 & 0x1F;
 		const auto rs = instr_code >> 21 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}, {}", current_instr_name, rd, rs, rt);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, {}, {}", current_instr_name, rd, rs, rt);
+		}
 
 		if constexpr (instr == ADD)
 		{
@@ -568,9 +586,6 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			/* Doubleword Add;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Generates an exception if an integer overflow occurs. */
-
-			   /* TODO Execution of this instruction in 32-bit User or Supervisor mode
-	   causes a reserved instruction exception.*/
 			const s64 sum = gpr[rs] + gpr[rt];
 			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
 			if (overflow)
@@ -620,30 +635,21 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		using enum CPUInstruction;
 
+		const auto sa = instr_code >>  6 & 0x1F;
 		const auto rd = instr_code >> 11 & 0x1F;
 		const auto rt = instr_code >> 16 & 0x1F;
+		const auto rs = instr_code >> 21 & 0x1F;
 
-		const auto rs = [&] {
-			if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
-				return instr_code >> 21 & 0x1F;
-			else return 0;
-		}();
-
-		const auto sa = [&] {
-			if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
-				return 0;
-			else return instr_code >> 6 & 0x1F;
-		}();
-
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = [&] {
-			if (instr_code == 0)
-				return std::string("NOP");
-			if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
-				return std::format("{} {}, {}, {}", current_instr_name, rd, rt, rs);
-			return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
-		}();
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = [&] {
+				if (instr_code == 0)
+					return std::string("NOP");
+				if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
+					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, rs);
+				return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
+			}();
+		}
 
 		const s64 result = static_cast<s64>( [&] {
 			if constexpr (instr == SLL)
@@ -780,9 +786,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const auto rt = instr_code >> 16 & 0x1F;
 		const auto rs = instr_code >> 21 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
+		}
 
 		if constexpr (instr == MULT)
 		{
@@ -969,17 +976,19 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			if constexpr (instr == J || instr == JAL)
 			{
 				const u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
-#ifdef LOG_CPU_INSTR
-				current_instr_log_output = std::format("{} ${:X}", current_instr_name, static_cast<std::make_unsigned<decltype(target)>::type>(target));
-#endif
+				if constexpr (log_cpu_instructions)
+				{
+					current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
+				}
 				return pc & 0xFFFF'FFFF'F000'0000 | target;
 			}
 			else if constexpr (instr == JR || instr == JALR)
 			{
 				const auto rs = instr_code >> 21 & 0x1F;
-#ifdef LOG_CPU_INSTR
-				current_instr_log_output = std::format("{} {}", current_instr_name, rs);
-#endif
+				if constexpr (log_cpu_instructions)
+				{
+					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
+				}
 				if (gpr[rs] & 3)
 				{
 					SignalException<Exception::AddressError>();
@@ -1013,23 +1022,19 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		using enum CPUInstruction;
 
+		const auto rt = instr_code >> 16 & 0x1F;
 		const auto rs = instr_code >> 21 & 0x1F;
 
-		const auto rt = [&] {
-			if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
-				return instr_code >> 16 & 0x1F;
-			else return 0; /* 'rt' is not needed for the other instructions; this will be optimized away. */
-		}();
-
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = [&] {
-			const s16 offset = instr_code & 0xFFFF;
-			if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
-				return std::format("{} {}, {}, ${:X}", current_instr_name, rs, rt, offset);
-			else
-				return std::format("{} {}, ${:X}", current_instr_name, rs, offset);
-		}();
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = [&] {
+				const s16 offset = instr_code & 0xFFFF;
+				if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
+					return std::format("{} {}, {}, ${:X}", current_instr_name, rs, rt, offset);
+				else
+					return std::format("{} {}, ${:X}", current_instr_name, rs, offset);
+			}();
+		}
 
 		/* For all instructions: branch to the branch address if the condition is met, with a delay of one instruction.
 		   For "likely" instructions: if the branch condition is not satisfied, the instruction in the branch delay slot is discarded.
@@ -1085,9 +1090,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		const auto rt = instr_code >> 16 & 0x1F;
 		const auto rs = instr_code >> 21 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
+		}
 
 		const bool trap_cond = [&] {
 			if constexpr (instr == TGE)
@@ -1156,9 +1162,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 				return u16(instr_code & 0xFFFF);
 		}();
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
+		}
 
 		const bool trap_cond = [&] {
 			if constexpr (instr == TGEI)
@@ -1225,9 +1232,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			   Transfers the contents of special register LO/HI to register rd. */
 			const auto rd = instr_code >> 11 & 0x1F;
 			gpr.Set(rd, [] { if constexpr (instr == MFLO) return lo_reg; else return hi_reg; }());
-#ifdef LOG_CPU_INSTR
-			current_instr_log_output = std::format("{} {}", current_instr_name, rd);
-#endif
+
+			if constexpr (log_cpu_instructions)
+			{
+				current_instr_log_output = std::format("{} {}", current_instr_name, rd);
+			}
 		}
 		else if constexpr (instr == MTLO || instr == MTHI)
 		{
@@ -1236,9 +1245,11 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 			const auto rs = instr_code >> 21 & 0x1F;
 			if constexpr (instr == MTLO) lo_reg = gpr[rs];
 			else                         hi_reg = gpr[rs];
-#ifdef LOG_CPU_INSTR
-			current_instr_log_output = std::format("{} {}", current_instr_name, rs);
-#endif
+
+			if constexpr (log_cpu_instructions)
+			{
+				current_instr_log_output = std::format("{} {}", current_instr_name, rs);
+			}
 		}
 		AdvancePipeline<1>();
 	}
@@ -1249,9 +1260,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 		/* Synchronize;
 		   Completes the Load/store instruction currently in the pipeline before the new
 		   Load/store instruction is executed. Is executed as a NOP on the VR4300. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
 		AdvancePipeline<1>();
 	}
 
@@ -1260,9 +1272,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		/* System Call;
 		   Generates a system call exception and transfers control to the exception processing program. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
 		SignalException<Exception::Syscall>();
 		AdvancePipeline<1>();
 	}
@@ -1272,9 +1285,10 @@ namespace VR4300 /* TODO check for intsructions that cause exceptions when in 32
 	{
 		/* Breakpoint;
 		   Generates a breakpoint exception and transfers control to the exception processing program. */
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = current_instr_name;
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = current_instr_name;
+		}
 		SignalException<Exception::Breakpoint>();
 		AdvancePipeline<1>();
 	}

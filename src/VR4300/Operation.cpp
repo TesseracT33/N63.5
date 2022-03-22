@@ -7,11 +7,8 @@ import :Exceptions;
 import :MMU;
 import :Registers;
 
+import DebugOptions;
 import Logging;
-
-import <cassert>;
-
-#include "../debug/DebugOptions.h"
 
 namespace VR4300
 {
@@ -64,21 +61,25 @@ namespace VR4300
 		}
 		else
 		{
-#ifdef RUN_BOOT_ROM
-			SignalException<Exception::ColdReset>();
-			HandleException();
-#else
-			HLE_PIF();
-#endif
+			if constexpr (skip_boot_rom)
+			{
+				HLE_PIF();
+			}
+			else
+			{
+				SignalException<Exception::ColdReset>();
+				HandleException();
+			}
 		}
 	}
 
 
 	void ExecuteInstruction() /* todo: bad name for now */
 	{
-#ifdef LOG_CPU_INSTR
-		current_instr_pc = pc;
-#endif
+		if (log_cpu_instructions)
+		{
+			current_instr_pc = pc;
+		}
 		const u32 instr_code = FetchInstruction(pc);
 		pc += 4;
 		DecodeAndExecuteInstruction(instr_code);

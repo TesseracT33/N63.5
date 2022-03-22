@@ -6,7 +6,7 @@ import :MMU;
 import :Operation;
 import :Registers;
 
-#include "../debug/DebugOptions.h"
+import DebugOptions;
 
 namespace VR4300
 {
@@ -24,6 +24,7 @@ namespace VR4300
 	constexpr static std::array compare_cond_strings = {
 		"F", "UN", "EQ", "UEQ", "OLT", "ULT", "OLE", "ULE", "SF", "NGLE", "SEQ", "NGL", "LT", "NGE", "LE", "NGT"
 	};
+
 
 	bool unimplemented_operation = false;
 
@@ -144,9 +145,10 @@ namespace VR4300
 		const auto base = instr_code >> 21 & 0x1F;
 		const auto address = gpr[base] + offset;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+		}
 
 		const auto result = [&] {
 			if constexpr (instr == LWC1)
@@ -191,9 +193,10 @@ namespace VR4300
 		const auto base = instr_code >> 21 & 0x1F;
 		const auto address = gpr[base] + offset;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+		}
 
 		if constexpr (instr == SWC1)
 		{
@@ -229,9 +232,10 @@ namespace VR4300
 		const auto fs = instr_code >> 11 & 0x1F;
 		const auto rt = instr_code >> 16 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, fs);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, fs);
+		}
 
 		if constexpr (instr == MTC1)
 		{
@@ -314,9 +318,10 @@ namespace VR4300
 		const auto fs = instr_code >> 11 & 0x1F;
 		const auto fmt = instr_code >> 21 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
+		}
 
 		if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_W || instr == CVT_L)
 		{
@@ -486,9 +491,10 @@ namespace VR4300
 
 			const auto ft = instr_code >> 16 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-			current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToString(fmt), fd, fs, ft);
-#endif
+			if constexpr (log_cpu_instructions)
+			{
+				current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToString(fmt), fd, fs, ft);
+			}
 
 			auto Compute = [&] <std::floating_point Float>
 			{
@@ -554,9 +560,10 @@ namespace VR4300
 			   Calculates arithmetic positive square root of the contents of floating-point
 			   register fs in the specified format. Stores the rounded result to floating-point register fd. */
 
-#ifdef LOG_CPU_INSTR
-			current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
-#endif
+			if constexpr (log_cpu_instructions)
+			{
+				current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
+			}
 
 			auto Compute = [&] <std::floating_point Float>
 			{
@@ -639,9 +646,10 @@ namespace VR4300
 		   If the FPU condition line is false, branches to the target address (delay of one instruction).
 		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("{} ${:X}", current_instr_name, s16(instr_code & 0xFFFF));
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("{} ${:X}", current_instr_name, s16(instr_code & 0xFFFF));
+		}
 
 		const s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 
@@ -677,9 +685,10 @@ namespace VR4300
 		const auto ft = instr_code >> 16 & 0x1F;
 		const auto fmt = instr_code >> 21 & 0x1F;
 
-#ifdef LOG_CPU_INSTR
-		current_instr_log_output = std::format("C.{}.{} {}, {}", compare_cond_strings[cond], FmtToString(fmt), fs, ft);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			current_instr_log_output = std::format("C.{}.{} {}, {}", compare_cond_strings[cond], FmtToString(fmt), fs, ft);
+		}
 
 		auto Compare = [&] <std::floating_point Float>
 		{

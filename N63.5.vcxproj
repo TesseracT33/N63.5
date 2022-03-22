@@ -166,6 +166,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\debug\DebugOptions.ixx" />
     <ClCompile Include="src\debug\Logging.cpp" />
     <ClCompile Include="src\debug\Logging.ixx" />
     <ClCompile Include="src\Input.cpp" />
@@ -218,7 +219,6 @@
     <ClCompile Include="src\VR4300\VR4300.ixx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\debug\DebugOptions.h" />
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

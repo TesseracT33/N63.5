@@ -1,13 +1,12 @@
 module DMA;
 
 import Cartridge;
+import DebugOptions;
 import Logging;
 import N64;
 import PIF;
 import RDRAM;
 import VR4300;
-
-#include "../debug/DebugOptions.h"
 
 namespace DMA
 {
@@ -32,11 +31,12 @@ namespace DMA
 		}();
 		N64::EnqueueEvent(n64_event, cycles_until_finish, VR4300::p_cycle_counter);
 
-#ifdef LOG_CPU_DMA
-		const std::string output = std::format("From {} ${:X} to {} ${:X}; ${:X} bytes",
-			LocationToString(source), source_start_addr, LocationToString(dest), dest_start_addr, number_of_bytes_to_copy);
-		Logging::LogDMA(output);
-#endif
+		if constexpr (log_dma)
+		{
+			const std::string output = std::format("From {} ${:X} to {} ${:X}; ${:X} bytes",
+				LocationToString(source), source_start_addr, LocationToString(dest), dest_start_addr, number_of_bytes_to_copy);
+			Logging::LogDMA(output);
+		}
 	}
 
 

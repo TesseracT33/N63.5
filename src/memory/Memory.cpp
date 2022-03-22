@@ -1,6 +1,7 @@
 module Memory;
 
 import Cartridge;
+import DebugOptions;
 import Logging;
 import MI;
 import PI;
@@ -11,17 +12,15 @@ import SI;
 import VI;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
-#include "../debug/DebugOptions.h"
 
 namespace Memory
 {
+	std::string_view io_location;
+
+
 	template<std::integral Int, MemoryAccess::Operation operation>
 	Int ReadPhysical(const u32 physical_address)
 	{
-#ifdef LOG_CPU_MEM
-		std::string_view source;
-#endif
-
 		const Int value = [&] {
 			switch (physical_address >> 20)
 			{
@@ -44,39 +43,27 @@ namespace Memory
 				return Int(0);
 
 			case 0x043:
-#ifdef LOG_CPU_MEM
-				source = "MI";
-#endif
+				if constexpr (log_cpu_memory) io_location = "MI";
 				return MI::Read<Int>(physical_address);
 
 			case 0x044:
-#ifdef LOG_CPU_MEM
-				source = "VI";
-#endif
+				if constexpr (log_cpu_memory) io_location = "VI";
 				return VI::Read<Int>(physical_address);
 
 			case 0x045:
-#ifdef LOG_CPU_MEM
-				source = "AI";
-#endif
+				if constexpr (log_cpu_memory) io_location = "AI";
 				return Int(0);
 
 			case 0x046:
-#ifdef LOG_CPU_MEM
-				source = "PI";
-#endif
+				if constexpr (log_cpu_memory) io_location = "PI";
 				return PI::Read<Int>(physical_address);
 
 			case 0x047:
-#ifdef LOG_CPU_MEM
-				source = "RI";
-#endif
+				if constexpr (log_cpu_memory) io_location = "RI";
 				return Int(0);
 
 			case 0x048:
-#ifdef LOG_CPU_MEM
-				source = "SI";
-#endif
+				if constexpr (log_cpu_memory) io_location = "SI";
 				return SI::Read<Int>(physical_address);
 
 			case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
@@ -158,22 +145,24 @@ namespace Memory
 
 		if constexpr (operation == MemoryAccess::Operation::InstrFetch)
 		{
-#ifdef LOG_CPU_INSTR
-			VR4300::last_instr_fetch_phys_addr = physical_address;
-#endif
+			if constexpr (log_cpu_instructions)
+			{
+				VR4300::last_instr_fetch_phys_addr = physical_address;
+			}
 		}
 		else
 		{
-#ifdef LOG_CPU_MEM
-			if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
-				Logging::LogIORead(physical_address, byteswapped_value, source);
-			else
+			if constexpr (log_cpu_memory)
 			{
-#ifndef LOG_CPU_MEM_ONLY_IO
-				Logging::LogMemoryRead(physical_address, byteswapped_value);
-#endif
+				if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
+				{
+					Logging::LogIORead(physical_address, byteswapped_value, io_location);
+				}
+				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All)
+				{
+					Logging::LogMemoryRead(physical_address, byteswapped_value);
+				}
 			}
-#endif
 		}
 
 		return byteswapped_value;
@@ -184,10 +173,6 @@ namespace Memory
 	void WritePhysical(const u32 physical_address, const auto data)
 	{
 		const auto byteswapped_data = ByteswapOnLittleEndian(data);
-
-#ifdef LOG_CPU_MEM
-		std::string_view dest;
-#endif
 
 		switch (physical_address >> 20)
 		{
@@ -214,42 +199,30 @@ namespace Memory
 			break;
 
 		case 0x043:
-#ifdef LOG_CPU_MEM
-			dest = "MI";
-#endif
+			if constexpr (log_cpu_memory) io_location = "MI";
 			MI::Write<number_of_bytes>(physical_address, byteswapped_data);
 			break;
 
 		case 0x044:
-#ifdef LOG_CPU_MEM
-			dest = "VI";
-#endif
+			if constexpr (log_cpu_memory) io_location = "VI";
 			VI::Write<number_of_bytes>(physical_address, byteswapped_data);
 			break;
 
 		case 0x045:
-#ifdef LOG_CPU_MEM
-			dest = "AI";
-#endif
+			if constexpr (log_cpu_memory) io_location = "AI";
 			break;
 
 		case 0x046:
-#ifdef LOG_CPU_MEM
-			dest = "PI";
-#endif
+			if constexpr (log_cpu_memory) io_location = "PI";
 			PI::Write<number_of_bytes>(physical_address, byteswapped_data);
 			break;
 
 		case 0x047:
-#ifdef LOG_CPU_MEM
-			dest = "RI";
-#endif
+			if constexpr (log_cpu_memory) io_location = "RI";
 			break;
 
 		case 0x048:
-#ifdef LOG_CPU_MEM
-			dest = "SI";
-#endif
+			if constexpr (log_cpu_memory) io_location = "SI";
 			SI::Write<number_of_bytes>(physical_address, byteswapped_data);
 			break;
 
@@ -326,16 +299,17 @@ namespace Memory
 			break;
 		}
 
-#ifdef LOG_CPU_MEM
-		if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
-			Logging::LogIOWrite(physical_address, data, dest);
-		else
+		if constexpr (log_cpu_memory)
 		{
-#ifndef LOG_CPU_MEM_ONLY_IO
-			Logging::LogMemoryWrite(physical_address, data);
-#endif
+			if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
+			{
+				Logging::LogIOWrite(physical_address, data, io_location);
+			}
+			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All)
+			{
+				Logging::LogMemoryWrite(physical_address, data);
+			}
 		}
-#endif
 	}
 
 

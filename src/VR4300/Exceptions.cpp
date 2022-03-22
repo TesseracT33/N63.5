@@ -6,6 +6,7 @@ import :MMU;
 import :Operation;
 import :Registers;
 
+import DebugOptions;
 import Logging;
 
 namespace VR4300
@@ -66,9 +67,10 @@ namespace VR4300
 
 	void HandleException()
 	{
-#ifdef LOG_CPU_EXCEPTIONS
-		Logging::LogException(ExceptionToString(occurred_exception));
-#endif
+		if constexpr (log_cpu_exceptions)
+		{
+			Logging::LogException(ExceptionToString(occurred_exception));
+		}
 
 		exception_has_occurred = false;
 

@@ -7,21 +7,26 @@ import :Exceptions;
 import :MMU;
 import :Registers;
 
+import DebugOptions;
 import Logging;
 import NumericalTypes;
 
-#include "../debug/DebugOptions.h"
 
-#ifdef LOG_CPU_INSTR
-#define EXEC_CPU_INSTR(INSTR)  { current_instr_name = #INSTR; ExecuteCPUInstruction<CPUInstruction::INSTR>(); }
-#define EXEC_COP0_INSTR(INSTR) { current_instr_name = #INSTR; ExecuteCOP0Instruction<COP0Instruction::INSTR>(); }
-#define EXEC_COP1_INSTR(INSTR) { current_instr_name = #INSTR; ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
-#else
-#define EXEC_CPU_INSTR(INSTR)  { ExecuteCPUInstruction<CPUInstruction::INSTR>(); }
-#define EXEC_COP0_INSTR(INSTR) { ExecuteCOP0Instruction<COP0Instruction::INSTR>(); }
-#define EXEC_COP1_INSTR(INSTR) { ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
-#endif
-	
+#define EXEC_CPU_INSTR(INSTR) { \
+	if constexpr (log_cpu_instructions) \
+		current_instr_name = #INSTR; \
+	ExecuteCPUInstruction<CPUInstruction::INSTR>(); }
+
+#define EXEC_COP0_INSTR(INSTR) { \
+	if constexpr (log_cpu_instructions) \
+		current_instr_name = #INSTR; \
+	ExecuteCOP0Instruction<COP0Instruction::INSTR>(); }
+
+#define EXEC_COP1_INSTR(INSTR) { \
+	if constexpr (log_cpu_instructions) \
+		current_instr_name = #INSTR; \
+	ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
+
 
 namespace VR4300
 {
@@ -419,9 +424,10 @@ namespace VR4300
 			static_assert(instr != instr);
 		}
 
-#ifdef LOG_CPU_INSTR
-		Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
+		}
 	}
 
 
@@ -440,9 +446,10 @@ namespace VR4300
 		else if constexpr (instr == COP0Instruction::CACHE) CACHE(instr_code);
 		else static_assert(instr != instr);
 
-#ifdef LOG_CPU_INSTR
-		Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
+		}
 	}
 
 
@@ -486,8 +493,9 @@ namespace VR4300
 			static_assert(instr != instr);
 		}
 
-#ifdef LOG_CPU_INSTR
-		Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
-#endif
+		if constexpr (log_cpu_instructions)
+		{
+			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
+		}
 	}
 }
