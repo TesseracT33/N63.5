@@ -6,6 +6,7 @@ import <bit>;
 import <cassert>;
 import <string>;
 import <string_view>;
+import <utility>;
 
 namespace VR4300
 {

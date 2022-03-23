@@ -54,14 +54,14 @@ namespace PI
 	template<StatusFlag status_flag>
 	void SetStatusFlag()
 	{
-		mem[PI_STATUS + 3] |= static_cast<u8>(status_flag);
+		mem[PI_STATUS + 3] |= std::to_underlying(status_flag);
 	}
 
 
 	template<StatusFlag status_flag>
 	void ClearStatusFlag()
 	{
-		mem[PI_STATUS + 3] &= ~static_cast<u8>(status_flag);
+		mem[PI_STATUS + 3] &= ~std::to_underlying(status_flag);
 	}
 
 

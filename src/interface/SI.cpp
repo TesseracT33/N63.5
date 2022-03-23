@@ -18,7 +18,7 @@ namespace SI
 	template<StatusFlag status_flag>
 	void SetStatusFlag()
 	{
-		constexpr u8 status_flag_mask = static_cast<u8>(status_flag);
+		constexpr u8 status_flag_mask = std::to_underlying(status_flag);
 		if constexpr (status_flag == StatusFlag::INTERRUPT)
 			mem[SI_STATUS + 2] |= status_flag_mask;
 		else
@@ -29,7 +29,7 @@ namespace SI
 	template<StatusFlag status_flag>
 	void ClearStatusFlag()
 	{
-		constexpr u8 status_flag_mask = static_cast<u8>(status_flag);
+		constexpr u8 status_flag_mask = std::to_underlying(status_flag);
 		if constexpr (status_flag == StatusFlag::INTERRUPT)
 			mem[SI_STATUS + 2] &= ~status_flag_mask;
 		else

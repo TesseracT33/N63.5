@@ -112,14 +112,14 @@ namespace VR4300
 	template<ExternalInterruptSource interrupt>
 	void ClearInterruptPending()
 	{
-		cop0_reg.cause.ip &= ~static_cast<u8>(interrupt);
+		cop0_reg.cause.ip &= ~std::to_underlying(interrupt);
 	}
 
 
 	template<ExternalInterruptSource interrupt>
 	void SetInterruptPending()
 	{
-		cop0_reg.cause.ip |= static_cast<u8>(interrupt);
+		cop0_reg.cause.ip |= std::to_underlying(interrupt);
 		CheckInterrupts();
 	}
 

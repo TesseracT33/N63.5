@@ -31,8 +31,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void SetInterruptFlag()
 	{
-		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
-		mem[MI_INTERRUPT + 3] |= interrupt_type_mask;
+		mem[MI_INTERRUPT + 3] |= std::to_underlying(interrupt_type);
 		if (mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3])
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
@@ -43,8 +42,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptFlag()
 	{
-		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
-		mem[MI_INTERRUPT + 3] &= ~interrupt_type_mask;
+		mem[MI_INTERRUPT + 3] &= ~std::to_underlying(interrupt_type);
 		if (!(mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3]))
 		{
 			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
@@ -55,8 +53,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void SetInterruptMask()
 	{
-		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
-		mem[MI_MASK + 3] |= interrupt_type_mask;
+		mem[MI_MASK + 3] |= std::to_underlying(interrupt_type);;
 		if (mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3])
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
@@ -67,8 +64,7 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptMask()
 	{
-		static constexpr u8 interrupt_type_mask = static_cast<u8>(interrupt_type);
-		mem[MI_MASK + 3] &= ~interrupt_type_mask;
+		mem[MI_MASK + 3] &= ~std::to_underlying(interrupt_type);;
 		if (!(mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3]))
 		{
 			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
@@ -95,7 +91,6 @@ namespace MI
 		}
 		else if (offset == MI_MASK)
 		{
-			/* The below values will byteswap only if host system is little endian. */
 			static constexpr s32 clear_sp_mask = Memory::ByteswapOnLittleEndian<s32>(0x01);
 			static constexpr s32   set_sp_mask = Memory::ByteswapOnLittleEndian<s32>(0x02);
 			static constexpr s32 clear_si_mask = Memory::ByteswapOnLittleEndian<s32>(0x04);
