@@ -991,7 +991,7 @@ namespace VR4300
 				}
 				if (gpr[rs] & 3)
 				{
-					SignalException<Exception::AddressError>();
+					SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
 				}
 				return gpr[rs];
 			}
@@ -1009,7 +1009,7 @@ namespace VR4300
 		}
 		else if constexpr (instr == JALR)
 		{
-			const unsigned rd = instr_code >> 11 & 0x1F;
+			const auto rd = instr_code >> 11 & 0x1F;
 			gpr.Set(rd, pc + 4);
 		}
 
