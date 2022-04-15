@@ -171,6 +171,8 @@
     <ClCompile Include="src\debug\Logging.ixx" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Input.ixx" />
+    <ClCompile Include="src\interface\AI.cpp" />
+    <ClCompile Include="src\interface\AI.ixx" />
     <ClCompile Include="src\memory\PIF.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Renderer.ixx" />
@@ -200,6 +202,7 @@
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\N64.ixx" />
     <ClCompile Include="src\UserMessage.ixx" />
+    <ClCompile Include="src\Utils\FileUtils.ixx" />
     <ClCompile Include="src\VR4300\COP0.cpp" />
     <ClCompile Include="src\VR4300\COP0.ixx" />
     <ClCompile Include="src\VR4300\COP1.cpp" />

@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 
+import DebugOptions;
 import N64;
 import UserMessage;
 
@@ -22,7 +23,9 @@ int main(int argc, char* argv[])
 	const std::string rom_path = argv[1];
 	std::optional<std::string> ipl_path;
 	if (argc >= 3)
+	{
 		ipl_path.emplace(argv[2]);
+	}
 
 	SDL_SetMainReady();
 
@@ -57,7 +60,6 @@ int main(int argc, char* argv[])
 		UserMessage::Show("An error occured when starting the emulator.", UserMessage::Type::Error);
 		exit(1);
 	}
-
 	N64::Run();
 
 	SDL_DestroyRenderer(sdl_renderer);

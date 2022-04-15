@@ -5,6 +5,7 @@ import NumericalTypes;
 import <cassert>;
 import <concepts>;
 import <fstream>;
+import <optional>;
 import <string>;
 import <vector>;
 

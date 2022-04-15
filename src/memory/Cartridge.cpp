@@ -1,5 +1,6 @@
 module Cartridge;
 
+import FileUtils;
 import Memory;
 import UserMessage;
 
@@ -9,23 +10,13 @@ namespace Cartridge
 {
 	bool LoadROM(const std::string& rom_path)
 	{
-		/* Attempt to open the rom file */
-		std::ifstream ifs{ rom_path, std::ifstream::in | std::ifstream::binary };
-		if (!ifs)
+		const std::optional<std::vector<u8>> optional_rom = FileUtils::LoadBinaryFileVec(rom_path);
+		if (!optional_rom.has_value())
 		{
 			UserMessage::Show("Failed to open rom file.", UserMessage::Type::Error);
 			return false;
 		}
-
-		/* Compute the rom file size and resize the rom vector */
-		ifs.seekg(0, ifs.end);
-		const std::size_t rom_size = ifs.tellg();
-		rom.resize(rom_size);
-
-		/* Read the file */
-		ifs.seekg(0, ifs.beg);
-		ifs.read((char*)rom.data(), rom_size);
-
+		rom = optional_rom.value();
 		return true;
 	}
 

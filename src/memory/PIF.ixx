@@ -7,12 +7,16 @@ import <array>;
 import <concepts>;
 import <format>;
 import <fstream>;
+import <optional>;
 import <string>;
 
 namespace PIF
 {
-	std::array<u8, 0x7C0> pif_rom{};
-	std::array<u8, 0x40> pif_ram{};
+	constexpr std::size_t ram_size = 0x40;
+	constexpr std::size_t rom_size = 0x7C0;
+
+	std::array<u8, ram_size> ram{};
+	std::array<u8, rom_size> rom{};
 
 	export
 	{
