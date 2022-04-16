@@ -206,9 +206,11 @@ namespace VR4300
 
 		/* Check if the pc is misaligned, and if so, signal an exception right away.
 		   Then, there is no need to check if the pc is misaligned every time an instruction is fetched
-		   (this is the only place where the pc can be set to anything, since epc and error_epc are writeable?). */
+		   (this is one of the few places where the pc can be set to a misaligned value). */
 		if (pc & 3)
+		{
 			SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
+		}
 
 		AdvancePipeline<1>();
 	}

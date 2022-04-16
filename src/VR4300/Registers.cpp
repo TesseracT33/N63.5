@@ -32,7 +32,7 @@ namespace VR4300
 
 		if constexpr (sizeof(*struct_) == 4)
 		{
-			u32 value_to_write = static_cast<u32>(value);
+			const u32 value_to_write = static_cast<u32>(value);
 			std::memcpy(struct_, &value_to_write, 4);
 		}
 		else
@@ -41,8 +41,10 @@ namespace VR4300
 		}
 
 		/* For registers that, once they have been written to, need to tell the rest of the cpu about it. */
-		if constexpr (notifies_cpu_on_write<decltype(*struct_)>)
+		if constexpr (reg_notifies_cpu_on_write<decltype(*struct_)>)
+		{
 			struct_->NotifyCpuAfterWrite();
+		}
 	};
 
 	void SetStructFromIntMasked(auto* struct_, const u64 value, const u64 write_mask)
@@ -60,12 +62,14 @@ namespace VR4300
 		{
 			u64 struct_int;
 			std::memcpy(&struct_int, struct_, 8);
-			u64 value_to_write = value & write_mask | struct_int & ~write_mask;
+			const u64 value_to_write = value & write_mask | struct_int & ~write_mask;
 			std::memcpy(struct_, &value_to_write, 8);
 		}
 
-		if constexpr (notifies_cpu_on_write<decltype(*struct_)>)
+		if constexpr (reg_notifies_cpu_on_write<decltype(*struct_)>)
+		{
 			struct_->NotifyCpuAfterWrite();
+		}
 	};
 
 
@@ -110,7 +114,7 @@ namespace VR4300
 	}
 
 
-	u64 COP0Registers::Get(const size_t register_index) const
+	u64 COP0Registers::Get(const std::size_t register_index) const
 	{
 		switch (register_index)
 		{
@@ -142,7 +146,7 @@ namespace VR4300
 	}
 
 
-	void COP0Registers::Set(const size_t register_index, const u64 value)
+	void COP0Registers::Set(const std::size_t register_index, const u64 value)
 	{
 		switch (register_index)
 		{ /* Masks are used for bits that are non-writeable. */
@@ -172,7 +176,7 @@ namespace VR4300
 	}
 
 
-	void COP0Registers::SetRaw(const size_t register_index, const u64 value)
+	void COP0Registers::SetRaw(const std::size_t register_index, const u64 value)
 	{
 		switch (register_index)
 		{
@@ -226,36 +230,50 @@ namespace VR4300
 	}
 
 
-	u32 FPUControl::Get(const size_t index) const
+	u32 FPUControl::Get(const std::size_t index) const
 	{
 		static constexpr u32 fcr0 = 0; /* TODO */
-		if (index == 0)
-			return fcr0;
-		else if (index == 31)
+		if (index == 31)
+		{
 			return fcr31.Get();
+		}
+		else if (index == 0)
+		{
+			return fcr0;
+		}
 		else
+		{
 			return 0; /* Only #0 and #31 are "valid". */
+		}
 	}
 
 
-	void FPUControl::Set(const size_t index, const u32 data)
+	void FPUControl::Set(const std::size_t index, const u32 data)
 	{
 		if (index == 31)
+		{
 			fcr31.Set(data);
+		}
 	}
 
 
 	template<typename FPUNumericType>
-	FPUNumericType FGR::Get(const size_t index) const
+	FPUNumericType FGR::Get(const std::size_t index) const
 	{
 		if constexpr (std::is_same_v<FPUNumericType, s32>)
+		{
 			return s32(fpr[index]);
+		}
 		else if constexpr (std::is_same_v<FPUNumericType, f32>)
+		{
 			return std::bit_cast<f32, s32>(s32(fpr[index]));
+		}
 		else if constexpr (std::is_same_v<FPUNumericType, s64>)
 		{
 			if (cop0_reg.status.fr)
+			{
 				return fpr[index];
+			}
 			else
 			{ /* If the index is odd, then the result is undefined.
 				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
@@ -266,7 +284,9 @@ namespace VR4300
 		else if constexpr (std::is_same_v<FPUNumericType, f64>)
 		{
 			if (cop0_reg.status.fr)
+			{
 				return std::bit_cast<f64, s64>(fpr[index]);
+			}
 			else
 			{ /* If the index is odd, then the result is undefined.
 				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
@@ -278,16 +298,22 @@ namespace VR4300
 
 
 	template<typename FPUNumericType>
-	void FGR::Set(const size_t index, const FPUNumericType data)
+	void FGR::Set(const std::size_t index, const FPUNumericType data)
 	{
 		if constexpr (std::is_same_v<FPUNumericType, s32>)
+		{
 			fpr[index] = data;
+		}
 		else if constexpr (std::is_same_v<FPUNumericType, f32>)
+		{
 			fpr[index] = std::bit_cast<s32, f32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
+		}
 		else if constexpr (std::is_same_v<FPUNumericType, s64>)
 		{
 			if (cop0_reg.status.fr)
+			{
 				fpr[index] = data;
+			}
 			else
 			{ /* If the index is odd, then the result is undefined.
 				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
@@ -299,7 +325,9 @@ namespace VR4300
 		else if constexpr (std::is_same_v<FPUNumericType, f64>)
 		{
 			if (cop0_reg.status.fr)
+			{
 				fpr[index] = std::bit_cast<s64, f64>(data);
+			}
 			else
 			{ /* If the index is odd, then the result is undefined.
 				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
@@ -312,13 +340,13 @@ namespace VR4300
 	}
 
 
-	template s32 FGR::Get<s32>(const size_t) const;
-	template s64 FGR::Get<s64>(const size_t) const;
-	template f32 FGR::Get<f32>(const size_t) const;
-	template f64 FGR::Get<f64>(const size_t) const;
+	template s32 FGR::Get<s32>(std::size_t) const;
+	template s64 FGR::Get<s64>(std::size_t) const;
+	template f32 FGR::Get<f32>(std::size_t) const;
+	template f64 FGR::Get<f64>(std::size_t) const;
 
-	template void FGR::Set<s32>(const size_t, const s32);
-	template void FGR::Set<s64>(const size_t, const s64);
-	template void FGR::Set<f32>(const size_t, const f32);
-	template void FGR::Set<f64>(const size_t, const f64);
+	template void FGR::Set<s32>(std::size_t, s32);
+	template void FGR::Set<s64>(std::size_t, s64);
+	template void FGR::Set<f32>(std::size_t, f32);
+	template void FGR::Set<f64>(std::size_t, f64);
 }

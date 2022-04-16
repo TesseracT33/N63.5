@@ -14,7 +14,7 @@ namespace VR4300
 {
 	/* For (COP0) registers (structs) that, once they have been written to, need to tell the rest of the cpu about it. */
 	template<typename T>
-	concept notifies_cpu_on_write = requires(T t)
+	concept reg_notifies_cpu_on_write = requires(T t)
 	{
 		{ t.NotifyCpuAfterWrite() } -> std::convertible_to<void>;
 	};
@@ -35,9 +35,18 @@ namespace VR4300
 	/* CPU general-purpose registers */
 	struct GPR
 	{
-		s64 Get(const size_t index) const { return gpr[index]; }
-		void Set(const size_t index, const s64 data) { if (index != 0) gpr[index] = data; }
-		s64 operator[](const size_t index) { return gpr[index]; } /* returns by value so that assignments have to made through function "Set". */
+		s64 Get(const std::size_t index) const
+		{
+			return gpr[index];
+		}
+		void Set(const std::size_t index, const s64 data)
+		{
+			if (index != 0) gpr[index] = data;
+		}
+		s64 operator[](const std::size_t index) /* returns by value so that assignments have to made through function "Set". */
+		{
+			return gpr[index];
+		} 
 	private:
 		std::array<s64, 32> gpr{};
 	} gpr;
@@ -65,7 +74,10 @@ namespace VR4300
 	constexpr int cop0_index_x_context = 20;
 	constexpr int cop0_index_parity_error = 26;
 	constexpr int cop0_index_tag_lo = 28;
+	constexpr int cop0_index_tag_hi = 29;
 	constexpr int cop0_index_error_epc = 30;
+
+
 
 	struct COP0Registers
 	{
@@ -270,9 +282,9 @@ namespace VR4300
 			u64 value;
 		} error_epc{};
 
-		u64 Get(const size_t register_index) const;
-		void Set(const size_t register_index, const u64 value);
-		void SetRaw(const size_t register_index, const u64 value);
+		u64 Get(const std::size_t register_index) const;
+		void Set(const std::size_t register_index, const u64 value);
+		void SetRaw(const std::size_t register_index, const u64 value);
 	} cop0_reg{};
 
 	/* Floating point control register #31 */
@@ -311,18 +323,18 @@ namespace VR4300
 	/* Floating point control registers. Only #0 and #31 are "valid", and #0 is read-only. */
 	struct FPUControl
 	{
-		u32 Get(const size_t index) const;
-		void Set(const size_t index, const u32 data);
+		u32 Get(const std::size_t index) const;
+		void Set(const std::size_t index, const u32 data);
 	} fpu_control;
 
 	/* General-purpose floating point registers. */
 	struct FGR
 	{
 		template<typename FPUNumericType>
-		FPUNumericType Get(const size_t index) const;
+		FPUNumericType Get(const std::size_t index) const;
 
 		template<typename FPUNumericType>
-		void Set(const size_t index, const FPUNumericType data);
+		void Set(const std::size_t index, const FPUNumericType data);
 
 	private:
 		std::array<s64, 32> fpr{};
@@ -336,10 +348,12 @@ namespace VR4300
 		std::mt19937 gen{ rd() }; // Standard mersenne_twister_engine seeded with rd()
 		std::uniform_int_distribution<u32> distrib{ 0, 0x1F };
 	public:
-		u32 Generate() {
+		u32 Generate()
+		{
 			return distrib(gen);
 		}
-		void SetLowerBound(u32 min) {
+		void SetLowerBound(const auto min)
+		{
 			distrib = { min, 0x1F };
 		}
 	} random_generator{};

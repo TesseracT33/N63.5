@@ -22,8 +22,8 @@ namespace DMA
 
 		std::memcpy(dest_start_ptr, source_start_ptr, number_of_bytes_to_copy);
 
-		static constexpr std::size_t cycles_per_byte_dma = 18;
-		const std::size_t cycles_until_finish = number_of_bytes_to_copy * cycles_per_byte_dma;
+		static constexpr auto cycles_per_byte_dma = 18;
+		const auto cycles_until_finish = number_of_bytes_to_copy * cycles_per_byte_dma;
 		const N64::Event n64_event = [] {
 			if constexpr (type == DMA::Type::PI) return N64::Event::PI_DMA_FINISH;
 			else if constexpr (type == DMA::Type::SI) return N64::Event::SI_DMA_FINISH;
