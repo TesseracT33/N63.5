@@ -176,8 +176,14 @@
     <ClCompile Include="src\memory\PIF.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Renderer.ixx" />
-    <ClCompile Include="src\RSP\RSP.cpp" />
+    <ClCompile Include="src\RSP\RSPInstructionDecode.cpp" />
     <ClCompile Include="src\RSP\RSP.ixx" />
+    <ClCompile Include="src\RSP\RSPOperation.cpp" />
+    <ClCompile Include="src\RSP\RSPOperation.ixx" />
+    <ClCompile Include="src\RSP\ScalarUnit.cpp" />
+    <ClCompile Include="src\RSP\ScalarUnit.ixx" />
+    <ClCompile Include="src\RSP\VectorUnit.cpp" />
+    <ClCompile Include="src\RSP\VectorUnit.ixx" />
     <ClCompile Include="src\Utils\BitUtils.ixx" />
     <ClCompile Include="src\HostSystem.ixx" />
     <ClCompile Include="src\interface\MI.cpp" />

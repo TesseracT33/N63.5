@@ -53,8 +53,18 @@ namespace Logging
 	void LogVR4300Instruction(u64 pc, const std::string& instr_output, u32 instr_phys_addr)
 	{
 		const std::string output = std::format(
-			"INSTR; ${:016X} \t origin: ${:08X} \t {}\n",
+			"VR4300; ${:016X} \t origin: ${:08X} \t {}\n",
 			pc, instr_phys_addr, instr_output
+		);
+		instr_logging_ofs << output;
+	}
+
+
+	void LogRSPInstruction(u32 pc, const std::string& instr_output)
+	{
+		const std::string output = std::format(
+			"RSP; ${:03X} \t {}\n",
+			pc, instr_output
 		);
 		instr_logging_ofs << output;
 	}

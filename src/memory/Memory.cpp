@@ -34,7 +34,7 @@ namespace Memory
 				return RDRAM::ReadRegisterRegion<Int>(physical_address);
 
 			case 0x040:
-				return RSP::ReadMemory<Int>(physical_address);
+				return RSP::CPUReadMemory<Int>(physical_address);
 
 			case 0x041:
 				return Int(0);
@@ -189,7 +189,7 @@ namespace Memory
 			break;
 
 		case 0x040:
-			RSP::WriteMemory<number_of_bytes>(physical_address, byteswapped_data);
+			RSP::CPUWriteMemory<number_of_bytes>(physical_address, byteswapped_data);
 			break;
 
 		case 0x041:

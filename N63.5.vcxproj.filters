@@ -43,7 +43,6 @@
     <ClCompile Include="src\interface\SI.cpp" />
     <ClCompile Include="src\interface\VI.cpp" />
     <ClCompile Include="src\RSP\RSP.ixx" />
-    <ClCompile Include="src\RSP\RSP.cpp" />
     <ClCompile Include="src\Renderer.ixx" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\debug\Logging.ixx" />
@@ -55,6 +54,13 @@
     <ClCompile Include="src\interface\AI.ixx" />
     <ClCompile Include="src\interface\AI.cpp" />
     <ClCompile Include="src\Utils\FileUtils.ixx" />
+    <ClCompile Include="src\RSP\RSPInstructionDecode.cpp" />
+    <ClCompile Include="src\RSP\ScalarUnit.ixx" />
+    <ClCompile Include="src\RSP\ScalarUnit.cpp" />
+    <ClCompile Include="src\RSP\VectorUnit.ixx" />
+    <ClCompile Include="src\RSP\VectorUnit.cpp" />
+    <ClCompile Include="src\RSP\RSPOperation.ixx" />
+    <ClCompile Include="src\RSP\RSPOperation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
