@@ -4,8 +4,7 @@ import <bit>;
 
 export namespace HostSystem
 {
-	constexpr std::endian endianness = std::endian::native;
-	static_assert(endianness == std::endian::little || endianness == std::endian::big);
+	static_assert(std::endian::native == std::endian::little);
 
 	constexpr bool has_avx2 = [] {
 #ifdef __AVX2__

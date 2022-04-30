@@ -173,11 +173,13 @@ namespace VR4300
 
 	void DecodeAndExecuteCOP1Instruction()
 	{
+		/*
 		if (!fpu_is_enabled)
 		{
 			SignalException<Exception::CoprocessorUnusable>();
 			return;
 		}
+		*/
 
 		const auto sub_op_code = instr_code >> 21 & 0x1F;
 
@@ -247,7 +249,7 @@ namespace VR4300
 	}
 
 
-	void DecodeAndExecuteInstruction(const u32 instr_code)
+	void DecodeExecuteInstruction(const u32 instr_code)
 	{
 		VR4300::instr_code = instr_code;
 
@@ -310,6 +312,12 @@ namespace VR4300
 
 		break; case 0b101111: EXEC_COP0_INSTR(CACHE);
 
+		break; case 0b110101: EXEC_COP1_INSTR(LDC1);
+		break; case 0b110001: EXEC_COP1_INSTR(LWC1);
+		break; case 0b111101: EXEC_COP1_INSTR(SDC1);
+		break; case 0b111001: EXEC_COP1_INSTR(SWC1);
+
+		/*
 		break; case 0b110101:
 			if (!fpu_is_enabled)
 				SignalException<Exception::CoprocessorUnusable>();
@@ -333,7 +341,7 @@ namespace VR4300
 				SignalException<Exception::CoprocessorUnusable>();
 			else
 				EXEC_COP1_INSTR(SWC1);
-
+		*/
 		break; default:
 			SignalException<Exception::ReservedInstruction>();
 		}

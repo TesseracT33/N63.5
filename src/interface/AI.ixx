@@ -1,3 +1,9 @@
-export module AI;
+export module AI; /* Audio Interface */
 
-export void MyFunc();
+namespace AI
+{
+	export
+	{
+		void Initialize();
+	}
+}

@@ -45,7 +45,7 @@ namespace RSP
 
 
 	template<std::size_t number_of_bytes>
-	void CPUWriteMemory(u32 addr, auto data)
+	void CPUWriteMemory(const u32 addr, auto data)
 	{
 		/* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
 		static constexpr std::array mem = { dmem.data(), imem.data() };
@@ -55,6 +55,20 @@ namespace RSP
 
 
 	template<std::integral Int>
+	Int CPUReadRegister(u32 addr)
+	{
+		return Int(0);
+	}
+
+
+	template<std::size_t number_of_bytes>
+	void CPUWriteRegister(u32 addr, auto data)
+	{
+
+	}
+
+
+	template<std::integral Int, N64::Processor processor>
 	Int ReadDMEM(u32 addr)
 	{
 		addr &= 0xFFF;
@@ -65,15 +79,27 @@ namespace RSP
 		else
 		{
 			Int ret;
-			/* The read may be misaligned; we must check if it goes out of bounds. */
-			if (addr + sizeof Int <= 0x1000)
+			if constexpr (processor == N64::Processor::CPU)
 			{
+				/* CPU precondition: addr is aligned */
 				std::memcpy(&ret, dmem.data() + addr, sizeof Int);
+			}
+			else if constexpr (processor == N64::Processor::RSP)
+			{
+				/* Addr may be misaligned; we must check if it goes out of bounds. */
+				if (addr + sizeof Int <= 0x1000)
+				{
+					std::memcpy(&ret, dmem.data() + addr, sizeof Int);
+				}
+				else
+				{
+					std::memcpy(&ret, dmem.data() + addr, 0x1000 - addr);
+					std::memcpy(&ret, dmem.data(), sizeof Int - (0x1000 - addr));
+				}
 			}
 			else
 			{
-				std::memcpy(&ret, dmem.data() + addr, 0x1000 - addr);
-				std::memcpy(&ret, dmem.data(), sizeof Int - (0x1000 - addr));
+				static_assert(processor != processor);
 			}
 			return std::byteswap(ret);
 		}
@@ -125,6 +151,24 @@ namespace RSP
 
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(CPUReadMemory, u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(CPUWriteMemory, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadDMEM, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(CPUReadRegister, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(CPUWriteRegister, u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteDMEM, u32)
+
+	template u8 ReadDMEM<u8, N64::Processor::CPU>(u32);
+	template s8 ReadDMEM<s8, N64::Processor::CPU>(u32);
+	template u16 ReadDMEM<u16, N64::Processor::CPU>(u32);
+	template s16 ReadDMEM<s16, N64::Processor::CPU>(u32);
+	template u32 ReadDMEM<u32, N64::Processor::CPU>(u32);
+	template s32 ReadDMEM<s32, N64::Processor::CPU>(u32);
+	template u64 ReadDMEM<u64, N64::Processor::CPU>(u32);
+	template s64 ReadDMEM<s64, N64::Processor::CPU>(u32);
+	template u8 ReadDMEM<u8, N64::Processor::RSP>(u32);
+	template s8 ReadDMEM<s8, N64::Processor::RSP>(u32);
+	template u16 ReadDMEM<u16, N64::Processor::RSP>(u32);
+	template s16 ReadDMEM<s16, N64::Processor::RSP>(u32);
+	template u32 ReadDMEM<u32, N64::Processor::RSP>(u32);
+	template s32 ReadDMEM<s32, N64::Processor::RSP>(u32);
+	template u64 ReadDMEM<u64, N64::Processor::RSP>(u32);
+	template s64 ReadDMEM<s64, N64::Processor::RSP>(u32);
 }

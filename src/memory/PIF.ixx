@@ -4,9 +4,9 @@ import NumericalTypes;
 
 import <algorithm>;
 import <array>;
+import <bit>;
 import <concepts>;
-import <format>;
-import <fstream>;
+import <cstring>;
 import <optional>;
 import <string>;
 
@@ -15,8 +15,7 @@ namespace PIF
 	constexpr std::size_t ram_size = 0x40;
 	constexpr std::size_t rom_size = 0x7C0;
 
-	std::array<u8, ram_size> ram{};
-	std::array<u8, rom_size> rom{};
+	std::array<u8, rom_size + ram_size> mem{}; /* $0-$7BF: rom; $7C0-$7FF: ram $*/
 
 	export
 	{
@@ -27,12 +26,9 @@ namespace PIF
 		std::size_t GetNumberOfBytesUntilRAMEnd(u32 offset);
 
 		template<std::integral Int>
-		Int ReadROM(u32 offset);
-
-		template<std::integral Int>
-		Int ReadRAM(u32 offset);
+		Int ReadMemory(u32 addr);
 
 		template<std::size_t number_of_bytes>
-		void WriteRAM(u32 offset, auto data);
+		void WriteMemory(u32 addr, auto data);
 	}
 }

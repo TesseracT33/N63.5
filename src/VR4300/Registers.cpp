@@ -217,7 +217,7 @@ namespace VR4300
 			case 0b01: return FE_TOWARDZERO; /* RZ */
 			case 0b10: return FE_UPWARD;     /* RP */
 			case 0b11: return FE_DOWNWARD;   /* RM */
-			default: assert(false);
+			default: assert(false); return 0;
 			}
 		}();
 		std::fesetround(new_rounding_mode);

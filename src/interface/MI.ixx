@@ -2,13 +2,15 @@ export module MI; /* MIPS Interface */
 
 import NumericalTypes;
 
-import <array>;
+
+import <bit>;
 import <concepts>;
+import <cstring>;
 import <utility>;
 
 namespace MI
 {
-	export enum class InterruptType : u8
+	export enum class InterruptType : s32
 	{
 		SP = 1 << 0, /* Set by the RSP when requested by a write to the SP status register, and optionally when the RSP halts */
 		SI = 1 << 1, /* Set when a SI DMA to/from PIF RAM finishes */
@@ -18,7 +20,10 @@ namespace MI
 		DP = 1 << 5  /* Set when a full sync completes */
 	};
 
-	std::array<u8, 0x10> mem{};
+	struct
+	{
+		s32 mode, version, interrupt, mask;
+	} mi{};
 
 	template<InterruptType interrupt_type>
 	void SetInterruptMask();
@@ -37,9 +42,9 @@ namespace MI
 		void ClearInterruptFlag();
 
 		template<std::integral Int>
-		Int Read(const u32 addr);
+		Int Read(u32 addr);
 
 		template<std::size_t number_of_bytes>
-		void Write(const u32 addr, const auto data);
+		void Write(u32 addr, auto data);
 	}
 }

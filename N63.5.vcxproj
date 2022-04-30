@@ -173,6 +173,8 @@
     <ClCompile Include="src\Input.ixx" />
     <ClCompile Include="src\interface\AI.cpp" />
     <ClCompile Include="src\interface\AI.ixx" />
+    <ClCompile Include="src\interface\RI.cpp" />
+    <ClCompile Include="src\interface\RI.ixx" />
     <ClCompile Include="src\memory\PIF.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Renderer.ixx" />

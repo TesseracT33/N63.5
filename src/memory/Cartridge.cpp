@@ -21,35 +21,61 @@ namespace Cartridge
 	}
 
 
+	bool LoadSRAM(const std::string& ram_path)
+	{
+		const std::optional<std::vector<u8>> optional_sram = FileUtils::LoadBinaryFileVec(ram_path);
+		if (!optional_sram.has_value())
+		{
+			return false;
+		}
+		sram = optional_sram.value();
+		return true;
+	}
+
+
 	u8* GetPointerToROM(const u32 addr)
 	{
-		const u32 rom_offset = (addr & 0x0FFF'FFFF) % rom.size();
-		return rom.data() + rom_offset;
+		const u32 offset = (addr & 0x0FFF'FFFF) % rom.size();
+		return rom.data() + offset;
+	}
+
+
+	u8* GetPointerToSRAM(const u32 addr)
+	{
+		const u32 offset = (addr & 0x0FFF'FFFF) % sram.size();
+		return sram.data() + offset;
 	}
 
 
 	std::size_t GetNumberOfBytesUntilROMEnd(const u32 addr)
 	{
-		const u32 rom_offset = (addr & 0x0FFF'FFFF) % rom.size();
-		return rom.size() - rom_offset;
+		const u32 offset = (addr & 0x0FFF'FFFF) % rom.size();
+		return rom.size() - offset;
 	}
 
 
 	template<std::integral Int>
 	Int ReadROM(const u32 addr)
 	{
-		const u32 read_offset = (addr & 0x0FFF'FFFF) % rom.size();
-		return Memory::GenericRead<Int>(rom.data() + read_offset);
+		Int ret;
+		std::memcpy(&ret, GetPointerToROM(addr), sizeof Int);
+		return std::byteswap(ret);
 	}
 
 
 	template<std::integral Int>
 	Int ReadSRAM(const u32 addr)
-	{
+	{ /* CPU precondition: addr is always aligned */
 		if (sram.size() == 0)
+		{
 			return 0;
-		const u32 read_offset = (addr & 0x0FFF'FFFF) % sram.size();
-		return Memory::GenericRead<Int>(sram.data() + read_offset);
+		}
+		else
+		{
+			Int ret;
+			std::memcpy(&ret, GetPointerToSRAM(addr), sizeof Int);
+			return std::byteswap(ret);
+		}
 	}
 
 
@@ -61,17 +87,18 @@ namespace Cartridge
 
 
 	template<std::size_t number_of_bytes>
-	void WriteSRAM(const u32 addr, const auto data)
-	{
-		if (sram.size() == 0)
-			return;
-		const u32 write_offset = (addr & 0x0FFF'FFFF) % sram.size();
-		Memory::GenericWrite<number_of_bytes>(sram.data() + write_offset, data);
+	void WriteSRAM(const u32 addr, auto data)
+	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
+		if (sram.size() != 0)
+		{
+			data = std::byteswap(data);
+			std::memcpy(GetPointerToSRAM(addr), &data, number_of_bytes);
+		}
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadROM, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadSRAM, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteROM, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteSRAM, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadROM, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadSRAM, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteROM, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteSRAM, u32)
 }

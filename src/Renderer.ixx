@@ -20,11 +20,7 @@ namespace Renderer
 		u8* src_ptr{};
 		int width = 320, height = 240, pitch = 320 * 4;
 		int bytes_per_pixel = 4;
-		uint pixel_format = [] {
-			if constexpr (HostSystem::endianness == std::endian::little)
-				return SDL_PIXELFORMAT_ABGR8888;
-			else return SDL_PIXELFORMAT_RGBA8888;
-		}();
+		uint pixel_format = SDL_PIXELFORMAT_ABGR8888;
 	} framebuffer{};
 
 	void RecreateTexture();

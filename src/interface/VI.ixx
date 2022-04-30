@@ -2,25 +2,28 @@ export module VI; /* Video Interface */
 
 import NumericalTypes;
 
-import <array>;
+import <bit>;
 import <cassert>;
 import <concepts>;
+import <cstring>;
 
 namespace VI
 {
-	std::array<u8, 0x38> mem{};
-
-	void ApplyWriteToControl();
+	struct
+	{
+		s32 ctrl, origin, width, v_intr, v_current, burst, v_sync, h_sync, h_sync_leap;
+		s32 h_video, v_video, v_burst, x_scale, y_scale, test_addr, stated_data;
+	} vi{};
 
 	export
 	{
 		void Initialize();
 
 		template<std::integral Int>
-		Int Read(const u32 addr);
+		Int Read(u32 addr);
 
 		template<std::size_t number_of_bytes>
-		void Write(const u32 addr, const auto data);
+		void Write(u32 addr, auto data);
 
 		void CheckVideoInterrupt();
 		void SetCurrentHalfline(u32 halfline);

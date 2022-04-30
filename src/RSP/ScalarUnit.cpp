@@ -2,6 +2,8 @@ module RSP:ScalarUnit;
 
 import :RSPOperation;
 
+import N64;
+
 namespace RSP
 {
 	template<ScalarInstruction instr>
@@ -26,37 +28,37 @@ namespace RSP
 			{
 				/* Load Byte;
 				   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadDMEM<s8>(address);
+				return ReadDMEM<s8, N64::Processor::RSP>(address);
 			}
 			else if constexpr (instr == LBU)
 			{
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadDMEM<u8>(address);
+				return ReadDMEM<u8, N64::Processor::RSP>(address);
 			}
 			else if constexpr (instr == LH)
 			{
 				/* Load halfword;
 				   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadDMEM<s16>(address);
+				return ReadDMEM<s16, N64::Processor::RSP>(address);
 			}
 			else if constexpr (instr == LHU)
 			{
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadDMEM<u16>(address);
+				return ReadDMEM<u16, N64::Processor::RSP>(address);
 			}
 			else if constexpr (instr == LW || instr == LWU)
 			{
 				/* Load Word (Unsigned);
 				   Sign(Zero)-extends the contents of a word specified by the address and loads the result to register rt. */
-				return ReadDMEM<s32>(address);
+				return ReadDMEM<s32, N64::Processor::RSP>(address);
 			}
 			else if constexpr (instr == LL)
 			{
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-				const s32 ret = ReadDMEM<s32>(address);
+				const s32 ret = ReadDMEM<s32, N64::Processor::RSP>(address);
 				ll_bit = 1;
 				return ret;
 			}

@@ -6,6 +6,7 @@ import <algorithm>;
 import <cassert>;
 import <format>;
 import <string>;
+import <string_view>;
 
 namespace DMA
 {
@@ -22,7 +23,7 @@ namespace DMA
 		};
 
 		template<Type type, Location source, Location dest>
-		void Init(std::size_t length, u32 source_start_addr, u32 dest_start_addr);
+		void Init(std::size_t length, s32 source_start_addr, s32 dest_start_addr);
 	}
 
 	template<Location location>

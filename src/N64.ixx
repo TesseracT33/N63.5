@@ -12,9 +12,16 @@ namespace N64
 {
 	export
 	{
-		enum class Event {
+		enum class Event
+		{
 			PI_DMA_FINISH,
 			SI_DMA_FINISH
+		};
+
+		enum class Processor
+		{
+			CPU,
+			RSP
 		};
 
 		constexpr int cpu_cycles_per_second = 93'750'000;

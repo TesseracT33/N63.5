@@ -23,8 +23,6 @@ namespace VR4300
 			IndyWrite = 0x40  /* ip6; Connected to the Indy dev kit’s RDB port. Set to 1 when a value is written. */
 		};
 
-		constexpr std::endian endianness = std::endian::big;
-
 		void Run(unsigned cycles_to_run);
 		void Reset();
 		void PowerOn(bool hle_pif);
@@ -40,8 +38,8 @@ namespace VR4300
 		unsigned p_cycle_counter = 0;
 	}
 
-	void DecodeAndExecuteInstruction(const u32 instr_code);
-	void ExecuteInstruction();
+	void DecodeExecuteInstruction(u32 instr_code);
+	void FetchDecodeExecuteInstruction();
 	void HLE_PIF();
 
 	template<u64 number_of_cycles>

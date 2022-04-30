@@ -19,67 +19,67 @@ import NumericalTypes;
 	template s64 FUNCTION<s64>(ARG_TYPE);
 
 #define ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(FUNCTION, ARG_TYPE) \
-	template void FUNCTION<1>(ARG_TYPE, const u8); \
-	template void FUNCTION<1>(ARG_TYPE, const u16); \
-	template void FUNCTION<1>(ARG_TYPE, const u32); \
-	template void FUNCTION<1>(ARG_TYPE, const u64); \
-	template void FUNCTION<2>(ARG_TYPE, const u8); \
-	template void FUNCTION<2>(ARG_TYPE, const u16); \
-	template void FUNCTION<2>(ARG_TYPE, const u32); \
-	template void FUNCTION<2>(ARG_TYPE, const u64); \
-	template void FUNCTION<3>(ARG_TYPE, const u8); \
-	template void FUNCTION<3>(ARG_TYPE, const u16); \
-	template void FUNCTION<3>(ARG_TYPE, const u32); \
-	template void FUNCTION<3>(ARG_TYPE, const u64); \
-	template void FUNCTION<4>(ARG_TYPE, const u8); \
-	template void FUNCTION<4>(ARG_TYPE, const u16); \
-	template void FUNCTION<4>(ARG_TYPE, const u32); \
-	template void FUNCTION<4>(ARG_TYPE, const u64); \
-	template void FUNCTION<5>(ARG_TYPE, const u8); \
-	template void FUNCTION<5>(ARG_TYPE, const u16); \
-	template void FUNCTION<5>(ARG_TYPE, const u32); \
-	template void FUNCTION<5>(ARG_TYPE, const u64); \
-	template void FUNCTION<6>(ARG_TYPE, const u8); \
-	template void FUNCTION<6>(ARG_TYPE, const u16); \
-	template void FUNCTION<6>(ARG_TYPE, const u32); \
-	template void FUNCTION<6>(ARG_TYPE, const u64); \
-	template void FUNCTION<7>(ARG_TYPE, const u8); \
-	template void FUNCTION<7>(ARG_TYPE, const u16); \
-	template void FUNCTION<7>(ARG_TYPE, const u32); \
-	template void FUNCTION<7>(ARG_TYPE, const u64); \
-	template void FUNCTION<8>(ARG_TYPE, const u8); \
-	template void FUNCTION<8>(ARG_TYPE, const u16); \
-	template void FUNCTION<8>(ARG_TYPE, const u32); \
-	template void FUNCTION<8>(ARG_TYPE, const u64); \
-	template void FUNCTION<1>(ARG_TYPE, const s8); \
-	template void FUNCTION<1>(ARG_TYPE, const s16); \
-	template void FUNCTION<1>(ARG_TYPE, const s32); \
-	template void FUNCTION<1>(ARG_TYPE, const s64); \
-	template void FUNCTION<2>(ARG_TYPE, const s8); \
-	template void FUNCTION<2>(ARG_TYPE, const s16); \
-	template void FUNCTION<2>(ARG_TYPE, const s32); \
-	template void FUNCTION<2>(ARG_TYPE, const s64); \
-	template void FUNCTION<3>(ARG_TYPE, const s8); \
-	template void FUNCTION<3>(ARG_TYPE, const s16); \
-	template void FUNCTION<3>(ARG_TYPE, const s32); \
-	template void FUNCTION<3>(ARG_TYPE, const s64); \
-	template void FUNCTION<4>(ARG_TYPE, const s8); \
-	template void FUNCTION<4>(ARG_TYPE, const s16); \
-	template void FUNCTION<4>(ARG_TYPE, const s32); \
-	template void FUNCTION<4>(ARG_TYPE, const s64); \
-	template void FUNCTION<5>(ARG_TYPE, const s8); \
-	template void FUNCTION<5>(ARG_TYPE, const s16); \
-	template void FUNCTION<5>(ARG_TYPE, const s32); \
-	template void FUNCTION<5>(ARG_TYPE, const s64); \
-	template void FUNCTION<6>(ARG_TYPE, const s8); \
-	template void FUNCTION<6>(ARG_TYPE, const s16); \
-	template void FUNCTION<6>(ARG_TYPE, const s32); \
-	template void FUNCTION<6>(ARG_TYPE, const s64); \
-	template void FUNCTION<7>(ARG_TYPE, const s8); \
-	template void FUNCTION<7>(ARG_TYPE, const s16); \
-	template void FUNCTION<7>(ARG_TYPE, const s32); \
-	template void FUNCTION<7>(ARG_TYPE, const s64); \
-	template void FUNCTION<8>(ARG_TYPE, const s8); \
-	template void FUNCTION<8>(ARG_TYPE, const s16); \
-	template void FUNCTION<8>(ARG_TYPE, const s32); \
-	template void FUNCTION<8>(ARG_TYPE, const s64);
+	template void FUNCTION<1>(ARG_TYPE, u8); \
+	template void FUNCTION<1>(ARG_TYPE, u16); \
+	template void FUNCTION<1>(ARG_TYPE, u32); \
+	template void FUNCTION<1>(ARG_TYPE, u64); \
+	template void FUNCTION<2>(ARG_TYPE, u8); \
+	template void FUNCTION<2>(ARG_TYPE, u16); \
+	template void FUNCTION<2>(ARG_TYPE, u32); \
+	template void FUNCTION<2>(ARG_TYPE, u64); \
+	template void FUNCTION<3>(ARG_TYPE, u8); \
+	template void FUNCTION<3>(ARG_TYPE, u16); \
+	template void FUNCTION<3>(ARG_TYPE, u32); \
+	template void FUNCTION<3>(ARG_TYPE, u64); \
+	template void FUNCTION<4>(ARG_TYPE, u8); \
+	template void FUNCTION<4>(ARG_TYPE, u16); \
+	template void FUNCTION<4>(ARG_TYPE, u32); \
+	template void FUNCTION<4>(ARG_TYPE, u64); \
+	template void FUNCTION<5>(ARG_TYPE, u8); \
+	template void FUNCTION<5>(ARG_TYPE, u16); \
+	template void FUNCTION<5>(ARG_TYPE, u32); \
+	template void FUNCTION<5>(ARG_TYPE, u64); \
+	template void FUNCTION<6>(ARG_TYPE, u8); \
+	template void FUNCTION<6>(ARG_TYPE, u16); \
+	template void FUNCTION<6>(ARG_TYPE, u32); \
+	template void FUNCTION<6>(ARG_TYPE, u64); \
+	template void FUNCTION<7>(ARG_TYPE, u8); \
+	template void FUNCTION<7>(ARG_TYPE, u16); \
+	template void FUNCTION<7>(ARG_TYPE, u32); \
+	template void FUNCTION<7>(ARG_TYPE, u64); \
+	template void FUNCTION<8>(ARG_TYPE, u8); \
+	template void FUNCTION<8>(ARG_TYPE, u16); \
+	template void FUNCTION<8>(ARG_TYPE, u32); \
+	template void FUNCTION<8>(ARG_TYPE, u64); \
+	template void FUNCTION<1>(ARG_TYPE, s8); \
+	template void FUNCTION<1>(ARG_TYPE, s16); \
+	template void FUNCTION<1>(ARG_TYPE, s32); \
+	template void FUNCTION<1>(ARG_TYPE, s64); \
+	template void FUNCTION<2>(ARG_TYPE, s8); \
+	template void FUNCTION<2>(ARG_TYPE, s16); \
+	template void FUNCTION<2>(ARG_TYPE, s32); \
+	template void FUNCTION<2>(ARG_TYPE, s64); \
+	template void FUNCTION<3>(ARG_TYPE, s8); \
+	template void FUNCTION<3>(ARG_TYPE, s16); \
+	template void FUNCTION<3>(ARG_TYPE, s32); \
+	template void FUNCTION<3>(ARG_TYPE, s64); \
+	template void FUNCTION<4>(ARG_TYPE, s8); \
+	template void FUNCTION<4>(ARG_TYPE, s16); \
+	template void FUNCTION<4>(ARG_TYPE, s32); \
+	template void FUNCTION<4>(ARG_TYPE, s64); \
+	template void FUNCTION<5>(ARG_TYPE, s8); \
+	template void FUNCTION<5>(ARG_TYPE, s16); \
+	template void FUNCTION<5>(ARG_TYPE, s32); \
+	template void FUNCTION<5>(ARG_TYPE, s64); \
+	template void FUNCTION<6>(ARG_TYPE, s8); \
+	template void FUNCTION<6>(ARG_TYPE, s16); \
+	template void FUNCTION<6>(ARG_TYPE, s32); \
+	template void FUNCTION<6>(ARG_TYPE, s64); \
+	template void FUNCTION<7>(ARG_TYPE, s8); \
+	template void FUNCTION<7>(ARG_TYPE, s16); \
+	template void FUNCTION<7>(ARG_TYPE, s32); \
+	template void FUNCTION<7>(ARG_TYPE, s64); \
+	template void FUNCTION<8>(ARG_TYPE, s8); \
+	template void FUNCTION<8>(ARG_TYPE, s16); \
+	template void FUNCTION<8>(ARG_TYPE, s32); \
+	template void FUNCTION<8>(ARG_TYPE, s64);

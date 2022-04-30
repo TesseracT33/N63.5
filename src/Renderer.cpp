@@ -64,19 +64,13 @@ namespace Renderer
 		else if constexpr (pixel_format == PixelFormat::RGBA5553)
 		{
 			/* Treat this as RGBA5551 */
-			framebuffer.pixel_format = [] {
-				if constexpr (HostSystem::endianness == std::endian::big) return SDL_PIXELFORMAT_RGBA5551;
-				else                                                      return SDL_PIXELFORMAT_ABGR1555;
-			}();
+			framebuffer.pixel_format = SDL_PIXELFORMAT_ABGR1555;
 			framebuffer.bytes_per_pixel = 2;
 			rendering_is_enabled = true;
 		}
 		else if constexpr (pixel_format == PixelFormat::RGBA8888)
 		{
-			framebuffer.pixel_format = [] {
-				if constexpr (HostSystem::endianness == std::endian::big) return SDL_PIXELFORMAT_RGBA8888;
-				else                                                      return SDL_PIXELFORMAT_ABGR8888;
-			}();
+			framebuffer.pixel_format = SDL_PIXELFORMAT_ABGR8888;
 			framebuffer.bytes_per_pixel = 4;
 			rendering_is_enabled = true;
 		}

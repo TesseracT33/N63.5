@@ -2,9 +2,10 @@ export module Cartridge;
 
 import NumericalTypes;
 
+import <bit>;
 import <cassert>;
 import <concepts>;
-import <fstream>;
+import <cstring>;
 import <optional>;
 import <string>;
 import <vector>;
@@ -20,21 +21,23 @@ namespace Cartridge
 	export
 	{
 		bool LoadROM(const std::string& rom_path);
+		bool LoadSRAM(const std::string& ram_path);
 
-		u8* GetPointerToROM(const u32 addr);
+		u8* GetPointerToROM(u32 addr);
+		u8* GetPointerToSRAM(u32 addr);
 
-		std::size_t GetNumberOfBytesUntilROMEnd(const u32 addr);
+		std::size_t GetNumberOfBytesUntilROMEnd(u32 addr);
 
 		template<std::integral Int>
-		Int ReadROM(const u32 addr);
+		Int ReadROM(u32 addr);
 
 		template<std::integral Int>
-		Int ReadSRAM(const u32 addr);
+		Int ReadSRAM(u32 addr);
 
 		template<std::size_t number_of_bytes>
-		void WriteROM(const u32 addr, const auto data);
+		void WriteROM(u32 addr, auto data);
 
 		template<std::size_t number_of_bytes>
-		void WriteSRAM(const u32 addr, const auto data);
+		void WriteSRAM(u32 addr, auto data);
 	}
 }

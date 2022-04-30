@@ -1,11 +1,13 @@
 module N64;
 
+import AI;
 import Cartridge;
 import Input;
 import MI;
 import PI;
 import PIF;
 import Renderer;
+import RI;
 import SI;
 import VI;
 import VR4300;
@@ -30,7 +32,11 @@ namespace N64
 			hle_ipl = !success;
 		}
 
+		AI::Initialize();
 		MI::Initialize();
+		PI::Initialize();
+		RI::Initialize();
+		SI::Initialize();
 		VI::Initialize();
 		VR4300::PowerOn(hle_ipl);
 

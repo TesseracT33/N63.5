@@ -11,7 +11,7 @@ import VR4300;
 namespace DMA
 {
 	template<Type type, Location source, Location dest>
-	void Init(const std::size_t length, const u32 source_start_addr, const u32 dest_start_addr)
+	void Init(const std::size_t length, const s32 source_start_addr, const s32 dest_start_addr)
 	{
 		u8* source_start_ptr = GetPointerFromAddress<source>(source_start_addr);
 		u8* dest_start_ptr = GetPointerFromAddress<dest>(dest_start_addr);
@@ -80,8 +80,8 @@ namespace DMA
 	}
 
 
-	template void Init <Type::PI, Location::Cartridge, Location::RDRAM> (std::size_t, u32, u32);
-	template void Init <Type::PI, Location::RDRAM, Location::Cartridge>(std::size_t, u32, u32);
-	template void Init <Type::SI, Location::PIF, Location::RDRAM>(std::size_t, u32, u32);
-	template void Init <Type::SI, Location::RDRAM, Location::PIF>(std::size_t, u32, u32);
+	template void Init <Type::PI, Location::Cartridge, Location::RDRAM> (std::size_t, s32, s32);
+	template void Init <Type::PI, Location::RDRAM, Location::Cartridge>(std::size_t, s32, s32);
+	template void Init <Type::SI, Location::PIF, Location::RDRAM>(std::size_t, s32, s32);
+	template void Init <Type::SI, Location::RDRAM, Location::PIF>(std::size_t, s32, s32);
 }

@@ -10,6 +10,7 @@ import RDRAM;
 import RSP;
 import SI;
 import VI;
+import VR4300;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
@@ -34,7 +35,10 @@ namespace Memory
 				return RDRAM::ReadRegisterRegion<Int>(physical_address);
 
 			case 0x040:
-				return RSP::CPUReadMemory<Int>(physical_address);
+				return physical_address < 0x04040000 ?
+					RSP::CPUReadMemory<Int>(physical_address) :
+					RSP::CPUReadRegister<Int>(physical_address);
+				break;
 
 			case 0x041:
 				return Int(0);
@@ -65,16 +69,6 @@ namespace Memory
 			case 0x048:
 				if constexpr (log_cpu_memory) io_location = "SI";
 				return SI::Read<Int>(physical_address);
-
-			case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
-			case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
-				return Int(0);
-
-			case 0x060: case 0x061: case 0x062: case 0x063: case 0x064: case 0x065: case 0x066: case 0x067:
-			case 0x068: case 0x069: case 0x06A: case 0x06B: case 0x06C: case 0x06D: case 0x06E: case 0x06F:
-			case 0x070: case 0x071: case 0x072: case 0x073: case 0x074: case 0x075: case 0x076: case 0x077:
-			case 0x078: case 0x079: case 0x07A: case 0x07B: case 0x07C: case 0x07D: case 0x07E: case 0x07F:
-				return Int(0);
 
 			case 0x080: case 0x081: case 0x082: case 0x083: case 0x084: case 0x085: case 0x086: case 0x087:
 			case 0x088: case 0x089: case 0x08A: case 0x08B: case 0x08C: case 0x08D: case 0x08E: case 0x08F:
@@ -129,19 +123,14 @@ namespace Memory
 				return Cartridge::ReadROM<Int>(physical_address);
 
 			case 0x1FC:
-				if (physical_address <= 0x1FC0'07BF)
-					return PIF::ReadROM<Int>(physical_address - 0x1FC0'0000);
-				else if (physical_address <= 0x1FC0'07FF)
-					return PIF::ReadRAM<Int>(physical_address - 0x1FC0'07C0);
-				else
-					return Int(0);
+				return physical_address <= 0x1FC0'07FF ?
+					PIF::ReadMemory<Int>(physical_address) :
+					Int(0);
 
 			default:
 				return Int(0);
 			}
 		}();
-
-		const Int byteswapped_value = ByteswapOnLittleEndian<Int>(value);
 
 		if constexpr (operation == MemoryAccess::Operation::InstrFetch)
 		{
@@ -156,40 +145,40 @@ namespace Memory
 			{
 				if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
 				{
-					Logging::LogIORead(physical_address, byteswapped_value, io_location);
+					Logging::LogIORead(physical_address, value, io_location);
 				}
 				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All)
 				{
-					Logging::LogMemoryRead(physical_address, byteswapped_value);
+					Logging::LogMemoryRead(physical_address, value);
 				}
 			}
 		}
 
-		return byteswapped_value;
+		return value;
 	}
 
 
 	template<std::size_t number_of_bytes>
 	void WritePhysical(const u32 physical_address, const auto data)
 	{
-		const auto byteswapped_data = ByteswapOnLittleEndian(data);
-
 		switch (physical_address >> 20)
 		{
 		case 0x000: case 0x001: case 0x002: case 0x003:
-			RDRAM::WriteStandardRegion<number_of_bytes>(physical_address, byteswapped_data);
+			RDRAM::WriteStandardRegion<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x004: case 0x005: case 0x006: case 0x007:
-			RDRAM::WriteExpandedRegion<number_of_bytes>(physical_address, byteswapped_data);
+			RDRAM::WriteExpandedRegion<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x03F:
-			RDRAM::WriteRegisterRegion<number_of_bytes>(physical_address, byteswapped_data);
+			RDRAM::WriteRegisterRegion<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x040:
-			RSP::CPUWriteMemory<number_of_bytes>(physical_address, byteswapped_data);
+			physical_address < 0x04040000 ?
+				RSP::CPUWriteMemory<number_of_bytes>(physical_address, data) :
+				RSP::CPUWriteRegister<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x041:
@@ -200,12 +189,12 @@ namespace Memory
 
 		case 0x043:
 			if constexpr (log_cpu_memory) io_location = "MI";
-			MI::Write<number_of_bytes>(physical_address, byteswapped_data);
+			MI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x044:
 			if constexpr (log_cpu_memory) io_location = "VI";
-			VI::Write<number_of_bytes>(physical_address, byteswapped_data);
+			VI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x045:
@@ -214,7 +203,7 @@ namespace Memory
 
 		case 0x046:
 			if constexpr (log_cpu_memory) io_location = "PI";
-			PI::Write<number_of_bytes>(physical_address, byteswapped_data);
+			PI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x047:
@@ -223,17 +212,7 @@ namespace Memory
 
 		case 0x048:
 			if constexpr (log_cpu_memory) io_location = "SI";
-			SI::Write<number_of_bytes>(physical_address, byteswapped_data);
-			break;
-
-		case 0x050: case 0x051: case 0x052: case 0x053: case 0x054: case 0x055: case 0x056: case 0x057:
-		case 0x058: case 0x059: case 0x05A: case 0x05B: case 0x05C: case 0x05D: case 0x05E: case 0x05F:
-			break;
-
-		case 0x060: case 0x061: case 0x062: case 0x063: case 0x064: case 0x065: case 0x066: case 0x067:
-		case 0x068: case 0x069: case 0x06A: case 0x06B: case 0x06C: case 0x06D: case 0x06E: case 0x06F:
-		case 0x070: case 0x071: case 0x072: case 0x073: case 0x074: case 0x075: case 0x076: case 0x077:
-		case 0x078: case 0x079: case 0x07A: case 0x07B: case 0x07C: case 0x07D: case 0x07E: case 0x07F:
+			SI::Write<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x080: case 0x081: case 0x082: case 0x083: case 0x084: case 0x085: case 0x086: case 0x087:
@@ -252,7 +231,7 @@ namespace Memory
 		case 0x0E8: case 0x0E9: case 0x0EA: case 0x0EB: case 0x0EC: case 0x0ED: case 0x0EE: case 0x0EF:
 		case 0x0F0: case 0x0F1: case 0x0F2: case 0x0F3: case 0x0F4: case 0x0F5: case 0x0F6: case 0x0F7:
 		case 0x0F8: case 0x0F9: case 0x0FA: case 0x0FB: case 0x0FC: case 0x0FD: case 0x0FE: case 0x0FF:
-			Cartridge::WriteSRAM<number_of_bytes>(physical_address, byteswapped_data);
+			Cartridge::WriteSRAM<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x100: case 0x101: case 0x102: case 0x103: case 0x104: case 0x105: case 0x106: case 0x107:
@@ -287,12 +266,14 @@ namespace Memory
 		case 0x1E8: case 0x1E9: case 0x1EA: case 0x1EB: case 0x1EC: case 0x1ED: case 0x1EE: case 0x1EF:
 		case 0x1F0: case 0x1F1: case 0x1F2: case 0x1F3: case 0x1F4: case 0x1F5: case 0x1F6: case 0x1F7:
 		case 0x1F8: case 0x1F9: case 0x1FA: case 0x1FB:
-			Cartridge::WriteROM<number_of_bytes>(physical_address, byteswapped_data);
+			Cartridge::WriteROM<number_of_bytes>(physical_address, data);
 			break;
 
 		case 0x1FC:
-			if (physical_address >= 0x1FC0'07C0 && physical_address <= 0x1FC0'07FF)
-				PIF::WriteRAM<number_of_bytes>(physical_address - 0x1FC0'07C0, byteswapped_data);
+			if (physical_address <= 0x1FC0'07FF)
+			{
+				PIF::WriteMemory<number_of_bytes>(physical_address, data);
+			}
 			break;
 
 		default:
@@ -313,39 +294,6 @@ namespace Memory
 	}
 
 
-	template<std::integral Int>
-	Int GenericRead(const void* source)
-	{
-		Int ret = 0;
-		std::memcpy(&ret, source, sizeof Int);
-		return ret;
-	}
-
-
-	template<std::size_t number_of_bytes>
-	void GenericWrite(void* destination, const auto data)
-	{
-		std::memcpy(destination, &data, number_of_bytes);
-	}
-
-
-	template<std::integral Int>
-	Int ByteswappedGenericRead(const void* source)
-	{
-		Int ret = 0;
-		std::memcpy(&ret, source, sizeof Int);
-		return ByteswapOnLittleEndian<Int>(ret);
-	}
-
-
-	template<std::size_t number_of_bytes>
-	void ByteswappedGenericWrite(void* destination, const auto data)
-	{
-		const auto byteswapped_data = std::byteswap(data);
-		std::memcpy(destination, &byteswapped_data, sizeof data);
-	}
-
-
 	template u8 ReadPhysical<u8, MemoryAccess::Operation::Read>(u32);
 	template s8 ReadPhysical<s8, MemoryAccess::Operation::Read>(u32);
 	template u16 ReadPhysical<u16, MemoryAccess::Operation::Read>(u32);
@@ -358,8 +306,4 @@ namespace Memory
 
 
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WritePhysical, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(GenericRead, const void*)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(GenericWrite, void*)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ByteswappedGenericRead, const void*)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(ByteswappedGenericWrite, void*)
 }

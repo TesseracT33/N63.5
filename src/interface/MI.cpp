@@ -6,33 +6,20 @@ import VR4300;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
-/* Register addresses (offsets; repeat every 16 bytes starting from $0430'0000) */
-#define MI_MODE      0x0 /* R/W */
-#define MI_VERSION   0x4 /* R   */
-#define MI_INTERRUPT 0x8 /* R   */
-#define MI_MASK      0xC /* R/W */
-
 namespace MI
 {
 	void Initialize()
 	{
-		mem.fill(0);
-		static constexpr u8 rsp_version = 0x02; /* https://n64brew.dev/wiki/MIPS_Interface */
-		static constexpr u8 rdp_version = 0x01;
-		static constexpr u8 rac_version = 0x02;
-		static constexpr u8 io_version = 0x02;
-		mem[MI_VERSION] = io_version;
-		mem[MI_VERSION + 1] = rac_version;
-		mem[MI_VERSION + 2] = rdp_version;
-		mem[MI_VERSION + 3] = rsp_version;
+		mi.mode = mi.interrupt = mi.mask = 0;
+		mi.version = 0x02010202;
 	}
 
 
 	template<InterruptType interrupt_type>
 	void SetInterruptFlag()
 	{
-		mem[MI_INTERRUPT + 3] |= std::to_underlying(interrupt_type);
-		if (mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3])
+		mi.interrupt |= std::to_underlying(interrupt_type);
+		if (mi.interrupt & mi.mask)
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
@@ -42,8 +29,8 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptFlag()
 	{
-		mem[MI_INTERRUPT + 3] &= ~std::to_underlying(interrupt_type);
-		if (!(mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3]))
+		mi.interrupt &= ~std::to_underlying(interrupt_type);
+		if (!(mi.interrupt & mi.mask))
 		{
 			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
 		}
@@ -53,8 +40,8 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void SetInterruptMask()
 	{
-		mem[MI_MASK + 3] |= std::to_underlying(interrupt_type);;
-		if (mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3])
+		mi.mask |= std::to_underlying(interrupt_type);
+		if (mi.interrupt & mi.mask)
 		{
 			VR4300::SetInterruptPending<VR4300::ExternalInterruptSource::MI>();
 		}
@@ -64,8 +51,8 @@ namespace MI
 	template<InterruptType interrupt_type>
 	void ClearInterruptMask()
 	{
-		mem[MI_MASK + 3] &= ~std::to_underlying(interrupt_type);;
-		if (!(mem[MI_INTERRUPT + 3] & mem[MI_MASK + 3]))
+		mi.mask &= ~std::to_underlying(interrupt_type);
+		if (!(mi.interrupt & mi.mask))
 		{
 			VR4300::ClearInterruptPending<VR4300::ExternalInterruptSource::MI>(); /* TODO: not sure if should be called */
 		}
@@ -75,7 +62,10 @@ namespace MI
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
-		return Memory::GenericRead<Int>(&mem[addr & 0xF]);
+		const u32 offset = (addr & 0xF) >> 2;
+		s32 ret;
+		std::memcpy(&ret, (s32*)(&mi) + offset, 4);
+		return Int(ret);
 	}
 
 
@@ -83,26 +73,32 @@ namespace MI
 	void Write(const u32 addr, const auto data)
 	{
 		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
-		const u32 offset = addr & 0xC;
-		u32 word = static_cast<u32>(data);
-		if (offset == MI_MODE)
+		const u32 offset = (addr & 0xF) >> 2;
+		const auto word = static_cast<s32>(data);
+
+		static constexpr u32 offset_mode = 0;
+		static constexpr u32 offset_version = 1;
+		static constexpr u32 offset_interrupt = 2;
+		static constexpr u32 offset_mask = 3;
+
+		if (offset == offset_mode)
 		{
-			std::memcpy(&mem[MI_MODE], &word, 4);
+			mi.mode = word;
 		}
-		else if (offset == MI_MASK)
+		else if (offset == offset_mask)
 		{
-			static constexpr s32 clear_sp_mask = Memory::ByteswapOnLittleEndian<s32>(0x01);
-			static constexpr s32   set_sp_mask = Memory::ByteswapOnLittleEndian<s32>(0x02);
-			static constexpr s32 clear_si_mask = Memory::ByteswapOnLittleEndian<s32>(0x04);
-			static constexpr s32   set_si_mask = Memory::ByteswapOnLittleEndian<s32>(0x08);
-			static constexpr s32 clear_ai_mask = Memory::ByteswapOnLittleEndian<s32>(0x10);
-			static constexpr s32   set_ai_mask = Memory::ByteswapOnLittleEndian<s32>(0x20);
-			static constexpr s32 clear_vi_mask = Memory::ByteswapOnLittleEndian<s32>(0x40);
-			static constexpr s32   set_vi_mask = Memory::ByteswapOnLittleEndian<s32>(0x80);
-			static constexpr s32 clear_pi_mask = Memory::ByteswapOnLittleEndian<s32>(0x100);
-			static constexpr s32   set_pi_mask = Memory::ByteswapOnLittleEndian<s32>(0x200);
-			static constexpr s32 clear_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x400);
-			static constexpr s32   set_dp_mask = Memory::ByteswapOnLittleEndian<s32>(0x800);
+			static constexpr s32 clear_sp_mask = 1 << 0;
+			static constexpr s32   set_sp_mask = 1 << 1;
+			static constexpr s32 clear_si_mask = 1 << 2;
+			static constexpr s32   set_si_mask = 1 << 3;
+			static constexpr s32 clear_ai_mask = 1 << 4;
+			static constexpr s32   set_ai_mask = 1 << 5;
+			static constexpr s32 clear_vi_mask = 1 << 6;
+			static constexpr s32   set_vi_mask = 1 << 7;
+			static constexpr s32 clear_pi_mask = 1 << 8;
+			static constexpr s32   set_pi_mask = 1 << 9;
+			static constexpr s32 clear_dp_mask = 1 << 10;
+			static constexpr s32   set_dp_mask = 1 << 11;
 
 			/* TODO: unclear what would happen if two adjacent bits would be set */
 			if (word & clear_sp_mask)
@@ -138,8 +134,8 @@ namespace MI
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, const u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, const u32);
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32);
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32);
 
 	template void ClearInterruptFlag<InterruptType::SP>();
 	template void ClearInterruptFlag<InterruptType::SI>();

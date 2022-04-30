@@ -404,7 +404,7 @@ namespace VR4300
 		case Exception::Trap: return "Trap";
 		case Exception::Watch: return "Watch";
 		case Exception::XTLB_Miss: return "XTLB Miss";
-		default: assert(false);
+		default: assert(false); return "";
 		}
 	}
 

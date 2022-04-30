@@ -9,200 +9,130 @@ import Renderer;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
-#define VI_CTRL        0x00
-#define VI_ORIGIN      0x04
-#define VI_WIDTH       0x08
-#define VI_V_INTR      0x0C
-#define VI_V_CURRENT   0x10
-#define VI_BURST       0x14
-#define VI_V_SYNC      0x18
-#define VI_H_SYNC      0x1C
-#define VI_H_SYNC_LEAP 0x20
-#define VI_H_VIDEO     0x24
-#define VI_V_VIDEO     0x28
-#define VI_V_BURST     0x2C
-#define VI_X_SCALE     0x30
-#define VI_Y_SCALE     0x34
-#define VI_TEST_ADDR   0x38
-#define VI_STAGED_DATA 0x3C
-
 namespace VI
 {
 	void Initialize()
 	{
-		mem.fill(0);
-		Renderer::SetFramebufferPtr(RDRAM::GetPointer(0));
-		Write<4>(VI_V_INTR, Memory::ByteswapOnLittleEndian<u32>(0x3FF));
-		Write<4>(VI_BURST, Memory::ByteswapOnLittleEndian<u32>(1));
-		Write<4>(VI_V_SYNC, Memory::ByteswapOnLittleEndian<u32>(0x20C));
-		Write<4>(VI_H_SYNC, Memory::ByteswapOnLittleEndian<u32>(0x0015'07FF));
+		vi.ctrl = 0;
+		vi.origin = 0;
+		vi.v_intr = 0x3FF;
+		vi.burst = 1;
+		vi.v_sync = 0x20C;
+		vi.h_sync = 0x15'07FF;
 
 		/* NTSC "defaults" (?) */
 		num_fields = 1;
 		num_halflines = 262;
 		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
-	}
-
-
-	void ApplyWriteToControl()
-	{
-		/* Video pixel size */
-		switch (mem[VI_CTRL + 3] & 0x03)
-		{
-		case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
-			Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
-			break;
-
-		case 0b01: /* reserved */
-			Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
-			break;
-
-		case 0b10: /* 5/5/5/3 */
-			Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA5553>();
-			break;
-
-		case 0b11: /* 8/8/8/8 */
-			Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA8888>();
-			break;
-		}
-
-		/* Interlaced vs. progressive. Interlaced if bit 6 is set, otherwise progressive. */
-		num_fields = mem[VI_CTRL + 3] & 0x40 ? 2 : 1;
+		Renderer::SetFramebufferPtr(RDRAM::GetPointer(vi.origin));
 	}
 
 
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
-		return Memory::GenericRead<Int>(&mem[addr & 0x3F]); /* TODO: number of register bytes is 0x38.. */
+		const u32 offset = (addr >> 2) & 0xF;
+		s32 ret;
+		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
+		return Int(ret);
 	}
 
 
 	template<std::size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
-		const u32 offset = addr & 0x3C; /* TODO: number of register bytes is 0x38.. */
-		const u32 word = static_cast<u32>(data);
+		const u32 offset = (addr >> 2) & 0xF;
+		const auto word = s32(data);
+
+		static constexpr u32 offset_ctrl = 0;
+		static constexpr u32 offset_origin = 1;
+		static constexpr u32 offset_width = 2;
+		static constexpr u32 offset_v_intr = 3;
+		static constexpr u32 offset_v_current = 4;
+		static constexpr u32 offset_burst = 5;
+		static constexpr u32 offset_v_sync = 6;
+		static constexpr u32 offset_h_sync = 7;
+		static constexpr u32 offset_h_sync_leap = 8;
+		static constexpr u32 offset_h_video = 9;
+		static constexpr u32 offset_v_video = 10;
+		static constexpr u32 offset_v_burst = 11;
+		static constexpr u32 offset_x_scale = 12;
+		static constexpr u32 offset_y_scale = 13;
+		static constexpr u32 offset_test_addr = 14;
+		static constexpr u32 offset_stated_data = 15;
 
 		switch (offset)
 		{
-		case VI_CTRL:
-			std::memcpy(&mem[offset], &word, 4);
-			ApplyWriteToControl();
+		case offset_ctrl:
+			vi.ctrl = word;
+			/* Video pixel size */
+			switch (vi.ctrl & 3)
+			{
+			case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
+			case 0b01: /* reserved */
+				Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
+				break;
+
+			case 0b10: /* 5/5/5/3 */
+				Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA5553>();
+				break;
+
+			case 0b11: /* 8/8/8/8 */
+				Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA8888>();
+				break;
+			}
+			/* Interlaced vs. progressive. Interlaced if bit 6 is set, otherwise progressive. */
+			num_fields = 1 + bool(vi.ctrl & 0x40);
 			break;
 
-		case VI_ORIGIN:
-		{
-			std::memcpy(&mem[offset], &word, 4);
-			u32 framebuffer_origin = Memory::ByteswapOnLittleEndian<u32>(word);
-			Renderer::SetFramebufferPtr(RDRAM::GetPointer(framebuffer_origin));
+		case offset_origin:
+			vi.origin = word;
+			Renderer::SetFramebufferPtr(RDRAM::GetPointer(vi.origin));
 			break;
-		}
 
-		case VI_WIDTH:
-		{
-			std::memcpy(&mem[offset], &word, 4);
-			u32 framebuffer_width = Memory::ByteswapOnLittleEndian<u32>(word);
-			Renderer::SetFramebufferWidth(framebuffer_width);
+		case offset_width:
+			vi.width = word;
+			Renderer::SetFramebufferWidth(vi.width);
 			break;
-		}
 
-		case VI_V_INTR:
-			/* bits 9-0 are writable. */
-			mem[offset + 3] = [&] {
-				if constexpr (HostSystem::endianness == std::endian::big) return word       & 0xFF;
-				else                                                      return word >> 24 & 0xFF;
-			}();
-			mem[offset + 2] = [&] {
-				if constexpr (HostSystem::endianness == std::endian::big) return word >>  8 & 0x03;
-				else                                                      return word >> 16 & 0x03;
-			}();
+		case offset_v_intr:
+			vi.v_intr = word & 0x3FF; /* only bits 9-0 are writable. */
 			CheckVideoInterrupt();
 			break;
 
-		case VI_V_CURRENT:
-			/* bits 9-0 are writable. */
-			mem[offset + 3] = [&] {
-				if constexpr (HostSystem::endianness == std::endian::big) return word & 0xFF;
-				else                                                      return word >> 24 & 0xFF;
-			}();
-			mem[offset + 2] = [&] {
-				if constexpr (HostSystem::endianness == std::endian::big) return word >> 8 & 0x03;
-				else                                                      return word >> 16 & 0x03;
-			}();
+		case offset_v_current:
+			vi.v_current = word & 0x3FF;
 			MI::ClearInterruptFlag<MI::InterruptType::VI>();
 			break;
 
-		case VI_BURST:
-			break;
-
-		case VI_V_SYNC:
-			/* bits 9-0 are writable. */
-			mem[offset + 3] = [&] {
-				if constexpr (HostSystem::endianness == std::endian::big) return word & 0xFF;
-				else                                                      return word >> 24 & 0xFF;
-			}();
-			mem[offset + 2] = [&] {
-				if constexpr (HostSystem::endianness == std::endian::big) return word >> 8 & 0x03;
-				else                                                      return word >> 16 & 0x03;
-			}();
-			num_halflines = Memory::ByteswappedGenericRead<u32>(&mem[offset]) >> 1;
+		case offset_v_sync:
+			vi.v_sync = word & 0x3FF;
+			num_halflines = vi.v_sync >> 1;
 			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines; /* remainder being non-zero is taken caren of in the scheduler */
 			break;
 
-		case VI_H_SYNC:
-			break;
-
-		case VI_H_SYNC_LEAP:
-			break;
-
-		case VI_H_VIDEO:
-			break;
-
-		case VI_V_VIDEO:
-			break;
-
-		case VI_V_BURST:
-			break;
-
-		case VI_X_SCALE:
-			break;
-
-		case VI_Y_SCALE:
-			break;
-
-		case VI_TEST_ADDR:
-			break;
-
-		case VI_STAGED_DATA:
-			break;
-			
 		default:
-			break;
+			break; /* TODO */
 		}
 	}
 
 
 	void CheckVideoInterrupt()
 	{
-		const u32 current_line = Memory::ByteswappedGenericRead<u32>(&mem[VI_V_CURRENT]);
-		const u32 interrupt_line = Memory::ByteswappedGenericRead<u32>(&mem[VI_V_INTR]);
-		if (current_line == interrupt_line)
+		if (vi.v_current == vi.v_intr)
 		{
 			MI::SetInterruptFlag<MI::InterruptType::VI>();
 		}
 	}
 
 
-	void SetCurrentHalfline(u32 halfline)
+	void SetCurrentHalfline(const u32 halfline)
 	{
-		halfline &= 0x3FF;
-		Memory::ByteswappedGenericWrite<4>(&mem[VI_V_CURRENT], halfline);
+		vi.v_current = halfline & 0x3FF;
 		CheckVideoInterrupt();
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, const u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, const u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32)
 }

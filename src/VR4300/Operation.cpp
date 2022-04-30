@@ -28,7 +28,7 @@ namespace VR4300
 				}
 			}
 
-			ExecuteInstruction();
+			FetchDecodeExecuteInstruction();
 
 			if (exception_has_occurred)
 				HandleException();
@@ -74,15 +74,15 @@ namespace VR4300
 	}
 
 
-	void ExecuteInstruction() /* todo: bad name for now */
+	void FetchDecodeExecuteInstruction() /* todo: bad name for now */
 	{
-		if (log_cpu_instructions)
+		if constexpr (log_cpu_instructions)
 		{
 			current_instr_pc = pc;
 		}
 		const u32 instr_code = FetchInstruction(pc);
 		pc += 4;
-		DecodeAndExecuteInstruction(instr_code);
+		DecodeExecuteInstruction(instr_code);
 	}
 
 
@@ -218,6 +218,15 @@ namespace VR4300
 				}
 			}
 		}
+	}
+
+
+	void PrepareJump(const u64 target_address)
+	{
+		jump_is_pending = true;
+		instructions_until_jump = 1;
+		addr_to_jump_to = target_address;
+		pc_is_inside_branch_delay_slot = true;
 	}
 
 

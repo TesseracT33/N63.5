@@ -21,7 +21,7 @@ namespace VR4300
 	};
 
 
-	constexpr static std::array compare_cond_strings = {
+	constexpr std::array compare_cond_strings = {
 		"F", "UN", "EQ", "UEQ", "OLT", "ULT", "OLE", "ULE", "SF", "NGLE", "SEQ", "NGL", "LT", "NGE", "LE", "NGT"
 	};
 
@@ -44,14 +44,7 @@ namespace VR4300
 
 	constexpr std::string_view FmtToString(int fmt)
 	{
-		switch (static_cast<FmtTypeID>(fmt))
-		{
-		case FmtTypeID::Float32: return "S";
-		case FmtTypeID::Float64: return "D";
-		case FmtTypeID::Int32: return "W";
-		case FmtTypeID::Int64: return "L";
-		default: return "INVALID";
-		}
+		return FmtToString(static_cast<FmtTypeID>(fmt));
 	}
 
 

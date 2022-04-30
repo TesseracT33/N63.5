@@ -1,6 +1,6 @@
-module AI;
+module RI;
 
-namespace AI
+namespace RI
 {
 	void Initialize()
 	{

@@ -61,6 +61,8 @@
     <ClCompile Include="src\RSP\VectorUnit.cpp" />
     <ClCompile Include="src\RSP\RSPOperation.ixx" />
     <ClCompile Include="src\RSP\RSPOperation.cpp" />
+    <ClCompile Include="src\interface\RI.ixx" />
+    <ClCompile Include="src\interface\RI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
