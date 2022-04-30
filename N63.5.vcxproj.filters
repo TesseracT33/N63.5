@@ -25,7 +25,7 @@
     <ClCompile Include="src\N64.ixx" />
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\UserMessage.ixx" />
-    <ClCompile Include="src\HostSystem.ixx" />
+    <ClCompile Include="src\Host.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
     <ClCompile Include="src\memory\MemoryAccess.ixx" />

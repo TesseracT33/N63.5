@@ -1,6 +1,5 @@
 export module Renderer;
 
-import HostSystem;
 import NumericalTypes;
 
 import <SDL.h>;

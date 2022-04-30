@@ -187,7 +187,7 @@
     <ClCompile Include="src\RSP\VectorUnit.cpp" />
     <ClCompile Include="src\RSP\VectorUnit.ixx" />
     <ClCompile Include="src\Utils\BitUtils.ixx" />
-    <ClCompile Include="src\HostSystem.ixx" />
+    <ClCompile Include="src\Host.ixx" />
     <ClCompile Include="src\interface\MI.cpp" />
     <ClCompile Include="src\interface\MI.ixx" />
     <ClCompile Include="src\interface\PI.cpp" />

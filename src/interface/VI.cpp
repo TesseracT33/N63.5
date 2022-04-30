@@ -1,6 +1,5 @@
 module VI;
 
-import HostSystem;
 import Memory;
 import MI;
 import N64;

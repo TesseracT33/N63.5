@@ -1,6 +1,6 @@
 export module RSP:VectorUnit;
 
-import HostSystem;
+import Host;
 import NumericalTypes;
 
 import <algorithm>;

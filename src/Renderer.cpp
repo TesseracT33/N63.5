@@ -1,7 +1,5 @@
 module Renderer;
 
-import HostSystem;
-
 namespace Renderer
 {
 	void Initialize(SDL_Renderer* renderer)

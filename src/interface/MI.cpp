@@ -1,6 +1,5 @@
 module MI;
 
-import HostSystem;
 import Memory;
 import VR4300;
 

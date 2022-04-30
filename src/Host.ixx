@@ -1,8 +1,8 @@
-export module HostSystem;
+export module Host;
 
 import <bit>;
 
-export namespace HostSystem
+export namespace Host
 {
 	static_assert(std::endian::native == std::endian::little);
 

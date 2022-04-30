@@ -178,7 +178,7 @@ namespace RSP
 		{
 			assert(vs < 3);
 			gpr[rt] = [&] {
-				if constexpr (HostSystem::has_avx2)
+				if constexpr (Host::has_avx2)
 				{
 					static const __m256i shuffle_mask = _mm256_set_epi8( /* TODO */
 						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
