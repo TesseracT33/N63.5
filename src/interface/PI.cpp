@@ -81,7 +81,7 @@ namespace PI
 		case offset_wr_len:
 			pi.wr_len = word;
 			/* Initialize DMA transfer */
-			DMA::Init<DMA::Type::PI, DMA::Location::Cartridge, DMA::Location::RDRAM>(pi.rd_len + 1, pi.cart_addr, pi.dram_addr);
+			DMA::Init<DMA::Type::PI, DMA::Location::Cartridge, DMA::Location::RDRAM>(pi.wr_len + 1, pi.cart_addr, pi.dram_addr);
 			SetStatusFlag<StatusFlag::DMA_BUSY>();
 			ClearStatusFlag<StatusFlag::DMA_COMPLETED>();
 			MI::ClearInterruptFlag<MI::InterruptType::PI>();
