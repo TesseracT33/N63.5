@@ -36,8 +36,8 @@ namespace RSP
 	};
 
 	/* Main processor instructions */
-	template<ScalarInstruction instr> void Load(u32 instr_code);
-	template<ScalarInstruction instr> void Store(u32 instr_code);
+	template<ScalarInstruction instr> void ScalarLoad(u32 instr_code);
+	template<ScalarInstruction instr> void ScalarStore(u32 instr_code);
 	template<ScalarInstruction instr> void ALUImmediate(u32 instr_code);
 	template<ScalarInstruction instr> void ALUThreeOperand(u32 instr_code);
 	template<ScalarInstruction instr> void ALUShift(u32 instr_code);
@@ -55,7 +55,7 @@ namespace RSP
 		{
 			if (index != 0) gpr[index] = data;
 		}
-		s32 operator[](const std::size_t index) /* returns by value so that assignments have to made through function "Set". */
+		s32& operator[](const std::size_t index) 
 		{
 			return gpr[index];
 		}

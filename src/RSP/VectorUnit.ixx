@@ -1,6 +1,5 @@
 export module RSP:VectorUnit;
 
-import Host;
 import NumericalTypes;
 
 import <algorithm>;
@@ -24,25 +23,31 @@ namespace RSP
 {
 	enum class VectorInstruction
 	{
-		LBV, LSV, LLV, LDV, SBV, SSV, SLV, SDV, LQV, LRV, SQV, SRV, LTV, STV, LPV, LUV, SPV, SUV,
+		/* Load instructions */
+		LBV, LSV, LLV, LDV, LQV, LRV, LTV, LPV, LUV,
 
+		/* Store instructions*/
+		SBV, SSV, SLV, SDV, SQV, SRV, STV, SPV, SUV,
+
+		/* Move instructions*/
 		MTC2, MFC2, CTC2, CFC2,
 
-		VMOV, VRCP, VRSQ, VRCPH, VRSQH, VRCPL, VRSQL, VNOP, VNULL,
+		/* Single-lane instructions */
+		VMOV, VRCP, VRSQ, VRCPH, VRSQH, VRCPL, VRSQL, VRNDN, VRNDP, VNOP, VNULL,
 
-		VMULF, VMULU, VMUDL, VMUDM, VMUDN, VMUDH, VMACF, VMACU, VMADL, VMADM, VADMN, VADMH,
+		/* Computational instructions */
+		VMULF, VMULU, VMULQ, VMUDL, VMUDM, VMUDN, VMUDH, VMACF, VMACU, VMACQ, VMADL, VMADM, VADMN, VADMH,
 		VADD, VABS, VADDC, VSUB, VSUBC, VMADN, VMADH, VSAR, VAND, VNAND, VOR, VNOR, VXOR, VNXOR,
 
+		/* Select instructions */
 		VLT, VEQ, VNE, VGE, VCH, VCR, VCL, VMRG
 	};
 
-	template<VectorInstruction instr> void ScalarLoad(u32 instr_code);
-	template<VectorInstruction instr> void ScalarStore(u32 instr_code);
 	template<VectorInstruction instr> void VectorLoad(u32 instr_code);
 	template<VectorInstruction instr> void VectorStore(u32 instr_code);
 	template<VectorInstruction instr> void Move(u32 instr_code);
 	template<VectorInstruction instr> void SingleLaneInstr(u32 instr_code);
-	template<VectorInstruction instr> void Compute(u32 instr_code);
+	template<VectorInstruction instr> void ComputeInstr(u32 instr_code);
 	template<VectorInstruction instr> void SelectInstr(u32 instr_code);
 
 	__m128i GetVTBroadcast(int vt, int element);

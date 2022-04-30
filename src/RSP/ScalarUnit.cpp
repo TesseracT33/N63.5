@@ -7,7 +7,7 @@ import N64;
 namespace RSP
 {
 	template<ScalarInstruction instr>
-	void Load(const u32 instr_code)
+	void ScalarLoad(const u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -21,7 +21,7 @@ namespace RSP
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
 		}
 
-		/* For all instructions:
+		/* For all ScalarInstructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
 		const auto result = [&] {
 			if constexpr (instr == LB)
@@ -64,7 +64,7 @@ namespace RSP
 			}
 			else
 			{
-				static_assert(instr != instr, "\"Load\" template function called, but no matching load instruction was found.");
+				static_assert(instr != instr, "\"Load\" template function called, but no matching load ScalarInstruction was found.");
 			}
 		}();
 
@@ -75,7 +75,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void Store(const u32 instr_code)
+	void ScalarStore(const u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -89,7 +89,7 @@ namespace RSP
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
 		}
 
-		/* For all instructions:
+		/* For all ScalarInstructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base. */
 		if constexpr (instr == SB)
 		{
@@ -128,7 +128,7 @@ namespace RSP
 		}
 		else
 		{
-			static_assert(instr != instr, "\"Store\" template function called, but no matching store instruction was found.");
+			static_assert(instr != instr, "\"Store\" template function called, but no matching store ScalarInstruction was found.");
 		}
 
 		AdvancePipeline<1>();
@@ -214,7 +214,7 @@ namespace RSP
 			}
 			else
 			{
-				static_assert(instr != instr, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
+				static_assert(instr != instr, "\"ALU_Immediate\" template function called, but no matching ALU immediate ScalarInstruction was found.");
 			}
 		}());
 
@@ -292,7 +292,7 @@ namespace RSP
 			}
 			else
 			{
-				static_assert(instr != instr, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
+				static_assert(instr != instr, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand ScalarInstruction was found.");
 			}
 		}());
 
@@ -369,7 +369,7 @@ namespace RSP
 			}
 			else
 			{
-				static_assert(instr != instr, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
+				static_assert(instr != instr, "\"ALU_Shift\" template function called, but no matching ALU shift ScalarInstruction was found.");
 			}
 		}());
 
@@ -384,19 +384,19 @@ namespace RSP
 
 		/* J: Jump;
 		   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
-		   coupled with the high-order 4 bits of the PC, delayed by one instruction.
+		   coupled with the high-order 4 bits of the PC, delayed by one ScalarInstruction.
 
 		   JAL: Jump And Link;
 		   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
-		   coupled with the high-order 4 bits of the PC, delayed by one instruction.
-		   Stores the address of the instruction following the delay slot to r31 (link register).
+		   coupled with the high-order 4 bits of the PC, delayed by one ScalarInstruction.
+		   Stores the address of the ScalarInstruction following the delay slot to r31 (link register).
 
 		   JR: Jump Register;
-		   Jumps to the address of register rs, delayed by one instruction.
+		   Jumps to the address of register rs, delayed by one ScalarInstruction.
 
 		   JALR: Jump And Link Register;
-		   Jumps to the address of register rs, delayed by one instruction.
-		   Stores the address of the instruction following the delay slot to register rd. */
+		   Jumps to the address of register rs, delayed by one ScalarInstruction.
+		   Stores the address of the ScalarInstruction following the delay slot to register rd. */
 		const u32 target = [&] {
 			if constexpr (instr == J || instr == JAL)
 			{
@@ -418,7 +418,7 @@ namespace RSP
 			}
 			else
 			{
-				static_assert(instr != instr, "\"Jump\" template function called, but no matching jump instruction was found.");
+				static_assert(instr != instr, "\"Jump\" template function called, but no matching jump ScalarInstruction was found.");
 			}
 		}();
 
@@ -457,8 +457,8 @@ namespace RSP
 			}();
 		}
 
-		/* For all instructions: branch to the branch address if the condition is met, with a delay of one instruction.
-		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
+		/* For all ScalarInstructions: branch to the branch address if the condition is met, with a delay of one ScalarInstruction.
+		   For "link" ScalarInstructions: stores the address of the ScalarInstruction following the delay slot to register r31 (link register). */
 
 		if constexpr (instr == BLTZAL || instr == BGEZAL)
 		{
@@ -483,7 +483,7 @@ namespace RSP
 			else if constexpr (instr == BGEZAL) /* Branch On Greater Than Or Equal To Zero And Link */
 				return gpr[rs] >= 0;
 			else
-				static_assert(instr != instr, "\"Branch\" template function called, but no matching branch instruction was found.");
+				static_assert(instr != instr, "\"Branch\" template function called, but no matching branch ScalarInstruction was found.");
 		}();
 
 		if (branch_cond)
@@ -503,18 +503,18 @@ namespace RSP
 	}
 
 
-	template void Load<ScalarInstruction::LB>(u32);
-	template void Load<ScalarInstruction::LBU>(u32);
-	template void Load<ScalarInstruction::LH>(u32);
-	template void Load<ScalarInstruction::LHU>(u32);
-	template void Load<ScalarInstruction::LW>(u32);
-	template void Load<ScalarInstruction::LWU>(u32);
-	template void Load<ScalarInstruction::LL>(u32);
+	template void ScalarLoad<ScalarInstruction::LB>(u32);
+	template void ScalarLoad<ScalarInstruction::LBU>(u32);
+	template void ScalarLoad<ScalarInstruction::LH>(u32);
+	template void ScalarLoad<ScalarInstruction::LHU>(u32);
+	template void ScalarLoad<ScalarInstruction::LW>(u32);
+	template void ScalarLoad<ScalarInstruction::LWU>(u32);
+	template void ScalarLoad<ScalarInstruction::LL>(u32);
 
-	template void Store<ScalarInstruction::SB>(u32);
-	template void Store<ScalarInstruction::SH>(u32);
-	template void Store<ScalarInstruction::SW>(u32);
-	template void Store<ScalarInstruction::SC>(u32);
+	template void ScalarStore<ScalarInstruction::SB>(u32);
+	template void ScalarStore<ScalarInstruction::SH>(u32);
+	template void ScalarStore<ScalarInstruction::SW>(u32);
+	template void ScalarStore<ScalarInstruction::SC>(u32);
 
 	template void ALUImmediate<ScalarInstruction::ADDI>(u32);
 	template void ALUImmediate<ScalarInstruction::ADDIU>(u32);

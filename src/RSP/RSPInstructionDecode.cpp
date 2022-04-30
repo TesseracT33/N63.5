@@ -82,7 +82,70 @@ namespace RSP
 
 	void DecodeAndExecuteCOP2Instruction()
 	{
-
+		if (instr_code & 1 << 25)
+		{
+			const auto op_code = instr_code & 0x3F;
+			switch (op_code)
+			{
+			case 0x00: EXEC_VECTOR_INSTR(VMULF); break;
+			case 0x01: EXEC_VECTOR_INSTR(VMULU); break;
+			case 0x02: EXEC_VECTOR_INSTR(VRNDP); break;
+			case 0x03: EXEC_VECTOR_INSTR(VMULQ); break;
+			case 0x04: EXEC_VECTOR_INSTR(VMUDL); break;
+			case 0x05: EXEC_VECTOR_INSTR(VMUDM); break;
+			case 0x06: EXEC_VECTOR_INSTR(VMUDN); break;
+			case 0x07: EXEC_VECTOR_INSTR(VMUDH); break;
+			case 0x08: EXEC_VECTOR_INSTR(VMACF); break;
+			case 0x09: EXEC_VECTOR_INSTR(VMACU); break;
+			case 0x0A: EXEC_VECTOR_INSTR(VRNDN); break;
+			case 0x0B: EXEC_VECTOR_INSTR(VMACQ); break;
+			case 0x0C: EXEC_VECTOR_INSTR(VMADL); break;
+			case 0x0D: EXEC_VECTOR_INSTR(VMADM); break;
+			case 0x0E: EXEC_VECTOR_INSTR(VMADN); break;
+			case 0x0F: EXEC_VECTOR_INSTR(VMADH); break;
+			case 0x10: EXEC_VECTOR_INSTR(VADD); break;
+			case 0x11: EXEC_VECTOR_INSTR(VSUB); break;
+			case 0x13: EXEC_VECTOR_INSTR(VABS); break;
+			case 0x14: EXEC_VECTOR_INSTR(VADDC); break;
+			case 0x15: EXEC_VECTOR_INSTR(VSUBC); break;
+			case 0x1D: EXEC_VECTOR_INSTR(VSAR); break;
+			case 0x20: EXEC_VECTOR_INSTR(VLT); break;
+			case 0x21: EXEC_VECTOR_INSTR(VEQ); break;
+			case 0x22: EXEC_VECTOR_INSTR(VNE); break;
+			case 0x23: EXEC_VECTOR_INSTR(VGE); break;
+			case 0x24: EXEC_VECTOR_INSTR(VCL); break;
+			case 0x25: EXEC_VECTOR_INSTR(VCH); break;
+			case 0x26: EXEC_VECTOR_INSTR(VCR); break;
+			case 0x27: EXEC_VECTOR_INSTR(VMRG); break;
+			case 0x28: EXEC_VECTOR_INSTR(VAND); break;
+			case 0x29: EXEC_VECTOR_INSTR(VNAND); break;
+			case 0x2A: EXEC_VECTOR_INSTR(VOR); break;
+			case 0x2B: EXEC_VECTOR_INSTR(VNOR); break;
+			case 0x2C: EXEC_VECTOR_INSTR(VXOR); break;
+			case 0x2D: EXEC_VECTOR_INSTR(VNXOR); break;
+			case 0x30: EXEC_VECTOR_INSTR(VRCP); break;
+			case 0x31: EXEC_VECTOR_INSTR(VRCPL); break;
+			case 0x32: EXEC_VECTOR_INSTR(VRCPH); break;
+			case 0x33: EXEC_VECTOR_INSTR(VMOV); break;
+			case 0x34: EXEC_VECTOR_INSTR(VRSQ); break;
+			case 0x35: EXEC_VECTOR_INSTR(VRSQL); break;
+			case 0x36: EXEC_VECTOR_INSTR(VRSQH); break;
+			case 0x37: EXEC_VECTOR_INSTR(VNOP); break;
+			default: break;
+			}
+		}
+		else
+		{
+			const auto op_code = instr_code >> 21 & 0x1F;
+			switch (op_code)
+			{
+			case 0b00000: EXEC_VECTOR_INSTR(MFC2); break;
+			case 0b00100: EXEC_VECTOR_INSTR(MTC2); break;
+			case 0b00010: EXEC_VECTOR_INSTR(CFC2); break;
+			case 0b00110: EXEC_VECTOR_INSTR(CTC2); break;
+			default: break;
+			}
+		}
 	}
 
 
@@ -128,6 +191,42 @@ namespace RSP
 		break; case 0b000110: EXEC_SCALAR_INSTR(BLEZ);
 		break; case 0b000101: EXEC_SCALAR_INSTR(BNE);
 
+		break; case 0b110010:
+		{
+			const auto op_code = instr_code >> 11 & 0x1F;
+			switch (op_code)
+			{
+			case 0x00: EXEC_VECTOR_INSTR(LBV); break;
+			case 0x01: EXEC_VECTOR_INSTR(LSV); break;
+			case 0x02: EXEC_VECTOR_INSTR(LLV); break;
+			case 0x03: EXEC_VECTOR_INSTR(LDV); break;
+			case 0x04: EXEC_VECTOR_INSTR(LQV); break;
+			case 0x05: EXEC_VECTOR_INSTR(LRV); break;
+			case 0x06: EXEC_VECTOR_INSTR(LPV); break;
+			case 0x07: EXEC_VECTOR_INSTR(LUV); break;
+			case 0x08: EXEC_VECTOR_INSTR(LTV); break;
+			default: break;
+			}
+		}
+
+		break; case 0b111010:
+		{
+			const auto op_code = instr_code >> 11 & 0x1F;
+			switch (op_code)
+			{
+			case 0x00: EXEC_VECTOR_INSTR(SBV); break;
+			case 0x01: EXEC_VECTOR_INSTR(SSV); break;
+			case 0x02: EXEC_VECTOR_INSTR(SLV); break;
+			case 0x03: EXEC_VECTOR_INSTR(SDV); break;
+			case 0x04: EXEC_VECTOR_INSTR(SQV); break;
+			case 0x05: EXEC_VECTOR_INSTR(SRV); break;
+			case 0x06: EXEC_VECTOR_INSTR(SPV); break;
+			case 0x07: EXEC_VECTOR_INSTR(SUV); break;
+			case 0x08: EXEC_VECTOR_INSTR(STV); break;
+			default: break;
+			}
+		}
+
 		break; default:
 			;
 		}
@@ -141,12 +240,12 @@ namespace RSP
 
 		if constexpr (instr == LB || instr == LBU || instr == LH || instr == LHU || instr == LW || instr == LWU || instr == LL)
 		{
-			Load<instr>(instr_code);
+			ScalarLoad<instr>(instr_code);
 		}
 
 		else if constexpr (instr == SB || instr == SH || instr == SW || instr == SC)
 		{
-			Store<instr>(instr_code);
+			ScalarStore<instr>(instr_code);
 		}
 
 		else if constexpr (instr == ADDI || instr == ADDIU || instr == SLTI || instr == SLTIU || instr == ANDI ||
@@ -197,6 +296,50 @@ namespace RSP
 	void ExecuteVectorInstruction()
 	{
 		using enum VectorInstruction;
+		
+		if constexpr (instr == LBV || instr == LSV || instr == LLV || instr == LDV ||
+			instr == LQV || instr == LRV || instr == LPV || instr == LUV || instr == LTV)
+		{
+			VectorLoad<instr>(instr_code);
+		}
+
+		else if constexpr (instr == SBV || instr == SSV || instr == SLV || instr == SDV ||
+			instr == SQV || instr == SRV || instr == SPV || instr == SUV || instr == STV)
+		{
+			VectorStore<instr>(instr_code);
+		}
+
+		else if constexpr (instr == MTC2 || instr == MFC2 || instr == CTC2 || instr == CFC2)
+		{
+			Move<instr>(instr_code);
+		}
+
+		else if constexpr (instr == VMOV || instr == VRCP || instr == VRSQ || instr == VRCPH || instr == VRSQH ||
+			instr == VRCPL || instr == VRSQL || instr == VRNDN || instr == VRNDP || instr == VNOP || instr == VNULL)
+		{
+			SingleLaneInstr<instr>(instr_code);
+		}
+
+		else if constexpr (instr == VMULF || instr == VMULU || instr == VMULQ || instr == VMUDL ||
+			instr == VMUDM || instr == VMUDN || instr == VMUDH || instr == VMACF || instr == VMACU ||
+			instr == VMADL || instr == VMADM || instr == VADMN || instr == VADMH || instr == VADD ||
+			instr == VMACQ || instr == VABS || instr == VADDC || instr == VSUB || instr == VSUBC ||
+			instr == VMADN || instr == VMADH || instr == VSAR || instr == VAND || instr == VNAND ||
+			instr == VOR || instr == VNOR || instr == VXOR || instr == VNXOR)
+		{
+			ComputeInstr<instr>(instr_code);
+		}
+
+		else if constexpr (instr == VLT || instr == VEQ || instr == VNE ||instr == VGE ||
+			instr == VCH || instr == VCR || instr == VCL || instr == VMRG)
+		{
+			SelectInstr<instr>(instr_code);
+		}
+
+		else
+		{
+			static_assert(instr != instr);
+		}
 
 		if constexpr (log_rsp_instructions)
 		{

@@ -3,10 +3,12 @@ module RSP:VectorUnit;
 import :RSPOperation;
 import :ScalarUnit;
 
+import Host;
+
 namespace RSP
 {
 	const __m128i epi16_ones = _mm_set1_epi16(s16(0xFFFF));
-	const __m128i epi16_zeroes{ 0 };
+	const __m128i epi16_zeroes = _mm_set1_epi16(s16(0));
 
 
 	__m128i GetVTBroadcast(const int vt, const int element)
@@ -51,7 +53,7 @@ namespace RSP
 
 
 	template<VectorInstruction instr>
-	void ScalarLoad(const u32 instr_code)
+	void VectorLoad(const u32 instr_code)
 	{
 		const signed offset = (instr_code & 0x1F) - 0x20 * bool(instr_code & 0x20); /* two's complement 6-bit number */
 		const auto element = instr_code >> 7 & 0xF;
@@ -62,7 +64,7 @@ namespace RSP
 		auto ScalarLoad = [&] <std::integral Int>
 		{
 			const auto address = gpr[base] + offset * sizeof Int;
-			const Int data = ReadDMEM<Int>(address);
+			const Int data = ReadDMEM<Int, N64::Processor::RSP>(address);
 			u8* const vpr_dest = (u8*)(vpr.data() + vt) + element;
 			if constexpr (sizeof Int == 1)
 			{
@@ -77,6 +79,45 @@ namespace RSP
 				std::memcpy(vpr_dest, &data, 16 - element); /* slow */
 			}
 		};
+
+		using enum VectorInstruction;
+
+		if constexpr (instr == LBV) ScalarLoad.template operator() < s8 > ();
+		else if constexpr (instr == LSV) ScalarLoad.template operator() < s16 > ();
+		else if constexpr (instr == LLV) ScalarLoad.template operator() < s32 > ();
+		else if constexpr (instr == LDV) ScalarLoad.template operator() < s64 > ();
+		else if constexpr (instr == LQV)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == LRV)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == LTV)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == LPV)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == LUV)
+		{
+			/* TODO */
+		}
+		else static_assert(instr != instr, "Invalid VectorInstruction given to function template \"ScalarLoadStore\"");
+	}
+
+
+	template<VectorInstruction instr>
+	void VectorStore(const u32 instr_code)
+	{
+		const signed offset = (instr_code & 0x1F) - 0x20 * bool(instr_code & 0x20); /* two's complement 6-bit number */
+		const auto element = instr_code >> 7 & 0xF;
+		const auto op_code = instr_code >> 11 & 0x1F;
+		const auto vt = instr_code >> 16 & 0x1F;
+		const auto base = instr_code >> 21 & 0x1F;
 
 		auto ScalarStore = [&] <std::integral Int>
 		{
@@ -107,26 +148,10 @@ namespace RSP
 
 		using enum VectorInstruction;
 
-		if constexpr (instr == LBV) ScalarLoad.template operator() < s8 > ();
-		else if constexpr (instr == LSV) ScalarLoad.template operator() < s16 > ();
-		else if constexpr (instr == LLV) ScalarLoad.template operator() < s32 > ();
-		else if constexpr (instr == LDV) ScalarLoad.template operator() < s64 > ();
-		else if constexpr (instr == SBV) ScalarStore.template operator() < s8 > ();
+		if constexpr (instr == SBV) ScalarStore.template operator() < s8 > ();
 		else if constexpr (instr == SSV) ScalarStore.template operator() < s16 > ();
 		else if constexpr (instr == SLV) ScalarStore.template operator() < s32 > ();
 		else if constexpr (instr == SDV) ScalarStore.template operator() < s64 > ();
-		else if constexpr (instr == LQV)
-		{
-			const auto address = gpr[base] + offset * 16;
-			/* TODO */
-		}
-		else if constexpr (instr == LRV)
-		{
-			const auto pivot = gpr[base] + offset * 16;
-			const auto address = pivot & ~0xF;
-			const std::size_t num_bytes = std::min(16 - element, pivot & 0xF);
-			/* TODO */
-		}
 		else if constexpr (instr == SQV)
 		{
 			/* TODO */
@@ -135,19 +160,22 @@ namespace RSP
 		{
 			/* TODO */
 		}
-		else if constexpr (instr == LTV)
-		{
-			/* TODO */
-		}
 		else if constexpr (instr == STV)
 		{
 			/* TODO */
 		}
-		else if constexpr (instr == LPV)
+		else if constexpr (instr == SPV)
 		{
 			/* TODO */
 		}
-		else static_assert(instr != instr, "Invalid instruction given to function template \"ScalarLoadStore\"");
+		else if constexpr (instr == SUV)
+		{
+			/* TODO */
+		}
+		else
+		{
+			static_assert(instr != instr);
+		}
 	}
 
 
@@ -162,44 +190,21 @@ namespace RSP
 
 		if constexpr (instr == MTC2)
 		{
-			vpr[vs] = _mm_insert_epi16(vpr[vs], gpr[rt], vs_elem);
+			std::memcpy((s16*)(&vpr[vs]) + vs_elem, &gpr[rt], sizeof s16);
 		}
 		else if constexpr (instr == MFC2)
 		{
-			gpr[rt] = s16(*((u16*)(vpr.data() + vs) + vs_elem));
+			gpr.Set(rt, s16(*((u16*)(&vpr[vs]) + vs_elem)));
 		}
 		else if constexpr (instr == CTC2)
 		{
 			assert(vs < 3);
-			(*control_reg_ptrs[vs]).low = _mm_blend_epi16(epi16_zeroes, epi16_ones, gpr[rt] & 0xFF);
-			(*control_reg_ptrs[vs]).high = _mm_blend_epi16(epi16_zeroes, epi16_ones, gpr[rt] >> 8 & 0xFF);
+			//(*control_reg_ptrs[vs]).low = _mm_blend_epi16(epi16_zeroes, epi16_ones, gpr[rt] & 0xFF);
+			//(*control_reg_ptrs[vs]).high = _mm_blend_epi16(epi16_zeroes, epi16_ones, gpr[rt] >> 8 & 0xFF);
 		}
 		else if constexpr (instr == CFC2)
 		{
 			assert(vs < 3);
-			gpr[rt] = [&] {
-				if constexpr (Host::has_avx2)
-				{
-					static const __m256i shuffle_mask = _mm256_set_epi8( /* TODO */
-						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-						0x0E, 0x0C, 0x0A, 0x08, 0x06, 0x04, 0x02, 0x00);
-					const __m256i control_reg = _mm256_loadu2_m128i(control_reg_ptrs[vs].high, control_reg_ptrs[vs].low);
-					const __m256i shuffle = _mm256_shuffle_epi8(control_reg, shuffle_mask);
-					const int ret = _mm256_movemask_epi8(shuffle);
-					return s16(ret);
-				}
-				else
-				{
-					static const __m128i shuffle_mask = _mm_set_epi8(
-						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
-						0x0E, 0x0C, 0x0A, 0x08, 0x06, 0x04, 0x02, 0x00);
-					const __m128i shuffle_low = _mm_shuffle_epi8((*control_reg_ptrs[vs]).low, shuffle_mask);
-					const __m128i shuffle_high = _mm_shuffle_epi8((*control_reg_ptrs[vs]).high, shuffle_mask);
-					const int ret_low = _mm_movemask_epi8(shuffle_low);
-					const int ret_high = _mm_movemask_epi8(shuffle_high);
-					return s16(ret_high << 8 | ret_low);
-				}
-			}();
 		}
 		else
 		{
@@ -255,12 +260,12 @@ namespace RSP
 			};
 
 			if (src == 0)
-				return 0xFFFF'FFFF;
+				return u32(-1);
 			const u32 src_abs = src < 0 ? -src : src;
 			const auto scale_out = std::bit_width(src_abs);
 			const auto scale_in = 32 - scale_out;
 			const auto result = (0x10000 | rcp_rom[src_abs >> (scale_in - 9) & 0x1FF]) << (scale_out - 16);
-			return src < 0 ? ~result : result;
+			return u32(src < 0 ? ~result : result);
 		};
 
 		auto Rsq = [&](const s32 src)
@@ -302,13 +307,13 @@ namespace RSP
 			};
 
 			if (src == 0)
-				return 0xFFFF'FFFF;
+				return u32(-1);
 			const u32 src_abs = src < 0 ? -src : src;
 			auto scale_out = std::bit_width(src_abs);
 			const auto scale_in = 32 - scale_out;
 			scale_out >>= 1;
 			const auto result = (0x10000 | rsq_rom[(scale_in & 1) << 8 | src_abs >> (scale_in - 8) & 0xFF]) << (scale_out - 16);
-			return src < 0 ? ~result : result;
+			return u32(src < 0 ? ~result : result);
 		};
 
 		using enum VectorInstruction;
@@ -321,39 +326,60 @@ namespace RSP
 		}
 		else if constexpr (instr == VRCP || instr == VRSQ)
 		{
-			const s32 src = s16(_mm_extract_epi16(vpr[vt], vt_elem));
+			s16 src;
+			std::memcpy(&src, (s16*)(vpr.data() + vt) + vt_elem, sizeof s16);
 			const u32 result = [&] {
 				if constexpr (instr == VRCP)
 					return Rcp(src);
 				else
 					return Rsq(src);
 			}();
-			vpr[vd] = _mm_insert_epi16(vpr[vd], result, vd_elem);
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof s16);
 			div_out = u16(result >> 16);
 			if constexpr (instr == VRCP)
 				accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCPH || instr == VRSQH)
 		{
-			vpr[vd] = _mm_insert_epi16(vpr[vd], div_out, vd_elem);
-			div_in = _mm_extract_epi16(vpr[vt], vt_elem);
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &div_out, sizeof s16);
+			std::memcpy(&div_in, (s16*)(vpr.data() + vt) + vt_elem, sizeof s16);
 			if constexpr (instr == VRCPH) /* TODO: correct? */
 				accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCPL || instr == VRSQL)
 		{
-			const s32 src = div_in << 16 | _mm_extract_epi16(vpr[vt], vt_elem);
+			const s32 src = [&] {
+				s16 lane;
+				std::memcpy(&lane, (s16*)(vpr.data() + vt) + vt_elem, sizeof s16);
+				return div_in << 16 | lane;
+			}();
 			const u32 result = [&] {
 				if constexpr (instr == VRCPL)
 					return Rcp(src);
 				else
 					return Rsq(src);
 			}();
-			vpr[vd] = _mm_insert_epi16(vpr[vd], result, vd_elem);
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof s16);
 			div_out = u16(result >> 16);
 			div_in = 0;
 			if constexpr (instr == VRCPL) /* TODO: correct? */
 				accumulator.low = vpr[vt];
+		}
+		else if constexpr (instr == VRNDN)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == VRNDP)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == VNOP)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == VNULL)
+		{
+			/* TODO */
 		}
 		else
 		{
@@ -363,7 +389,7 @@ namespace RSP
 
 
 	template<VectorInstruction instr>
-	void Compute(const u32 instr_code)
+	void ComputeInstr(const u32 instr_code)
 	{
 		const auto vd = instr_code >> 6 & 0x1F;
 		const auto vs = instr_code >> 11 & 0x1F;
@@ -395,11 +421,19 @@ namespace RSP
 		{
 			/* TODO */
 		}
+		else if constexpr (instr == VMULQ)
+		{
+			/* TODO */
+		}
 		else if constexpr (instr == VMACF)
 		{
 			/* TODO */
 		}
 		else if constexpr (instr == VMACU)
+		{
+			/* TODO */
+		}
+		else if constexpr (instr == VMACQ)
 		{
 			/* TODO */
 		}
@@ -429,7 +463,7 @@ namespace RSP
 		}
 		else if constexpr (instr == VABS)
 		{
-			vpr[vd] = _mm_abs_epi16(vpr[vs], vt_operand);
+			vpr[vd] = _mm_abs_epi16(vpr[vs]);
 		}
 		else if constexpr (instr == VSAR)
 		{
@@ -534,4 +568,80 @@ namespace RSP
 			static_assert(instr != instr);
 		}
 	}
+
+
+	template void VectorLoad<VectorInstruction::LBV>(u32);
+	template void VectorLoad<VectorInstruction::LSV>(u32);
+	template void VectorLoad<VectorInstruction::LLV>(u32);
+	template void VectorLoad<VectorInstruction::LDV>(u32);
+	template void VectorLoad<VectorInstruction::LQV>(u32);
+	template void VectorLoad<VectorInstruction::LRV>(u32);
+	template void VectorLoad<VectorInstruction::LPV>(u32);
+	template void VectorLoad<VectorInstruction::LUV>(u32);
+	template void VectorLoad<VectorInstruction::LTV>(u32);
+
+	template void VectorStore<VectorInstruction::SBV>(u32);
+	template void VectorStore<VectorInstruction::SSV>(u32);
+	template void VectorStore<VectorInstruction::SLV>(u32);
+	template void VectorStore<VectorInstruction::SDV>(u32);
+	template void VectorStore<VectorInstruction::SQV>(u32);
+	template void VectorStore<VectorInstruction::SRV>(u32);
+	template void VectorStore<VectorInstruction::SPV>(u32);
+	template void VectorStore<VectorInstruction::SUV>(u32);
+	template void VectorStore<VectorInstruction::STV>(u32);
+
+	template void Move<VectorInstruction::MFC2>(u32);
+	template void Move<VectorInstruction::MTC2>(u32);
+	template void Move<VectorInstruction::CFC2>(u32);
+	template void Move<VectorInstruction::CTC2>(u32);
+
+	template void SingleLaneInstr<VectorInstruction::VMOV>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRCP>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRSQ>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRCPH>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRSQH>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRCPL>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRSQL>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRNDN>(u32);
+	template void SingleLaneInstr<VectorInstruction::VRNDP>(u32);
+	template void SingleLaneInstr<VectorInstruction::VNOP>(u32);
+	template void SingleLaneInstr<VectorInstruction::VNULL>(u32);
+
+	template void ComputeInstr<VectorInstruction::VMULF>(u32);
+	template void ComputeInstr<VectorInstruction::VMULU>(u32);
+	template void ComputeInstr<VectorInstruction::VMULQ>(u32);
+	template void ComputeInstr<VectorInstruction::VMUDL>(u32);
+	template void ComputeInstr<VectorInstruction::VMUDM>(u32);
+	template void ComputeInstr<VectorInstruction::VMUDN>(u32);
+	template void ComputeInstr<VectorInstruction::VMUDH>(u32);
+	template void ComputeInstr<VectorInstruction::VMACF>(u32);
+	template void ComputeInstr<VectorInstruction::VMACU>(u32);
+	template void ComputeInstr<VectorInstruction::VMACQ>(u32);
+	template void ComputeInstr<VectorInstruction::VMADL>(u32);
+	template void ComputeInstr<VectorInstruction::VMADM>(u32);
+	template void ComputeInstr<VectorInstruction::VADMN>(u32);
+	template void ComputeInstr<VectorInstruction::VADMH>(u32);
+	template void ComputeInstr<VectorInstruction::VADD>(u32);
+	template void ComputeInstr<VectorInstruction::VABS>(u32);
+	template void ComputeInstr<VectorInstruction::VADDC>(u32);
+	template void ComputeInstr<VectorInstruction::VSUB>(u32);
+	template void ComputeInstr<VectorInstruction::VSUBC>(u32);
+	template void ComputeInstr<VectorInstruction::VMADN>(u32);
+	template void ComputeInstr<VectorInstruction::VMADH>(u32);
+	template void ComputeInstr<VectorInstruction::VSAR>(u32);
+	template void ComputeInstr<VectorInstruction::VAND>(u32);
+	template void ComputeInstr<VectorInstruction::VNAND>(u32);
+	template void ComputeInstr<VectorInstruction::VOR>(u32);
+	template void ComputeInstr<VectorInstruction::VNOR>(u32);
+	template void ComputeInstr<VectorInstruction::VXOR>(u32);
+	template void ComputeInstr<VectorInstruction::VNXOR>(u32);
+
+	template void SelectInstr<VectorInstruction::VLT>(u32);
+	template void SelectInstr<VectorInstruction::VEQ>(u32);
+	template void SelectInstr<VectorInstruction::VNE>(u32);
+	template void SelectInstr<VectorInstruction::VGE>(u32);
+	template void SelectInstr<VectorInstruction::VCH>(u32);
+	template void SelectInstr<VectorInstruction::VCR>(u32);
+	template void SelectInstr<VectorInstruction::VCL>(u32);
+	template void SelectInstr<VectorInstruction::VMRG>(u32);
 }
