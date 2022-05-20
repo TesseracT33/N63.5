@@ -87,8 +87,8 @@ namespace VR4300
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressUserMode32(u64 virt_addr)
 	{
-		virt_addr &= 0xFFFFFFFF;
-		if (virt_addr < 0x80000000)
+		virt_addr &= 0xFFFF'FFFF;
+		if (virt_addr < 0x8000'0000)
 		{
 			return VirtualToPhysicalAddress<operation>(virt_addr);
 		}
@@ -103,7 +103,7 @@ namespace VR4300
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressUserMode64(u64 virt_addr)
 	{
-		if (virt_addr < 0x100'00000000)
+		if (virt_addr < 0x100'0000'0000)
 		{
 			return VirtualToPhysicalAddress<operation>(virt_addr);
 		}
@@ -118,7 +118,7 @@ namespace VR4300
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressSupervisorMode32(u64 virt_addr)
 	{
-		virt_addr &= 0xFFFFFFFF;
+		virt_addr &= 0xFFFF'FFFF;
 		if ((virt_addr & 1 << 31) && (virt_addr & 0b11 << 29) != 0b10 << 29) /* $8000'0000-$BFFF'FFFF; $E000'0000-$FFFF'FFFF */
 		{
 			SignalAddressErrorException<operation>(virt_addr);
@@ -329,11 +329,11 @@ namespace VR4300
 	{
 		/* For aligned accesses, check if the address is misaligned. No need to do it for instruction fetches.
 		   The PC can be misaligned after an ERET instruction, but we manually check there if the PC read from the EPC register is misaligned. */
-		if constexpr (sizeof Int > 1 && operation != MemoryAccess::Operation::InstrFetch)
+		if constexpr (sizeof(Int) > 1 && operation != MemoryAccess::Operation::InstrFetch)
 		{
 			if constexpr (alignment == MemoryAccess::Alignment::Aligned)
 			{
-				if (virtual_address & (sizeof Int - 1))
+				if (virtual_address & (sizeof(Int) - 1))
 				{
 					SignalAddressErrorException<operation>(virtual_address);
 					return Int(0);
@@ -343,7 +343,7 @@ namespace VR4300
 			{
 				/* For unaligned accesses, always read from the last boundary, with the number of bytes being sizeof Int.
 				   The rest is taken care of by the function which handles the load instruction. */
-				virtual_address &= ~(sizeof Int - 1);
+				virtual_address &= ~(sizeof(Int) - 1);
 			}
 		}
 		const u32 physical_address = std::invoke(active_virtual_to_physical_fun_read, virtual_address);
@@ -361,9 +361,9 @@ namespace VR4300
 	template<std::integral Int, MemoryAccess::Alignment alignment>
 	void WriteVirtual(const u64 virtual_address, const Int data)
 	{
-		if constexpr (sizeof Int > 1 && alignment == MemoryAccess::Alignment::Aligned)
+		if constexpr (sizeof(Int) > 1 && alignment == MemoryAccess::Alignment::Aligned)
 		{
-			if (virtual_address & (sizeof Int - 1))
+			if (virtual_address & (sizeof(Int) - 1))
 			{
 				SignalAddressErrorException<MemoryAccess::Operation::Write>(virtual_address);
 				return;
@@ -374,21 +374,21 @@ namespace VR4300
 			return;
 
 		/* Find out how many bytes to write. */
-		if constexpr (sizeof Int == 1)
+		if constexpr (sizeof(Int) == 1)
 			Memory::WritePhysical<1>(physical_address, data);
 		else if constexpr (alignment == MemoryAccess::Alignment::Aligned)
-			Memory::WritePhysical<sizeof Int>(physical_address, data);
+			Memory::WritePhysical<sizeof(Int)>(physical_address, data);
 		else
 		{
 			/* The result will different from sizeof(Int) only for unaligned memory accesses. */
 			const std::size_t number_of_bytes = [&] {
 				if constexpr (alignment == MemoryAccess::Alignment::UnalignedLeft) /* Store (Double)Word Left */
-					return sizeof Int - (physical_address & (sizeof Int - 1)); 
+					return sizeof(Int) - (physical_address & (sizeof(Int) - 1)); 
 				else /* UnalignedRight; Store (Double)Word Right */
-					return (physical_address & (sizeof Int - 1)) + 1;
+					return (physical_address & (sizeof(Int) - 1)) + 1;
 			}();
 			if constexpr (alignment == MemoryAccess::Alignment::UnalignedRight)
-				physical_address &= ~(sizeof Int - 1);
+				physical_address &= ~(sizeof(Int) - 1);
 			/* This branch will be worth it; the fact that we can pass the number of bytes to access
 			   as a template argument means that, among other things, memcpy will be optimized away
 			   to 'mov' instructions, when we later go to actually access data. */

@@ -26,7 +26,7 @@ namespace RSP
 	void FetchDecodeExecuteInstruction()
 	{
 		u32 instr_code;
-		std::memcpy(&instr_code, imem.data() + pc, sizeof u32); /* TODO: can pc be misaligned? */
+		std::memcpy(&instr_code, imem.data() + pc, sizeof(u32)); /* TODO: can pc be misaligned? */
 		instr_code = std::byteswap(instr_code);
 		pc = (pc + 4) & 0xFFF;
 		DecodeExecuteInstruction(instr_code);
@@ -39,7 +39,7 @@ namespace RSP
 		/* CPU precondition; the address is always aligned */
 		static constexpr std::array mem = { dmem.data(), imem.data() };
 		Int ret;
-		std::memcpy(&ret, mem[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof Int);
+		std::memcpy(&ret, mem[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -70,9 +70,9 @@ namespace RSP
 
 	template<std::integral Int, N64::Processor processor>
 	Int ReadDMEM(u32 addr)
-	{
+	{ 
 		addr &= 0xFFF;
-		if constexpr (sizeof Int == 1)
+		if constexpr (sizeof(Int) == 1)
 		{
 			return dmem[addr];
 		}
@@ -82,19 +82,25 @@ namespace RSP
 			if constexpr (processor == N64::Processor::CPU)
 			{
 				/* CPU precondition: addr is aligned */
-				std::memcpy(&ret, dmem.data() + addr, sizeof Int);
+				std::memcpy(&ret, dmem.data() + addr, sizeof(Int));
 			}
 			else if constexpr (processor == N64::Processor::RSP)
 			{
 				/* Addr may be misaligned; we must check if it goes out of bounds. */
-				if (addr + sizeof Int <= 0x1000)
+				if (addr + sizeof(Int) <= 0x1000)
 				{
-					std::memcpy(&ret, dmem.data() + addr, sizeof Int);
+					std::memcpy(&ret, dmem.data() + addr, sizeof(Int));
 				}
 				else
 				{
+					for (std::size_t i = sizeof(Int) - 1; i >= 0; --i)
+					{
+						*((u8*)(&ret) + i) = dmem[addr];
+						addr = (addr + 1) & 0xFFF;
+					}
+					return ret;
 					std::memcpy(&ret, dmem.data() + addr, 0x1000 - addr);
-					std::memcpy(&ret, dmem.data(), sizeof Int - (0x1000 - addr));
+					std::memcpy(&ret, dmem.data(), sizeof(Int) - (0x1000 - addr));
 				}
 			}
 			else

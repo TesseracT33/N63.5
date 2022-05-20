@@ -63,20 +63,36 @@ namespace RSP
 
 		auto ScalarLoad = [&] <std::integral Int>
 		{
-			const auto address = gpr[base] + offset * sizeof Int;
-			const Int data = ReadDMEM<Int, N64::Processor::RSP>(address);
 			u8* const vpr_dest = (u8*)(vpr.data() + vt) + element;
-			if constexpr (sizeof Int == 1)
+			const auto address = (gpr[base] + offset * sizeof(Int)) & 0xFFF;
+			if constexpr (sizeof(Int) == 1)
 			{
-				*vpr_dest = data;
+				*vpr_dest = dmem[address];
 			}
-			else if (element + sizeof Int <= 16)
+			else
 			{
-				std::memcpy(vpr_dest, &data, sizeof Int); /* fast */
-			}
-			else /* attempting to write past the end of the lane */
-			{
-				std::memcpy(vpr_dest, &data, 16 - element); /* slow */
+				if (element + sizeof(Int) <= 16)
+				{
+					if (address + sizeof(Int) <= 0x1000)
+					{
+						std::memcpy(vpr_dest, dmem.data() + address, sizeof(Int));
+					}
+					else
+					{
+						for (std::size_t i = 0; i < sizeof(Int); ++i)
+						{
+							*vpr_dest = dmem[(address + i) & 0xFFF];
+						}
+					}
+				}
+				else /* attempting to write past the end of the lane */
+				{
+					const auto num_bytes = 16 - element;
+					for (std::size_t i = 0; i < num_bytes; ++i)
+					{
+						*vpr_dest = dmem[(address + i) & 0xFFF];
+					}
+				}
 			}
 		};
 
@@ -88,23 +104,55 @@ namespace RSP
 		else if constexpr (instr == LDV) ScalarLoad.template operator() < s64 > ();
 		else if constexpr (instr == LQV)
 		{
-			/* TODO */
+			u8* const vpr_dest = (u8*)(vpr.data() + vt) + element;
+			const u32 address = (gpr[base] + offset * 16) & 0xFFF;
+			if (element == 0 && (address & 0xF) == 0)
+			{
+				std::memcpy(vpr_dest, dmem.data() + address, 16);
+			}
+			else
+			{
+				const auto num_bytes = 16 - std::max(address & 0xF, element);
+				std::memcpy(vpr_dest, dmem.data() + address, num_bytes);
+			}
 		}
 		else if constexpr (instr == LRV)
 		{
-			/* TODO */
+			u8* const vpr_dest = (u8*)(vpr.data() + vt) + element;
+			const u32 address = (gpr[base] + offset * 16) & 0xFFF;
+			const auto num_bytes = std::min(address & 0xF, 16 - element);
+			std::memcpy(vpr_dest, dmem.data() + (address & 0xFF0), num_bytes);
 		}
 		else if constexpr (instr == LTV)
 		{
-			/* TODO */
+			auto address = (gpr[base] + offset * 16) & 0xFFF;
+			auto reg_index = vt & 0x18;
+			auto elem = element >> 1;
+			const auto num_bytes_until_wrap = 16 - (address & 7);
+			for (int i = 0; i < num_bytes_until_wrap; ++i)
+			{
+				std::memcpy((s16*)(vpr.data() + reg_index) + elem, dmem.data() + address, sizeof(s16));
+				elem = (elem + 1) & 7;
+				address = (address + 2) & 0xFFF;
+				++reg_index;
+			}
 		}
-		else if constexpr (instr == LPV)
+		else if constexpr (instr == LPV || instr == LUV)
 		{
-			/* TODO */
-		}
-		else if constexpr (instr == LUV)
-		{
-			/* TODO */
+			/* 'element' selects the first lane, not byte, being accessed */
+			s16* const vpr_dest = (s16*)(vpr.data() + vt);
+			const auto address = (gpr[base] + offset * 8) & 0xFFF;
+			auto address_dword_offset = address & 7;
+			auto elem = element & 7;
+			for (int i = 0; i < 8; ++i)
+			{
+				*(vpr_dest + elem) = dmem[address & 0xFF8 | address_dword_offset] << [&] {
+					if constexpr (instr == LPV) return 8;
+					else return 7;
+				}();
+				elem = (elem + 1) & 7;
+				address_dword_offset = (address_dword_offset + 1) & 7;
+			}
 		}
 		else static_assert(instr != instr, "Invalid VectorInstruction given to function template \"ScalarLoadStore\"");
 	}
@@ -121,29 +169,21 @@ namespace RSP
 
 		auto ScalarStore = [&] <std::integral Int>
 		{
-			const auto address = gpr[base] + offset * sizeof Int;
-			const u8* const vpr_src = (u8*)(vpr.data() + vt) + element;
-			const Int data = [&] {
-				if constexpr (sizeof Int == 1)
+			const u8* const vpr_src = (u8*)(vpr.data() + vt);
+			const auto address = gpr[base] + offset * sizeof(Int);
+			if constexpr (sizeof(Int) == 1)
+			{
+				dmem[address & 0xFFF] = *(vpr_src + element);
+			}
+			else
+			{
+				auto elem = element;
+				for (std::size_t i = 0; i < sizeof(Int); ++i)
 				{
-					return *vpr_src;
+					dmem[(address + i) & 0xFFF] = *(vpr_src + elem);
+					elem = (elem + 1) & 0xF;
 				}
-				else
-				{
-					Int data;
-					if (element + sizeof Int <= 16)
-					{
-						std::memcpy(&data, vpr_src, sizeof Int);
-					}
-					else
-					{ /* TODO: optimize */
-						std::memcpy(&data, vpr_src, 16 - element);
-						std::memcpy(&data, vpr.data() + vt, sizeof Int - (16 - element));
-					}
-					return data;
-				}
-			}();
-			WriteDMEM<sizeof Int>(address, data);
+			}
 		};
 
 		using enum VectorInstruction;
@@ -152,25 +192,54 @@ namespace RSP
 		else if constexpr (instr == SSV) ScalarStore.template operator() < s16 > ();
 		else if constexpr (instr == SLV) ScalarStore.template operator() < s32 > ();
 		else if constexpr (instr == SDV) ScalarStore.template operator() < s64 > ();
-		else if constexpr (instr == SQV)
+		else if constexpr (instr == SQV || instr == SRV)
 		{
-			/* TODO */
+			const u8* const vpr_src = (u8*)(vpr.data() + vt);
+			u32 address = gpr[base] + offset * 16;
+			auto elem = element;
+			const std::size_t num_bytes = [&] {
+				if constexpr (instr == SQV) return 16 - (address & 0xF);
+				else return address & 0xF;
+			}();
+			for (std::size_t i = 0; i < 16 - (address & 0xF); ++i)
+			{
+				static constexpr auto address_mask = [&] {
+					if constexpr (instr == SQV) return 0xFFF;
+					else return 0xFF0;
+				}();
+				dmem[(address & address_mask) + i] = *(vpr_src + elem);
+				elem = (elem + 1) & 0xF;
+			}
 		}
 		else if constexpr (instr == SRV)
 		{
-			/* TODO */
+			const u8* const vpr_src = (u8*)(vpr.data() + vt);
+			const u32 address = gpr[base] + offset * 16;
+			auto elem = element;
+			for (std::size_t i = 0; i < (address & 0xF); ++i)
+			{
+				dmem[(address & 0xFF0) + i] = *(vpr_src + elem);
+				elem = (elem + 1) & 0xF;
+			}
 		}
 		else if constexpr (instr == STV)
 		{
 			/* TODO */
 		}
-		else if constexpr (instr == SPV)
+		else if constexpr (instr == SPV || instr == SUV)
 		{
-			/* TODO */
-		}
-		else if constexpr (instr == SUV)
-		{
-			/* TODO */
+			/* 'element' selects the first lane, not byte, being accessed */
+			s16* const vpr_src = (s16*)(vpr.data() + vt);
+			const auto address = (gpr[base] + offset * 8) & 0xFFF;
+			auto address_dword_offset = address & 7;
+			auto elem = element & 7;
+			const auto shift_count = 7 + ((instr == SPV) ^ (element >= 8));
+			for (int i = 0; i < 8; ++i)
+			{
+				dmem[address & 0xFF8 | address_dword_offset] = *(vpr_src + elem) >> shift_count & 0xFF;
+				elem = (elem + 1) & 7;
+				address_dword_offset = (address_dword_offset + 1) & 7;
+			}
 		}
 		else
 		{
@@ -190,7 +259,7 @@ namespace RSP
 
 		if constexpr (instr == MTC2)
 		{
-			std::memcpy((s16*)(&vpr[vs]) + vs_elem, &gpr[rt], sizeof s16);
+			std::memcpy((s16*)(&vpr[vs]) + vs_elem, &gpr[rt], sizeof(s16));
 		}
 		else if constexpr (instr == MFC2)
 		{
@@ -205,6 +274,31 @@ namespace RSP
 		else if constexpr (instr == CFC2)
 		{
 			assert(vs < 3);
+			/*
+			gpr.Set(rt, [&] {
+				if constexpr (Host::has_avx2)
+				{
+					static const __m256i shuffle_mask = _mm256_set_epi8(
+						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+						0x0E, 0x0C, 0x0A, 0x08, 0x06, 0x04, 0x02, 0x00);
+					const __m256i control_reg = _mm256_loadu2_m128i(control_reg_ptrs[vs].high, control_reg_ptrs[vs].low);
+					const __m256i shuffle = _mm256_shuffle_epi8(control_reg, shuffle_mask);
+					const int ret = _mm256_movemask_epi8(shuffle);
+					return s16(ret);
+				}
+				else
+				{
+					static const __m128i shuffle_mask = _mm_set_epi8(
+						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+						0x0E, 0x0C, 0x0A, 0x08, 0x06, 0x04, 0x02, 0x00);
+					const __m128i shuffle_low = _mm_shuffle_epi8((*control_reg_ptrs[vs]).low, shuffle_mask);
+					const __m128i shuffle_high = _mm_shuffle_epi8((*control_reg_ptrs[vs]).high, shuffle_mask);
+					const int ret_low = _mm_movemask_epi8(shuffle_low);
+					const int ret_high = _mm_movemask_epi8(shuffle_high);
+					return s16(ret_high << 8 | ret_low);
+				}
+				}());
+			*/
 		}
 		else
 		{
@@ -327,22 +421,22 @@ namespace RSP
 		else if constexpr (instr == VRCP || instr == VRSQ)
 		{
 			s16 src;
-			std::memcpy(&src, (s16*)(vpr.data() + vt) + vt_elem, sizeof s16);
+			std::memcpy(&src, (s16*)(vpr.data() + vt) + vt_elem, sizeof(s16));
 			const u32 result = [&] {
 				if constexpr (instr == VRCP)
 					return Rcp(src);
 				else
 					return Rsq(src);
 			}();
-			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof s16);
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof(s16));
 			div_out = u16(result >> 16);
 			if constexpr (instr == VRCP)
 				accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCPH || instr == VRSQH)
 		{
-			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &div_out, sizeof s16);
-			std::memcpy(&div_in, (s16*)(vpr.data() + vt) + vt_elem, sizeof s16);
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &div_out, sizeof(s16));
+			std::memcpy(&div_in, (s16*)(vpr.data() + vt) + vt_elem, sizeof(s16));
 			if constexpr (instr == VRCPH) /* TODO: correct? */
 				accumulator.low = vpr[vt];
 		}
@@ -350,7 +444,7 @@ namespace RSP
 		{
 			const s32 src = [&] {
 				s16 lane;
-				std::memcpy(&lane, (s16*)(vpr.data() + vt) + vt_elem, sizeof s16);
+				std::memcpy(&lane, (s16*)(vpr.data() + vt) + vt_elem, sizeof(s16));
 				return div_in << 16 | lane;
 			}();
 			const u32 result = [&] {
@@ -359,7 +453,7 @@ namespace RSP
 				else
 					return Rsq(src);
 			}();
-			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof s16);
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof(s16));
 			div_out = u16(result >> 16);
 			div_in = 0;
 			if constexpr (instr == VRCPL) /* TODO: correct? */
@@ -406,7 +500,7 @@ namespace RSP
 		if constexpr (instr == VADD || instr == VSUB)
 		{
 			__m128i result = _mm_add_epi16(vpr[vs], vt_operand);
-			std::memset(&vc0, 0, sizeof vc0);
+			std::memset(&vc0, 0, sizeof(vc0));
 			/* TODO */
 		}
 		else if constexpr (instr == VADDC || instr == VSUBC)
@@ -468,8 +562,8 @@ namespace RSP
 		else if constexpr (instr == VSAR)
 		{
 			assert(element < 3);
-			const u8* const accumulator_portion_start_ptr = (u8*)&accumulator.low + sizeof __m128i * element;
-			std::memcpy(vpr.data() + vd, accumulator_portion_start_ptr, sizeof __m128i);
+			const u8* const accumulator_portion_start_ptr = (u8*)&accumulator.low + sizeof(__m128i) * element;
+			std::memcpy(vpr.data() + vd, accumulator_portion_start_ptr, sizeof(__m128i));
 		}
 		else if constexpr (instr == VAND)
 		{
@@ -544,8 +638,8 @@ namespace RSP
 				}
 			}();
 			vpr[vd] = accumulator.low = _mm_blendv_epi8(vpr[vs], vt_operand, vcc.low); /* epi8 blending works because each 16-bit lane in vcc is either 0 or $FFFF */
-			std::memset(&vc0, 0, sizeof vc0);
-			std::memset(&vcc.high, 0, sizeof vcc.high);
+			std::memset(&vc0, 0, sizeof(vc0));
+			std::memset(&vcc.high, 0, sizeof(vcc.high));
 		}
 		else if constexpr (instr == VCH)
 		{

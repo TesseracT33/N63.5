@@ -39,7 +39,7 @@ namespace PIF
 	{ /* CPU precondition: addr is aligned */
 		addr &= 0x7FF;
 		Int ret;
-		std::memcpy(&ret, mem.data() + addr, sizeof Int);
+		std::memcpy(&ret, mem.data() + addr, sizeof(Int));
 		return std::byteswap(ret);
 	}
 

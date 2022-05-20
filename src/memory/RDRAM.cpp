@@ -28,7 +28,7 @@ namespace RDRAM
 	Int ReadStandardRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
 		Int ret;
-		std::memcpy(&ret, rdram.data() + addr, sizeof Int);
+		std::memcpy(&ret, rdram.data() + addr, sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -37,15 +37,15 @@ namespace RDRAM
 	template<std::integral Int>
 	Int ReadExpandedRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
-		if (rdram.size() != rdram_expanded_size)
+		if (rdram.size() == rdram_expanded_size)
 		{
-			return Int(0);
+			Int ret;
+			std::memcpy(&ret, rdram.data() + addr, sizeof(Int));
+			return std::byteswap(ret);
 		}
 		else
 		{
-			Int ret;
-			std::memcpy(&ret, rdram.data() + addr, sizeof Int);
-			return std::byteswap(ret);
+			return Int(0);
 		}
 	}
 

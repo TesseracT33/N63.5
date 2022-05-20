@@ -58,7 +58,7 @@ namespace Cartridge
 	Int ReadROM(const u32 addr)
 	{
 		Int ret;
-		std::memcpy(&ret, GetPointerToROM(addr), sizeof Int);
+		std::memcpy(&ret, GetPointerToROM(addr), sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -73,7 +73,7 @@ namespace Cartridge
 		else
 		{
 			Int ret;
-			std::memcpy(&ret, GetPointerToSRAM(addr), sizeof Int);
+			std::memcpy(&ret, GetPointerToSRAM(addr), sizeof(Int));
 			return std::byteswap(ret);
 		}
 	}
