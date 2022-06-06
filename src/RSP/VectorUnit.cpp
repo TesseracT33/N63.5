@@ -4,11 +4,107 @@ import :RSPOperation;
 import :ScalarUnit;
 
 import Host;
+import SSEUtils;
+import Utils;
 
 namespace RSP
 {
-	const __m128i epi16_ones = _mm_set1_epi16(s16(0xFFFF));
-	const __m128i epi16_zeroes = _mm_set1_epi16(s16(0));
+	const __m128i m128i_all_ones = _mm_set1_epi16(0xFFFF);
+	const __m128i m128i_all_zeroes = _mm_set1_epi16(0);
+
+
+	void AddToAccumulator(const __m128i low, const __m128i mid, const __m128i high)
+	{
+		/* pseudo-code:
+			for i in 0..7
+				accumulator<i>(47..0) += high<i> << 32 | mid<i> << 16 | low<i>
+			endfor
+		*/
+		const __m128i prev_acc_low = accumulator.low;
+		accumulator.low = _mm_add_epi16(accumulator.low, low);
+		const __m128i low_carry = _mm_srli_epi16(_mm_cmplt_epu16(accumulator.low, prev_acc_low), 15);
+		__m128i prev_acc_mid = accumulator.mid;
+		accumulator.mid = _mm_add_epi16(accumulator.mid, mid);
+		__m128i mid_carry = _mm_cmplt_epu16(accumulator.mid, prev_acc_mid);
+		prev_acc_mid = accumulator.mid;
+		accumulator.mid = _mm_add_epi16(accumulator.mid, low_carry);
+		mid_carry = _mm_or_si128(mid_carry, _mm_cmplt_epu16(accumulator.mid, prev_acc_mid));
+		mid_carry = _mm_srli_epi16(mid_carry, 15);
+		accumulator.high = _mm_add_epi16(accumulator.high, high);
+		accumulator.high = _mm_add_epi16(accumulator.high, mid_carry);
+	}
+
+
+	void AddToAccumulator(const __m128i low)
+	{
+		/* pseudo-code:
+			for i in 0..7
+				accumulator<i>(47..0) += low<i>
+			endfor
+		*/
+		const __m128i prev_acc_low = accumulator.low;
+		accumulator.low = _mm_add_epi16(accumulator.low, low);
+		const __m128i low_carry = _mm_srli_epi16(_mm_cmplt_epu16(accumulator.low, prev_acc_low), 15);
+		const __m128i prev_acc_mid = accumulator.mid;
+		accumulator.mid = _mm_add_epi16(accumulator.mid, low_carry);
+		const __m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(accumulator.mid, prev_acc_mid), 15);
+		accumulator.high = _mm_add_epi16(accumulator.high, mid_carry);
+	}
+
+
+	void AddToAccumulatorFromMid(const __m128i mid, const __m128i high)
+	{
+		/* pseudo-code:
+			for i in 0..7
+				accumulator<i>(47..0) += high<i> << 32 | mid<i> << 16
+			endfor
+		*/
+		const __m128i prev_acc_mid = accumulator.mid;
+		accumulator.mid = _mm_add_epi16(accumulator.mid, mid);
+		const __m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(accumulator.mid, prev_acc_mid), 15);
+		accumulator.high = _mm_add_epi16(accumulator.high, high);
+		accumulator.high = _mm_add_epi16(accumulator.high, mid_carry);
+	}
+
+
+	__m128i ClampSigned(const __m128i low, const __m128i high)
+	{
+		/* pseudo-code:
+			for i in 0..7
+				value = high<i> << 16 | low<i>
+				if value < -32768
+					result<i> = -32768
+				elif value > 32767
+					result<i> = 32767
+				else
+					result<i> = value(15..0)
+				endif
+			endfor
+		*/
+		const __m128i words1 = _mm_unpacklo_epi16(low, high);
+		const __m128i words2 = _mm_unpackhi_epi16(low, high);
+		return _mm_packs_epi32(words1, words2);
+	}
+
+
+	__m128i ClampUnsigned(const __m128i low, const __m128i high)
+	{
+		/* pseudo-code:
+			for i in 0..7
+				value = high<i> << 16 | low<i>
+				if value < 0
+					result<i> = 0
+				elif value > 32767
+					result<i> = 65535
+				else
+					result<i> = value(15..0)
+				endif
+			endfor
+		*/
+		const __m128i words1 = _mm_unpacklo_epi16(low, high);
+		const __m128i words2 = _mm_unpackhi_epi16(low, high);
+		return _mm_packus_epi32(words1, words2);
+	}
 
 
 	__m128i GetVTBroadcast(const int vt, const int element)
@@ -16,12 +112,10 @@ namespace RSP
 		/* Determine which lanes (0-7) of vpr[vt] to access */
 		auto CombineFourLanes = [&] <int mask>
 		{
-			static const __m128i x = _mm_set_epi64x(0xFFFF'FFFF'FFFF'FFFF, 0);
-			static const __m128i y = _mm_set_epi64x(0, 0xFFFF'FFFF'FFFF'FFFF);
-			__m128i bottom_half = _mm_shufflelo_epi16(vpr[vt], mask);
-			bottom_half = _mm_and_si128(bottom_half, x);
-			__m128i top_half = _mm_shufflehi_epi16(vpr[vt], mask);
-			top_half = _mm_and_si128(top_half, y);
+			static const __m128i x = _mm_set_epi64x(s64(-1), 0);
+			static const __m128i y = _mm_set_epi64x(0, s64(-1));
+			const __m128i bottom_half = _mm_and_si128(_mm_shufflelo_epi16(vpr[vt], mask), x);
+			const __m128i top_half = _mm_and_si128(_mm_shufflehi_epi16(vpr[vt], mask), y);
 			return _mm_or_si128(bottom_half, top_half);
 		};
 
@@ -39,8 +133,10 @@ namespace RSP
 		case 6: /* 2,2,2,2,6,6,6,6 */
 		case 7: /* 3,3,3,3,7,7,7,7 */
 		{
-			const u16 bottom_lane = *((u16*)(vpr.data() + vt) + element - 4);
-			const u16 top_lane = *((u16*)(vpr.data() + vt) + element);
+			const u16* src = (u16*)(vpr.data() + vt) + element;
+			u16 bottom_lane, top_lane;
+			std::memcpy(&bottom_lane, src - 4, 2);
+			std::memcpy(&top_lane, src, 2);
 			return _mm_set_epi16(bottom_lane, bottom_lane, bottom_lane, bottom_lane, top_lane, top_lane, top_lane, top_lane);
 		}
 		default: /* 8x (element - 8) */
@@ -259,29 +355,31 @@ namespace RSP
 
 		if constexpr (instr == MTC2)
 		{
-			std::memcpy((s16*)(&vpr[vs]) + vs_elem, &gpr[rt], sizeof(s16));
+			_mm_setlane_epi16(&vpr[vs], vs_elem, s16(gpr[rt]));
 		}
 		else if constexpr (instr == MFC2)
 		{
-			gpr.Set(rt, s16(*((u16*)(&vpr[vs]) + vs_elem)));
+			gpr.Set(rt, _mm_getlane_epi16(&vpr[vs], vs_elem));
 		}
 		else if constexpr (instr == CTC2)
 		{
 			assert(vs < 3);
-			//(*control_reg_ptrs[vs]).low = _mm_blend_epi16(epi16_zeroes, epi16_ones, gpr[rt] & 0xFF);
-			//(*control_reg_ptrs[vs]).high = _mm_blend_epi16(epi16_zeroes, epi16_ones, gpr[rt] >> 8 & 0xFF);
+			for (int i = 0; i < 8; ++i)
+			{
+				_mm_setlane_epi16(&control_reg[vs].low, i, 0xFFFF * bool(gpr[rt] & 1 << i));
+				_mm_setlane_epi16(&control_reg[vs].high, i, 0xFFFF * bool(gpr[rt] & 1 << (i + 8)));
+			}
 		}
 		else if constexpr (instr == CFC2)
 		{
 			assert(vs < 3);
-			/*
 			gpr.Set(rt, [&] {
 				if constexpr (Host::has_avx2)
 				{
 					static const __m256i shuffle_mask = _mm256_set_epi8(
 						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
 						0x0E, 0x0C, 0x0A, 0x08, 0x06, 0x04, 0x02, 0x00);
-					const __m256i control_reg = _mm256_loadu2_m128i(control_reg_ptrs[vs].high, control_reg_ptrs[vs].low);
+					const __m256i control_reg = _mm256_loadu2_m128i(&control_reg[vs].high, &control_reg[vs].low);
 					const __m256i shuffle = _mm256_shuffle_epi8(control_reg, shuffle_mask);
 					const int ret = _mm256_movemask_epi8(shuffle);
 					return s16(ret);
@@ -291,14 +389,13 @@ namespace RSP
 					static const __m128i shuffle_mask = _mm_set_epi8(
 						0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
 						0x0E, 0x0C, 0x0A, 0x08, 0x06, 0x04, 0x02, 0x00);
-					const __m128i shuffle_low = _mm_shuffle_epi8((*control_reg_ptrs[vs]).low, shuffle_mask);
-					const __m128i shuffle_high = _mm_shuffle_epi8((*control_reg_ptrs[vs]).high, shuffle_mask);
+					const __m128i shuffle_low = _mm_shuffle_epi8(control_reg[vs].low, shuffle_mask);
+					const __m128i shuffle_high = _mm_shuffle_epi8(control_reg[vs].high, shuffle_mask);
 					const int ret_low = _mm_movemask_epi8(shuffle_low);
 					const int ret_high = _mm_movemask_epi8(shuffle_high);
 					return s16(ret_high << 8 | ret_low);
 				}
-				}());
-			*/
+			}());
 		}
 		else
 		{
@@ -421,22 +518,22 @@ namespace RSP
 		else if constexpr (instr == VRCP || instr == VRSQ)
 		{
 			s16 src;
-			std::memcpy(&src, (s16*)(vpr.data() + vt) + vt_elem, sizeof(s16));
+			std::memcpy(&src, (s16*)(vpr.data() + vt) + vt_elem, 2);
 			const u32 result = [&] {
 				if constexpr (instr == VRCP)
 					return Rcp(src);
 				else
 					return Rsq(src);
 			}();
-			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, sizeof(s16));
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &result, 2);
 			div_out = u16(result >> 16);
 			if constexpr (instr == VRCP)
 				accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCPH || instr == VRSQH)
 		{
-			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &div_out, sizeof(s16));
-			std::memcpy(&div_in, (s16*)(vpr.data() + vt) + vt_elem, sizeof(s16));
+			std::memcpy((s16*)(vpr.data() + vd) + vd_elem, &div_out, 2);
+			std::memcpy(&div_in, (s16*)(vpr.data() + vt) + vt_elem, 2);
 			if constexpr (instr == VRCPH) /* TODO: correct? */
 				accumulator.low = vpr[vt];
 		}
@@ -495,65 +592,149 @@ namespace RSP
 
 		using enum VectorInstruction;
 
-		static const __m128i epi16_all_lanes_1 = _mm_set1_epi16(s16(1));
+		static const __m128i epi16_all_lanes_1 = _mm_set1_epi16(1);
 
-		if constexpr (instr == VADD || instr == VSUB)
+		if constexpr (instr == VADD)
 		{
-			__m128i result = _mm_add_epi16(vpr[vs], vt_operand);
-			std::memset(&vc0, 0, sizeof(vc0));
-			/* TODO */
+			/* Pseudo-code:
+				for i in 0..7
+					result(16..0) = VS<i>(15..0) + VT<i>(15..0) + VCO(i)
+					ACC<i>(15..0) = result(15..0)
+					VD<i>(15..0) = clamp_signed(result(16..0))
+					VCO(i) = 0
+					VCO(i + 8) = 0
+				endfor
+			*/
+			const __m128i vc0_operand = _mm_and_si128(vco.low, epi16_all_lanes_1);
+			accumulator.low = _mm_add_epi16(vpr[vs], _mm_add_epi16(vt_operand, vc0_operand));
+			vpr[vd] = _mm_adds_epi16(vpr[vs], _mm_adds_epi16(vt_operand, vc0_operand));
+			std::memset(&vco, 0, sizeof(vco));
 		}
-		else if constexpr (instr == VADDC || instr == VSUBC)
+		else if constexpr (instr == VSUB)
 		{
-			/* TODO */
+			/* Pseudo-code:
+				for i in 0..7
+					result(16..0) = VS<i>(15..0) - VT<i>(15..0) - VCO(i)
+					ACC<i>(15..0) = result(15..0)
+					VD<i>(15..0) = clamp_signed(result(16..0))
+					VCO(i) = 0
+					VCO(i + 8) = 0
+				endfor
+			*/
+			const __m128i vc0_operand = _mm_and_si128(vco.low, epi16_all_lanes_1);
+			accumulator.low = _mm_sub_epi16(vpr[vs], _mm_add_epi16(vt_operand, vc0_operand));
+			vpr[vd] = _mm_subs_epi16(vpr[vs], _mm_adds_epi16(vt_operand, vc0_operand));
+			std::memset(&vco, 0, sizeof(vco));
 		}
-		else if constexpr (instr == VMULF)
+		else if constexpr (instr == VADDC)
 		{
-			/* TODO */
+			/* Pseudo-code:
+				for i in 0..7
+					result(16..0) = VS<i>(15..0) + VT<i>(15..0)
+					ACC<i>(15..0) = result(15..0)
+					VD<i>(15..0) = result(15..0)
+					VCO(i) = result(16)
+					VCO(i + 8) = 0
+				endfor
+			*/
+			vpr[vd] = accumulator.low = _mm_add_epi16(vpr[vs], vt_operand);
+			vco.low = _mm_cmplt_epu16(_mm_sub_epi16(m128i_all_ones, vpr[vs]), vt_operand); /* check carry */
+			std::memset(&vco.high, 0, sizeof(vco.high));
 		}
-		else if constexpr (instr == VMULU)
+		else if constexpr (instr == VSUBC)
 		{
-			/* TODO */
+			/* Pseudo-code:
+				for i in 0..7
+					result(16..0) = VS<i>(15..0) - VT<i>(15..0)
+					ACC<i>(15..0) = result(15..0)
+					VD<i>(15..0) = result(15..0)
+					VCO(i) = result(16)
+					VCO(i + 8) = result(16..0) != 0
+				endfor
+			*/
+			vpr[vd] = accumulator.low = _mm_sub_epi16(vpr[vs], vt_operand);
+			vco.low = _mm_cmplt_epu16(vpr[vs], vt_operand); /* check borrow */
+			vco.high = _mm_or_si128(vco.low, _mm_cmpneq_epi16(vpr[vd], m128i_all_zeroes));
+		}
+		else if constexpr (instr == VMULF || instr == VMULU)
+		{
+			/* Pseudo-code:
+				for i in 0..7
+					prod(32..0) = VS<i>(15..0) * VT<i>(15..0) * 2   // signed multiplication
+					ACC<i>(47..0) = sign_extend(prod(32..0) + 0x8000)
+					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
+				endfor
+			*/
+			static const __m128i carry_mask = _mm_set1_epi16(0x8000);
+			static const __m128i m128i_all_lanes_1_epi16 = _mm_set1_epi16(1);
+			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
+			__m128i carry = _mm_cmpeq_epi16(_mm_and_si128(high, carry_mask), carry_mask);
+			low = _mm_slli_epi16(low, 1);
+			high = _mm_slli_epi16(high, 1);
+			// add $8000
+			low = _mm_add_epi16(low, carry_mask);
+			const __m128i low_carry = _mm_srli_epi16(_mm_cmpgt_epi16(low, m128i_all_ones), 15); // carry if low >= 0
+			high = _mm_add_epi16(high, low_carry);
+			const __m128i high_carry = _mm_and_si128(_mm_cmpeq_epi16(high, m128i_all_zeroes), _mm_cmpeq_epi16(low_carry, m128i_all_lanes_1_epi16));
+			carry = _mm_add_epi16(carry, high_carry);
+			accumulator.low = low;
+			accumulator.mid = high;
+			accumulator.high = carry;
+			// set vd
+			vpr[vd] = [&] {
+				if constexpr (instr == VMULF) return ClampSigned(accumulator.mid, accumulator.high);
+				else return ClampUnsigned(accumulator.mid, accumulator.high);
+			}();
 		}
 		else if constexpr (instr == VMULQ)
 		{
 			/* TODO */
 		}
-		else if constexpr (instr == VMACF)
+		else if constexpr (instr == VMACF || instr == VMACU)
 		{
-			/* TODO */
-		}
-		else if constexpr (instr == VMACU)
-		{
-			/* TODO */
+			static const __m128i carry_mask = _mm_set1_epi16(0x8000);
+			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
+			__m128i carry = _mm_cmpeq_epi16(_mm_and_si128(high, carry_mask), carry_mask);
+			low = _mm_slli_epi16(low, 1);
+			high = _mm_slli_epi16(high, 1);
+			AddToAccumulator(low, high, carry);
+			// set vd
+			vpr[vd] = [&] {
+				if constexpr (instr == VMACF) return ClampSigned(accumulator.mid, accumulator.high);
+				else return ClampUnsigned(accumulator.mid, accumulator.high);
+			}();
 		}
 		else if constexpr (instr == VMACQ)
 		{
 			/* TODO */
 		}
-		else if constexpr (instr == VMUDN)
+		else if constexpr (instr == VMUDN || instr == VMADN)
 		{
-			/* TODO */
+			const __m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			const __m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
+			// TODO
 		}
-		else if constexpr (instr == VMADN)
+		else if constexpr (instr == VMUDL || instr == VMADL)
 		{
-			/* TODO */
+			const __m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			const __m128i high = _mm_mulhi_epu16(vpr[vs], vt_operand);
+			AddToAccumulator(high);
+			vpr[vd] = ClampUnsigned(accumulator.low, accumulator.mid);
 		}
-		else if constexpr (instr == VMUDM)
+		else if constexpr (instr == VMUDM || instr == VMADM)
 		{
-			/* TODO */
+			const __m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			const __m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
+			// TODO
 		}
-		else if constexpr (instr == VMADM)
+		else if constexpr (instr == VMUDH || instr == VMADH)
 		{
-			/* TODO */
-		}
-		else if constexpr (instr == VMUDH)
-		{
-			/* TODO */
-		}
-		else if constexpr (instr == VMADH)
-		{
-			/* TODO */
+			const __m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			const __m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
+			AddToAccumulatorFromMid(low, high);
+			vpr[vd] = ClampSigned(accumulator.mid, accumulator.high);
 		}
 		else if constexpr (instr == VABS)
 		{
@@ -571,8 +752,7 @@ namespace RSP
 		}
 		else if constexpr (instr == VNAND)
 		{
-			vpr[vd] = _mm_and_si128(vpr[vs], vt_operand);
-			vpr[vd] = accumulator.low = _mm_xor_si128(vpr[vd], epi16_ones);
+			vpr[vd] = accumulator.low = _mm_nand_si128(vpr[vs], vt_operand);
 		}
 		else if constexpr (instr == VOR)
 		{
@@ -580,8 +760,7 @@ namespace RSP
 		}
 		else if constexpr (instr == VNOR)
 		{
-			vpr[vd] = _mm_or_si128(vpr[vs], vt_operand);
-			vpr[vd] = accumulator.low = _mm_xor_si128(vpr[vd], epi16_ones);
+			vpr[vd] = accumulator.low = _mm_nor_si128(vpr[vs], vt_operand);
 		}
 		else if constexpr (instr == VXOR)
 		{
@@ -589,8 +768,7 @@ namespace RSP
 		}
 		else if constexpr (instr == VNXOR)
 		{
-			vpr[vd] = _mm_xor_si128(vpr[vs], vt_operand);
-			vpr[vd] = accumulator.low = _mm_xor_si128(vpr[vd], epi16_ones);
+			vpr[vd] = accumulator.low = _mm_nxor_si128(vpr[vs], vt_operand);
 		}
 	}
 
@@ -614,36 +792,95 @@ namespace RSP
 				const __m128i eq = _mm_cmpeq_epi16(vpr[vs], vt_operand);
 				if constexpr (instr == VLT)
 				{
-					const __m128i neg = _mm_and_si128(eq, _mm_and_si128(vc0.low, vc0.high));
+					/* Pseudo-code:
+						for i in 0..7
+							eql = VS<i>(15..0) == VT<i>(15..0)
+							neg = VCO(i + 8) & VCO(i) & eql
+							VCC(i) = neg | (VS<i>(15..0) < VT<i>(15..0))
+							ACC<i>(15..0) = VCC(i) ? VS<i>(15..0) : VT<i>(15..0)
+							VD<i>(15..0) = ACC<i>(15..0)
+							VCC(i + 8) = VCO(i + 8) = VCO(i) = 0
+						endfor
+					*/
+					const __m128i neg = _mm_and_si128(_mm_and_si128(vco.low, vco.high), eq);
 					const __m128i lt = _mm_cmplt_epi16(vpr[vs], vt_operand);
 					return _mm_or_si128(neg, lt);
 				}
 				else if constexpr (instr == VGE)
 				{
-					const __m128i neg = _mm_and_si128(eq, _mm_xor_si128(epi16_ones, _mm_and_si128(vc0.low, vc0.high)));
+					/* Pseudo-code;
+						for i in 0..7
+							eql = VS<i>(15..0) == VT<i>(15..0)
+							neg = !(VCO(i + 8) & VCO(i)) & eql
+							VCC(i) = neg | (VS<i>(15..0) > VT<i>(15..0))
+							ACC<i>(15..0) = VCC(i) ? VS<i>(15..0) : VT<i>(15..0)
+							VD<i>(15..0) = ACC<i>(15..0)
+							VCC(i + 8) = VCO(i + 8) = VCO(i) = 0
+						endfor
+					*/
+					const __m128i neg = _mm_and_si128(_mm_nand_si128(vco.low, vco.high), eq);
 					const __m128i gt = _mm_cmpgt_epi16(vpr[vs], vt_operand);
 					return _mm_or_si128(neg, gt);
 				}
 				else if constexpr (instr == VEQ)
 				{
-					return _mm_and_si128(_mm_xor_si128(epi16_ones, vc0.high), _mm_cmpeq_epi16(vpr[vs], vt_operand));
+					/* Pseudo-code:
+						for i in 0..7
+							VCC(i) = !VCO(i + 8) & (VS<i>(15..0) == VT<i>(15..0))
+							ACC<i>(15..0) = VCC(i) ? VS<i>(15..0) : VT<i>(15..0)
+							VD<i>(15..0) = ACC<i>(15..0)
+							VCC(i + 8) = VCO(i + 8) = VCO(i) = 0
+						endfor
+					*/
+					return _mm_and_si128(_mm_not_si128(vco.high), eq);
 				}
 				else if constexpr (instr == VNE)
 				{
-					return _mm_or_si128(vc0.high, _mm_xor_si128(epi16_ones, _mm_cmpeq_epi16(vpr[vs], vt_operand)));
+					/* Pseudo-code:
+						for i in 0..7
+							VCC(i) = VCO(i + 8) | (VS<i>(15..0) != VT<i>(15..0))
+							ACC<i>(15..0) = VCC(i) ? VS<i>(15..0) : VT<i>(15..0)
+							VD<i>(15..0) = ACC<i>(15..0)
+							VCC(i + 8) = VCO(i + 8) = VCO(i) = 0
+						endfor
+					*/
+					return _mm_or_si128(vco.high, _mm_cmpneq_epi16(vpr[vs], vt_operand));
 				}
 				else
 				{
 					static_assert(instr != instr);
 				}
 			}();
-			vpr[vd] = accumulator.low = _mm_blendv_epi8(vpr[vs], vt_operand, vcc.low); /* epi8 blending works because each 16-bit lane in vcc is either 0 or $FFFF */
-			std::memset(&vc0, 0, sizeof(vc0));
+			vpr[vd] = accumulator.low = _mm_blendv_epi8(vt_operand, vpr[vs], vcc.low); /* epi8 blending works because each 16-bit lane in vcc is either 0 or $FFFF */
+			std::memset(&vco, 0, sizeof(vco));
 			std::memset(&vcc.high, 0, sizeof(vcc.high));
 		}
 		else if constexpr (instr == VCH)
 		{
-			/* TODO */
+			/* Pseudo-code:
+				for i in 0..7
+					VCO(i) = VS<i>(15) != VT<i>(15)
+					vt_abs(15..0) = VCO(i) ? -VT<i>(15..0) : VT<i>(15..0)
+					VCE(i) = VCO(i) & (VS<i>(15..0) == -VT<i>(15..0) - 1)
+					VCO(i + 8) = !VCE(i) & (VS<i>(15..0) != vt_abs(15..0))
+					VCC(i) = VS<i>(15..0) <= -VT<i>(15..0)
+					VCC(i + 8) = VS<i>(15..0) >= VT<i>(15..0)
+					clip = VCO(i) ? VCC(i) : VCC(i + 8)
+					ACC<i>(15..0) = clip ? vt_abs(15..0) : VS<i>(15..0)
+					VD<i>(15..0) = ACC<i>(15..0)
+				endfor
+			*/
+			static const __m128i sign_mask = _mm_set1_epi16(0x8000);
+			static const __m128i epi16_all_lanes_one = _mm_set1_epi16(1);
+			vco.low = _mm_cmpneq_epi16(_mm_and_si128(vpr[vs], sign_mask), _mm_and_si128(vpr[vs], sign_mask));
+			const __m128i neg_vt = _mm_sign_epi16(vt_operand, vt_operand);
+			const __m128i vt_abs = _mm_blendv_epi8(vt_operand, neg_vt, vco.low);
+			vce.low = _mm_and_si128(vco.low, _mm_cmpeq_epi16(vpr[vs], _mm_sub_epi16(neg_vt, epi16_all_lanes_one)));
+			vco.high = _mm_not_si128(_mm_or_si128(vce.low, _mm_cmpeq_epi16(vpr[vs], vt_abs)));
+			vcc.low = _mm_cmple_epi16(vpr[vs], neg_vt);
+			vcc.high = _mm_cmpge_epi16(vpr[vs], vt_operand);
+			const __m128i clip = _mm_blendv_epi8(vcc.high, vcc.low, vco.low);
+			vpr[vd] = accumulator.low = _mm_blendv_epi8(vpr[vs], vt_abs, clip);
 		}
 		else if constexpr (instr == VCR)
 		{
@@ -651,7 +888,33 @@ namespace RSP
 		}
 		else if constexpr (instr == VCL)
 		{
-			/* TODO */
+			/* Pseudo-code:
+				for i in 0..7
+					if !VCO(i) & !VCO(i + 8)
+						VCC(i + 8) = VS<i>(15..0) >= VT<i>(15..0)
+					endif
+					if VCO(i) & !VCO(i + 8)
+						lte = VS<i>(15..0) <= -VT<i>(15..0)
+						eql = VS<i>(15..0) == -VT<i>(15..0)
+						VCC(i) = VCE(i) ? lte : eql
+					endif
+					clip = VCO(i) ? VCC(i) : VCC(i + 8)
+					vt_abs(15..0) = VCO(i) ? -VT<i>(15..0) : VT<i>(15..0)
+					ACC<i>(15..0) = clip ? vt_abs(15..0) : VS<i>(15..0)
+					VD<i>(15..0) = ACC<i>(15..0)
+				endfor
+			*/
+			vcc.high = _mm_blendv_epi8(_mm_cmpgt_epi16(vpr[vs], vt_operand), vcc.high, _mm_or_si128(vco.low, vco.high));
+			const __m128i neg_vt = _mm_sign_epi16(vt_operand, vt_operand);
+			const __m128i lt = _mm_cmplt_epi16(vpr[vs], neg_vt);
+			const __m128i eq = _mm_cmpeq_epi16(vpr[vs], neg_vt);
+			vcc.low = _mm_blendv_epi8(
+				vcc.low,
+				_mm_blendv_epi8(eq, lt, vce.low),
+				_mm_and_si128(vco.low, _mm_not_si128(vco.high)));
+			const __m128i clip = _mm_blendv_epi8(vcc.high, vcc.low, vco.low);
+			const __m128i vt_abs = _mm_blendv_epi8(vt_operand, neg_vt, vco.low);
+			vpr[vd] = accumulator.low = _mm_blendv_epi8(vpr[vs], vt_abs, clip);
 		}
 		else if constexpr (instr == VMRG)
 		{

@@ -50,22 +50,31 @@ namespace RSP
 	template<VectorInstruction instr> void ComputeInstr(u32 instr_code);
 	template<VectorInstruction instr> void SelectInstr(u32 instr_code);
 
+	void AddToAccumulator(__m128i low, __m128i mid, __m128i high);
+	void AddToAccumulator(__m128i low);
+	void AddToAccumulatorFromMid(__m128i mid, __m128i high);
+	__m128i ClampSigned(__m128i low, __m128i high);
+	__m128i ClampUnsigned(__m128i low, __m128i high);
 	__m128i GetVTBroadcast(int vt, int element);
 
 	struct Accumulator
 	{
 		__m128i low;
 		__m128i mid;
-		__m128i hi;
+		__m128i high;
 	} accumulator{};
 
 	struct ControlRegister
 	{
 		__m128i low;
 		__m128i high;
-	} vc0{}, vcc{}, vce{};
+	} vco{}, vcc{}, vce{};
 
-	constexpr std::array control_reg_ptrs = { &vc0, &vcc, &vce };
+	std::array<ControlRegister, 3> control_reg{};
+
+#define vco control_reg[0];
+#define vcc control_reg[1];
+#define vce control_reg[2];
 
 	std::array<__m128i, 32> vpr{}; /* SIMD registers; eight 16-bit lanes */
 

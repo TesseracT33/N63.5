@@ -211,6 +211,8 @@
     <ClCompile Include="src\N64.ixx" />
     <ClCompile Include="src\UserMessage.ixx" />
     <ClCompile Include="src\Utils\FileUtils.ixx" />
+    <ClCompile Include="src\Utils\SSEUtils.cpp" />
+    <ClCompile Include="src\Utils\SSEUtils.ixx" />
     <ClCompile Include="src\Utils\Utils.ixx" />
     <ClCompile Include="src\VR4300\COP0.cpp" />
     <ClCompile Include="src\VR4300\COP0.ixx" />
