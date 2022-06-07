@@ -78,5 +78,5 @@ namespace RSP
 
 	std::array<__m128i, 32> vpr{}; /* SIMD registers; eight 16-bit lanes */
 
-	u16 div_out, div_in;
+	s16 div_out, div_in;
 }

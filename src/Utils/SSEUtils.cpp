@@ -2,7 +2,7 @@ module SSEUtils;
 
 
 const __m128i m128i_all_zeroes = _mm_set1_epi16(0);
-const __m128i all_ones = _mm_set1_epi16(0xFFFF);
+const __m128i m128i_all_ones = _mm_set1_epi16(0xFFFF);
 
 
 __m128i _mm_cmpge_epi16(__m128i a, __m128i b)
@@ -55,7 +55,7 @@ __m128i _mm_nor_si128(const __m128i a, const __m128i b)
 
 __m128i _mm_not_si128(const __m128i a)
 {
-	return _mm_xor_si128(a, all_ones);
+	return _mm_xor_si128(a, m128i_all_ones);
 }
 
 
