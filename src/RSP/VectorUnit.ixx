@@ -68,13 +68,9 @@ namespace RSP
 	{
 		__m128i low;
 		__m128i high;
-	} vco{}, vcc{}, vce{};
+	};
 
 	std::array<ControlRegister, 3> control_reg{};
-
-#define vco control_reg[0];
-#define vcc control_reg[1];
-#define vce control_reg[2];
 
 	std::array<__m128i, 32> vpr{}; /* SIMD registers; eight 16-bit lanes */
 
