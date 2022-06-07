@@ -28,37 +28,37 @@ namespace RSP
 			{
 				/* Load Byte;
 				   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadDMEM<s8, N64::Processor::RSP>(address);
+				return ReadDMEM<s8>(address);
 			}
 			else if constexpr (instr == LBU)
 			{
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadDMEM<u8, N64::Processor::RSP>(address);
+				return ReadDMEM<u8>(address);
 			}
 			else if constexpr (instr == LH)
 			{
 				/* Load halfword;
 				   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadDMEM<s16, N64::Processor::RSP>(address);
+				return ReadDMEM<s16>(address);
 			}
 			else if constexpr (instr == LHU)
 			{
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadDMEM<u16, N64::Processor::RSP>(address);
+				return ReadDMEM<u16>(address);
 			}
 			else if constexpr (instr == LW || instr == LWU)
 			{
 				/* Load Word (Unsigned);
 				   Sign(Zero)-extends the contents of a word specified by the address and loads the result to register rt. */
-				return ReadDMEM<s32, N64::Processor::RSP>(address);
+				return ReadDMEM<s32>(address);
 			}
 			else if constexpr (instr == LL)
 			{
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1. */
-				const s32 ret = ReadDMEM<s32, N64::Processor::RSP>(address);
+				const s32 ret = ReadDMEM<s32>(address);
 				ll_bit = 1;
 				return ret;
 			}
@@ -95,19 +95,19 @@ namespace RSP
 		{
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			WriteDMEM<1>(address, s8(gpr[rt]));
+			WriteDMEM<s8>(address, s8(gpr[rt]));
 		}
 		else if constexpr (instr == SH)
 		{
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			WriteDMEM<2>(address, s16(gpr[rt]));
+			WriteDMEM<s16>(address, s16(gpr[rt]));
 		}
 		else if constexpr (instr == SW)
 		{
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			WriteDMEM<4>(address, gpr[rt]);
+			WriteDMEM<s32>(address, gpr[rt]);
 		}
 		else if constexpr (instr == SC)
 		{
@@ -118,7 +118,7 @@ namespace RSP
 			   rt to 0. */
 			if (ll_bit == 1)
 			{
-				WriteDMEM<4>(address, gpr[rt]);
+				WriteDMEM<s32>(address, gpr[rt]);
 				gpr.Set(rt, 1);
 			}
 			else

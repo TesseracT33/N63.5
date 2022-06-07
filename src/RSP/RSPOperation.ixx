@@ -22,11 +22,11 @@ namespace RSP
 	template<u64 number_of_cycles>
 	void AdvancePipeline();
 
-	template<std::integral Int, N64::Processor processor>
+	template<std::integral Int>
 	Int ReadDMEM(u32 addr);
 
-	template<std::size_t number_of_bytes>
-	void WriteDMEM(u32 addr, auto data);
+	template<std::integral Int>
+	void WriteDMEM(u32 addr, Int data);
 
 	bool jump_is_pending = false;
 	unsigned pc;

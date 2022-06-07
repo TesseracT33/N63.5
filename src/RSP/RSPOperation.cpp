@@ -68,71 +68,26 @@ namespace RSP
 	}
 
 
-	template<std::integral Int, N64::Processor processor>
-	Int ReadDMEM(u32 addr)
+	template<std::integral Int>
+	Int ReadDMEM(const u32 addr)
 	{ 
-		addr &= 0xFFF;
-		if constexpr (sizeof(Int) == 1)
+		/* Addr may be misaligned and the read can go out of bounds */
+		Int ret;
+		for (std::size_t i = 0; i < sizeof(Int); ++i)
 		{
-			return dmem[addr];
+			*((u8*)(&ret) + sizeof(Int) - i - 1) = dmem[(addr + i) & 0xFFF];
 		}
-		else
-		{
-			Int ret;
-			if constexpr (processor == N64::Processor::CPU)
-			{
-				/* CPU precondition: addr is aligned */
-				std::memcpy(&ret, dmem.data() + addr, sizeof(Int));
-			}
-			else if constexpr (processor == N64::Processor::RSP)
-			{
-				/* Addr may be misaligned; we must check if it goes out of bounds. */
-				if (addr + sizeof(Int) <= 0x1000)
-				{
-					std::memcpy(&ret, dmem.data() + addr, sizeof(Int));
-				}
-				else
-				{
-					for (std::size_t i = sizeof(Int) - 1; i >= 0; --i)
-					{
-						*((u8*)(&ret) + i) = dmem[addr];
-						addr = (addr + 1) & 0xFFF;
-					}
-					return ret;
-					std::memcpy(&ret, dmem.data() + addr, 0x1000 - addr);
-					std::memcpy(&ret, dmem.data(), sizeof(Int) - (0x1000 - addr));
-				}
-			}
-			else
-			{
-				static_assert(processor != processor);
-			}
-			return std::byteswap(ret);
-		}
+		return ret;
 	}
 
 
-	template<std::size_t number_of_bytes>
-	void WriteDMEM(u32 addr, auto data)
+	template<std::integral Int>
+	void WriteDMEM(const u32 addr, const Int data)
 	{
-		addr &= 0xFFF;
-		if constexpr (number_of_bytes == 1)
+		/* Addr may be misaligned and the write can go out of bounds */
+		for (std::size_t i = 0; i < sizeof(Int); ++i)
 		{
-			dmem[addr] = u8(data);
-		}
-		else
-		{
-			const auto byteswapped_data = std::byteswap(data);
-			/* The write may be misaligned; we must check if it goes out of bounds. */
-			if (addr + number_of_bytes <= 0x1000)
-			{
-				std::memcpy(dmem.data() + addr, &byteswapped_data, number_of_bytes);
-			}
-			else
-			{
-				std::memcpy(dmem.data() + addr, &byteswapped_data, 0x1000 - addr);
-				std::memcpy(dmem.data(), &byteswapped_data, number_of_bytes - (0x1000 - addr));
-			}
+			dmem[(addr + i) & 0xFFF] = *((u8*)(&data) + sizeof(Int) - i - 1);
 		}
 	}
 
@@ -159,22 +114,18 @@ namespace RSP
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(CPUWriteMemory, u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(CPUReadRegister, u32)
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(CPUWriteRegister, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteDMEM, u32)
 
-	template u8 ReadDMEM<u8, N64::Processor::CPU>(u32);
-	template s8 ReadDMEM<s8, N64::Processor::CPU>(u32);
-	template u16 ReadDMEM<u16, N64::Processor::CPU>(u32);
-	template s16 ReadDMEM<s16, N64::Processor::CPU>(u32);
-	template u32 ReadDMEM<u32, N64::Processor::CPU>(u32);
-	template s32 ReadDMEM<s32, N64::Processor::CPU>(u32);
-	template u64 ReadDMEM<u64, N64::Processor::CPU>(u32);
-	template s64 ReadDMEM<s64, N64::Processor::CPU>(u32);
-	template u8 ReadDMEM<u8, N64::Processor::RSP>(u32);
-	template s8 ReadDMEM<s8, N64::Processor::RSP>(u32);
-	template u16 ReadDMEM<u16, N64::Processor::RSP>(u32);
-	template s16 ReadDMEM<s16, N64::Processor::RSP>(u32);
-	template u32 ReadDMEM<u32, N64::Processor::RSP>(u32);
-	template s32 ReadDMEM<s32, N64::Processor::RSP>(u32);
-	template u64 ReadDMEM<u64, N64::Processor::RSP>(u32);
-	template s64 ReadDMEM<s64, N64::Processor::RSP>(u32);
+
+	template u8 ReadDMEM<u8>(u32);
+	template s8 ReadDMEM<s8>(u32);
+	template u16 ReadDMEM<u16>(u32);
+	template s16 ReadDMEM<s16>(u32);
+	template u32 ReadDMEM<u32>(u32);
+	template s32 ReadDMEM<s32>(u32);
+	template u64 ReadDMEM<u64>(u32);
+	template s64 ReadDMEM<s64>(u32);
+
+	template void WriteDMEM<s8>(u32, s8);
+	template void WriteDMEM<s16>(u32, s16);
+	template void WriteDMEM<s32>(u32, s32);
 }
