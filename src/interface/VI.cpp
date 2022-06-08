@@ -23,7 +23,7 @@ namespace VI
 		num_fields = 1;
 		num_halflines = 262;
 		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
-		Renderer::SetFramebufferPtr(RDRAM::GetPointer(vi.origin));
+		Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
 	}
 
 
@@ -85,12 +85,12 @@ namespace VI
 			break;
 
 		case offset_origin:
-			vi.origin = word;
-			Renderer::SetFramebufferPtr(RDRAM::GetPointer(vi.origin));
+			vi.origin = word & 0xFF'FFFF;
+			Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
 			break;
 
 		case offset_width:
-			vi.width = word;
+			vi.width = word & 0xFFF;
 			Renderer::SetFramebufferWidth(vi.width);
 			break;
 

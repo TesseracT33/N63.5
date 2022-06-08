@@ -17,14 +17,20 @@ namespace PIF
 			return false;
 		}
 		const auto& rom = optional_rom.value();
-		std::memcpy(mem.data(), rom.data(), rom_size);
+		std::memcpy(memory.data(), rom.data(), rom_size);
 		return true;
 	}
 
 
-	u8* GetPointerToRAM(const u32 offset)
+	u8* GetPointerToRAM(const u32 address)
 	{
-		return mem.data() + rom_size + (offset & (ram_size - 1)); /* Size is 0x40 bytes */
+		return memory.data() + rom_size + (address & (ram_size - 1)); /* Size is 0x40 bytes */
+	}
+
+
+	u8* GetPointerToMemory(const u32 address)
+	{
+		return memory.data() + (address & 0x7FF);
 	}
 
 
@@ -35,11 +41,10 @@ namespace PIF
 
 
 	template<std::integral Int>
-	Int ReadMemory(u32 addr)
+	Int ReadMemory(const u32 addr)
 	{ /* CPU precondition: addr is aligned */
-		addr &= 0x7FF;
 		Int ret;
-		std::memcpy(&ret, mem.data() + addr, sizeof(Int));
+		std::memcpy(&ret, memory.data() + (addr & 0x7FF), sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -51,7 +56,7 @@ namespace PIF
 		if (addr > rom_size)
 		{
 			data = std::byteswap(data);
-			std::memcpy(mem.data() + addr, &data, number_of_bytes);
+			std::memcpy(memory.data() + addr, &data, number_of_bytes);
 		}
 	}
 

@@ -3,6 +3,7 @@ module N64;
 import AI;
 import Cartridge;
 import Input;
+import Memory;
 import MI;
 import PI;
 import PIF;
@@ -38,6 +39,7 @@ namespace N64
 		RI::Initialize();
 		SI::Initialize();
 		VI::Initialize();
+		Memory::Initialize();
 		VR4300::PowerOn(hle_ipl);
 
 		Renderer::Initialize(renderer);

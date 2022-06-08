@@ -17,6 +17,7 @@ namespace Cartridge
 			return false;
 		}
 		rom = optional_rom.value();
+		Memory::ReloadPageTables();
 		return true;
 	}
 
@@ -29,12 +30,15 @@ namespace Cartridge
 			return false;
 		}
 		sram = optional_sram.value();
+		Memory::ReloadPageTables();
 		return true;
 	}
 
 
 	u8* GetPointerToROM(const u32 addr)
 	{
+		if (rom.size() == 0)
+			return nullptr;
 		const u32 offset = (addr & 0x0FFF'FFFF) % rom.size();
 		return rom.data() + offset;
 	}
@@ -42,6 +46,8 @@ namespace Cartridge
 
 	u8* GetPointerToSRAM(const u32 addr)
 	{
+		if (sram.size() == 0)
+			return nullptr;
 		const u32 offset = (addr & 0x0FFF'FFFF) % sram.size();
 		return sram.data() + offset;
 	}

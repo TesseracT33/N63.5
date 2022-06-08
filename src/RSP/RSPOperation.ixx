@@ -41,6 +41,8 @@ namespace RSP
 
 	export
 	{
+		u8* GetPointerToMemory(u32 addr);
+
 		template<std::integral Int>
 		Int CPUReadMemory(u32 addr);
 

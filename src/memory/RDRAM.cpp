@@ -10,20 +10,37 @@ namespace RDRAM
 	{
 		rdram.resize(rdram_expanded_size);
 		std::fill(rdram.begin() + rdram_standard_size, rdram.end(), 0);
-		static_assert(std::has_single_bit(rdram_expanded_size));
-		rdram_read_mask = rdram_expanded_size - 1;
+		Memory::ReloadPageTables();
 	}
 
 
 	void DeallocateExpansionPackRam()
 	{
 		rdram.resize(rdram_standard_size);
-		static_assert(std::has_single_bit(rdram_standard_size));
-		rdram_read_mask = rdram_standard_size - 1;
+		Memory::ReloadPageTables();
 	}
 
 
-	/* $0000'0000 - $0x003F'FFFF */
+	u8* GetPointerToMemory(const u32 addr)
+	{
+		if (addr >= rdram_standard_size && rdram.size() == rdram_standard_size)
+		{
+			return nullptr;
+		}
+		else
+		{
+			return rdram.data() + addr;
+		}
+	}
+
+
+	std::size_t GetNumberOfBytesUntilMemoryEnd(const u32 start_addr)
+	{
+		return std::max(std::size_t(0), rdram.size() - start_addr);
+	}
+
+
+	/* $0000'0000 - $0003F'FFFF */
 	template<std::integral Int>
 	Int ReadStandardRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
@@ -54,12 +71,12 @@ namespace RDRAM
 	template<std::integral Int>
 	Int ReadRegisterRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
-		/* STUB */
+		/* TODO */
 		return Int(0);
 	}
 
 
-	/* $0000'0000 - $0x003F'FFFF */
+	/* $0000'0000 - $0003F'FFFF */
 	template<std::size_t number_of_bytes>
 	void WriteStandardRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
@@ -85,18 +102,6 @@ namespace RDRAM
 	void WriteRegisterRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		/* TODO */
-	}
-
-
-	u8* GetPointer(const u32 addr)
-	{
-		return rdram.data() + (addr & rdram_read_mask); /* AND with either $3FFFFF or $7FFFFF. */
-	}
-
-
-	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 start_addr)
-	{
-		return rdram.size() - (start_addr & rdram_read_mask);
 	}
 
 

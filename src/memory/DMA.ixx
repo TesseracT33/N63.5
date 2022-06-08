@@ -30,7 +30,7 @@ namespace DMA
 	u8* GetPointerFromAddress(u32 addr);
 
 	template<Location location>
-	std::size_t GetNumberOfBytesUntilRegionEnd(u32 addr);
+	std::size_t GetNumberOfBytesUntilMemoryEnd(u32 addr);
 
 	constexpr std::string_view LocationToString(Location loc);
 }

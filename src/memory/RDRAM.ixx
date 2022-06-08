@@ -11,10 +11,8 @@ import <vector>;
 
 namespace RDRAM
 {
-	constexpr std::size_t rdram_standard_size = 0x400000;
-	constexpr std::size_t rdram_expanded_size = 0x800000;
-
-	u32 rdram_read_mask = rdram_standard_size - 1;
+	constexpr std::size_t rdram_standard_size = 0x40'0000;
+	constexpr std::size_t rdram_expanded_size = 0x80'0000;
 
 	std::vector<u8> rdram(rdram_standard_size, 0);
 
@@ -22,6 +20,10 @@ namespace RDRAM
 	{
 		void AllocateExpansionPackRam();
 		void DeallocateExpansionPackRam();
+
+		u8* GetPointerToMemory(u32 addr);
+
+		std::size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr);
 
 		/* $0000'0000 - $0x003F'FFFF */
 		template<std::integral Int>
@@ -46,9 +48,5 @@ namespace RDRAM
 		/* $03F0'0000 - $03FF'FFFF */
 		template<std::size_t number_of_bytes>
 		void WriteRegisterRegion(u32 addr, auto data);
-
-		u8* GetPointer(u32 addr);
-
-		std::size_t GetNumberOfBytesUntilRegionEnd(u32 start_addr);
 	}
 }

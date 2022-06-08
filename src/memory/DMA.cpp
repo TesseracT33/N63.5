@@ -16,8 +16,8 @@ namespace DMA
 		u8* source_start_ptr = GetPointerFromAddress<source>(source_start_addr);
 		u8* dest_start_ptr = GetPointerFromAddress<dest>(dest_start_addr);
 
-		const std::size_t bytes_until_source_end = GetNumberOfBytesUntilRegionEnd<source>(source_start_addr);
-		const std::size_t bytes_until_dest_end = GetNumberOfBytesUntilRegionEnd<dest>(dest_start_addr);
+		const std::size_t bytes_until_source_end = GetNumberOfBytesUntilMemoryEnd<source>(source_start_addr);
+		const std::size_t bytes_until_dest_end = GetNumberOfBytesUntilMemoryEnd<dest>(dest_start_addr);
 		const std::size_t number_of_bytes_to_copy = std::min(length, std::min(bytes_until_source_end, bytes_until_dest_end));
 
 		std::memcpy(dest_start_ptr, source_start_ptr, number_of_bytes_to_copy);
@@ -48,21 +48,21 @@ namespace DMA
 		else if constexpr (location == Location::PIF)
 			return PIF::GetPointerToRAM(addr);
 		else if constexpr (location == Location::RDRAM)
-			return RDRAM::GetPointer(addr);
+			return RDRAM::GetPointerToMemory(addr);
 		else
 			static_assert(location != location, "Unknown location given as argument to function \"GetPointerFromAddress\"");
 	}
 
 
 	template<Location location>
-	std::size_t GetNumberOfBytesUntilRegionEnd(const u32 addr)
+	std::size_t GetNumberOfBytesUntilMemoryEnd(const u32 addr)
 	{
 		if constexpr (location == Location::Cartridge)
 			return Cartridge::GetNumberOfBytesUntilROMEnd(addr);
 		else if constexpr (location == Location::PIF)
 			return PIF::GetNumberOfBytesUntilRAMEnd(addr);
 		else if constexpr (location == Location::RDRAM)
-			return RDRAM::GetNumberOfBytesUntilRegionEnd(addr);
+			return RDRAM::GetNumberOfBytesUntilMemoryEnd(addr);
 		else
 			static_assert(location != location, "Unknown location given as argument to function \"GetNumberOfBytesUntilRegionEnd\"");
 	}

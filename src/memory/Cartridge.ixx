@@ -20,11 +20,11 @@ namespace Cartridge
 
 	export
 	{
-		bool LoadROM(const std::string& rom_path);
-		bool LoadSRAM(const std::string& ram_path);
-
 		u8* GetPointerToROM(u32 addr);
 		u8* GetPointerToSRAM(u32 addr);
+
+		bool LoadROM(const std::string& rom_path);
+		bool LoadSRAM(const std::string& ram_path);
 
 		std::size_t GetNumberOfBytesUntilROMEnd(u32 addr);
 

@@ -4,6 +4,9 @@ module RSP:RSPOperation;
 
 namespace RSP
 {
+	constexpr std::array memory_ptrs = { dmem.data(), imem.data() };
+
+
 	void Run(const unsigned cycles_to_run)
 	{
 		p_cycle_counter = 0;
@@ -37,9 +40,8 @@ namespace RSP
 	Int CPUReadMemory(const u32 addr)
 	{
 		/* CPU precondition; the address is always aligned */
-		static constexpr std::array mem = { dmem.data(), imem.data() };
 		Int ret;
-		std::memcpy(&ret, mem[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
+		std::memcpy(&ret, memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -48,9 +50,8 @@ namespace RSP
 	void CPUWriteMemory(const u32 addr, auto data)
 	{
 		/* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
-		static constexpr std::array mem = { dmem.data(), imem.data() };
 		data = std::byteswap(data);
-		std::memcpy(mem[bool(addr & 0x1000)] + (addr & 0xFFF), &data, number_of_bytes);
+		std::memcpy(memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), &data, number_of_bytes);
 	}
 
 
@@ -89,6 +90,12 @@ namespace RSP
 		{
 			dmem[(addr + i) & 0xFFF] = *((u8*)(&data) + sizeof(Int) - i - 1);
 		}
+	}
+
+
+	u8* GetPointerToMemory(const u32 addr)
+	{
+		return memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF);
 	}
 
 
