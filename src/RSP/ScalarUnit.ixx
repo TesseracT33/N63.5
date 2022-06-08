@@ -53,7 +53,9 @@ namespace RSP
 		}
 		void Set(const std::size_t index, const s32 data)
 		{
-			if (index != 0) gpr[index] = data;
+			/* gpr[0] is hardwired to 0. Prefer setting it to zero every time over a branch checking if 'index' is zero. */
+			gpr[index] = data;
+			gpr[0] = 0;
 		}
 		s32& operator[](const std::size_t index) 
 		{

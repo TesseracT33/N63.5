@@ -41,7 +41,9 @@ namespace VR4300
 		}
 		void Set(const std::size_t index, const s64 data)
 		{
-			if (index != 0) gpr[index] = data;
+			/* gpr[0] is hardwired to 0. Prefer setting it to zero every time over a branch checking if 'index' is zero. */
+			gpr[index] = data;
+			gpr[0] = 0;
 		}
 		s64 operator[](const std::size_t index) /* returns by value so that assignments have to made through function "Set". */
 		{
