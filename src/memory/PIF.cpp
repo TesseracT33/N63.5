@@ -53,7 +53,7 @@ namespace PIF
 	void WriteMemory(u32 addr, auto data)
 	{ /* CPU precondition: write does not go to the next boundary */
 		addr &= 0x7FF;
-		if (addr > rom_size)
+		if (addr >= rom_size) /* $0-$7BF: rom; $7C0-$7FF: ram $*/
 		{
 			data = std::byteswap(data);
 			std::memcpy(memory.data() + addr, &data, number_of_bytes);
