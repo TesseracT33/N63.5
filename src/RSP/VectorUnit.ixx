@@ -50,8 +50,9 @@ namespace RSP
 	template<VectorInstruction instr> void ComputeInstr(u32 instr_code);
 	template<VectorInstruction instr> void SelectInstr(u32 instr_code);
 
-	void AddToAccumulator(__m128i low, __m128i mid, __m128i high);
 	void AddToAccumulator(__m128i low);
+	void AddToAccumulator(__m128i low, __m128i mid);
+	void AddToAccumulator(__m128i low, __m128i mid, __m128i high);
 	void AddToAccumulatorFromMid(__m128i mid, __m128i high);
 	__m128i ClampSigned(__m128i low, __m128i high);
 	__m128i ClampUnsigned(__m128i low, __m128i high);

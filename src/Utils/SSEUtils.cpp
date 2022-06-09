@@ -1,10 +1,6 @@
 module SSEUtils;
 
 
-const __m128i m128i_all_zeroes = _mm_set1_epi16(0);
-const __m128i m128i_all_ones = _mm_set1_epi16(0xFFFF);
-
-
 __m128i _mm_cmpge_epi16(__m128i a, __m128i b)
 {
 	return _mm_or_si128(_mm_cmpgt_epi16(a, b), _mm_cmpeq_epi16(a, b));
@@ -19,8 +15,7 @@ __m128i _mm_cmple_epi16(__m128i a, __m128i b)
 
 __m128i _mm_cmplt_epu16(const __m128i a, const __m128i b)
 {
-	static const __m128i add = _mm_set1_epi16(0x8000);
-	return _mm_cmplt_epi16(_mm_add_epi16(a, add), _mm_add_epi16(b, add));
+	return _mm_cmplt_epi16(_mm_add_epi16(a, m128i_epi16_sign_mask), _mm_add_epi16(b, m128i_epi16_sign_mask));
 }
 
 
@@ -61,29 +56,23 @@ __m128i _mm_not_si128(const __m128i a)
 
 __m128i _mm_nxor_si128(const __m128i a, const __m128i b)
 {
-	return _mm_not_si128(_mm_nxor_si128(a, b));
+	return _mm_not_si128(_mm_xor_si128(a, b));
 }
 
 
-void _mm_addlane_epi16(__m128i* num, int lane, s16 value)
-{
-	*((s16*)num + lane) += value;
-}
-
-
-s16 _mm_getlane_epi16(const __m128i* num, int lane)
+s16 _mm_getlane_epi16(const __m128i* num, const int lane)
 {
 	return *((s16*)num + lane);
 }
 
 
-u16 _mm_getlane_epu16(const __m128i* num, int lane)
+u16 _mm_getlane_epu16(const __m128i* num, const int lane)
 {
 	return *((u16*)num + lane);
 }
 
 
-void _mm_setlane_epi16(__m128i* num, int lane, s16 value)
+void _mm_setlane_epi16(__m128i* num, const int lane, const s16 value)
 {
 	*((s16*)num + lane) = value;
 }
