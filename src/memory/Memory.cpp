@@ -1,5 +1,6 @@
 module Memory;
 
+import AI;
 import Cartridge;
 import DebugOptions;
 import Logging;
@@ -105,7 +106,7 @@ namespace Memory
 
 				case 6: /* $0450'0000 - $045F'FFFF */
 					if constexpr (log_cpu_memory) io_location = "AI";
-					return Int(0);
+					return AI::Read<Int>(physical_address);
 
 				case 7: /* $0460'0000 - $046F'FFFF */
 					if constexpr (log_cpu_memory) io_location = "PI";
@@ -193,6 +194,7 @@ namespace Memory
 
 			case 6: /* $0450'0000 - $045F'FFFF */
 				if constexpr (log_cpu_memory) io_location = "AI";
+				AI::Write<number_of_bytes>(physical_address, data);
 				break;
 
 			case 7: /* $0460'0000 - $046F'FFFF */

@@ -62,6 +62,7 @@ namespace N64
 					/* If num_halflines == 262, the number of cycles to update becomes 5963. */
 					cpu_cycles_until_update_queue = VI::cpu_cycles_per_halfline;
 					VR4300::Run(VI::cpu_cycles_per_halfline);
+					AI::Step(VI::cpu_cycles_per_halfline);
 					CheckEventQueue();
 					cpu_cycles_taken_this_frame += VI::cpu_cycles_per_halfline;
 				}
@@ -71,6 +72,7 @@ namespace N64
 					const int extra_cycles = cpu_cycles_per_frame - cpu_cycles_taken_this_frame;
 					cpu_cycles_until_update_queue = extra_cycles;
 					VR4300::Run(extra_cycles);
+					AI::Step(extra_cycles);
 					CheckEventQueue();
 				}
 				Renderer::Render();
