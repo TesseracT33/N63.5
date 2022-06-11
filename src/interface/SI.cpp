@@ -47,9 +47,9 @@ namespace SI
 
 		static constexpr u32 offset_dram_addr = 0;
 		static constexpr u32 offset_addr_rd64b = 1;
-		static constexpr u32 offset_addr_rd4b = 2;
+		static constexpr u32 offset_addr_wr4b = 2;
 		static constexpr u32 offset_addr_wr64b = 4;
-		static constexpr u32 offset_addr_wr4b = 5;
+		static constexpr u32 offset_addr_rd4b = 5;
 		static constexpr u32 offset_status = 6;
 
 		switch (offset)

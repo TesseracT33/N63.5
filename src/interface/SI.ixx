@@ -10,8 +10,7 @@ namespace SI
 {
 	struct
 	{
-		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, pif_addr_wr64b, pif_addr_rd4b, status;
-		s32 dummy_reg_at_0x0C{}, dummy_reg_at_0x1C{};
+		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy_reg_at_0x0C, pif_addr_wr64b, pif_addr_rd4b, status, dummy_reg_at_0x1C;
 	} si{};
 
 	export
