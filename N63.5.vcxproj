@@ -131,12 +131,16 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>F:\SDKs\glm\include;F:\SDKs\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\SDKs\glm\include;F:\SDKs\glew\include;F:\SDKs\SDL2-2.0.22\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\SDKs\glew\lib;F:\SDKs\SDL2-2.0.12\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>F:\SDKs\glew\lib;F:\SDKs\SDL2-2.0.22\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;Opengl32.lib;glew32.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -152,14 +156,18 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>F:\SDKs\glm\include;F:\SDKs\glew\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\SDKs\glm\include;F:\SDKs\glew\include;F:\SDKs\SDL2-2.0.22\include;</AdditionalIncludeDirectories>
+      <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\SDKs\glew\lib;F:\SDKs\SDL2-2.0.12\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>F:\SDKs\glew\lib;F:\SDKs\SDL2-2.0.22\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;Opengl32.lib;glew32.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -178,10 +186,10 @@
     <ClCompile Include="src\memory\PIF.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Renderer.ixx" />
-    <ClCompile Include="src\RSP\RSPInstructionDecode.cpp" />
+    <ClCompile Include="src\RSP\InstructionDecode.cpp" />
     <ClCompile Include="src\RSP\RSP.ixx" />
-    <ClCompile Include="src\RSP\RSPOperation.cpp" />
-    <ClCompile Include="src\RSP\RSPOperation.ixx" />
+    <ClCompile Include="src\RSP\Operation.cpp" />
+    <ClCompile Include="src\RSP\Operation.ixx" />
     <ClCompile Include="src\RSP\ScalarUnit.cpp" />
     <ClCompile Include="src\RSP\ScalarUnit.ixx" />
     <ClCompile Include="src\RSP\VectorUnit.cpp" />

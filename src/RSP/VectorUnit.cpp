@@ -1,6 +1,6 @@
 module RSP:VectorUnit;
 
-import :RSPOperation;
+import :Operation;
 import :ScalarUnit;
 
 import SSEUtils;

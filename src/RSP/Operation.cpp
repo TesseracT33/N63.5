@@ -1,4 +1,4 @@
-module RSP:RSPOperation;
+module RSP:Operation;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 

@@ -1,4 +1,4 @@
-module RSP:RSPOperation;
+module RSP:Operation;
 
 import :ScalarUnit;
 import :VectorUnit;

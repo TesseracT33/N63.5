@@ -1,6 +1,6 @@
 module RSP:ScalarUnit;
 
-import :RSPOperation;
+import :Operation;
 
 import N64;
 

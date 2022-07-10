@@ -1,4 +1,4 @@
-export module RSP:RSPOperation;
+export module RSP:Operation;
 
 import Memory;
 import N64;

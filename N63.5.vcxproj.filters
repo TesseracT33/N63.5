@@ -54,13 +54,13 @@
     <ClCompile Include="src\interface\AI.ixx" />
     <ClCompile Include="src\interface\AI.cpp" />
     <ClCompile Include="src\Utils\FileUtils.ixx" />
-    <ClCompile Include="src\RSP\RSPInstructionDecode.cpp" />
+    <ClCompile Include="src\RSP\InstructionDecode.cpp" />
     <ClCompile Include="src\RSP\ScalarUnit.ixx" />
     <ClCompile Include="src\RSP\ScalarUnit.cpp" />
     <ClCompile Include="src\RSP\VectorUnit.ixx" />
     <ClCompile Include="src\RSP\VectorUnit.cpp" />
-    <ClCompile Include="src\RSP\RSPOperation.ixx" />
-    <ClCompile Include="src\RSP\RSPOperation.cpp" />
+    <ClCompile Include="src\RSP\Operation.ixx" />
+    <ClCompile Include="src\RSP\Operation.cpp" />
     <ClCompile Include="src\interface\RI.ixx" />
     <ClCompile Include="src\interface\RI.cpp" />
     <ClCompile Include="src\Utils\Utils.ixx" />
