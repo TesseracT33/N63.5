@@ -300,13 +300,13 @@ namespace RSP
 		if constexpr (instr == LBV || instr == LSV || instr == LLV || instr == LDV ||
 			instr == LQV || instr == LRV || instr == LPV || instr == LUV || instr == LTV)
 		{
-			VectorLoad<instr>(instr_code);
+			VectorLoadStore<instr>(instr_code);
 		}
 
 		else if constexpr (instr == SBV || instr == SSV || instr == SLV || instr == SDV ||
 			instr == SQV || instr == SRV || instr == SPV || instr == SUV || instr == STV)
 		{
-			VectorStore<instr>(instr_code);
+			VectorLoadStore<instr>(instr_code);
 		}
 
 		else if constexpr (instr == MTC2 || instr == MFC2 || instr == CTC2 || instr == CFC2)

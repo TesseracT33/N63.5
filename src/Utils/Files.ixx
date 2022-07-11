@@ -1,4 +1,4 @@
-export module FileUtils;
+export module Util.Files;
 
 import NumericalTypes;
 

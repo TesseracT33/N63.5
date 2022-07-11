@@ -43,12 +43,11 @@ namespace RSP
 		VLT, VEQ, VNE, VGE, VCH, VCR, VCL, VMRG
 	};
 
-	template<VectorInstruction instr> void VectorLoad(u32 instr_code);
-	template<VectorInstruction instr> void VectorStore(u32 instr_code);
-	template<VectorInstruction instr> void Move(u32 instr_code);
-	template<VectorInstruction instr> void SingleLaneInstr(u32 instr_code);
-	template<VectorInstruction instr> void ComputeInstr(u32 instr_code);
-	template<VectorInstruction instr> void SelectInstr(u32 instr_code);
+	template<VectorInstruction> void VectorLoadStore(u32 instr_code);
+	template<VectorInstruction> void Move(u32 instr_code);
+	template<VectorInstruction> void SingleLaneInstr(u32 instr_code);
+	template<VectorInstruction> void ComputeInstr(u32 instr_code);
+	template<VectorInstruction> void SelectInstr(u32 instr_code);
 
 	void AddToAccumulator(__m128i low);
 	void AddToAccumulator(__m128i low, __m128i mid);
@@ -73,7 +72,7 @@ namespace RSP
 
 	std::array<ControlRegister, 3> control_reg{};
 
-	std::array<__m128i, 32> vpr{}; /* SIMD registers; eight 16-bit lanes */
+	std::array<__m128i, 32> vpr; /* SIMD registers; eight 16-bit lanes */
 
 	s16 div_out, div_in;
 }

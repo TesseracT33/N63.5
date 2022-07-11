@@ -36,13 +36,13 @@ namespace RSP
 	};
 
 	/* Main processor instructions */
-	template<ScalarInstruction instr> void ScalarLoad(u32 instr_code);
-	template<ScalarInstruction instr> void ScalarStore(u32 instr_code);
-	template<ScalarInstruction instr> void ALUImmediate(u32 instr_code);
-	template<ScalarInstruction instr> void ALUThreeOperand(u32 instr_code);
-	template<ScalarInstruction instr> void ALUShift(u32 instr_code);
-	template<ScalarInstruction instr> void Jump(u32 instr_code);
-	template<ScalarInstruction instr> void Branch(u32 instr_code);
+	template<ScalarInstruction> void ScalarLoad(u32 instr_code);
+	template<ScalarInstruction> void ScalarStore(u32 instr_code);
+	template<ScalarInstruction> void ALUImmediate(u32 instr_code);
+	template<ScalarInstruction> void ALUThreeOperand(u32 instr_code);
+	template<ScalarInstruction> void ALUShift(u32 instr_code);
+	template<ScalarInstruction> void Jump(u32 instr_code);
+	template<ScalarInstruction> void Branch(u32 instr_code);
 	void Break();
 
 	struct GPR /* scalar general-purpose registers */

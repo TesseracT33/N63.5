@@ -132,7 +132,7 @@ namespace VR4300
 		gpr.Set(29, 0xA400'1FF0);
 		cop0_reg.SetRaw(cop0_index_status, 0x2410'00E0);
 		cop0_reg.SetRaw(cop0_index_config, 0x7006'E463);
-
+		
 		for (int i = 0; i < 0x1000; i += 4) /* no clue if some kind of DMA */
 		{
 			const s32 src_addr = s32(0xB000'0000 + i);

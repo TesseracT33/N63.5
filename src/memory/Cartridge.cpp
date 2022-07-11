@@ -1,8 +1,9 @@
 module Cartridge;
 
-import FileUtils;
 import Memory;
 import UserMessage;
+
+import Util.Files;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 

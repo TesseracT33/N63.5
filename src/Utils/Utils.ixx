@@ -1,4 +1,4 @@
-export module Utils;
+export module Util;
 
 import <array>;
 
@@ -15,12 +15,12 @@ export
 	}();
 
 
-	template <typename... T>
-	constexpr bool always_false = false;
+	template<typename... T>
+	constexpr bool AlwaysFalse = false;
 
 
 	template<typename T, std::size_t size>
-	constexpr std::array<T, size> make_array(const T& value)
+	constexpr std::array<T, size> MakeArray(const T& value)
 	{
 		std::array<T, size> arr{};
 		arr.fill(value);

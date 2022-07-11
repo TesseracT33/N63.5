@@ -1,4 +1,4 @@
-export module SSEUtils;
+export module Util.SSE;
 
 import NumericalTypes;
 
@@ -16,6 +16,7 @@ export
 	const __m128i x = _mm_set_epi64x(0, s64(-1)); /* todo: find good name... */
 	const __m128i y = _mm_set_epi64x(s64(-1), 0);
 
+	__m128i _mm_byteswap_epi16(__m128i a);
 	__m128i _mm_cmpge_epi16(__m128i a, __m128i b);
 	__m128i _mm_cmple_epi16(__m128i a, __m128i b);
 	__m128i _mm_cmplt_epu16(__m128i a, __m128i b);
@@ -30,3 +31,5 @@ export
 	u16 _mm_getlane_epu16(const __m128i* num, int lane);
 	void _mm_setlane_epi16(__m128i* num, int lane, s16 value);
 }
+
+const __m128i byteswap_epi16_mask = _mm_set_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);

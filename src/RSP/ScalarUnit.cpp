@@ -2,6 +2,7 @@ module RSP:ScalarUnit;
 
 import :Operation;
 
+import MI;
 import N64;
 
 namespace RSP
@@ -498,7 +499,10 @@ namespace RSP
 
 	void Break()
 	{
-		/* TODO */
+		halted = true;
+		if (regs.status & 0x40) {
+			MI::SetInterruptFlag<MI::InterruptType::SP>();
+		}
 		AdvancePipeline<1>();
 	}
 
