@@ -85,7 +85,7 @@ namespace VR4300
 		using enum Exception;
 		using enum MemoryAccess::Operation;
 
-		if constexpr (exception == AddressError)        return AddressErrorException<operation>;
+		if constexpr (exception == AddressError)             return AddressErrorException<operation>;
 		else if constexpr (exception == Breakpoint)          return BreakPointException;
 		else if constexpr (exception == BusError)            return BusErrorException<operation>;
 		else if constexpr (exception == ColdReset)           return ColdResetException;
@@ -102,7 +102,7 @@ namespace VR4300
 		else if constexpr (exception == TlbModification)     return TlbModException;
 		else if constexpr (exception == Trap)                return TrapException;
 		else if constexpr (exception == Watch)               return WatchException;
-		else if constexpr (exception == XtlbMiss)           return XtlbMissException<operation>;
+		else if constexpr (exception == XtlbMiss)            return XtlbMissException<operation>;
 		else                                                 static_assert(AlwaysFalse<exception>);
 	}
 
@@ -112,20 +112,22 @@ namespace VR4300
 	{ /* See p. 181, Table 6-3 */
 		using enum Exception;
 
-		static constexpr std::array<u64, 2> vector_base_addr = { /* Indexed by cop0.status.BEV */
-			0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'BFC0'0200 };
-
 		if constexpr (exception == ColdReset || exception == SoftReset || exception == Nmi) {
-			return vector_base_addr[1];
-		}
-		else if constexpr (exception == TlbMiss) {
-			return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0000);
-		}
-		else if constexpr (exception == XtlbMiss) {
-			return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0080);
+			return 0xFFFF'FFFF'BFC0'0000;
 		}
 		else {
-			return vector_base_addr[cop0_reg.status.bev] | 0x0180;
+			static constexpr std::array<u64, 2> vector_base_addr = { /* Indexed by cop0.status.BEV */
+				0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'BFC0'0200
+			};
+			if constexpr (exception == TlbMiss) {
+				return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0000);
+			}
+			else if constexpr (exception == XtlbMiss) {
+				return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0080);
+			}
+			else {
+				return vector_base_addr[cop0_reg.status.bev] | 0x0180;
+			}
 		}
 	}
 
