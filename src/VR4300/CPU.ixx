@@ -52,42 +52,27 @@ namespace VR4300
 		SYNC, SYSCALL, BREAK
 	};
 
-	bool jump_is_pending = false;
-	unsigned instructions_until_jump = 0;
-	u64 addr_to_jump_to;
-
-	bool last_instr_was_load = false;
-	u8 last_load_target_reg;
-
-	void PrepareJump(const u64 target_address);
+	void PrepareJump(u64 target_address);
 
 	/* Main processor instructions */
-	template<CPUInstruction instr> void CPULoad(u32 instr_code);
-	template<CPUInstruction instr> void CPUStore(u32 instr_code);
-	template<CPUInstruction instr> void ALUImmediate(u32 instr_code);
-	template<CPUInstruction instr> void ALUThreeOperand(u32 instr_code);
-	template<CPUInstruction instr> void ALUShift(u32 instr_code);
-	template<CPUInstruction instr> void ALUMulDiv(u32 instr_code);
-	template<CPUInstruction instr> void Jump(u32 instr_code);
-	template<CPUInstruction instr> void CPUBranch(u32 instr_code);
-	template<CPUInstruction instr> void TrapThreeOperand(u32 instr_code);
-	template<CPUInstruction instr> void TrapImmediate(u32 instr_code);
-	template<CPUInstruction instr> void CPUMove(u32 instr_code);
+	template<CPUInstruction> void CPULoad(u32 instr_code);
+	template<CPUInstruction> void CPUStore(u32 instr_code);
+	template<CPUInstruction> void ALUImmediate(u32 instr_code);
+	template<CPUInstruction> void ALUThreeOperand(u32 instr_code);
+	template<CPUInstruction> void ALUShift(u32 instr_code);
+	template<CPUInstruction> void ALUMulDiv(u32 instr_code);
+	template<CPUInstruction> void Jump(u32 instr_code);
+	template<CPUInstruction> void CPUBranch(u32 instr_code);
+	template<CPUInstruction> void TrapThreeOperand(u32 instr_code);
+	template<CPUInstruction> void TrapImmediate(u32 instr_code);
+	template<CPUInstruction> void CPUMove(u32 instr_code);
 	void Sync();
 	void Syscall();
 	void Break();
 
-	/* Check if the previous instruction was a load instructions, and if any of the provided register indeces
-	   use the result that was loaded. If so, we we get a pipeline interlock count of 1 cycle. */
-	/* TODO: currently unimplemented, should it stay that way? (performance, necessity) */
-	void CheckLoadDelay(auto... reg_indeces)
-	{
-		if (last_instr_was_load)
-		{
-			auto values = { reg_indeces... };
-			auto element_index = std::find(std::begin(values), std::end(values), last_load_target_reg);
-			if (element_index == std::end(values))
-				AdvancePipeline<1>;
-		}
-	}
+	bool jump_is_pending = false;
+	bool last_instr_was_load = false;
+	uint instructions_until_jump = 0;
+	u64 addr_to_jump_to;
+	u8 last_load_target_reg;
 }

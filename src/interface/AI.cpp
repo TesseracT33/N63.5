@@ -38,40 +38,6 @@ namespace AI
 	}
 
 
-	void Step(int cycles)
-	{
-		if (ai.control == 0)
-			return;
-		AI::cycles += cycles;
-		while (AI::cycles > dac.period)
-		{
-			Sample();
-			AI::cycles -= dac.period;
-		}
-	}
-
-
-	void Sample()
-	{
-		if (dma_count == 0)
-			return;
-		s32 data = Memory::ReadPhysical<s32, MemoryAccess::Operation::Read>(ai.dram_addr);
-		// TODO output sample
-		ai.dram_addr += 4;
-		ai.len -= 4;
-		if (ai.len == 0)
-		{
-			MI::SetInterruptFlag<MI::InterruptType::AI>();
-			--dma_count;
-			if (dma_count > 0)
-			{
-				ai.dram_addr = dma_address_buffer;
-				ai.len = dma_length_buffer;
-			}
-		}
-	}
-
-
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
@@ -80,62 +46,87 @@ namespace AI
 		ai.status |= (dma_count > 0) << 30;
 		ai.status |= (dma_count > 1) << 31;
 
-		const u32 offset = (addr & 0xF) >> 2;
+		auto offset = (addr & 0xF) >> 2;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&ai) + offset, 4);
 		return Int(ret);
 	}
 
 
-	template<std::size_t number_of_bytes>
+	void Sample()
+	{
+		if (dma_count == 0) {
+			return;
+		}
+		s32 data = Memory::ReadPhysical<s32, MemoryAccess::Operation::Read>(ai.dram_addr);
+		// TODO output sample
+		ai.dram_addr += 4;
+		ai.len -= 4;
+		if (ai.len == 0) {
+			MI::SetInterruptFlag(MI::InterruptType::AI);
+			if (--dma_count > 0) {
+				ai.dram_addr = dma_address_buffer;
+				ai.len = dma_length_buffer;
+			}
+		}
+	}
+
+
+	void Step(uint cycles)
+	{
+		if (ai.control == 0) {
+			return;
+		}
+		AI::cycles += cycles;
+		while (AI::cycles > dac.period) {
+			Sample();
+			AI::cycles -= dac.period;
+		}
+	}
+
+
+	template<size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
 		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
-		const u32 offset = addr >> 2 & 7;
-		const auto word = static_cast<s32>(data);
+		u32 offset = addr >> 2 & 7;
+		auto word = static_cast<s32>(data);
 
-		static constexpr u32 offset_dram_addr = 0;
-		static constexpr u32 offset_len = 1;
-		static constexpr u32 offset_control = 2;
-		static constexpr u32 offset_status = 3;
-		static constexpr u32 offset_dacrate = 4;
-		static constexpr u32 offset_bitrate = 5;
+		enum RegOffset {
+			DramAddr, Len, Control, Status, Dacrate, Bitrate
+		};
 
-		switch (offset)
-		{
-		case offset_dram_addr:
-			if (dma_count < 2)
-			{
+		switch (offset) {
+		case RegOffset::DramAddr:
+			if (dma_count < 2) {
 				dma_count == 0 ? ai.dram_addr = word & 0xFF'FFF8 : dma_address_buffer = word & 0xFF'FFF8;
 			}
 			break;
 
-		case offset_len:
-		{
-			const s32 length = word & 0x3'FFF8;
-			if (dma_count < 2 && length > 0)
-			{
+		case RegOffset::Len: {
+			s32 length = word & 0x3'FFF8;
+			if (dma_count < 2 && length > 0) {
 				dma_count == 0 ? ai.len = length : dma_length_buffer = length;
 				++dma_count;
 			}
 			break;
 		}
 
-		case offset_control:
+		case RegOffset::Control:
 			ai.control = word & 1;
 			break;
 
-		case offset_status:
-			MI::ClearInterruptFlag<MI::InterruptType::AI>();
+		case RegOffset::Status:
+			MI::ClearInterruptFlag(MI::InterruptType::AI);
 			break;
 
-		case offset_dacrate:
+		case RegOffset::Dacrate:
 			ai.dacrate = word & 0x3FFF;
-			dac.frequency = std::max(1, N64::cpu_cycles_per_second / (ai.dacrate + 1));
+			dac.frequency = std::max(1u, N64::cpu_cycles_per_second / (ai.dacrate + 1));
 			dac.period = N64::cpu_cycles_per_second / dac.frequency;
 			break;
 
-		case offset_bitrate:
+		case RegOffset::Bitrate:
 			ai.bitrate = word & 0xF;
 			break;
 

@@ -14,12 +14,12 @@ namespace DMA
 {
 	export
 	{
-		enum class Type {
-			PI, SI, SP
-		};
-
 		enum class Location {
 			Cartridge, PIF, RDRAM, SPRAM
+		};
+
+		enum class Type {
+			PI, SI, SP
 		};
 
 		template<Type type, Location source, Location dest>
@@ -30,10 +30,10 @@ namespace DMA
 	}
 
 	template<Location>
-	u8* GetPointerFromAddress(u32 addr);
+	size_t GetNumberOfBytesUntilMemoryEnd(u32 addr);
 
 	template<Location>
-	size_t GetNumberOfBytesUntilMemoryEnd(u32 addr);
+	u8* GetPointerFromAddress(u32 addr);
 
 	constexpr std::array location_to_string_table = {
 		"CART", "PIF", "RDRAM", "DMEM/IMEM"

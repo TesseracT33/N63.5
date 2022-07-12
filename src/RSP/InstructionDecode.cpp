@@ -6,6 +6,7 @@ import :VectorUnit;
 import DebugOptions;
 import Logging;
 import NumericalTypes;
+import Util;
 
 
 #define EXEC_SCALAR_INSTR(INSTR) { \
@@ -30,63 +31,57 @@ namespace RSP
 
 	void DecodeAndExecuteSpecialInstruction()
 	{
-		const auto sub_op_code = instr_code & 0x3F;
+		auto sub_op_code = instr_code & 0x3F;
 
-		switch (sub_op_code)
-		{
-		break; case 0b100000: EXEC_SCALAR_INSTR(ADD);
-		break; case 0b100001: EXEC_SCALAR_INSTR(ADDU);
-		break; case 0b100100: EXEC_SCALAR_INSTR(AND);
-		break; case 0b100111: EXEC_SCALAR_INSTR(NOR);
-		break; case 0b100101: EXEC_SCALAR_INSTR(OR);
-		break; case 0b101010: EXEC_SCALAR_INSTR(SLT);
-		break; case 0b101011: EXEC_SCALAR_INSTR(SLTU);
-		break; case 0b100010: EXEC_SCALAR_INSTR(SUB);
-		break; case 0b100011: EXEC_SCALAR_INSTR(SUBU);
-		break; case 0b100110: EXEC_SCALAR_INSTR(XOR);
+		switch (sub_op_code) {
+		case 0b100000: EXEC_SCALAR_INSTR(ADD); break;
+		case 0b100001: EXEC_SCALAR_INSTR(ADDU); break;
+		case 0b100100: EXEC_SCALAR_INSTR(AND); break;
+		case 0b100111: EXEC_SCALAR_INSTR(NOR); break;
+		case 0b100101: EXEC_SCALAR_INSTR(OR); break;
+		case 0b101010: EXEC_SCALAR_INSTR(SLT); break;
+		case 0b101011: EXEC_SCALAR_INSTR(SLTU); break;
+		case 0b100010: EXEC_SCALAR_INSTR(SUB); break;
+		case 0b100011: EXEC_SCALAR_INSTR(SUBU); break;
+		case 0b100110: EXEC_SCALAR_INSTR(XOR); break;
 
-		break; case 0b000000: EXEC_SCALAR_INSTR(SLL);
-		break; case 0b000100: EXEC_SCALAR_INSTR(SLLV);
-		break; case 0b000011: EXEC_SCALAR_INSTR(SRA);
-		break; case 0b000111: EXEC_SCALAR_INSTR(SRAV);
-		break; case 0b000010: EXEC_SCALAR_INSTR(SRL);
-		break; case 0b000110: EXEC_SCALAR_INSTR(SRLV);
+		case 0b000000: EXEC_SCALAR_INSTR(SLL); break;
+		case 0b000100: EXEC_SCALAR_INSTR(SLLV); break;
+		case 0b000011: EXEC_SCALAR_INSTR(SRA); break;
+		case 0b000111: EXEC_SCALAR_INSTR(SRAV); break;
+		case 0b000010: EXEC_SCALAR_INSTR(SRL); break;
+		case 0b000110: EXEC_SCALAR_INSTR(SRLV); break;
 
-		break; case 0b001001: EXEC_SCALAR_INSTR(JALR);
-		break; case 0b001000: EXEC_SCALAR_INSTR(JR);
+		case 0b001001: EXEC_SCALAR_INSTR(JALR); break;
+		case 0b001000: EXEC_SCALAR_INSTR(JR); break;
 
-		break; case 0b001101: EXEC_SCALAR_INSTR(BREAK);
+		case 0b001101: EXEC_SCALAR_INSTR(BREAK); break;
 
-		break; default:
-			;
+		default: break;
 		}
 	}
 
 
 	void DecodeAndExecuteRegimmInstruction()
 	{
-		const auto sub_op_code = instr_code >> 16 & 0x1F;
+		auto sub_op_code = instr_code >> 16 & 0x1F;
 
-		switch (sub_op_code)
-		{
-		break; case 0b00001: EXEC_SCALAR_INSTR(BGEZ);
-		break; case 0b10001: EXEC_SCALAR_INSTR(BGEZAL);
-		break; case 0b00000: EXEC_SCALAR_INSTR(BLTZ);
-		break; case 0b10000: EXEC_SCALAR_INSTR(BLTZAL);
+		switch (sub_op_code) {
+		case 0b00001: EXEC_SCALAR_INSTR(BGEZ); break;
+		case 0b10001: EXEC_SCALAR_INSTR(BGEZAL); break;
+		case 0b00000: EXEC_SCALAR_INSTR(BLTZ); break;
+		case 0b10000: EXEC_SCALAR_INSTR(BLTZAL); break;
 
-		break; default:
-			;
+		default: break;
 		}
 	}
 
 
 	void DecodeAndExecuteCOP2Instruction()
 	{
-		if (instr_code & 1 << 25)
-		{
-			const auto op_code = instr_code & 0x3F;
-			switch (op_code)
-			{
+		if (instr_code & 1 << 25) {
+			auto op_code = instr_code & 0x3F;
+			switch (op_code) {
 			case 0x00: EXEC_VECTOR_INSTR(VMULF); break;
 			case 0x01: EXEC_VECTOR_INSTR(VMULU); break;
 			case 0x02: EXEC_VECTOR_INSTR(VRNDP); break;
@@ -134,11 +129,9 @@ namespace RSP
 			default: break;
 			}
 		}
-		else
-		{
-			const auto op_code = instr_code >> 21 & 0x1F;
-			switch (op_code)
-			{
+		else {
+			auto op_code = instr_code >> 21 & 0x1F;
+			switch (op_code) {
 			case 0b00000: EXEC_VECTOR_INSTR(MFC2); break;
 			case 0b00100: EXEC_VECTOR_INSTR(MTC2); break;
 			case 0b00010: EXEC_VECTOR_INSTR(CFC2); break;
@@ -153,49 +146,47 @@ namespace RSP
 	{
 		RSP::instr_code = instr_code;
 
-		const auto op_code = instr_code >> 26; /* (0-63) */
+		auto op_code = instr_code >> 26; /* (0-63) */
 
-		switch (op_code)
+		switch (op_code) {
+		case 0b000000: DecodeAndExecuteSpecialInstruction(); break;
+		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
+		case 0b010010: DecodeAndExecuteCOP2Instruction(); break;
+
+		case 0b100000: EXEC_SCALAR_INSTR(LB); break;
+		case 0b100100: EXEC_SCALAR_INSTR(LBU); break;
+		case 0b100001: EXEC_SCALAR_INSTR(LH); break;
+		case 0b100101: EXEC_SCALAR_INSTR(LHU); break;
+		case 0b110000: EXEC_SCALAR_INSTR(LL); break;
+		case 0b100011: EXEC_SCALAR_INSTR(LW); break;
+		case 0b100111: EXEC_SCALAR_INSTR(LWU); break;
+
+		case 0b101000: EXEC_SCALAR_INSTR(SB); break;
+		case 0b111000: EXEC_SCALAR_INSTR(SC); break;
+		case 0b101001: EXEC_SCALAR_INSTR(SH); break;
+		case 0b101011: EXEC_SCALAR_INSTR(SW); break;
+
+		case 0b001000: EXEC_SCALAR_INSTR(ADDI); break;
+		case 0b001001: EXEC_SCALAR_INSTR(ADDIU); break;
+		case 0b001100: EXEC_SCALAR_INSTR(ANDI); break;
+		case 0b001111: EXEC_SCALAR_INSTR(LUI); break;
+		case 0b001101: EXEC_SCALAR_INSTR(ORI); break;
+		case 0b001010: EXEC_SCALAR_INSTR(SLTI); break;
+		case 0b001011: EXEC_SCALAR_INSTR(SLTIU); break;
+		case 0b001110: EXEC_SCALAR_INSTR(XORI); break;
+
+		case 0b000010: EXEC_SCALAR_INSTR(J); break;
+		case 0b000011: EXEC_SCALAR_INSTR(JAL); break;
+
+		case 0b000100: EXEC_SCALAR_INSTR(BEQ); break;
+		case 0b000111: EXEC_SCALAR_INSTR(BGTZ); break;
+		case 0b000110: EXEC_SCALAR_INSTR(BLEZ); break;
+		case 0b000101: EXEC_SCALAR_INSTR(BNE); break;
+
+		case 0b110010:
 		{
-		break; case 0b000000: DecodeAndExecuteSpecialInstruction();
-		break; case 0b000001: DecodeAndExecuteRegimmInstruction();
-		break; case 0b010010: DecodeAndExecuteCOP2Instruction();
-
-		break; case 0b100000: EXEC_SCALAR_INSTR(LB);
-		break; case 0b100100: EXEC_SCALAR_INSTR(LBU);
-		break; case 0b100001: EXEC_SCALAR_INSTR(LH);
-		break; case 0b100101: EXEC_SCALAR_INSTR(LHU);
-		break; case 0b110000: EXEC_SCALAR_INSTR(LL);
-		break; case 0b100011: EXEC_SCALAR_INSTR(LW);
-		break; case 0b100111: EXEC_SCALAR_INSTR(LWU);
-
-		break; case 0b101000: EXEC_SCALAR_INSTR(SB);
-		break; case 0b111000: EXEC_SCALAR_INSTR(SC);
-		break; case 0b101001: EXEC_SCALAR_INSTR(SH);
-		break; case 0b101011: EXEC_SCALAR_INSTR(SW);
-
-		break; case 0b001000: EXEC_SCALAR_INSTR(ADDI);
-		break; case 0b001001: EXEC_SCALAR_INSTR(ADDIU);
-		break; case 0b001100: EXEC_SCALAR_INSTR(ANDI);
-		break; case 0b001111: EXEC_SCALAR_INSTR(LUI);
-		break; case 0b001101: EXEC_SCALAR_INSTR(ORI);
-		break; case 0b001010: EXEC_SCALAR_INSTR(SLTI);
-		break; case 0b001011: EXEC_SCALAR_INSTR(SLTIU);
-		break; case 0b001110: EXEC_SCALAR_INSTR(XORI);
-
-		break; case 0b000010: EXEC_SCALAR_INSTR(J);
-		break; case 0b000011: EXEC_SCALAR_INSTR(JAL);
-
-		break; case 0b000100: EXEC_SCALAR_INSTR(BEQ);
-		break; case 0b000111: EXEC_SCALAR_INSTR(BGTZ);
-		break; case 0b000110: EXEC_SCALAR_INSTR(BLEZ);
-		break; case 0b000101: EXEC_SCALAR_INSTR(BNE);
-
-		break; case 0b110010:
-		{
-			const auto op_code = instr_code >> 11 & 0x1F;
-			switch (op_code)
-			{
+			auto op_code = instr_code >> 11 & 0x1F;
+			switch (op_code) {
 			case 0x00: EXEC_VECTOR_INSTR(LBV); break;
 			case 0x01: EXEC_VECTOR_INSTR(LSV); break;
 			case 0x02: EXEC_VECTOR_INSTR(LLV); break;
@@ -207,11 +198,12 @@ namespace RSP
 			case 0x08: EXEC_VECTOR_INSTR(LTV); break;
 			default: break;
 			}
+			break;
 		}
 
-		break; case 0b111010:
+		;case 0b111010:
 		{
-			const auto op_code = instr_code >> 11 & 0x1F;
+			auto op_code = instr_code >> 11 & 0x1F;
 			switch (op_code)
 			{
 			case 0x00: EXEC_VECTOR_INSTR(SBV); break;
@@ -225,10 +217,10 @@ namespace RSP
 			case 0x08: EXEC_VECTOR_INSTR(STV); break;
 			default: break;
 			}
+			break;
 		}
 
-		break; default:
-			;
+		default: break;
 		}
 	}
 
@@ -282,7 +274,7 @@ namespace RSP
 
 		else
 		{
-			static_assert(instr != instr);
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		if constexpr (log_rsp_instructions)
@@ -338,7 +330,7 @@ namespace RSP
 
 		else
 		{
-			static_assert(instr != instr);
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		if constexpr (log_rsp_instructions)

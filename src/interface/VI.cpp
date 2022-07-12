@@ -10,6 +10,14 @@ import Renderer;
 
 namespace VI
 {
+	void CheckVideoInterrupt()
+	{
+		if ((vi.v_current & 0x3FE) == vi.v_intr) {
+			MI::SetInterruptFlag(MI::InterruptType::VI);
+		}
+	}
+
+
 	void Initialize()
 	{
 		vi.ctrl = 0;
@@ -30,43 +38,37 @@ namespace VI
 	template<std::integral Int>
 	Int Read(const u32 addr)
 	{
-		const u32 offset = (addr >> 2) & 0xF;
+		u32 offset = (addr >> 2) & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
 		return Int(ret);
 	}
 
 
-	template<std::size_t number_of_bytes>
+	void SetCurrentHalfline(const u32 halfline)
+	{
+		vi.v_current = halfline & 0x3FF;
+		CheckVideoInterrupt();
+	}
+
+
+	template<size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
-		const u32 offset = (addr >> 2) & 0xF;
-		const auto word = s32(data);
+		u32 offset = (addr >> 2) & 0xF;
+		auto word = s32(data);
 
-		static constexpr u32 offset_ctrl = 0;
-		static constexpr u32 offset_origin = 1;
-		static constexpr u32 offset_width = 2;
-		static constexpr u32 offset_v_intr = 3;
-		static constexpr u32 offset_v_current = 4;
-		static constexpr u32 offset_burst = 5;
-		static constexpr u32 offset_v_sync = 6;
-		static constexpr u32 offset_h_sync = 7;
-		static constexpr u32 offset_h_sync_leap = 8;
-		static constexpr u32 offset_h_video = 9;
-		static constexpr u32 offset_v_video = 10;
-		static constexpr u32 offset_v_burst = 11;
-		static constexpr u32 offset_x_scale = 12;
-		static constexpr u32 offset_y_scale = 13;
-		static constexpr u32 offset_test_addr = 14;
-		static constexpr u32 offset_stated_data = 15;
+		enum RegOffset {
+			Ctrl, Origin, Width, VIntr, VCurrent, Burst,
+			VSync, HSync, HSyncLeap, HVideo, VVideo,
+			VBurst, XScale, YScale, TestAddr, StatedData
+		};
 
-		switch (offset)
-		{
-		case offset_ctrl:
+		switch (offset) {
+		case RegOffset::Ctrl:
 			vi.ctrl = word;
 			/* Video pixel size */
-			switch (vi.ctrl & 3)
-			{
+			switch (vi.ctrl & 3) {
 			case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
 			case 0b01: /* reserved */
 				Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
@@ -84,27 +86,27 @@ namespace VI
 			num_fields = 1 + bool(vi.ctrl & 0x40);
 			break;
 
-		case offset_origin:
-			vi.origin = word & 0xFF'FFFF;
+		case RegOffset::Origin:
+			vi.origin = word & 0x7F'FFFF;
 			Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
 			break;
 
-		case offset_width:
+		case RegOffset::Width:
 			vi.width = word & 0xFFF;
 			Renderer::SetFramebufferWidth(vi.width);
 			break;
 
-		case offset_v_intr:
+		case RegOffset::VIntr:
 			vi.v_intr = word & 0x3FF; /* only bits 9-0 are writable. */
 			CheckVideoInterrupt();
 			break;
 
-		case offset_v_current:
+		case RegOffset::VCurrent:
 			vi.v_current = word & 0x3FF;
-			MI::ClearInterruptFlag<MI::InterruptType::VI>();
+			MI::ClearInterruptFlag(MI::InterruptType::VI);
 			break;
 
-		case offset_v_sync:
+		case RegOffset::VSync:
 			vi.v_sync = word & 0x3FF;
 			num_halflines = vi.v_sync >> 1;
 			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines; /* remainder being non-zero is taken caren of in the scheduler */
@@ -113,22 +115,6 @@ namespace VI
 		default:
 			break; /* TODO */
 		}
-	}
-
-
-	void CheckVideoInterrupt()
-	{
-		if (vi.v_current == vi.v_intr)
-		{
-			MI::SetInterruptFlag<MI::InterruptType::VI>();
-		}
-	}
-
-
-	void SetCurrentHalfline(const u32 halfline)
-	{
-		vi.v_current = halfline & 0x3FF;
-		CheckVideoInterrupt();
 	}
 
 

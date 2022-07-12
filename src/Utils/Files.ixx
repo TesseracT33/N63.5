@@ -11,22 +11,17 @@ import <vector>;
 
 export namespace FileUtils
 {
-	template<std::size_t size>
-	std::optional<std::array<u8, size>> LoadBinaryFileArray(const std::string& path)
-	{
+	template<size_t size>
+	std::optional<std::array<u8, size>> LoadBinaryFileArray(const std::string& path) {
 		std::ifstream ifs{ path, std::ifstream::in | std::ifstream::binary };
-		if (!ifs)
-		{
+		if (!ifs) {
 			return {};
 		}
-
 		/* Test the file size */
 		ifs.seekg(0, ifs.end);
-		if (ifs.tellg() != size)
-		{
+		if (ifs.tellg() != size) {
 			return {};
 		}
-
 		/* Read the file */
 		std::array<u8, size> arr;
 		ifs.seekg(0, ifs.beg);
@@ -39,14 +34,13 @@ export namespace FileUtils
 	std::optional<std::vector<u8>> LoadBinaryFileVec(const std::string& path)
 	{
 		std::ifstream ifs{ path, std::ifstream::in | std::ifstream::binary };
-		if (!ifs)
-		{
+		if (!ifs) {
 			return {};
 		}
 
 		std::vector<u8> vec;
 		ifs.seekg(0, ifs.end);
-		const std::size_t size = ifs.tellg();
+		size_t size = ifs.tellg();
 		vec.resize(size);
 
 		ifs.seekg(0, ifs.beg);

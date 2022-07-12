@@ -9,17 +9,21 @@ namespace UserMessage
 {
 	SDL_Window* sdl_window = nullptr; /* Must be set via 'SetWindow' before any messages are shown. */
 
-	export enum class Type { Unspecified, Success, Warning, Error, Fatal };
+	export enum class Type {
+		Unspecified, Success, Warning, Error, Fatal
+	};
 
-	export inline void SetWindow(SDL_Window* sdl_window_) { sdl_window = sdl_window_; }
+	export void SetWindow(SDL_Window* sdl_window_)
+	{
+		sdl_window = sdl_window_;
+	}
 
-	export inline void Show(const std::string& message, const Type type = Type::Unspecified)
+	export void Show(const std::string& message, const Type type = Type::Unspecified)
 	{
 		assert(sdl_window != nullptr);
 
-		const std::string out_msg_prefix = [&] {
-			switch (type)
-			{
+		std::string out_msg_prefix = [&] {
+			switch (type) {
 			case Type::Success: return "Success: ";
 			case Type::Warning: return "Warning: ";
 			case Type::Error: return "Error: ";
@@ -28,9 +32,8 @@ namespace UserMessage
 			}
 		}();
 
-		const auto sdl_msg_type = [&] {
-			switch (type)
-			{
+		auto sdl_msg_type = [&] {
+			switch (type) {
 			case Type::Success: return SDL_MESSAGEBOX_INFORMATION;
 			case Type::Warning: return SDL_MESSAGEBOX_WARNING;
 			case Type::Error: return SDL_MESSAGEBOX_ERROR;
@@ -39,7 +42,7 @@ namespace UserMessage
 			}
 		}();
 
-		const std::string out_msg = out_msg_prefix + message;
+		std::string out_msg = out_msg_prefix + message;
 
 		SDL_ShowSimpleMessageBox(sdl_msg_type, "Message", out_msg.c_str(), sdl_window);
 	}

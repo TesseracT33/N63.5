@@ -11,37 +11,34 @@ import <format>;
 
 namespace AI
 {
+	export
+	{
+		template<std::integral Int>
+		Int Read(u32 addr);
+
+		template<size_t number_of_bytes>
+		void Write(u32 addr, auto data);
+
+		void Initialize();
+		void Step(uint cycles);
+	}
+
+	void Sample();
+
 	struct
 	{
 		s32 dram_addr, len, control, status, dacrate, bitrate;
 	} ai{};
 
-	int dma_count;
-	s32 dma_length_buffer;
-	s32 dma_address_buffer;
-	int cycles;
-
-	SDL_AudioDeviceID audio_device_id;
-
 	struct
 	{
-		s32 frequency;
-		s32 period;
-		s32 precision;
+		s32 frequency, period, precision;
 	} dac{};
 
-	void Sample();
+	s32 dma_length_buffer;
+	s32 dma_address_buffer;
+	uint cycles;
+	uint dma_count;
 
-	export
-	{
-		void Initialize();
-
-		void Step(int cycles);
-
-		template<std::integral Int>
-		Int Read(u32 addr);
-
-		template<std::size_t number_of_bytes>
-		void Write(u32 addr, auto data);
-	}
+	SDL_AudioDeviceID audio_device_id;
 }

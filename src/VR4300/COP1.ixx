@@ -29,12 +29,12 @@ namespace VR4300
 	};
 
 	/* COP1/FPU instructions */
-	template<COP1Instruction instr> void FPULoad(u32 instr_code);
-	template<COP1Instruction instr> void FPUStore(u32 instr_code);
-	template<COP1Instruction instr> void FPUMove(u32 instr_code);
-	template<COP1Instruction instr> void FPUConvert(u32 instr_code);
-	template<COP1Instruction instr> void FPUCompute(u32 instr_code);
-	template<COP1Instruction instr> void FPUBranch(u32 instr_code);
+	template<COP1Instruction> void FPULoad(u32 instr_code);
+	template<COP1Instruction> void FPUStore(u32 instr_code);
+	template<COP1Instruction> void FPUMove(u32 instr_code);
+	template<COP1Instruction> void FPUConvert(u32 instr_code);
+	template<COP1Instruction> void FPUCompute(u32 instr_code);
+	template<COP1Instruction> void FPUBranch(u32 instr_code);
 	void FPUCompare(u32 instr_code);
 
 	void InitializeFPU();

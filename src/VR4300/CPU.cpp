@@ -7,6 +7,7 @@ import :Registers;
 
 import DebugOptions;
 import MemoryAccess;
+import Util;
 
 namespace VR4300
 {
@@ -15,67 +16,56 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const s16 offset = instr_code & 0xFFFF;
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto base = instr_code >> 21 & 0x1F;
+		s16 offset = instr_code & 0xFFFF;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto base = instr_code >> 21 & 0x1F;
 		auto address = gpr[base] + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base.
 		   In the 32-bit Kernel mode, the high-order 32 bits are ignored during
 		   virtual address creation. */
-		if constexpr (instr == LD || instr == LDL || instr == LDR || instr == LLD)
-		{
-			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit)
-			{
+		if constexpr (instr == LD || instr == LDL || instr == LDR || instr == LLD) {
+			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
 				address = s32(address & 0xFFFF'FFFF);
 			}
 		}
-
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
 		}
 
 		auto result = [&] {
-			if constexpr (instr == LB)
-			{
+			if constexpr (instr == LB) {
 				/* Load Byte;
 				   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
 				return ReadVirtual<s8>(address);
 			}
-			else if constexpr (instr == LBU)
-			{
+			else if constexpr (instr == LBU) {
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
 				return ReadVirtual<u8>(address);
 			}
-			else if constexpr (instr == LH)
-			{
+			else if constexpr (instr == LH) {
 				/* Load halfword;
 				   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
 				return ReadVirtual<s16>(address);
 			}
-			else if constexpr (instr == LHU)
-			{
+			else if constexpr (instr == LHU) {
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
 				return ReadVirtual<u16>(address);
 			}
-			else if constexpr (instr == LW)
-			{
+			else if constexpr (instr == LW) {
 				/* Load Word;
 				   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
 				return ReadVirtual<s32>(address);
 			}
-			else if constexpr (instr == LWU)
-			{
+			else if constexpr (instr == LWU) {
 				/* Load Word Unsigned;
 				   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
 				return ReadVirtual<u32>(address);
 			}
-			else if constexpr (instr == LWL)
-			{
+			else if constexpr (instr == LWL) {
 				/* Load Word Left;
 				   Shifts a word specified by the address to the left, so that a byte specified by
 				   the address is at the leftmost position of the word. Sign-extends (in the 64-
@@ -83,8 +73,7 @@ namespace VR4300
 				   loads the result to register rt. */
 				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(address);
 			}
-			else if constexpr (instr == LWR)
-			{
+			else if constexpr (instr == LWR) {
 				/* Load Word Right;
 				   Shifts a word specified by the address to the right, so that a byte specified by
 				   the address is at the rightmost position of the word. Sign-extends (in the 64-
@@ -92,14 +81,12 @@ namespace VR4300
 				   loads the result to register rt. */
 				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(address);
 			}
-			else if constexpr (instr == LD)
-			{
+			else if constexpr (instr == LD) {
 				/* Load Doubleword;
 				   Loads the contents of a word specified by the address to register rt. */
 				return ReadVirtual<u64>(address);
 			}
-			else if constexpr (instr == LDL)
-			{
+			else if constexpr (instr == LDL) {
 				/* Load Doubleword Left;
 				   Shifts the doubleword specified by the address to the left so that the byte
 				   specified by the address is at the leftmost position of the doubleword.
@@ -107,8 +94,7 @@ namespace VR4300
 				   result to register rt. */
 				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(address);
 			}
-			else if constexpr (instr == LDR)
-			{
+			else if constexpr (instr == LDR) {
 				/* Load Doubleword Right;
 				   Shifts the doubleword specified by the address to the right so that the byte
 				   specified by the address is at the rightmost position of the doubleword.
@@ -116,36 +102,34 @@ namespace VR4300
 				   result to register rt. */
 				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(address);
 			}
-			else if constexpr (instr == LL)
-			{
+			else if constexpr (instr == LL) {
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
 				store_physical_address_on_load = true;
-				const s32 ret = ReadVirtual<s32>(address);
+				s32 ret = ReadVirtual<s32>(address);
 				store_physical_address_on_load = false;
 				ll_bit = 1;
 				return ret;
 			}
-			else if constexpr (instr == LLD)
-			{
+			else if constexpr (instr == LLD) {
 				/* Load Linked Doubleword;
 				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
 				store_physical_address_on_load = true;
-				const s64 ret = ReadVirtual<s64>(address);
+				s64 ret = ReadVirtual<s64>(address);
 				store_physical_address_on_load = false;
 				ll_bit = 1;
 				return ret;
 			}
-			else
-			{
-				static_assert(instr != instr, "\"Load\" template function called, but no matching load instruction was found.");
+			else {
+				static_assert(AlwaysFalse<instr>, "\"Load\" template function called, but no matching load instruction was found.");
 			}
 		}();
 
-		if (exception_has_occurred)
+		if (exception_has_occurred) {
 			return;
+		}
 
 		/* Unaligned memory access example: demonstrating that the below works.
 		   Memory in big endian: 01234567 (bytes), we perform LWL at $1 and then LWR at $4.
@@ -183,53 +167,46 @@ namespace VR4300
 			0xFF00'0000'0000'0000,
 			0
 		};
-		if constexpr (instr == LWL)
-		{
-			const std::size_t bits_from_last_boundary = (address & 3) << 3;
+		if constexpr (instr == LWL) {
+			u32 bits_from_last_boundary = (address & 3) << 3;
 			result <<= bits_from_last_boundary;
-			const s32 untouched_gpr = s32(gpr.Get(rt) & ((1 << bits_from_last_boundary) - 1));
+			s32 untouched_gpr = s32(gpr.Get(rt) & ((1 << bits_from_last_boundary) - 1));
 			gpr.Set(rt, result | untouched_gpr);
 			/* To access data not aligned at a boundary, an additional 1P cycle is necessary as compared when accessing data aligned at a boundary. */
-			if (bits_from_last_boundary > 0)
-			{
+			if (bits_from_last_boundary > 0) {
 				AdvancePipeline<1>();
 			}
 		}
-		else if constexpr (instr == LDL)
-		{
-			const std::size_t bits_from_last_boundary = (address & 7) << 3;
+		else if constexpr (instr == LDL) {
+			u32 bits_from_last_boundary = (address & 7) << 3;
 			result <<= bits_from_last_boundary;
-			const u64 untouched_gpr = gpr.Get(rt) & ((1ll << bits_from_last_boundary) - 1);
+			u64 untouched_gpr = gpr.Get(rt) & ((1ll << bits_from_last_boundary) - 1);
 			gpr.Set(rt, result | untouched_gpr);
-			if (bits_from_last_boundary > 0)
-			{
+			if (bits_from_last_boundary > 0) {
 				AdvancePipeline<1>();
 			}
 		}
 		else if constexpr (instr == LWR)
 		{
-			const std::size_t bytes_from_last_boundary = address & 3;
+			u32 bytes_from_last_boundary = address & 3;
 			result >>= 8 * (3 - bytes_from_last_boundary);
-			const s32 untouched_gpr = s32(gpr.Get(rt) & right_load_mask[bytes_from_last_boundary]);
+			s32 untouched_gpr = s32(gpr.Get(rt) & right_load_mask[bytes_from_last_boundary]);
 			gpr.Set(rt, result | untouched_gpr);
-			if (bytes_from_last_boundary > 0)
-			{
+			if (bytes_from_last_boundary > 0) {
 				AdvancePipeline<1>();
 			}
 		}
 		else if constexpr (instr == LDR)
 		{
-			const std::size_t bytes_from_last_boundary = address & 7;
+			u32 bytes_from_last_boundary = address & 7;
 			result >>= 8 * (7 - bytes_from_last_boundary);
-			const u64 untouched_gpr = gpr.Get(rt) & right_load_mask[bytes_from_last_boundary];
+			u64 untouched_gpr = gpr.Get(rt) & right_load_mask[bytes_from_last_boundary];
 			gpr.Set(rt, result | untouched_gpr);
-			if (bytes_from_last_boundary > 0)
-			{
+			if (bytes_from_last_boundary > 0) {
 				AdvancePipeline<1>();
 			}
 		}
-		else /* Aligned read */
-		{
+		else { /* Aligned read */
 			gpr.Set(rt, result);
 		}
 
@@ -242,42 +219,36 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const s16 offset = instr_code & 0xFFFF;
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto base = instr_code >> 21 & 0x1F;
+		s16 offset = instr_code & 0xFFFF;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto base = instr_code >> 21 & 0x1F;
 		auto address = gpr[base] + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base.
 		   For "doubleword instructions", in the 32-bit Kernel mode, the high-order 32 bits are ignored during
 		   virtual address creation. */
-		if constexpr (instr == SD || instr == SDL || instr == SDR || instr == SCD)
-		{
-			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit)
-			{
+		if constexpr (instr == SD || instr == SDL || instr == SDR || instr == SCD) {
+			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
 				address = s32(address & 0xFFFF'FFFF);
 			}
 		}
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
 		}
 
-		if constexpr (instr == SB)
-		{
+		if constexpr (instr == SB) {
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
 			WriteVirtual<s8>(address, s8(gpr[rt]));
 		}
-		else if constexpr (instr == SH)
-		{
+		else if constexpr (instr == SH) {
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
 			WriteVirtual<s16>(address, s16(gpr[rt]));
 		}
-		else if constexpr (instr == SW)
-		{
+		else if constexpr (instr == SW) {
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
 			WriteVirtual<s32>(address, s32(gpr[rt]));
@@ -288,79 +259,68 @@ namespace VR4300
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			const s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (address & 3))) - 1));
+			s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (address & 3))) - 1));
 			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
 		}
-		else if constexpr (instr == SWR)
-		{
+		else if constexpr (instr == SWR) {
 			/* Store Word Right;
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			const s32 data_to_write = s32(gpr[rt] << (8 * (3 - (address & 3))));
+			s32 data_to_write = s32(gpr[rt] << (8 * (3 - (address & 3))));
 			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
 		}
-		else if constexpr (instr == SD)
-		{
+		else if constexpr (instr == SD) {
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
 			WriteVirtual<s64>(address, gpr[rt]);
 		}
-		else if constexpr (instr == SDL)
-		{
+		else if constexpr (instr == SDL) {
 			/* Store Doubleword Left;
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			const s64 data_to_write = gpr[rt] & ~((1ll << (8 * (address & 7))) - 1);
+			s64 data_to_write = gpr[rt] & ~((1ll << (8 * (address & 7))) - 1);
 			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
 		}
-		else if constexpr (instr == SDR)
-		{
+		else if constexpr (instr == SDR) {
 			/* Store Doubleword Right;
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			const s64 data_to_write = gpr[rt] << (8 * (7 - (address & 7)));
+			s64 data_to_write = gpr[rt] << (8 * (7 - (address & 7)));
 			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
 		}
-		else if constexpr (instr == SC)
-		{
+		else if constexpr (instr == SC) {
 			/* Store Conditional;
 			   If the LL bit is 1, stores the contents of the low-order word of register rt to
 			   the memory specified by the address, and sets register rt to 1.
 			   If the LL bit is 0, does not store the contents of the word, and clears register
 			   rt to 0. */
-			if (ll_bit == 1)
-			{
+			if (ll_bit == 1) {
 				WriteVirtual<s32>(address, s32(gpr[rt]));
 				gpr.Set(rt, 1);
 			}
-			else
-			{
+			else {
 				gpr.Set(rt, 0);
 			}
 		}
-		else if constexpr (instr == SCD)
-		{
+		else if constexpr (instr == SCD) {
 			/* Store Conditional Doubleword;
 			   If the LL bit is 1, stores the contents of register rt to the memory specified by
 			   the address, and sets register rt to 1.
 			   If the LL bit is 0, does not store the contents of the register, and clears register
 			   rt to 0. */
-			if (ll_bit == 1)
-			{
+			if (ll_bit == 1) {
 				WriteVirtual<s64>(address, gpr[rt]);
 				gpr.Set(rt, 1);
 			}
-			else
-			{
+			else {
 				gpr.Set(rt, 0);
 			}
 		}
-		else
-		{
-			static_assert(instr != instr, "\"Store\" template function called, but no matching store instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"Store\" template function called, but no matching store instruction was found.");
 		}
 
 		AdvancePipeline<1>();
@@ -372,118 +332,111 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto rs = instr_code >> 21 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto rs = instr_code >> 21 & 0x1F;
 
-		const auto immediate = [&] {
+		auto immediate = [&] {
 			if constexpr (instr == ANDI || instr == LUI || instr == ORI || instr == XORI)
 				return u16(instr_code & 0xFFFF);
 			else
 				return s16(instr_code & 0xFFFF);
 		}();
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = [&] {
 				if constexpr (instr == LUI)
 					return std::format("{} {}, ${:X}", current_instr_name, rt, immediate);
-				return std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, immediate);
+				else
+					return std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, immediate);
 			}();
 		}
 
-		if constexpr (instr == ADDI)
-		{
+		if constexpr (instr == ADDI) {
 			/* Add Immediate;
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the
 			   32-bit result to register rt (sign-extends the result in the 64-bit mode).
 			   Generates an exception if a 2's complement integer overflow occurs.
 			   In that case, the contents of destination register rt are not modified */
-			const s32 sum = s32(gpr[rs] + immediate);
-			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000;
-			if (overflow)
+			s32 sum = s32(gpr[rs] + immediate);
+			bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000;
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
-			else
+			}
+			else {
 				gpr.Set(rt, sum);
+			}
 		}
-		else if constexpr (instr == ADDIU)
-		{
+		else if constexpr (instr == ADDIU) {
 			/* Add Immediate Unsigned;
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the 32-bit
 			   result to register rt (sign-extends the result in the 64-bit mode). Does not
 			   generate an exception even if an integer overflow occurs. */
-			const s32 sum = s32(gpr[rs] + immediate);
+			s32 sum = s32(gpr[rs] + immediate);
 			gpr.Set(rt, sum);
 		}
-		else if constexpr (instr == SLTI)
-		{
+		else if constexpr (instr == SLTI) {
 			/* Set On Less Than Immediate;
 			   Sign-extends the 16-bit immediate and compares it with register rs as a
 			   signed integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
 			gpr.Set(rt, gpr[rs] < immediate);
 		}
-		else if constexpr (instr == SLTIU)
-		{
+		else if constexpr (instr == SLTIU) {
 			/* Set On Less Than Immediate Unsigned;
 			   Sign-extends the 16-bit immediate and compares it with register rs as an
 			   unsigned integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
 			gpr.Set(rt, u64(gpr[rs]) < immediate);
 		}
-		else if constexpr (instr == ANDI)
-		{
+		else if constexpr (instr == ANDI) {
 			/* And Immediate;
 			   Zero-extends the 16-bit immediate, ANDs it with register rs, and stores the
 			   result to register rt. */
 			gpr.Set(rt, gpr[rs] & immediate);
 		}
-		else if constexpr (instr == ORI)
-		{
+		else if constexpr (instr == ORI) {
 			/* Or Immediate;
 			   Zero-extends the 16-bit immediate, ORs it with register rs, and stores the
 			   result to register rt. */
 			gpr.Set(rt, gpr[rs] | immediate);
 		}
-		else if constexpr (instr == XORI)
-		{
+		else if constexpr (instr == XORI) {
 			/* Exclusive Or Immediate;
 			   Zero-extends the 16-bit immediate, exclusive-ORs it with register rs, and
 			   stores the result to register rt. */
 			gpr.Set(rt, gpr[rs] ^ immediate);
 		}
-		else if constexpr (instr == LUI)
-		{
+		else if constexpr (instr == LUI) {
 			/* Load Upper Immediate;
 			   Shifts the 16-bit immediate 16 bits to the left, and clears the low-order 16 bits
 			   of the word to 0.
 			   Stores the result to register rt (by sign-extending the result in the 64-bit mode). */
-			const s32 result = immediate << 16;
+			s32 result = immediate << 16;
 			gpr.Set(rt, result);
 		}
-		else if constexpr (instr == DADDI)
-		{
+		else if constexpr (instr == DADDI) {
 			/* Doubleword Add Immediate;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Generates an exception if an integer overflow occurs. */
-			const s64 sum = gpr[rs] + immediate;
-			const bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000;
-			if (overflow)
+			s64 sum = gpr[rs] + immediate;
+			bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000;
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
-			else
+			}
+			else {
 				gpr.Set(rt, sum);
+			}
 		}
-		else if constexpr (instr == DADDIU)
-		{
+		else if constexpr (instr == DADDIU){
 			/* Doubleword Add Immediate Unsigned;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Does not generate an exception even if an
 			   integer overflow occurs. */
-			const s64 sum = gpr[rs] + immediate;
+			s64 sum = gpr[rs] + immediate;
 			gpr.Set(rt, sum);
 		}
-		else
-		{
-			static_assert(instr != instr, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
 		}
 
 		AdvancePipeline<1>();
@@ -494,141 +447,133 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto rd = instr_code >> 11 & 0x1F;
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto rs = instr_code >> 21 & 0x1F;
+		auto rd = instr_code >> 11 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, {}, {}", current_instr_name, rd, rs, rt);
 		}
 
-		if constexpr (instr == ADD)
-		{
+		if constexpr (instr == ADD) {
 			/* Add;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
 			   the 32-bit result to register rd. Generates an exception if an integer overflow occurs.
 			   In that case, the contents of the destination register rd are not modified.
 			   In 64-bit mode, the operands must be sign-extended, 32-bit values. */
-			const s32 sum = s32(gpr[rs] + gpr[rt]);
-			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
-			if (overflow)
+			s32 sum = s32(gpr[rs] + gpr[rt]);
+			bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
-			else
+			}
+			else {
 				gpr.Set(rd, sum);
+			}
 		}
-		else if constexpr (instr == ADDU)
-		{
+		else if constexpr (instr == ADDU) {
 			/* Add Unsigned;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
 			   the 32-bit result to register rd. Does not generate an exception even if an integer overflow occurs. */
-			const s32 sum = s32(gpr[rs] + gpr[rt]);
+			s32 sum = s32(gpr[rs] + gpr[rt]);
 			gpr.Set(rd, sum);
 		}
-		else if constexpr (instr == SUB)
-		{
+		else if constexpr (instr == SUB) {
 			/* Subtract;
 			   Subtracts the contents of register rs from register rt, and stores (sign-extends
 			   in the 64-bit mode) the result to register rd. Generates an exception if an integer overflow occurs. */
-			const s32 sum = s32(gpr[rs] - gpr[rt]);
-			const bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000;
-			if (overflow)
+			s32 sum = s32(gpr[rs] - gpr[rt]);
+			bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000;
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
-			else
+			}
+			else {
 				gpr.Set(rd, sum);
+			}
 		}
-		else if constexpr (instr == SUBU)
-		{
+		else if constexpr (instr == SUBU) {
 			/* Subtract Unsigned;
 			   Subtracts the contents of register rt from register rs, and stores (sign-extends
 			   in the 64-bit mode) the 32-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs.*/
-			const s32 sum = s32(gpr[rs] - gpr[rt]);
+			s32 sum = s32(gpr[rs] - gpr[rt]);
 			gpr.Set(rd, sum);
 		}
-		else if constexpr (instr == SLT)
-		{
+		else if constexpr (instr == SLT) {
 			/* Set On Less Than;
 			   Compares the contents of registers rs and rt as 64-bit signed integers.
 			   If the contents of register rs are less than those of rt, stores 1 to register rd;
 			   otherwise, stores 0 to rd. */
 			gpr.Set(rd, gpr[rs] < gpr[rt]);
 		}
-		else if constexpr (instr == SLTU)
-		{
+		else if constexpr (instr == SLTU) {
 			/* Set On Less Than Unsigned;
 			   Compares the contents of registers rs and rt as 64-bit unsigned integers.
 			   If the contents of register rs are less than those of rt, stores 1 to register rd;
 			   otherwise, stores 0 to rd. */
 			gpr.Set(rd, u64(gpr[rs]) < u64(gpr[rt]));
 		}
-		else if constexpr (instr == AND)
-		{
+		else if constexpr (instr == AND) {
 			/* And;
 			   ANDs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			gpr.Set(rd, gpr[rs] & gpr[rt]);
 		}
-		else if constexpr (instr == OR)
-		{
+		else if constexpr (instr == OR) {
 			/* Or;
 			   ORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			gpr.Set(rd, gpr[rs] | gpr[rt]);
 		}
-		else if constexpr (instr == XOR)
-		{
+		else if constexpr (instr == XOR) {
 			/* Exclusive Or;
 			   Exclusive-ORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			gpr.Set(rd, gpr[rs] ^ gpr[rt]);
 		}
-		else if constexpr (instr == NOR)
-		{
+		else if constexpr (instr == NOR) {
 			/* Nor;
 			   NORs the contents of registers rs and rt in bit units, and stores the result to register rd. */
 			gpr.Set(rd, ~(gpr[rs] | gpr[rt]));
 		}
-		else if constexpr (instr == DADD)
-		{
+		else if constexpr (instr == DADD) {
 			/* Doubleword Add;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Generates an exception if an integer overflow occurs. */
-			const s64 sum = gpr[rs] + gpr[rt];
-			const bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
-			if (overflow)
+			s64 sum = gpr[rs] + gpr[rt];
+			bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
-			else
+			}
+			else {
 				gpr.Set(rd, sum);
+			}
 		}
-		else if constexpr (instr == DADDU)
-		{
+		else if constexpr (instr == DADDU) {
 			/* Doubleword Add Unsigned;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
-			const s64 sum = gpr[rs] + gpr[rt];
+			s64 sum = gpr[rs] + gpr[rt];
 			gpr.Set(rd, sum);
 		}
-		else if constexpr (instr == DSUB)
-		{
+		else if constexpr (instr == DSUB) {
 			/* Doubleword Subtract;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit
 			   result to register rd. Generates an exception if an integer overflow occurs. */
-			const s64 sum = gpr[rs] - gpr[rt];
-			const bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
-			if (overflow)
+			s64 sum = gpr[rs] - gpr[rt];
+			bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
-			else
+			}
+			else {
 				gpr.Set(rd, sum);
+			}
 		}
-		else if constexpr (instr == DSUBU)
-		{
+		else if constexpr (instr == DSUBU) {
 			/* Doubleword Subtract Unsigned;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
-			const s64 sum = gpr[rs] - gpr[rt];
+			s64 sum = gpr[rs] - gpr[rt];
 			gpr.Set(rd, sum);
 		}
-		else
-		{
-			static_assert(instr != instr, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
 		}
 
 		AdvancePipeline<1>();
@@ -640,46 +585,42 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto sa = instr_code >>  6 & 0x1F;
-		const auto rd = instr_code >> 11 & 0x1F;
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto rs = instr_code >> 21 & 0x1F;
+		auto sa = instr_code >>  6 & 0x1F;
+		auto rd = instr_code >> 11 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = [&] {
 				if (instr_code == 0)
 					return std::string("NOP");
 				if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
 					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, rs);
-				return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
+				else
+					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
 			}();
 		}
 
-		const s64 result = static_cast<s64>( [&] {
-			if constexpr (instr == SLL)
-			{
+		s64 result = static_cast<s64>( [&] {
+			if constexpr (instr == SLL) {
 				/* Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(gpr[rt] << sa);
 			}
-			else if constexpr (instr == SRL)
-			{
+			else if constexpr (instr == SRL) {
 				/* Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(u32(gpr[rt]) >> sa);
 			}
-			else if constexpr (instr == SRA)
-			{
+			else if constexpr (instr == SRA) {
 				/* Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(gpr[rt] >> sa);
 			}
-			else if constexpr (instr == SLLV)
-			{
+			else if constexpr (instr == SLLV) {
 				/* Shift Left Logical Variable;
 				   Shifts the contents of register rt to the left and inserts 0 to the low-order bits.
 				   The number of bits by which the register contents are to be shifted is
@@ -687,8 +628,7 @@ namespace VR4300
 				   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
 				return s32(gpr[rt]) << (gpr[rs] & 0x1F);
 			}
-			else if constexpr (instr == SRLV)
-			{
+			else if constexpr (instr == SRLV) {
 				/* Shift Right Logical Variable;
 				   Shifts the contents of register rt to the right, and inserts 0 to the high-order bits.
 				   The number of bits by which the register contents are to be shifted is
@@ -696,8 +636,7 @@ namespace VR4300
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(u32(gpr[rt]) >> (gpr[rs] & 0x1F));
 			}
-			else if constexpr (instr == SRAV)
-			{
+			else if constexpr (instr == SRAV) {
 				/* Shift Right Arithmetic Variable;
 				   Shifts the contents of register rt to the right and sign-extends the high-order bits.
 				   The number of bits by which the register contents are to be shifted is
@@ -705,29 +644,25 @@ namespace VR4300
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(gpr[rt] >> (gpr[rs] & 0x1F));
 			}
-			else if constexpr (instr == DSLL)
-			{
+			else if constexpr (instr == DSLL) {
 				/* Doubleword Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
 				   Stores the 64-bit result to register rd. */
 				return gpr[rt] << sa;
 			}
-			else if constexpr (instr == DSRL)
-			{
+			else if constexpr (instr == DSRL) {
 				/* Doubleword Shift Right Logical;
 				   Shifts the contents of register rt sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return u64(gpr[rt]) >> sa;
 			}
-			else if constexpr (instr == DSRA)
-			{
+			else if constexpr (instr == DSRA) {
 				/* Doubleword Shift Right Arithmetic;
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return gpr[rt] >> sa;
 			}
-			else if constexpr (instr == DSLLV)
-			{
+			else if constexpr (instr == DSLLV) {
 				/* Doubleword Shift Left Logical Variable;
 				   Shifts the contents of register rt to the left, and inserts 0 to the low-order bits.
 				   The number of bits by which the register contents are to be shifted is
@@ -735,46 +670,40 @@ namespace VR4300
 				   Stores the 64-bit result and stores it to register rd. */
 				return gpr[rt] << (gpr[rs] & 0x3F);
 			}
-			else if constexpr (instr == DSRLV)
-			{
+			else if constexpr (instr == DSRLV) {
 				/* Doubleword Shift Right Logical Variable;
 				   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 6 bits of register rs. */
 				return u64(gpr[rt]) >> (gpr[rs] & 0x3F);
 			}
-			else if constexpr (instr == DSRAV)
-			{
+			else if constexpr (instr == DSRAV) {
 				/* Doubleword Shift Right Arithmetic Variable;
 				   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
 				   The number of bits by which the register contents are to be shifted is
 				   specified by the low-order 6 bits of register rs.  */
 				return gpr[rt] >> (gpr[rs] & 0x3F);
 			}
-			else if constexpr (instr == DSLL32)
-			{
+			else if constexpr (instr == DSLL32) {
 				/* Doubleword Shift Left Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the left, and inserts 0 to the low-order bits.
 				   Stores the 64-bit result to register rd. */
 				return gpr[rt] << (sa + 32);
 			}
-			else if constexpr (instr == DSRL32)
-			{
+			else if constexpr (instr == DSRL32) {
 				/* Doubleword Shift Right Logical + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and inserts 0 to the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return u64(gpr[rt]) >> (sa + 32);
 			}
-			else if constexpr (instr == DSRA32)
-			{
+			else if constexpr (instr == DSRA32) {
 				/* Doubleword Shift Right Arithmetic + 32;
 				   Shifts the contents of register rt 32+sa bits to the right, and sign-extends the high-order bits.
 				   Stores the 64-bit result to register rd.*/
 				return gpr[rt] >> (sa + 32);
 			}
-			else
-			{
-				static_assert(instr != instr, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
+			else {
+				static_assert(AlwaysFalse<instr>, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
 			}
 		}());
 
@@ -788,81 +717,70 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto rs = instr_code >> 21 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
 		}
 
-		if constexpr (instr == MULT)
-		{
+		if constexpr (instr == MULT) {
 			/* Multiply;
 			   Multiplies the contents of register rs by the contents of register rt as a 32-bit
 			   signed integer. Sign-extends (in the 64-bit mode) and stores the 64-bit result
 			   to special registers HI and LO. */
-			const s64 result = (gpr[rs] & 0xFFFF'FFFF) * (gpr[rt] & 0xFFFF'FFFF);
+			s64 result = (gpr[rs] & 0xFFFF'FFFF) * (gpr[rt] & 0xFFFF'FFFF);
 			lo_reg = s32(result);
 			hi_reg = result >> 32;
 		}
-		else if constexpr (instr == MULTU)
-		{
+		else if constexpr (instr == MULTU) {
 			/* Multiply Unsigned;
 			   Multiplies the contents of register rs by the contents of register rt as a 32-bit
 			   unsigned integer. Sign-extends (in the 64-bit mode) and stores the 64-bit
 			   result to special registers HI and LO. */
-			const u64 result = u64(gpr[rs] & 0xFFFF'FFFF) * u64(gpr[rt] & 0xFFFF'FFFF);
+			u64 result = u64(gpr[rs] & 0xFFFF'FFFF) * u64(gpr[rt] & 0xFFFF'FFFF);
 			lo_reg = s32(result);
 			hi_reg = s32(result >> 32);
 		}
-		else if constexpr (instr == DIV)
-		{
+		else if constexpr (instr == DIV) {
 			/* Divide;
 			   Divides the contents of register rs by the contents of register rt. The operand
 			   is treated as a 32-bit signed integer. Sign-extends (in the 64-bit mode) and
 			   stores the 32-bit quotient to special register LO and the 32-bit remainder to
 			   special register HI. */
-			const s32 op1 = s32(gpr[rs]);
-			const s32 op2 = s32(gpr[rt]);
-			if (op2 == 0)
-			{ /* Peter Lemon N64 CPUTest>CPU>DIV */
+			s32 op1 = s32(gpr[rs]);
+			s32 op2 = s32(gpr[rt]);
+			if (op2 == 0) { /* Peter Lemon N64 CPUTest>CPU>DIV */
 				lo_reg = op1 > 0 ? -1 : 1;
 				hi_reg = op1;
 			}
-			else if (op1 == std::numeric_limits<s32>::min() && op2 == -1)
-			{
+			else if (op1 == std::numeric_limits<s32>::min() && op2 == -1) {
 				lo_reg = op1;
 				hi_reg = 0;
 			}
-			else
-			{
+			else {
 				lo_reg = op1 / op2;
 				hi_reg = op1 % op2;
 			}
 		}
-		else if constexpr (instr == DIVU)
-		{
+		else if constexpr (instr == DIVU) {
 			/* Divide Unsigned;
 			   Divides the contents of register rs by the contents of register rt. The operand
 			   is treated as a 32-bit unsigned integer. Sign-extends (in the 64-bit mode) and
 			   stores the 32-bit quotient to special register LO and the 32-bit remainder to
 			   special register HI. */
-			const u32 op1 = u32(gpr[rs]);
-			const u32 op2 = u32(gpr[rt]);
-			if (op2 == 0)
-			{
+			u32 op1 = u32(gpr[rs]);
+			u32 op2 = u32(gpr[rt]);
+			if (op2 == 0) {
 				lo_reg = -1;
 				hi_reg = op1;
 			}
-			else
-			{
+			else {
 				lo_reg = s32(op1 / op2);
 				hi_reg = s32(op1 % op2);
 			}
 		}
-		else if constexpr (instr == DMULT)
-		{
+		else if constexpr (instr == DMULT) {
 			/* Doubleword Multiply;
 			   Multiplies the contents of register rs by the contents of register rt as a signed integer.
 			   Stores the 128-bit result to special registers HI and LO. */
@@ -872,7 +790,7 @@ namespace VR4300
 			   lo_reg = low_product;
 			   hi_reg = high_product;
 #elif defined __clang__ || defined __GNUC__
-			const __int128 product = __int128(gpr[rs]) * __int128(gpr[rt]);
+			__int128 product = __int128(gpr[rs]) * __int128(gpr[rt]);
 			lo_reg = product & 0xFFFF'FFFF'FFFF'FFFF;
 			hi_reg = product >> 64;
 #else
@@ -880,8 +798,7 @@ namespace VR4300
 			assert(false);
 #endif
 		}
-		else if constexpr (instr == DMULTU)
-		{
+		else if constexpr (instr == DMULTU) {
 			/* Doubleword Multiply Unsigned;
 			   Multiplies the contents of register rs by the contents of register rt as an unsigned integer.
 			   Stores the 128-bit result to special registers HI and LO. */
@@ -891,7 +808,7 @@ namespace VR4300
 			   lo_reg = low_product;
 			   hi_reg = high_product;
 #elif defined __clang__ || defined __GNUC__
-			const unsigned __int128 product = unsigned __int128(gpr[rs]) * unsigned __int128(gpr[rt]);
+			unsigned __int128 product = unsigned __int128(gpr[rs]) * unsigned __int128(gpr[rt]);
 			lo_reg = product & 0xFFFF'FFFF'FFFF'FFFF;
 			hi_reg = product >> 64;
 #else
@@ -899,52 +816,44 @@ namespace VR4300
 			assert(false);
 #endif
 		}
-		else if constexpr (instr == DDIV)
-		{
+		else if constexpr (instr == DDIV) {
 			/* Doubleword Divide;
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as a signed integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-			const s64 op1 = gpr[rs];
-			const s64 op2 = gpr[rt];
-			if (op2 == 0)
-			{ /* Peter Lemon N64 CPUTest>CPU>DDIV */
+			s64 op1 = gpr[rs];
+			s64 op2 = gpr[rt];
+			if (op2 == 0) { /* Peter Lemon N64 CPUTest>CPU>DDIV */
 				lo_reg = op1 > 0 ? -1 : 1;
 				hi_reg = op1;
 			}
-			else if (op1 == std::numeric_limits<s64>::min() && op2 == -1)
-			{
+			else if (op1 == std::numeric_limits<s64>::min() && op2 == -1) {
 				lo_reg = op1;
 				hi_reg = 0;
 			}
-			else
-			{
+			else {
 				lo_reg = op1 / op2;
 				hi_reg = op1 % op2;
 			}
 		}
-		else if constexpr (instr == DDIVU)
-		{
+		else if constexpr (instr == DDIVU) {
 			/* Doubleword Divide Unsigned;
 			   Divides the contents of register rs by the contents of register rt.
 			   The operand is treated as an unsigned integer.
 			   Stores the 64-bit quotient to special register LO, and the 64-bit remainder to special register HI. */
-			const u64 op1 = u64(gpr[rs]);
-			const u64 op2 = u64(gpr[rt]);
-			if (op2 == 0)
-			{
+			u64 op1 = u64(gpr[rs]);
+			u64 op2 = u64(gpr[rt]);
+			if (op2 == 0) {
 				lo_reg = -1;
 				hi_reg = op1;
 			}
-			else
-			{
+			else {
 				lo_reg = op1 / op2;
 				hi_reg = op1 % op2;
 			}
 		}
-		else
-		{
-			static_assert(instr != instr, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}
 
 		AdvancePipeline< [&] {
@@ -952,7 +861,7 @@ namespace VR4300
 			else if constexpr (instr == DMULT || instr == DMULTU) return 8;
 			else if constexpr (instr == DIV   || instr == DIVU)   return 37;
 			else if constexpr (instr == DDIV  || instr == DDIVU)  return 69;
-			else static_assert(instr != instr, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+			else static_assert(AlwaysFalse<instr>, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}()>();
 	}
 
@@ -977,44 +886,36 @@ namespace VR4300
 		   JALR: Jump And Link Register;
 		   Jumps to the address of register rs, delayed by one instruction.
 		   Stores the address of the instruction following the delay slot to register rd. */
-		const u64 target = [&] {
-			if constexpr (instr == J || instr == JAL)
-			{
-				const u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
-				if constexpr (log_cpu_instructions)
-				{
+		u64 target = [&] {
+			if constexpr (instr == J || instr == JAL) {
+				u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
+				if constexpr (log_cpu_instructions) {
 					current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
 				}
 				return pc & 0xFFFF'FFFF'F000'0000 | target;
 			}
-			else if constexpr (instr == JR || instr == JALR)
-			{
-				const auto rs = instr_code >> 21 & 0x1F;
-				if constexpr (log_cpu_instructions)
-				{
+			else if constexpr (instr == JR || instr == JALR) {
+				auto rs = instr_code >> 21 & 0x1F;
+				if constexpr (log_cpu_instructions) {
 					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
 				}
-				if (gpr[rs] & 3)
-				{
+				if (gpr[rs] & 3) {
 					SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
 				}
 				return gpr[rs];
 			}
-			else
-			{
-				static_assert(instr != instr, "\"Jump\" template function called, but no matching jump instruction was found.");
+			else {
+				static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump instruction was found.");
 			}
 		}();
 
 		PrepareJump(target);
 
-		if constexpr (instr == JAL)
-		{
+		if constexpr (instr == JAL) {
 			gpr.Set(31, pc + 4);
 		}
-		else if constexpr (instr == JALR)
-		{
-			const auto rd = instr_code >> 11 & 0x1F;
+		else if constexpr (instr == JALR) {
+			auto rd = instr_code >> 11 & 0x1F;
 			gpr.Set(rd, pc + 4);
 		}
 
@@ -1027,13 +928,12 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto rs = instr_code >> 21 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = [&] {
-				const s16 offset = instr_code & 0xFFFF;
+				s16 offset = instr_code & 0xFFFF;
 				if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
 					return std::format("{} {}, {}, ${:X}", current_instr_name, rs, rt, offset);
 				else
@@ -1045,12 +945,11 @@ namespace VR4300
 		   For "likely" instructions: if the branch condition is not satisfied, the instruction in the branch delay slot is discarded.
 		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
 
-		if constexpr (instr == BLTZAL || instr == BGEZAL || instr == BLTZALL || instr == BGEZALL)
-		{
+		if constexpr (instr == BLTZAL || instr == BGEZAL || instr == BLTZALL || instr == BGEZALL) {
 			gpr.Set(31, pc + 4);
 		}
 
-		const bool branch_cond = [&] {
+		bool branch_cond = [&] {
 			if constexpr (instr == BEQ || instr == BEQL) /* Branch On Equal (Likely) */
 				return gpr[rs] == gpr[rt];
 			else if constexpr (instr == BNE || instr == BNEL) /* Branch On Not Equal (Likely) */
@@ -1068,12 +967,12 @@ namespace VR4300
 			else if constexpr (instr == BGEZAL || instr == BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
 				return gpr[rs] >= 0;
 			else
-				static_assert(instr != instr, "\"Branch\" template function called, but no matching branch instruction was found.");
+				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
 		if (branch_cond)
 		{
-			const s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
+			s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 			PrepareJump(pc + offset);
 			pc_is_inside_branch_delay_slot = true;
 		}
@@ -1092,63 +991,56 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto rt = instr_code >> 16 & 0x1F;
-		const auto rs = instr_code >> 21 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
+		auto rs = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
 		}
 
-		const bool trap_cond = [&] {
-			if constexpr (instr == TGE)
-			{
+		bool trap_cond = [&] {
+			if constexpr (instr == TGE) {
 				/* Trap If Greater Than Or Equal;
 				   Compares registers rs and rt as signed integers.
 				   If register rs is greater than rt, generates an exception. */
 				return gpr[rs] > gpr[rt];
 			}
-			else if constexpr (instr == TGEU)
-			{
+			else if constexpr (instr == TGEU) {
 				/* Trap If Greater Than Or Equal Unsigned;
 				   Compares registers rs and rt as unsigned integers.
 				   If register rs is greater than rt, generates an exception. */
 				return u64(gpr[rs]) > u64(gpr[rt]);
 			}
-			else if constexpr (instr == TLT)
-			{
+			else if constexpr (instr == TLT) {
 				/* Trap If Less Than;
 				   Compares registers rs and rt as signed integers.
 				   If register rs is less than rt, generates an exception. */
 				return gpr[rs] < gpr[rt];
 			}
-			else if constexpr (instr == TLTU)
-			{
+			else if constexpr (instr == TLTU) {
 				/* Trap If Less Than Unsigned;
 				   Compares registers rs and rt as unsigned integers.
 				   If register rs is less than rt, generates an exception. */
 				return u64(gpr[rs]) < u64(gpr[rt]);
 			}
-			else if constexpr (instr == TEQ)
-			{
+			else if constexpr (instr == TEQ) {
 				/* Trap If Equal;
 				   Generates an exception if registers rs and rt are equal. */
 				return gpr[rs] == gpr[rt];
 			}
-			else if constexpr (instr == TNE)
-			{
+			else if constexpr (instr == TNE) {
 				/* Trap If Not Equal;
 				   Generates an exception if registers rs and rt are not equal. */
 				return gpr[rs] != gpr[rt];
 			}
-			else
-			{
-				static_assert(instr != instr, "\"Trap_ThreeOperand\" template function called, but no matching trap instruction was found.");
+			else {
+				static_assert(AlwaysFalse<instr>, "\"Trap_ThreeOperand\" template function called, but no matching trap instruction was found.");
 			}
 		}();
 
-		if (trap_cond)
+		if (trap_cond) {
 			SignalException<Exception::Trap>();
+		}
 
 		AdvancePipeline<1>();
 	}
@@ -1159,68 +1051,61 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		const auto rs = instr_code >> 21 & 0x1F;
-		const auto immediate = [&] {
+		auto rs = instr_code >> 21 & 0x1F;
+		auto immediate = [&] {
 			if constexpr (instr == TGEI || instr == TLTI)
 				return s16(instr_code & 0xFFFF);
 			else
 				return u16(instr_code & 0xFFFF);
 		}();
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
 		}
 
-		const bool trap_cond = [&] {
-			if constexpr (instr == TGEI)
-			{
+		bool trap_cond = [&] {
+			if constexpr (instr == TGEI) {
 				/* Trap If Greater Than Or Equal Immediate;
 				   Compares the contents of register rs with 16-bit sign-extended immediate as a
 				   signed integer. If rs contents are greater than the immediate, generates an exception. */
 				return gpr[rs] > immediate;
 			}
-			else if constexpr (instr == TGEIU)
-			{
+			else if constexpr (instr == TGEIU) {
 				/* Trap If Greater Than Or Equal Immediate Unsigned;
 				   Compares the contents of register rs with 16-bit zero-extended immediate as an
 				   unsigned integer. If rs contents are greater than the immediate, generates an exception. */
 				return u64(gpr[rs]) > immediate;
 			}
-			else if constexpr (instr == TLTI)
-			{
+			else if constexpr (instr == TLTI) {
 				/* Trap If Less Than Immediate;
 				   Compares the contents of register rs with 16-bit sign-extended immediate as a
 				   signed integer. If rs contents are less than the immediate, generates an exception. */
 				return gpr[rs] < immediate;
 			}
-			else if constexpr (instr == TLTIU)
-			{
+			else if constexpr (instr == TLTIU) {
 				/* Trap If Less Than Immediate Unsigned;
 				   Compares the contents of register rs with 16-bit zero-extended immediate as an
 				   unsigned integer. If rs contents are less than the immediate, generates an exception. */
 				return u64(gpr[rs]) < immediate;
 			}
-			else if constexpr (instr == TEQI)
-			{
+			else if constexpr (instr == TEQI) {
 				/* Trap If Equal Immediate;
 				   Generates an exception if the contents of register rs are equal to immediate. */
 				return s64(gpr[rs]) == immediate; /* TODO: should we really cast to s64? */
 			}
-			else if constexpr (instr == TNEI)
-			{
+			else if constexpr (instr == TNEI) {
 				/* Trap If Not Equal Immediate;
 				   Generates an exception if the contents of register rs are not equal to immediate. */
 				return s64(gpr[rs]) != immediate;
 			}
-			else
-			{
-				static_assert(instr != instr, "\"Trap_Immediate\" template function called, but no matching trap instruction was found.");
+			else {
+				static_assert(AlwaysFalse<instr>, "\"Trap_Immediate\" template function called, but no matching trap instruction was found.");
 			}
 		}();
 
-		if (trap_cond)
+		if (trap_cond) {
 			SignalException<Exception::Trap>();
+		}
 
 		AdvancePipeline<1>();
 	}
@@ -1231,28 +1116,28 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		if constexpr (instr == MFLO || instr == MFHI)
-		{
+		if constexpr (instr == MFLO || instr == MFHI) {
 			/* Move From LO/HI;
 			   Transfers the contents of special register LO/HI to register rd. */
-			const auto rd = instr_code >> 11 & 0x1F;
-			gpr.Set(rd, [] { if constexpr (instr == MFLO) return lo_reg; else return hi_reg; }());
-
-			if constexpr (log_cpu_instructions)
-			{
+			auto rd = instr_code >> 11 & 0x1F;
+			gpr.Set(rd, [] {
+				if constexpr (instr == MFLO)
+					return lo_reg;
+				else
+					return hi_reg;
+			}());
+			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{} {}", current_instr_name, rd);
 			}
 		}
-		else if constexpr (instr == MTLO || instr == MTHI)
-		{
+		else if constexpr (instr == MTLO || instr == MTHI) {
 			/* Move To LO/HI;
 			   Transfers the contents of register rs to special register LO/HI. */
-			const auto rs = instr_code >> 21 & 0x1F;
+			auto rs = instr_code >> 21 & 0x1F;
 			if constexpr (instr == MTLO) lo_reg = gpr[rs];
 			else                         hi_reg = gpr[rs];
 
-			if constexpr (log_cpu_instructions)
-			{
+			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{} {}", current_instr_name, rs);
 			}
 		}
@@ -1265,8 +1150,7 @@ namespace VR4300
 		/* Synchronize;
 		   Completes the Load/store instruction currently in the pipeline before the new
 		   Load/store instruction is executed. Is executed as a NOP on the VR4300. */
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = current_instr_name;
 		}
 		AdvancePipeline<1>();
@@ -1277,8 +1161,7 @@ namespace VR4300
 	{
 		/* System Call;
 		   Generates a system call exception and transfers control to the exception processing program. */
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = current_instr_name;
 		}
 		SignalException<Exception::Syscall>();
@@ -1290,8 +1173,7 @@ namespace VR4300
 	{
 		/* Breakpoint;
 		   Generates a breakpoint exception and transfers control to the exception processing program. */
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = current_instr_name;
 		}
 		SignalException<Exception::Breakpoint>();

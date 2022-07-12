@@ -47,17 +47,17 @@ namespace RSP
 
 	struct GPR /* scalar general-purpose registers */
 	{
-		s32 Get(const std::size_t index) const
+		s32 Get(size_t index) const
 		{
 			return gpr[index];
 		}
-		void Set(const std::size_t index, const s32 data)
+		void Set(size_t index, s32 data)
 		{
 			/* gpr[0] is hardwired to 0. Prefer setting it to zero every time over a branch checking if 'index' is zero. */
 			gpr[index] = data;
 			gpr[0] = 0;
 		}
-		s32& operator[](const std::size_t index) 
+		s32& operator[](size_t index) 
 		{
 			return gpr[index];
 		}

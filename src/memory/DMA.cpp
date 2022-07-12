@@ -11,6 +11,34 @@ import VR4300;
 
 namespace DMA
 {
+	template<Location location>
+	size_t GetNumberOfBytesUntilMemoryEnd(u32 addr)
+	{
+		if constexpr (location == Location::Cartridge)
+			return Cartridge::GetNumberOfBytesUntilROMEnd(addr);
+		else if constexpr (location == Location::PIF)
+			return PIF::GetNumberOfBytesUntilRAMEnd(addr);
+		else if constexpr (location == Location::RDRAM)
+			return RDRAM::GetNumberOfBytesUntilMemoryEnd(addr);
+		else
+			static_assert(location != location, "Unknown location given as argument to function \"GetNumberOfBytesUntilRegionEnd\"");
+	}
+
+
+	template<Location location>
+	u8* GetPointerFromAddress(u32 addr)
+	{
+		if constexpr (location == Location::Cartridge)
+			return Cartridge::GetPointerToROM(addr);
+		else if constexpr (location == Location::PIF)
+			return PIF::GetPointerToRAM(addr);
+		else if constexpr (location == Location::RDRAM)
+			return RDRAM::GetPointerToMemory(addr);
+		else
+			static_assert(location != location, "Unknown location given as argument to function \"GetPointerFromAddress\"");
+	}
+
+
 	template<Type type, Location src, Location dst>
 	void Init(size_t length, s32 src_start_addr, s32 dst_start_addr)
 	{
@@ -47,34 +75,6 @@ namespace DMA
 	void Init(size_t rows, size_t bytes_per_row, size_t skip, s32 src_start_addr, s32 dst_start_addr)
 	{
 		// TODO
-	}
-
-
-	template<Location location>
-	u8* GetPointerFromAddress(u32 addr)
-	{
-		if constexpr (location == Location::Cartridge)
-			return Cartridge::GetPointerToROM(addr);
-		else if constexpr (location == Location::PIF)
-			return PIF::GetPointerToRAM(addr);
-		else if constexpr (location == Location::RDRAM)
-			return RDRAM::GetPointerToMemory(addr);
-		else
-			static_assert(location != location, "Unknown location given as argument to function \"GetPointerFromAddress\"");
-	}
-
-
-	template<Location location>
-	size_t GetNumberOfBytesUntilMemoryEnd(u32 addr)
-	{
-		if constexpr (location == Location::Cartridge)
-			return Cartridge::GetNumberOfBytesUntilROMEnd(addr);
-		else if constexpr (location == Location::PIF)
-			return PIF::GetNumberOfBytesUntilRAMEnd(addr);
-		else if constexpr (location == Location::RDRAM)
-			return RDRAM::GetNumberOfBytesUntilMemoryEnd(addr);
-		else
-			static_assert(location != location, "Unknown location given as argument to function \"GetNumberOfBytesUntilRegionEnd\"");
 	}
 
 

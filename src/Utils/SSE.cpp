@@ -31,6 +31,18 @@ __m128i _mm_cmpneq_epi16(__m128i a, __m128i b)
 }
 
 
+s16 _mm_getlane_epi16(const __m128i* num, int lane)
+{
+	return *((s16*)num + lane);
+}
+
+
+u16 _mm_getlane_epu16(const __m128i* num, int lane)
+{
+	return *((u16*)num + lane);
+}
+
+
 __m128i _mm_mulhi_epu16_epi16(__m128i a, __m128i b)
 {
 	/* High 16 bits of unsigned x signed multiplication is equivalent to high 16 bits of unsigned multiplication,
@@ -63,18 +75,6 @@ __m128i _mm_not_si128(__m128i a)
 __m128i _mm_nxor_si128(__m128i a, __m128i b)
 {
 	return _mm_not_si128(_mm_xor_si128(a, b));
-}
-
-
-s16 _mm_getlane_epi16(const __m128i* num, int lane)
-{
-	return *((s16*)num + lane);
-}
-
-
-u16 _mm_getlane_epu16(const __m128i* num, int lane)
-{
-	return *((u16*)num + lane);
 }
 
 

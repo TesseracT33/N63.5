@@ -8,90 +8,10 @@ import :Registers;
 
 import DebugOptions;
 import Logging;
+import Util;
 
 namespace VR4300
 {
-	/* Exception handlers */
-	template<MemoryAccess::Operation operation> void AddressErrorException();
-	template<MemoryAccess::Operation operation> void BusErrorException();
-	template<MemoryAccess::Operation operation> void TLB_InvalidException();
-	template<MemoryAccess::Operation operation> void TLB_MissException();
-	template<MemoryAccess::Operation operation> void XTLB_MissException();
-	void BreakPointException();
-	void BusErrorException();
-	void ColdResetException();
-	void CoprocessorUnusableException();
-	void FloatingpointException();
-	void IntegerOverflowException();
-	void InterruptException();
-	void NMI_Exception();
-	void ReservedInstructionException();
-	void SoftResetException();
-	void SyscallException();
-	void TLB_ModException();
-	void TrapException();
-	void WatchException();
-
-
-	template<Exception exception, MemoryAccess::Operation operation>
-	void SignalException()
-	{
-		constexpr static int new_exception_priority = GetExceptionPriority<exception, operation>();
-		if (exception_has_occurred)
-		{
-			/* Compare exception priorities; return if the new exception has a lower priority than an already occured one. */
-			if (new_exception_priority < occurred_exception_priority)
-				return;
-		}
-		exception_has_occurred = true;
-		occurred_exception = exception;
-		occurred_exception_priority = new_exception_priority;
-		/* The below two assignments incur a run-time cost of two stores and one branch if a new exception occurs with a lower priority.
-		   However, if we fetched this data once we knew which exception to handle, then the functions 'GetExceptionVector',
-		   'GetExceptionCauseCode' and 'GetExceptionHandlerFun' could not take 'exception' as a template argument, and would
-		   instead have to take it as a function argument. Then, several run-time branches would have to be taken over this argument. */
-		exception_vector = GetExceptionVector<exception>();
-		exception_handler_fun = GetExceptionHandlerFun<exception, operation>();
-	}
-
-
-	template<MemoryAccess::Operation operation>
-	void SignalAddressErrorException(const u64 bad_virt_addr)
-	{
-		SignalException<Exception::AddressError>();
-		address_failure.bad_virt_addr = bad_virt_addr;
-		address_failure.bad_vpn2 = bad_virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
-		address_failure.bad_asid = cop0_reg.entry_hi.asid;
-	}
-
-
-	void HandleException()
-	{
-		if constexpr (log_cpu_exceptions)
-		{
-			Logging::LogException(ExceptionToString(occurred_exception));
-		}
-
-		exception_has_occurred = false;
-
-		cop0_reg.cause.bd = pc_is_inside_branch_delay_slot;
-		if (cop0_reg.status.exl == 0)
-		{
-			/* Store to the EPC register the address of the instruction causing the exception.
-			   If the instruction was executing in a branch delay slot, the CPU loads the EPC register
-			   to the address of the branch instruction immediately preceding the branch delay slot. */
-			cop0_reg.epc.value = pc - 4 * (1 + pc_is_inside_branch_delay_slot);
-			cop0_reg.status.exl = 1;
-			SetActiveVirtualToPhysicalFunctions();
-		}
-		pc = exception_vector;
-		pc_is_inside_branch_delay_slot = false;
-		jump_is_pending = false;
-
-		std::invoke(exception_handler_fun);
-	}
-
-
 	template<Exception exception, MemoryAccess::Operation operation>
 	constexpr int GetExceptionPriority()
 	{
@@ -124,7 +44,7 @@ namespace VR4300
 		else if constexpr (exception == Interrupt) {
 			return 0;
 		}
-		else if constexpr (exception == NMI) {
+		else if constexpr (exception == Nmi) {
 			return 18;
 		}
 		else if constexpr (exception == ReservedInstruction) {
@@ -136,15 +56,15 @@ namespace VR4300
 		else if constexpr (exception == Syscall) {
 			return 13;
 		}
-		else if constexpr (exception == TLB_Invalid) {
+		else if constexpr (exception == TlbInvalid) {
 			if constexpr (operation == InstrFetch) return 15;
 			else return 4;
 		}
-		else if constexpr (exception == TLB_Miss || exception == XTLB_Miss) {
+		else if constexpr (exception == TlbMiss || exception == XtlbMiss) {
 			if constexpr (operation == InstrFetch) return 16;
 			else return 5;
 		}
-		else if constexpr (exception == TLB_Modification) {
+		else if constexpr (exception == TlbModification) {
 			return 3;
 		}
 		else if constexpr (exception == Trap) {
@@ -154,7 +74,7 @@ namespace VR4300
 			return 2;
 		}
 		else {
-			static_assert(exception != exception);
+			static_assert(AlwaysFalse<exception>);
 		}
 	}
 
@@ -165,7 +85,7 @@ namespace VR4300
 		using enum Exception;
 		using enum MemoryAccess::Operation;
 
-		     if constexpr (exception == AddressError)        return AddressErrorException<operation>;
+		if constexpr (exception == AddressError)        return AddressErrorException<operation>;
 		else if constexpr (exception == Breakpoint)          return BreakPointException;
 		else if constexpr (exception == BusError)            return BusErrorException<operation>;
 		else if constexpr (exception == ColdReset)           return ColdResetException;
@@ -173,17 +93,17 @@ namespace VR4300
 		else if constexpr (exception == FloatingPoint)       return FloatingpointException;
 		else if constexpr (exception == IntegerOverflow)     return IntegerOverflowException;
 		else if constexpr (exception == Interrupt)           return InterruptException;
-		else if constexpr (exception == NMI)                 return NMI_Exception;
+		else if constexpr (exception == Nmi)                 return NmiException;
 		else if constexpr (exception == ReservedInstruction) return ReservedInstructionException;
 		else if constexpr (exception == SoftReset)           return SoftResetException;
 		else if constexpr (exception == Syscall)             return SyscallException;
-		else if constexpr (exception == TLB_Invalid)         return TLB_InvalidException<operation>;
-		else if constexpr (exception == TLB_Miss)            return TLB_MissException<operation>;
-		else if constexpr (exception == TLB_Modification)    return TLB_ModException;
+		else if constexpr (exception == TlbInvalid)          return TlbInvalidException<operation>;
+		else if constexpr (exception == TlbMiss)             return TlbMissException<operation>;
+		else if constexpr (exception == TlbModification)     return TlbModException;
 		else if constexpr (exception == Trap)                return TrapException;
 		else if constexpr (exception == Watch)               return WatchException;
-		else if constexpr (exception == XTLB_Miss)           return XTLB_MissException<operation>;
-		else                                                 static_assert(exception != exception);
+		else if constexpr (exception == XtlbMiss)           return XtlbMissException<operation>;
+		else                                                 static_assert(AlwaysFalse<exception>);
 	}
 
 
@@ -195,14 +115,75 @@ namespace VR4300
 		static constexpr std::array<u64, 2> vector_base_addr = { /* Indexed by cop0.status.BEV */
 			0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'BFC0'0200 };
 
-		if constexpr (exception == ColdReset || exception == SoftReset || exception == NMI)
+		if constexpr (exception == ColdReset || exception == SoftReset || exception == Nmi) {
 			return vector_base_addr[1];
-		else if constexpr (exception == TLB_Miss)
+		}
+		else if constexpr (exception == TlbMiss) {
 			return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0000);
-		else if constexpr (exception == XTLB_Miss)
+		}
+		else if constexpr (exception == XtlbMiss) {
 			return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0080);
-		else
+		}
+		else {
 			return vector_base_addr[cop0_reg.status.bev] | 0x0180;
+		}
+	}
+
+
+	void HandleException()
+	{
+		if constexpr (log_cpu_exceptions) {
+			Logging::LogException(ExceptionToString(occurred_exception));
+		}
+
+		exception_has_occurred = false;
+
+		cop0_reg.cause.bd = pc_is_inside_branch_delay_slot;
+		if (cop0_reg.status.exl == 0) {
+			/* Store to the EPC register the address of the instruction causing the exception.
+			   If the instruction was executing in a branch delay slot, the CPU loads the EPC register
+			   to the address of the branch instruction immediately preceding the branch delay slot. */
+			cop0_reg.epc.value = pc - 4 * (1 + pc_is_inside_branch_delay_slot);
+			cop0_reg.status.exl = 1;
+			SetActiveVirtualToPhysicalFunctions();
+		}
+		pc = exception_vector;
+		pc_is_inside_branch_delay_slot = false;
+		jump_is_pending = false;
+
+		std::invoke(exception_handler_fun);
+	}
+
+
+	template<Exception exception, MemoryAccess::Operation operation>
+	void SignalException()
+	{
+		constexpr static int new_exception_priority = GetExceptionPriority<exception, operation>();
+		if (exception_has_occurred) {
+			/* Compare exception priorities; return if the new exception has a lower priority than an already occured one. */
+			if (new_exception_priority < occurred_exception_priority) {
+				return;
+			}
+		}
+		exception_has_occurred = true;
+		occurred_exception = exception;
+		occurred_exception_priority = new_exception_priority;
+		/* The below two assignments incur a run-time cost of two stores and one branch if a new exception occurs with a lower priority.
+		   However, if we fetched this data once we knew which exception to handle, then the functions 'GetExceptionVector',
+		   'GetExceptionCauseCode' and 'GetExceptionHandlerFun' could not take 'exception' as a template argument, and would
+		   instead have to take it as a function argument. Then, several run-time branches would have to be taken over this argument. */
+		exception_vector = GetExceptionVector<exception>();
+		exception_handler_fun = GetExceptionHandlerFun<exception, operation>();
+	}
+
+
+	template<MemoryAccess::Operation operation>
+	void SignalAddressErrorException(const u64 bad_virt_addr)
+	{
+		SignalException<Exception::AddressError>();
+		address_failure.bad_virt_addr = bad_virt_addr;
+		address_failure.bad_vpn2 = bad_virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
+		address_failure.bad_asid = cop0_reg.entry_hi.asid;
 	}
 
 
@@ -278,7 +259,7 @@ namespace VR4300
 	}
 
 
-	void NMI_Exception()
+	void NmiException()
 	{
 		pc = cop0_reg.error_epc.value;
 		cop0_reg.status.ts = 0;
@@ -311,7 +292,7 @@ namespace VR4300
 
 
 	template<MemoryAccess::Operation operation>
-	void TLB_InvalidException()
+	void TlbInvalidException()
 	{
 		cop0_reg.cause.exc_code = [&] {
 			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
@@ -327,7 +308,7 @@ namespace VR4300
 
 
 	template<MemoryAccess::Operation operation>
-	void TLB_MissException()
+	void TlbMissException()
 	{
 		cop0_reg.cause.exc_code = [&] {
 			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
@@ -341,7 +322,7 @@ namespace VR4300
 	}
 
 
-	void TLB_ModException()
+	void TlbModException()
 	{
 		cop0_reg.cause.exc_code = 1;
 		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
@@ -367,7 +348,7 @@ namespace VR4300
 
 
 	template<MemoryAccess::Operation operation>
-	void XTLB_MissException()
+	void XtlbMissException()
 	{
 		cop0_reg.cause.exc_code = [&] {
 			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
@@ -384,8 +365,7 @@ namespace VR4300
 
 	constexpr std::string_view ExceptionToString(const Exception exception)
 	{
-		switch (exception)
-		{
+		switch (exception) {
 		case Exception::AddressError: return "Address Error";
 		case Exception::Breakpoint: return "Breakpoint";
 		case Exception::BusError: return "Bus Error";
@@ -394,16 +374,16 @@ namespace VR4300
 		case Exception::FloatingPoint: return "Floating Point";
 		case Exception::IntegerOverflow: return "Integer Overflow";
 		case Exception::Interrupt: return "Interrupt";
-		case Exception::NMI: return "NMI";
+		case Exception::Nmi: return "NMI";
 		case Exception::ReservedInstruction: return "Reserved instruction";
 		case Exception::SoftReset: return "Soft Reset";
 		case Exception::Syscall: return "Syscall";
-		case Exception::TLB_Invalid: return "Invalid TLB";
-		case Exception::TLB_Miss: return "TLB Miss";
-		case Exception::TLB_Modification: return "TLB Modification";
+		case Exception::TlbInvalid: return "Invalid TLB";
+		case Exception::TlbMiss: return "TLB Miss";
+		case Exception::TlbModification: return "TLB Modification";
 		case Exception::Trap: return "Trap";
 		case Exception::Watch: return "Watch";
-		case Exception::XTLB_Miss: return "XTLB Miss";
+		case Exception::XtlbMiss: return "XTLB Miss";
 		default: assert(false); return "";
 		}
 	}
@@ -418,16 +398,16 @@ namespace VR4300
 	template void SignalException<Exception::FloatingPoint, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::IntegerOverflow, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::Interrupt, MEMORY_OPERATION>(); \
-	template void SignalException<Exception::NMI, MEMORY_OPERATION>(); \
+	template void SignalException<Exception::Nmi, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::ReservedInstruction, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::SoftReset, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::Syscall, MEMORY_OPERATION>(); \
-	template void SignalException<Exception::TLB_Invalid, MEMORY_OPERATION>(); \
-	template void SignalException<Exception::TLB_Miss, MEMORY_OPERATION>(); \
-	template void SignalException<Exception::TLB_Modification, MEMORY_OPERATION>(); \
+	template void SignalException<Exception::TlbInvalid, MEMORY_OPERATION>(); \
+	template void SignalException<Exception::TlbMiss, MEMORY_OPERATION>(); \
+	template void SignalException<Exception::TlbModification, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::Trap, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::Watch, MEMORY_OPERATION>(); \
-	template void SignalException<Exception::XTLB_Miss, MEMORY_OPERATION>();
+	template void SignalException<Exception::XtlbMiss, MEMORY_OPERATION>();
 
 	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemoryAccess::Operation::Read)
 	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemoryAccess::Operation::Write)

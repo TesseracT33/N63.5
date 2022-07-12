@@ -21,22 +21,20 @@ namespace RDRAM
 	}
 
 
-	u8* GetPointerToMemory(const u32 addr)
+	size_t GetNumberOfBytesUntilMemoryEnd(const u32 start_addr)
 	{
-		if (addr >= rdram_standard_size && rdram.size() == rdram_standard_size)
-		{
-			return nullptr;
-		}
-		else
-		{
-			return rdram.data() + addr;
-		}
+		return std::max(std::size_t(0), rdram.size() - start_addr);
 	}
 
 
-	std::size_t GetNumberOfBytesUntilMemoryEnd(const u32 start_addr)
+	u8* GetPointerToMemory(const u32 addr)
 	{
-		return std::max(std::size_t(0), rdram.size() - start_addr);
+		if (addr >= rdram_standard_size && rdram.size() == rdram_standard_size) {
+			return nullptr;
+		}
+		else {
+			return rdram.data() + addr;
+		}
 	}
 
 
@@ -54,14 +52,12 @@ namespace RDRAM
 	template<std::integral Int>
 	Int ReadExpandedRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
-		if (rdram.size() == rdram_expanded_size)
-		{
+		if (rdram.size() == rdram_expanded_size) {
 			Int ret;
 			std::memcpy(&ret, rdram.data() + addr, sizeof(Int));
 			return std::byteswap(ret);
 		}
-		else
-		{
+		else {
 			return Int(0);
 		}
 	}
@@ -77,7 +73,7 @@ namespace RDRAM
 
 
 	/* $0000'0000 - $0003F'FFFF */
-	template<std::size_t number_of_bytes>
+	template<size_t number_of_bytes>
 	void WriteStandardRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		data = std::byteswap(data);
@@ -86,11 +82,10 @@ namespace RDRAM
 
 
 	/* $0040'0000 - $007F'FFFF */
-	template<std::size_t number_of_bytes>
+	template<size_t number_of_bytes>
 	void WriteExpandedRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
-		if (rdram.size() == rdram_expanded_size)
-		{
+		if (rdram.size() == rdram_expanded_size) {
 			data = std::byteswap(data);
 			std::memcpy(rdram.data() + addr, &data, number_of_bytes);
 		}
@@ -98,7 +93,7 @@ namespace RDRAM
 
 
 	/* $03F0'0000 - $03FF'FFFF */
-	template<std::size_t number_of_bytes>
+	template<size_t number_of_bytes>
 	void WriteRegisterRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		/* TODO */

@@ -24,39 +24,30 @@ namespace VR4300
 			FloatingPoint,
 			IntegerOverflow,
 			Interrupt,
-			NMI,
+			Nmi,
 			ReservedInstruction,
 			SoftReset,
 			Syscall,
-			TLB_Invalid,
-			TLB_Miss,
-			TLB_Modification,
+			TlbInvalid,
+			TlbMiss,
+			TlbModification,
 			Trap,
 			Watch,
-			XTLB_Miss
+			XtlbMiss
 		};
 
 		template<Exception exception, MemoryAccess::Operation operation = MemoryAccess::Operation::Read>
 		void SignalException();
 
 		template<MemoryAccess::Operation operation>
-		void SignalAddressErrorException(const u64 bad_virt_addr);
+		void SignalAddressErrorException(u64 bad_virt_addr);
 
 		void HandleException();
 
 		bool exception_has_occurred = false;
 	}
 
-	typedef void(*ExceptionHandlerFun)();
-	ExceptionHandlerFun exception_fun_to_call;
-
-	/* Details when a TLB Miss etc. or Address Error exception happens */
-	struct AddressFailure
-	{
-		u64 bad_virt_addr;
-		u64 bad_vpn2;
-		u64 bad_asid;
-	} address_failure;
+	using ExceptionHandlerFun = void(*)();
 
 	template<Exception exception, MemoryAccess::Operation operation>
 	constexpr ExceptionHandlerFun GetExceptionHandlerFun();
@@ -69,9 +60,38 @@ namespace VR4300
 
 	constexpr std::string_view ExceptionToString(Exception exception);
 
+	/* Exception handlers */
+	template<MemoryAccess::Operation operation> void AddressErrorException();
+	template<MemoryAccess::Operation operation> void BusErrorException();
+	template<MemoryAccess::Operation operation> void TlbInvalidException();
+	template<MemoryAccess::Operation operation> void TlbMissException();
+	template<MemoryAccess::Operation operation> void XtlbMissException();
+	void BreakPointException();
+	void BusErrorException();
+	void ColdResetException();
+	void CoprocessorUnusableException();
+	void FloatingpointException();
+	void IntegerOverflowException();
+	void InterruptException();
+	void NmiException();
+	void ReservedInstructionException();
+	void SoftResetException();
+	void SyscallException();
+	void TlbModException();
+	void TrapException();
+	void WatchException();
+
+	/* Details when a TLB Miss etc. or Address Error exception happens */
+	struct AddressFailure
+	{
+		u64 bad_virt_addr;
+		u64 bad_vpn2;
+		u64 bad_asid;
+	} address_failure;
+
 	Exception occurred_exception;
 	int occurred_exception_priority = -1;
 	u64 exception_vector;
-	unsigned coprocessor_unusable_source; /* 0 if COP0 signaled the exception, 1 if COP1 did it. */
+	uint coprocessor_unusable_source; /* 0 if COP0 signaled the exception, 1 if COP1 did it. */
 	ExceptionHandlerFun exception_handler_fun;
 }

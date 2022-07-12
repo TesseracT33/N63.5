@@ -12,7 +12,9 @@ namespace VR4300
 {
 	export
 	{
-		enum class OperatingMode { User, Supervisor, Kernel } operating_mode;
+		enum class OperatingMode {
+			User, Supervisor, Kernel
+		} operating_mode;
 
 		enum class ExternalInterruptSource
 		{
@@ -23,24 +25,20 @@ namespace VR4300
 			IndyWrite = 0x40  /* ip6; Connected to the Indy dev kit’s RDB port. Set to 1 when a value is written. */
 		};
 
-		void Run(unsigned cycles_to_run);
-		void Reset();
-		void PowerOn(bool hle_pif);
-
-		template<ExternalInterruptSource interrupt>
-		void ClearInterruptPending();
-
-		template<ExternalInterruptSource interrupt>
-		void SetInterruptPending();
-
 		void CheckInterrupts();
+		void ClearInterruptPending(ExternalInterruptSource);
+		void Reset();
+		void Run(uint cycles_to_run);
+		void PowerOn(bool hle_pif);
+		void SetInterruptPending(ExternalInterruptSource);
 
-		unsigned p_cycle_counter = 0;
+		uint p_cycle_counter = 0;
 	}
 
 	void DecodeExecuteInstruction(u32 instr_code);
 	void FetchDecodeExecuteInstruction();
-	void HLE_PIF();
+	void HlePif();
+	void PrepareJump(u64 target_address);
 
 	template<u64 number_of_cycles>
 	void AdvancePipeline();

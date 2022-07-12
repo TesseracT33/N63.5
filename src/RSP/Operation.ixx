@@ -21,15 +21,15 @@ namespace RSP
 		template<std::integral Int>
 		Int CPUReadRegister(u32 addr);
 
-		template<std::size_t number_of_bytes>
+		template<size_t number_of_bytes>
 		void CPUWriteMemory(u32 addr, auto data);
 
-		template<std::size_t number_of_bytes>
+		template<size_t number_of_bytes>
 		void CPUWriteRegister(u32 addr, auto data);
 
 		u8* GetPointerToMemory(u32 addr);
-		void Run(uint cycles_to_run);
 		void PowerOn();
+		void Run(uint cycles_to_run);
 	}
 
 	enum RegOffset {

@@ -17,53 +17,9 @@ import VR4300;
 
 namespace Memory
 {
-	std::array<u8*, 0x10000> read_page_table{};
-	std::array<u8*, 0x10000> write_page_table{};
-
-
-	std::string_view io_location;
-
-
 	void Initialize()
 	{
 		ReloadPageTables();
-	}
-
-
-	void ReloadPageTables()
-	{
-		int page = 0;
-		for (u8*& ptr : read_page_table) {
-			ptr = [&] {
-				if (page <= 0x007F)
-					return RDRAM::GetPointerToMemory(page << 16);
-				else if (page >= 0x0400 && page <= 0x0403)
-					return RSP::GetPointerToMemory(page << 16);
-				else if (page >= 0x0800 && page <= 0x0FFF)
-					return Cartridge::GetPointerToSRAM(page << 16);
-				else if (page >= 0x1000 && page <= 0x1FBF)
-					return Cartridge::GetPointerToROM(page << 16);
-				else if (page == 0x1FC0)
-					return PIF::GetPointerToMemory(page << 16);
-				else
-					return (u8*)nullptr;
-			}();
-			++page;
-		}
-		page = 0;
-		for (u8*& ptr : write_page_table) {
-			ptr = [&] {
-				if (page <= 0x007F)
-					return RDRAM::GetPointerToMemory(page << 16);
-				else if (page >= 0x0400 && page <= 0x0403)
-					return RSP::GetPointerToMemory(page << 16);
-				else if (page >= 0x0800 && page <= 0x0FFF)
-					return Cartridge::GetPointerToSRAM(page << 16);
-				else
-					return (u8*)nullptr;
-			}();
-			++page;
-		}
 	}
 
 
@@ -71,19 +27,16 @@ namespace Memory
 	Int ReadPhysical(const u32 physical_address)
 	{
 		/* Precondition: 'physical_address' is aligned according to the size of 'Int' */
-		const u32 page = physical_address >> 16;
-		const u8* ptr = read_page_table[page];
-		const Int value = [&] {
-			if (ptr != nullptr)
-			{
+		u32 page = physical_address >> 16;
+		u8* ptr = read_page_table[page];
+		Int value = [&] {
+			if (ptr != nullptr) {
 				Int ret;
 				std::memcpy(&ret, ptr + (physical_address & 0xFFFF), sizeof(Int));
 				return std::byteswap(ret);
 			}
-			else if (page >= 0x03F0 && page <= 0x04FF)
-			{
-				switch (((physical_address >> 20) - 0x03F) & 0xF)
-				{
+			else if (page >= 0x03F0 && page <= 0x04FF) {
+				switch (((physical_address >> 20) - 0x03F) & 0xF) {
 				case 0: /* $03F0'0000 - $03FF'FFFF */
 					return Int(0);
 
@@ -125,28 +78,21 @@ namespace Memory
 				}
 				return Int(0);
 			}
-			else
-			{
+			else {
 				return Int(0);
 			}
 		}(); 
-		if constexpr (operation == MemoryAccess::Operation::InstrFetch)
-		{
-			if constexpr (log_cpu_instructions)
-			{
+		if constexpr (operation == MemoryAccess::Operation::InstrFetch) {
+			if constexpr (log_cpu_instructions) {
 				VR4300::last_instr_fetch_phys_addr = physical_address;
 			}
 		}
-		else
-		{
-			if constexpr (log_cpu_memory)
-			{
-				if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
-				{
+		else {
+			if constexpr (log_cpu_memory) {
+				if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000) {
 					Logging::LogIORead(physical_address, value, io_location);
 				}
-				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All)
-				{
+				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
 					Logging::LogMemoryRead(physical_address, value);
 				}
 			}
@@ -155,21 +101,45 @@ namespace Memory
 	}
 
 
-	template<std::size_t number_of_bytes>
+	void ReloadPageTables()
+	{
+		uint page = 0;
+		for (u8*& ptr : read_page_table) {
+			ptr = [&] {
+				if (page <= 0x007F)                        return RDRAM::GetPointerToMemory(page << 16);
+				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
+				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSRAM(page << 16);
+				else if (page >= 0x1000 && page <= 0x1FBF) return Cartridge::GetPointerToROM(page << 16);
+				else if (page == 0x1FC0)                   return PIF::GetPointerToMemory(page << 16);
+				else                                       return (u8*)nullptr;
+			}();
+			++page;
+		}
+		page = 0;
+		for (u8*& ptr : write_page_table) {
+			ptr = [&] {
+				if (page <= 0x007F)                        return RDRAM::GetPointerToMemory(page << 16);
+				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
+				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSRAM(page << 16);
+				else                                       return (u8*)nullptr;
+			}();
+			++page;
+		}
+	}
+
+
+	template<size_t number_of_bytes>
 	void WritePhysical(const u32 physical_address, auto data)
 	{
 		/* Precondition: 'physical_address' is aligned according to the size of 'Int' */
-		const u32 page = physical_address >> 16;
+		u32 page = physical_address >> 16;
 		u8* ptr = write_page_table[page];
-		if (ptr != nullptr)
-		{
+		if (ptr != nullptr) {
 			data = std::byteswap(data);
 			std::memcpy(ptr + (physical_address & 0xFFFF), &data, number_of_bytes);
 		}
-		else if (page >= 0x03F0 && page <= 0x04FF)
-		{
-			switch (((physical_address >> 20) - 0x03F) & 0xF)
-			{
+		else if (page >= 0x03F0 && page <= 0x04FF) {
+			switch (((physical_address >> 20) - 0x03F) & 0xF) {
 			case 0: /* $03F0'0000 - $03FF'FFFF */
 				break;
 
@@ -216,18 +186,14 @@ namespace Memory
 				break;
 			}
 		}
-		else if (physical_address >= 0x1FC007C0 && physical_address <= 0x1FC007FF)
-		{
+		else if (physical_address >= 0x1FC007C0 && physical_address <= 0x1FC007FF) {
 			PIF::WriteMemory<number_of_bytes>(physical_address, data);
 		}
-		if constexpr (log_cpu_memory)
-		{
-			if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000)
-			{
+		if constexpr (log_cpu_memory) {
+			if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000) {
 				Logging::LogIOWrite(physical_address, data, io_location);
 			}
-			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All)
-			{
+			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
 				Logging::LogMemoryWrite(physical_address, data);
 			}
 		}

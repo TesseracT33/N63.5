@@ -4,13 +4,13 @@ import <array>;
 
 export
 {
-	template<std::size_t bound>
-	constexpr std::array<std::size_t, bound> range = []
-	{
+	template<size_t bound>
+	constexpr std::array<size_t, bound> range = [] {
 		static_assert(bound > 0);
 		std::array<std::size_t, bound> arr{};
-		for (std::size_t i = 0; i < arr.size(); ++i)
+		for (size_t i = 0; i < arr.size(); ++i) {
 			arr[i] = i;
+		}
 		return arr;
 	}();
 
@@ -19,7 +19,7 @@ export
 	constexpr bool AlwaysFalse = false;
 
 
-	template<typename T, std::size_t size>
+	template<typename T, size_t size>
 	constexpr std::array<T, size> MakeArray(const T& value)
 	{
 		std::array<T, size> arr{};

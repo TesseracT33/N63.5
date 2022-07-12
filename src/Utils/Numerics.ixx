@@ -14,24 +14,19 @@ export
 		static_assert(sizeof(Int) * 8 >= num_bits);
 		static_assert(sizeof(Int) <= 8);
 
-		if constexpr (num_bits == 8)
-		{
+		if constexpr (num_bits == 8) {
 			return Int(s8(value));
 		}
-		else if constexpr (num_bits == 16)
-		{
+		else if constexpr (num_bits == 16) {
 			return Int(s16(value));
 		}
-		else if constexpr (num_bits == 32)
-		{
+		else if constexpr (num_bits == 32) {
 			return Int(s32(value));
 		}
-		else if constexpr (num_bits == 64)
-		{
+		else if constexpr (num_bits == 64) {
 			return value;
 		}
-		else
-		{
+		else {
 			/* Let UMAX be the number of bit width 'num_bits' with all bits set.
 			* Let ~UMAX be one's complement of this number, but with bit width 'sizeof(Int) * 8'.
 			* The below is then equivalent to ORing 'value' with ~UMAX when the sign bit of 'value' is set,

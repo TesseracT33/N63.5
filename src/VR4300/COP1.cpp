@@ -7,6 +7,7 @@ import :Operation;
 import :Registers;
 
 import DebugOptions;
+import Util;
 
 namespace VR4300
 {
@@ -133,17 +134,16 @@ namespace VR4300
 	{
 		using enum COP1Instruction;
 
-		const s16 offset = instr_code & 0xFFFF;
-		const auto ft = instr_code >> 16 & 0x1F;
-		const auto base = instr_code >> 21 & 0x1F;
-		const auto address = gpr[base] + offset;
+		s16 offset = instr_code & 0xFFFF;
+		auto ft = instr_code >> 16 & 0x1F;
+		auto base = instr_code >> 21 & 0x1F;
+		auto address = gpr[base] + offset;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
 		}
 
-		const auto result = [&] {
+		auto result = [&] {
 			if constexpr (instr == LWC1)
 			{
 				/* Load Word To FPU;
@@ -152,8 +152,7 @@ namespace VR4300
 				   FPU general purpose register ft. */
 				return ReadVirtual<s32>(address);
 			}
-			else if constexpr (instr == LDC1)
-			{
+			else if constexpr (instr == LDC1) {
 				/* Load Doubleword To FPU;
 				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 				   an address. Loads the contents of the doubleword specified by the address to
@@ -161,16 +160,16 @@ namespace VR4300
 				   general purpose register ft when FR = 1. */
 				return ReadVirtual<s64>(address);
 			}
-			else
-			{
-				static_assert(instr != instr, "\"FPU_Load\" template function called, but no matching load instruction was found.");
+			else {
+				static_assert(AlwaysFalse<instr>, "\"FPU_Load\" template function called, but no matching load instruction was found.");
 			}
 		}();
 
 		AdvancePipeline<1>();
 
-		if (exception_has_occurred)
+		if (exception_has_occurred) {
 			return;
+		}
 
 		fpr.Set(ft, result);
 	}
@@ -181,26 +180,23 @@ namespace VR4300
 	{
 		using enum COP1Instruction;
 
-		const s16 offset = instr_code & 0xFFFF;
-		const auto ft = instr_code >> 16 & 0x1F;
-		const auto base = instr_code >> 21 & 0x1F;
-		const auto address = gpr[base] + offset;
+		s16 offset = instr_code & 0xFFFF;
+		auto ft = instr_code >> 16 & 0x1F;
+		auto base = instr_code >> 21 & 0x1F;
+		auto address = gpr[base] + offset;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
 		}
 
-		if constexpr (instr == SWC1)
-		{
+		if constexpr (instr == SWC1) {
 			/* Store Word From FPU;
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose register ft to the
 			   memory position specified by the address. */
 			WriteVirtual<s32>(address, fpr.Get<s32>(ft));
 		}
-		else if constexpr (instr == SDC1)
-		{
+		else if constexpr (instr == SDC1) {
 			/* Store Doubleword From FPU;
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose registers ft and
@@ -208,9 +204,8 @@ namespace VR4300
 			   contents of the FPU general purpose register ft when FR = 1. */
 			WriteVirtual<s64>(address, fpr.Get<s64>(ft));
 		}
-		else
-		{
-			static_assert(instr != instr, "\"FPU_Store\" template function called, but no matching store instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"FPU_Store\" template function called, but no matching store instruction was found.");
 		}
 
 		AdvancePipeline<1>();
@@ -222,57 +217,48 @@ namespace VR4300
 	{
 		using enum COP1Instruction;
 
-		const auto fs = instr_code >> 11 & 0x1F;
-		const auto rt = instr_code >> 16 & 0x1F;
+		auto fs = instr_code >> 11 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, fs);
 		}
 
-		if constexpr (instr == MTC1)
-		{
+		if constexpr (instr == MTC1) {
 			/* Move Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
 			fpr.Set<s32>(fs, s32(gpr[rt]));
 		}
-		else if constexpr (instr == MFC1)
-		{
+		else if constexpr (instr == MFC1) {
 			/* Move Word From FPU;
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
 			gpr.Set(rt, u64(fpr.Get<s32>(fs)));
 		}
-		else if constexpr (instr == CTC1)
-		{
+		else if constexpr (instr == CTC1) {
 			/* Move Control Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
-			if (fs == 31) // Only #31 is writeable
-			{
+			if (fs == 31) { // Only #31 is writeable
 				fpu_control.Set(fs, u32(gpr[rt]));
 				TestAllExceptions();
 			}
 		}
-		else if constexpr (instr == CFC1)
-		{
+		else if constexpr (instr == CFC1) {
 			/* Move Control Word From FPU;
 			   Transfers the contents of FPU control register fs to CPU general purpose register rt. */
 			gpr.Set(rt, s32(fpu_control.Get(fs)));
 		}
-		else if constexpr (instr == DMTC1)
-		{
+		else if constexpr (instr == DMTC1) {
 			/* Doubleword Move To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU general purpose register fs. */
 			fpr.Set<s64>(fs, s64(gpr[rt]));
 		}
-		else if constexpr (instr == DMFC1)
-		{
+		else if constexpr (instr == DMFC1) {
 			/* Doubleword Move From FPU;
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
 			gpr.Set(rt, fpr.Get<s64>(fs));
 		}
-		else
-		{
-			static_assert(instr != instr, "\"FPU_Move\" template function called, but no matching move instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"FPU_Move\" template function called, but no matching move instruction was found.");
 		}
 
 		AdvancePipeline<1>();
@@ -289,35 +275,31 @@ namespace VR4300
 		   For all these instructions, an unimplemented exception will occur if either:
 			 * If the source operand is infinity or NaN, or
 			 * If overflow occurs during conversion to integer format. */
-		auto TestForUnimplementedException = [&] <typename From, typename To> (const From source) -> bool
+		auto TestForUnimplementedException = [&] <typename From, typename To> (From source) -> bool
 		{
-			if constexpr (std::is_integral_v<From> && std::is_same_v<To, f64>)
-			{
+			if constexpr (std::is_integral_v<From> && std::is_same_v<To, f64>) {
 				return false; /* zero-cost shortcut; integers cannot be infinity or NaN, and the operation is then always exact when converting to a double */
 			}
-			if constexpr (std::is_floating_point_v<From>)
-			{
-				if (std::isnan(source) || std::isinf(source))
+			if constexpr (std::is_floating_point_v<From>) {
+				if (std::isnan(source) || std::isinf(source)) {
 					return true;
+				}
 			}
-			if constexpr (std::is_integral_v<To>)
-			{
+			if constexpr (std::is_integral_v<To>) {
 				return std::fetestexcept(FE_OVERFLOW) != 0; // TODO: should this also include underflow?
 			}
 			return false;
 		};
 
-		const auto fd = instr_code >> 6 & 0x1F;
-		const auto fs = instr_code >> 11 & 0x1F;
-		const auto fmt = instr_code >> 21 & 0x1F;
+		auto fd = instr_code >> 6 & 0x1F;
+		auto fs = instr_code >> 11 & 0x1F;
+		auto fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
 		}
 
-		if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_W || instr == CVT_L)
-		{
+		if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_W || instr == CVT_L) {
 			/* CVT.S/CVT.D: Convert To Single/Double Floating-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a single/double-precision floating-point format. Stores the rounded result to floating-point register fd.
@@ -325,14 +307,12 @@ namespace VR4300
 			   CVT.W/CVT.L: Convert To Single/Long Fixed-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a 32/64-bit fixed-point format. Stores the rounded result to floating-point register fd. */
-			auto Convert = [&] <FPUNumericType InputType>
-			{
+			auto Convert = [&] <FPUNumericType InputType> {
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
-				auto Convert2 = [&] <FPUNumericType From, FPUNumericType To> // TODO think of a new lambda name ;)
-				{
-					const From source = fpr.Get<From>(fs);
+				auto Convert2 = [&] <FPUNumericType From, FPUNumericType To> { // TODO think of a new lambda name ;)
+					From source = fpr.Get<From>(fs);
 					std::feclearexcept(FE_ALL_EXCEPT);
-					const To conv = To(source); 
+					To conv = To(source); 
 					fpr.Set<To>(fd, conv);
 
 					unimplemented_operation = TestForUnimplementedException.template operator () < From, To > (source);
@@ -359,11 +339,10 @@ namespace VR4300
 				else if constexpr (instr == CVT_L)
 					Convert2.template operator() < InputType, s64 > ();
 				else
-					static_assert(instr != instr, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+					static_assert(AlwaysFalse<instr>, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 			};
 
-			switch (fmt)
-			{
+			switch (fmt) {
 			case FmtTypeID::Float32:
 				Convert.template operator() <f32 /* input format */> ();
 				break;
@@ -397,48 +376,53 @@ namespace VR4300
 			   fixed-point format and converts them from the specified format (fmt). Stores the result to floating-point register fd. */
 
 			/* Interpret the source operand (as a float), and round it to an integer (s32 or s64). */
-			auto Round = [&] <std::floating_point InputFloat, std::signed_integral OutputInt>
-			{
-				const InputFloat source = fpr.Get<InputFloat>(fs);
+			auto Round = [&] <std::floating_point InputFloat, std::signed_integral OutputInt> {
+				InputFloat source = fpr.Get<InputFloat>(fs);
 
 				std::feclearexcept(FE_ALL_EXCEPT);
 
-				const OutputInt result = [&] {
+				OutputInt result = [&] {
 					     if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::nearbyint(source));
 					else if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
 					else if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
 					else if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
-					else static_assert(instr != instr, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+					else static_assert(AlwaysFalse<instr>, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 				}();
 
 				unimplemented_operation = TestForUnimplementedException.template operator () < InputFloat, OutputInt > (source);
 
 				/* If the invalid operation exception occurs, but the exception is not enabled, return INT_MAX */
 				fpr.Set<OutputInt>(fd, [&] {
-					if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I)
+					if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I) {
 						return std::numeric_limits<OutputInt>::max();
-					else return result;
+					}
+					else {
+						return result;
+					}
 				}());
 			};
 
 			constexpr static bool rounding_is_made_to_s32 =
 				instr == ROUND_W || instr == TRUNC_W || instr == CEIL_W || instr == FLOOR_W;
 
-			switch (fmt)
-			{
+			switch (fmt) {
 			case FmtTypeID::Float32:
-				if constexpr (rounding_is_made_to_s32)
+				if constexpr (rounding_is_made_to_s32) {
 					Round.template operator() < f32 /* input format */, s32 /* output format */ > ();
-				else
+				}
+				else {
 					Round.template operator() < f32, s64 > ();
+				}
 				AdvancePipeline<5>();
 				break;
 
 			case FmtTypeID::Float64:
-				if constexpr (rounding_is_made_to_s32)
+				if constexpr (rounding_is_made_to_s32) {
 					Round.template operator() < f64, s32 > ();
-				else
+				}
+				else {
 					Round.template operator() < f64, s64 > ();
+				}
 				AdvancePipeline<5>();
 				break;
 
@@ -460,9 +444,8 @@ namespace VR4300
 
 			TestAllExceptions();
 		}
-		else
-		{
-			static_assert(instr != instr, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
 		}
 	}
 
@@ -472,50 +455,46 @@ namespace VR4300
 	{
 		using enum COP1Instruction;
 
-		const auto fd = instr_code >> 6 & 0x1F;
-		const auto fs = instr_code >> 11 & 0x1F;
-		const auto fmt = instr_code >> 21 & 0x1F;
+		auto fd = instr_code >> 6 & 0x1F;
+		auto fs = instr_code >> 11 & 0x1F;
+		auto fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == ADD || instr == SUB || instr == MUL || instr == DIV)
-		{
+		if constexpr (instr == ADD || instr == SUB || instr == MUL || instr == DIV) {
 			/* Floating-point Add/Subtract/Multiply/Divide;
 			   Arithmetically adds/subtracts/multiplies/divides the contents of floating-point registers
 			   fs and ft in the specified format (fmt). Stores the rounded result to floating-point register fd. */
 
-			const auto ft = instr_code >> 16 & 0x1F;
+			auto ft = instr_code >> 16 & 0x1F;
 
-			if constexpr (log_cpu_instructions)
-			{
+			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToString(fmt), fd, fs, ft);
 			}
 
-			auto Compute = [&] <std::floating_point Float>
-			{
-				const Float op1 = fpr.Get<Float>(fs);
-				const Float op2 = fpr.Get<Float>(ft);
+			auto Compute = [&] <std::floating_point Float> {
+				Float op1 = fpr.Get<Float>(fs);
+				Float op2 = fpr.Get<Float>(ft);
 
 				std::feclearexcept(FE_ALL_EXCEPT);
 
-				const Float result = [&] {
+				Float result = [&] {
 					     if constexpr (instr == ADD) return op1 + op2;
 					else if constexpr (instr == SUB) return op1 - op2;
 					else if constexpr (instr == MUL) return op1 * op2;
 					else if constexpr (instr == DIV) return op1 / op2;
-					else                             static_assert(instr != instr);
+					else                             static_assert(AlwaysFalse<instr>);
 				}();
 
 				AdvancePipeline<[&] {
 					     if constexpr (instr == ADD || instr == SUB) return 3;
 					else if constexpr (std::is_same_v<Float, f32>)   return 29;
 					else if constexpr (std::is_same_v<Float, f64>)   return 58;
-					else                                             static_assert(instr != instr);
+					else                                             static_assert(AlwaysFalse<instr>);
 				}()>();
 
 				fpr.Set<Float>(fd, result);
 			};
 
-			switch (fmt)
-			{
+			switch (fmt) {
 			case FmtTypeID::Float32:
 				Compute.template operator() <f32> ();
 				unimplemented_operation = false;
@@ -535,8 +514,7 @@ namespace VR4300
 
 			TestAllExceptions();
 		}
-		else if constexpr (instr == ABS || instr == MOV || instr == NEG || instr == SQRT)
-		{
+		else if constexpr (instr == ABS || instr == MOV || instr == NEG || instr == SQRT) {
 			/* Floating-point Absolute Value;
 			   Calculates the arithmetic absolute value of the contents of floating-point
 			   register fs in the specified format (fmt). Stores the result to floating-point register fd.
@@ -553,31 +531,28 @@ namespace VR4300
 			   Calculates arithmetic positive square root of the contents of floating-point
 			   register fs in the specified format. Stores the rounded result to floating-point register fd. */
 
-			if constexpr (log_cpu_instructions)
-			{
+			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
 			}
 
-			auto Compute = [&] <std::floating_point Float>
-			{
-				const Float op = fpr.Get<Float>(fs);
+			auto Compute = [&] <std::floating_point Float> {
+				Float op = fpr.Get<Float>(fs);
 
 				std::feclearexcept(FE_ALL_EXCEPT);
 
-				const Float result = [&] {
+				Float result = [&] {
 					     if constexpr (instr == ABS)  return std::abs(op);
 					else if constexpr (instr == MOV)  return op; 
 					else if constexpr (instr == NEG)  return -op;
 					else if constexpr (instr == SQRT) return std::sqrt(op);
-					else                              static_assert(instr != instr);
+					else                              static_assert(AlwaysFalse<instr>);
 				}();
 
 				AdvancePipeline<[&] {
-					if constexpr (instr == SQRT)
-					{
+					if constexpr (instr == SQRT) {
 						     if constexpr (std::is_same_v<Float, f32>) return 29;
 						else if constexpr (std::is_same_v<Float, f64>) return 58;
-						else                                           static_assert(instr != instr);
+						else                                           static_assert(AlwaysFalse<instr>);
 					}
 					else return 1;
 				}()>();
@@ -585,8 +560,7 @@ namespace VR4300
 				fpr.Set<Float>(fd, result); // TODO: could this result in host exception flags changing?
 			};
 
-			switch (fmt)
-			{
+			switch (fmt) {
 			case FmtTypeID::Float32:
 				Compute.template operator() < f32 > ();
 				unimplemented_operation = false;
@@ -605,14 +579,15 @@ namespace VR4300
 			}
 
 			/* MOV can cause only the unimplemented operation exception. */
-			if constexpr (instr == MOV)
+			if constexpr (instr == MOV) {
 				TestUnimplementedOperationException();
-			else
+			}
+			else {
 				TestAllExceptions();
+			}
 		}
-		else
-		{
-			static_assert(instr != instr, "\"FPU_Compute\" template function called, but no matching compute instruction was found.");
+		else {
+			static_assert(AlwaysFalse<instr>, "\"FPU_Compute\" template function called, but no matching compute instruction was found.");
 		}
 	}
 
@@ -639,25 +614,22 @@ namespace VR4300
 		   If the FPU condition line is false, branches to the target address (delay of one instruction).
 		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} ${:X}", current_instr_name, s16(instr_code & 0xFFFF));
 		}
 
-		const s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
+		s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 
-		const bool branch_cond = [&] {
+		bool branch_cond = [&] {
 			     if constexpr (instr == BC1T || instr == BC1TL) return fcr31.c;
 			else if constexpr (instr == BC1F || instr == BC1FL) return !fcr31.c;
-			else static_assert(instr != instr, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
+			else static_assert(AlwaysFalse<instr>, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
-		if (branch_cond)
-		{
+		if (branch_cond) {
 			PrepareJump(pc + offset);
 		}
-		else if constexpr (instr == BC1TL || instr == BC1FL)
-		{
+		else if constexpr (instr == BC1TL || instr == BC1FL) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. TODO: manual says "invalidated" */
 		}
 
@@ -673,29 +645,25 @@ namespace VR4300
 		   specified condition (cond). After a delay of one instruction, the comparison
 		   result can be used by the FPU branch instruction of the CPU. */
 
-		const auto cond = instr_code & 0xF;
-		const auto fs = instr_code >> 11 & 0x1F;
-		const auto ft = instr_code >> 16 & 0x1F;
-		const auto fmt = instr_code >> 21 & 0x1F;
+		auto cond = instr_code & 0xF;
+		auto fs = instr_code >> 11 & 0x1F;
+		auto ft = instr_code >> 16 & 0x1F;
+		auto fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("C.{}.{} {}, {}", compare_cond_strings[cond], FmtToString(fmt), fs, ft);
 		}
 
-		auto Compare = [&] <std::floating_point Float>
-		{
-			const Float op1 = fpr.Get<Float>(fs);
-			const Float op2 = fpr.Get<Float>(ft);
+		auto Compare = [&] <std::floating_point Float> {
+			Float op1 = fpr.Get<Float>(fs);
+			Float op2 = fpr.Get<Float>(ft);
 
-			const bool comp_result = [&] { /* See VR4300 User's Manual by NEC, p. 566 */
-				if (std::isnan(op1) || std::isnan(op2))
-				{
+			bool comp_result = [&] { /* See VR4300 User's Manual by NEC, p. 566 */
+				if (std::isnan(op1) || std::isnan(op2)) {
 					SetInvalidException(cond & 8);
 					return bool(cond & 1);
 				}
-				else
-				{
+				else {
 					SetInvalidException(false);
 					return (cond & 4) && op1 < op2 || (cond & 2) && op1 == op2;
 				}
@@ -706,8 +674,7 @@ namespace VR4300
 
 		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */
 
-		switch (fmt)
-		{
+		switch (fmt) {
 		case FmtTypeID::Float32:
 			Compare.template operator() < f32 > ();
 			unimplemented_operation = false;

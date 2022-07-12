@@ -9,17 +9,9 @@ import Util.Files;
 
 namespace PIF
 {
-	bool LoadIPL12(const std::string& path)
+	size_t GetNumberOfBytesUntilRAMEnd(const u32 offset)
 	{
-		const std::optional<std::array<u8, rom_size>> optional_rom = FileUtils::LoadBinaryFileArray<rom_size>(path);
-		if (!optional_rom.has_value())
-		{
-			UserMessage::Show("Failed to open boot rom (IPL) file.", UserMessage::Type::Warning);
-			return false;
-		}
-		const auto& rom = optional_rom.value();
-		std::memcpy(memory.data(), rom.data(), rom_size);
-		return true;
+		return ram_size - (offset & (ram_size - 1)); /* Size is 0x40 bytes */
 	}
 
 
@@ -35,9 +27,16 @@ namespace PIF
 	}
 
 
-	std::size_t GetNumberOfBytesUntilRAMEnd(const u32 offset)
+	bool LoadIPL12(const std::string& path)
 	{
-		return ram_size - (offset & (ram_size - 1)); /* Size is 0x40 bytes */
+		std::optional<std::array<u8, rom_size>> optional_rom = FileUtils::LoadBinaryFileArray<rom_size>(path);
+		if (!optional_rom.has_value()) {
+			UserMessage::Show("Failed to open boot rom (IPL) file.", UserMessage::Type::Warning);
+			return false;
+		}
+		const auto& rom = optional_rom.value();
+		std::memcpy(memory.data(), rom.data(), rom_size);
+		return true;
 	}
 
 
@@ -50,12 +49,11 @@ namespace PIF
 	}
 
 
-	template<std::size_t number_of_bytes>
+	template<size_t number_of_bytes>
 	void WriteMemory(u32 addr, auto data)
 	{ /* CPU precondition: write does not go to the next boundary */
 		addr &= 0x7FF;
-		if (addr >= rom_size) /* $0-$7BF: rom; $7C0-$7FF: ram $*/
-		{
+		if (addr >= rom_size) { /* $0-$7BF: rom; $7C0-$7FF: ram */
 			data = std::byteswap(data);
 			std::memcpy(memory.data() + addr, &data, number_of_bytes);
 		}

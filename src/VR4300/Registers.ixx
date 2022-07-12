@@ -14,8 +14,7 @@ namespace VR4300
 {
 	/* For (COP0) registers (structs) that, once they have been written to, need to tell the rest of the cpu about it. */
 	template<typename T>
-	concept reg_notifies_cpu_on_write = requires(T t)
-	{
+	concept reg_notifies_cpu_on_write = requires(T t) {
 		{ t.NotifyCpuAfterWrite() } -> std::convertible_to<void>;
 	};
 
@@ -26,6 +25,10 @@ namespace VR4300
 		std::is_same_v<s32, typename std::remove_cv<T>::type> ||
 		std::is_same_v<s64, typename std::remove_cv<T>::type>;
 
+
+	void InitializeRegisters();
+
+
 	u64 pc; /* Program counter */
 
 	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
@@ -35,17 +38,15 @@ namespace VR4300
 	/* CPU general-purpose registers */
 	struct GPR
 	{
-		s64 Get(const std::size_t index) const
-		{
+		s64 Get(size_t index) const {
 			return gpr[index];
 		}
-		void Set(const std::size_t index, const s64 data)
-		{
+		void Set(size_t index, s64 data) {
 			/* gpr[0] is hardwired to 0. Prefer setting it to zero every time over a branch checking if 'index' is zero. */
 			gpr[index] = data;
 			gpr[0] = 0;
 		}
-		s64 operator[](const std::size_t index) /* returns by value so that assignments have to made through function "Set". */
+		s64 operator[](size_t index) /* returns by value so that assignments have to made through function "Set". */
 		{
 			return gpr[index];
 		} 
@@ -54,31 +55,30 @@ namespace VR4300
 	} gpr;
 
 	/* COP0 registers. Used for exception handling and memory management. */
-	constexpr int cop0_index_index = 0;
-	constexpr int cop0_index_random = 1;
-	constexpr int cop0_index_entry_lo_0 = 2;
-	constexpr int cop0_index_entry_lo_1 = 3;
-	constexpr int cop0_index_context = 4;
-	constexpr int cop0_index_page_mask = 5;
-	constexpr int cop0_index_wired = 6;
-	constexpr int cop0_index_bad_v_addr = 8;
-	constexpr int cop0_index_count = 9;
-	constexpr int cop0_index_entry_hi = 10;
-	constexpr int cop0_index_compare = 11;
-	constexpr int cop0_index_status = 12;
-	constexpr int cop0_index_cause = 13;
-	constexpr int cop0_index_epc = 14;
-	constexpr int cop0_index_pr_id = 15;
-	constexpr int cop0_index_config = 16;
-	constexpr int cop0_index_ll_addr = 17;
-	constexpr int cop0_index_watch_lo = 18;
-	constexpr int cop0_index_watch_hi = 19;
-	constexpr int cop0_index_x_context = 20;
-	constexpr int cop0_index_parity_error = 26;
-	constexpr int cop0_index_tag_lo = 28;
-	constexpr int cop0_index_tag_hi = 29;
-	constexpr int cop0_index_error_epc = 30;
-
+	constexpr uint cop0_index_index = 0;
+	constexpr uint cop0_index_random = 1;
+	constexpr uint cop0_index_entry_lo_0 = 2;
+	constexpr uint cop0_index_entry_lo_1 = 3;
+	constexpr uint cop0_index_context = 4;
+	constexpr uint cop0_index_page_mask = 5;
+	constexpr uint cop0_index_wired = 6;
+	constexpr uint cop0_index_bad_v_addr = 8;
+	constexpr uint cop0_index_count = 9;
+	constexpr uint cop0_index_entry_hi = 10;
+	constexpr uint cop0_index_compare = 11;
+	constexpr uint cop0_index_status = 12;
+	constexpr uint cop0_index_cause = 13;
+	constexpr uint cop0_index_epc = 14;
+	constexpr uint cop0_index_pr_id = 15;
+	constexpr uint cop0_index_config = 16;
+	constexpr uint cop0_index_ll_addr = 17;
+	constexpr uint cop0_index_watch_lo = 18;
+	constexpr uint cop0_index_watch_hi = 19;
+	constexpr uint cop0_index_x_context = 20;
+	constexpr uint cop0_index_parity_error = 26;
+	constexpr uint cop0_index_tag_lo = 28;
+	constexpr uint cop0_index_tag_hi = 29;
+	constexpr uint cop0_index_error_epc = 30;
 
 
 	struct COP0Registers
@@ -284,9 +284,9 @@ namespace VR4300
 			u64 value;
 		} error_epc{};
 
-		u64 Get(const std::size_t register_index) const;
-		void Set(const std::size_t register_index, const u64 value);
-		void SetRaw(const std::size_t register_index, const u64 value);
+		u64 Get(size_t register_index) const;
+		void Set(size_t register_index, u64 value);
+		void SetRaw(size_t register_index, u64 value);
 	} cop0_reg{};
 
 	/* Floating point control register #31 */
@@ -318,25 +318,25 @@ namespace VR4300
 		u32 fs : 1; /* TODO */
 		u32 : 7;
 
-		void Set(const u32 data);
+		void Set(u32 data);
 		u32 Get() const;
 	} fcr31{};
 
 	/* Floating point control registers. Only #0 and #31 are "valid", and #0 is read-only. */
 	struct FPUControl
 	{
-		u32 Get(const std::size_t index) const;
-		void Set(const std::size_t index, const u32 data);
+		u32 Get(size_t index) const;
+		void Set(size_t index, u32 data);
 	} fpu_control;
 
 	/* General-purpose floating point registers. */
 	struct FGR
 	{
 		template<typename FPUNumericType>
-		FPUNumericType Get(const std::size_t index) const;
+		FPUNumericType Get(size_t index) const;
 
 		template<typename FPUNumericType>
-		void Set(const std::size_t index, const FPUNumericType data);
+		void Set(size_t index, FPUNumericType data);
 
 	private:
 		std::array<s64, 32> fpr{};
@@ -359,7 +359,4 @@ namespace VR4300
 			distrib = { min, 0x1F };
 		}
 	} random_generator{};
-
-
-	void InitializeRegisters();
 }
