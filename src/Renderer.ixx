@@ -6,6 +6,7 @@ import <SDL.h>;
 
 import <bit>;
 import <cassert>;
+import <iostream>;
 
 namespace Renderer
 {
@@ -26,6 +27,7 @@ namespace Renderer
 		void SetWindowSize(uint width, uint height);
 	}
 
+	void ByteswapFramebuffer();
 	void RecreateTexture();
 
 	struct Framebuffer
@@ -33,6 +35,7 @@ namespace Renderer
 		u8* src_ptr{};
 		uint width = 320, height = 240, pitch = 320 * 4;
 		uint bytes_per_pixel = 4;
+		uint size = width * height * bytes_per_pixel;
 		uint pixel_format = SDL_PIXELFORMAT_ABGR8888;
 	} framebuffer{};
 

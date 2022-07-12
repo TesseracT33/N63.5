@@ -1,9 +1,26 @@
 module Renderer;
 
+import VI;
 import Util;
+
+import <bit>;
 
 namespace Renderer
 {
+	void ByteswapFramebuffer()
+	{
+		/* RDRAM is stored in big endian. If using RGBA5551 (RGBA5553), colour channels
+		   will go across byte boundaries. Thus, it is not enough to use SDL_PIXELFORMAT_ABGR1555;
+		   we need to byteswap each halfword in the framebuffer before copying it into the texture. */
+		for (uint i = 0; i < framebuffer.size; i += 2) {
+			u8* framebuffer_src = (u8*)(framebuffer.src_ptr) + i;
+			u8 tmp = *framebuffer_src;
+			*framebuffer_src = *(framebuffer_src + 1);
+			*(framebuffer_src + 1) = tmp;
+		}
+	}
+
+
 	void Initialize(SDL_Renderer* renderer)
 	{
 		assert(renderer != nullptr);
@@ -36,6 +53,13 @@ namespace Renderer
 		int locked_pixels_pitch = 0;
 		SDL_LockTexture(texture, nullptr, &locked_pixels, &locked_pixels_pitch);
 
+		/* RDRAM is stored in big endian. If using RGBA5551 (RGBA5553), colour channels
+		   will go across byte boundaries. Thus, it is not enough to use SDL_PIXELFORMAT_ABGR1555;
+		   we need to byteswap each halfword in the framebuffer before copying it into the texture. */
+		if (framebuffer.pixel_format == SDL_PIXELFORMAT_RGBA5551) {
+			ByteswapFramebuffer();
+		}
+
 		SDL_ConvertPixels(
 			framebuffer.width,        /* framebuffer width  */
 			framebuffer.height,       /* framebuffer height */
@@ -48,6 +72,10 @@ namespace Renderer
 		);
 
 		SDL_UnlockTexture(texture);
+
+		if (framebuffer.pixel_format == SDL_PIXELFORMAT_RGBA5551) {
+			ByteswapFramebuffer();
+		}
 
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, nullptr, nullptr);
@@ -79,11 +107,14 @@ namespace Renderer
 		}
 		else if constexpr (pixel_format == PixelFormat::RGBA5553) {
 			/* Treat this as RGBA5551 */
-			framebuffer.pixel_format = SDL_PIXELFORMAT_ABGR1555;
+			/* RDRAM is stored in big endian, but we do manual byteswapping before copying to texture. */
+			framebuffer.pixel_format = SDL_PIXELFORMAT_RGBA5551;
 			framebuffer.bytes_per_pixel = 2;
 			rendering_is_enabled = true;
 		}
 		else if constexpr (pixel_format == PixelFormat::RGBA8888) {
+			/* Here, we can use SDL_PIXELFORMAT_ABGR8888 and don't need to do manual byteswapping before copying to
+			texture (we let SDL do it instead), since all colour channels are within byte boundaries, unlike with RGBA5551. */
 			framebuffer.pixel_format = SDL_PIXELFORMAT_ABGR8888;
 			framebuffer.bytes_per_pixel = 4;
 			rendering_is_enabled = true;
