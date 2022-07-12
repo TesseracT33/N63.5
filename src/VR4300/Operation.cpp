@@ -212,17 +212,6 @@ namespace VR4300
 	}
 
 
-	template void ClearInterruptPending<ExternalInterruptSource::MI>();
-	template void ClearInterruptPending<ExternalInterruptSource::Cartridge>();
-	template void ClearInterruptPending<ExternalInterruptSource::Reset>();
-	template void ClearInterruptPending<ExternalInterruptSource::IndyRead>();
-	template void ClearInterruptPending<ExternalInterruptSource::IndyWrite>();
-	template void SetInterruptPending<ExternalInterruptSource::MI>();
-	template void SetInterruptPending<ExternalInterruptSource::Cartridge>();
-	template void SetInterruptPending<ExternalInterruptSource::Reset>();
-	template void SetInterruptPending<ExternalInterruptSource::IndyRead>();
-	template void SetInterruptPending<ExternalInterruptSource::IndyWrite>();
-
 	template void AdvancePipeline<1>();
 	template void AdvancePipeline<2>();
 	template void AdvancePipeline<3>();

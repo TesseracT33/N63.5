@@ -30,11 +30,13 @@ namespace RSP
 
 	void PowerOn()
 	{
-		halted = jump_is_pending = single_step_mode = false;
+		jump_is_pending = single_step_mode = false;
+		halted = true;
 		pc = 0;
 		dmem.fill(0);
 		imem.fill(0);
 		std::memset(&regs, 0, sizeof(decltype(regs)));
+		regs.status |= 1; /* halted == true */
 	}
 
 

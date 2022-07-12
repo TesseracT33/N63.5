@@ -110,6 +110,8 @@ namespace N64
 		SI::Initialize();
 		VI::Initialize();
 		Memory::Initialize();
+		/* Power CPU after RSP, since CPU reads to RSP memory if hle_ipl and RSP clears it. */
+		RSP::PowerOn();
 		VR4300::PowerOn(hle_ipl);
 
 		Renderer::Initialize(renderer);
