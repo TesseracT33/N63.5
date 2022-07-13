@@ -18,23 +18,13 @@ namespace RSP
 		template<std::integral Int>
 		Int CPUReadMemory(u32 addr);
 
-		template<std::integral Int>
-		Int CPUReadRegister(u32 addr);
-
 		template<size_t number_of_bytes>
 		void CPUWriteMemory(u32 addr, auto data);
-
-		template<size_t number_of_bytes>
-		void CPUWriteRegister(u32 addr, auto data);
 
 		u8* GetPointerToMemory(u32 addr);
 		void PowerOn();
 		void Run(uint cycles_to_run);
 	}
-
-	enum RegOffset {
-		DmaSpaddr, DmaRamaddr, DmaRdlen, DmaWrlen, Status, DmaFull, DmaBusy, Semaphore
-	};
 
 	void DecodeExecuteInstruction(u32 instr_code);
 	void FetchDecodeExecuteInstruction();
@@ -65,13 +55,5 @@ namespace RSP
 	std::array<u8, 0x1000> dmem; /* data memory */
 	std::array<u8, 0x1000> imem; /* instruction memory */
 
-	struct
-	{
-		s32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen,
-			status, dma_full, dma_busy, semaphore;
-	} regs;
-
 	constexpr std::array memory_ptrs = { dmem.data(), imem.data() };
-
-	constexpr s32 sp_pc_addr = 0x0408'0000;
 }

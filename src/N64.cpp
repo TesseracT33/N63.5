@@ -32,8 +32,9 @@ namespace N64
 	}
 
 
-	void EnqueueEvent(Event event, uint cycles_until_fire, uint cycles_into_update)
+	void EnqueueEvent(Event event, uint cycles_until_fire)
 	{
+		uint cycles_into_update = VR4300::p_cycle_counter;
 		cpu_cycles_until_update_queue -= cycles_into_update;
 
 		EventItem new_item = { event, cycles_until_fire };
@@ -62,23 +63,23 @@ namespace N64
 	void ExecuteEvent(Event event)
 	{
 		switch (event) {
-		case Event::PI_DMA_FINISH:
+		case Event::PiDmaFinish:
 			MI::SetInterruptFlag(MI::InterruptType::PI);
 			PI::SetStatusFlag(PI::StatusFlag::DmaCompleted);
 			PI::ClearStatusFlag(PI::StatusFlag::DmaBusy);
 			VR4300::CheckInterrupts();
 			break;
 
-		case Event::SI_DMA_FINISH:
+		case Event::SiDmaFinish:
 			MI::SetInterruptFlag(MI::InterruptType::SI);
-			SI::SetStatusFlag(SI::StatusFlag::INTERRUPT);
+			SI::SetStatusFlag(SI::StatusFlag::Interrupt);
 			SI::ClearStatusFlag(SI::StatusFlag::DmaBusy);
 			VR4300::CheckInterrupts();
 			break;
 
-		case Event::SP_DMA_FINISH:
+		case Event::SpDmaFinish:
 			MI::SetInterruptFlag(MI::InterruptType::SP);
-			//RSP::ReportDMAFinished();
+			RSP::NotifyDmaFinish();
 			VR4300::CheckInterrupts();
 			break;
 		}
@@ -131,7 +132,7 @@ namespace N64
 					/* If num_halflines == 262, the number of cycles to update becomes 5963. */
 					cpu_cycles_until_update_queue = VI::cpu_cycles_per_halfline;
 					VR4300::Run(VI::cpu_cycles_per_halfline);
-					//RSP::Run(VI::cpu_cycles_per_halfline);
+					RSP::Run(VI::cpu_cycles_per_halfline);
 					AI::Step(VI::cpu_cycles_per_halfline);
 					CheckEventQueue();
 					cpu_cycles_taken_this_frame += VI::cpu_cycles_per_halfline;
@@ -141,7 +142,7 @@ namespace N64
 					uint extra_cycles = cpu_cycles_per_frame - cpu_cycles_taken_this_frame;
 					cpu_cycles_until_update_queue = extra_cycles;
 					VR4300::Run(extra_cycles);
-					//RSP::Run(extra_cycles);
+					RSP::Run(extra_cycles);
 					AI::Step(extra_cycles);
 					CheckEventQueue();
 				}

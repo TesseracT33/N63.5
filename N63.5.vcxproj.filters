@@ -67,6 +67,8 @@
     <ClCompile Include="src\Utils\SSE.ixx" />
     <ClCompile Include="src\Utils\SSE.cpp" />
     <ClCompile Include="src\Utils\Numerics.ixx" />
+    <ClCompile Include="src\RSP\Interface.ixx" />
+    <ClCompile Include="src\RSP\Interface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />

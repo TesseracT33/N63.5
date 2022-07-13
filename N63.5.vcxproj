@@ -187,6 +187,8 @@
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Renderer.ixx" />
     <ClCompile Include="src\RSP\InstructionDecode.cpp" />
+    <ClCompile Include="src\RSP\Interface.cpp" />
+    <ClCompile Include="src\RSP\Interface.ixx" />
     <ClCompile Include="src\RSP\RSP.ixx" />
     <ClCompile Include="src\RSP\Operation.cpp" />
     <ClCompile Include="src\RSP\Operation.ixx" />

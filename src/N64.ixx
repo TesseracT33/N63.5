@@ -13,9 +13,9 @@ namespace N64
 	export
 	{
 		enum class Event {
-			PI_DMA_FINISH,
-			SI_DMA_FINISH,
-			SP_DMA_FINISH
+			PiDmaFinish,
+			SiDmaFinish,
+			SpDmaFinish
 		};
 
 		enum class Processor {
@@ -27,7 +27,7 @@ namespace N64
 		constexpr uint cpu_cycles_per_frame = cpu_cycles_per_second / 60; /* 1,562,500 */
 		constexpr uint rsp_cycles_per_frame = rsp_cycles_per_second / 60; /* 1,041,675 */
 
-		void EnqueueEvent(Event event, uint cycles_until_fire, uint cycles_into_update);
+		void EnqueueEvent(Event event, uint cycles_until_fire);
 		bool PowerOn(
 			const std::string& rom_path,
 			const std::optional<std::string>& ipl_path,

@@ -54,15 +54,13 @@ namespace DMA
 		static constexpr auto cycles_per_byte_dma = 18;
 		auto cycles_until_finish = num_bytes_to_copy * cycles_per_byte_dma;
 		N64::Event n64_event = [] {
-			if constexpr (type == DMA::Type::PI) return N64::Event::PI_DMA_FINISH;
-			else if constexpr (type == DMA::Type::SI) return N64::Event::SI_DMA_FINISH;
-			else if constexpr (type == DMA::Type::SP) return N64::Event::SP_DMA_FINISH;
+			if constexpr (type == DMA::Type::PI) return N64::Event::PiDmaFinish;
+			else if constexpr (type == DMA::Type::SI) return N64::Event::SiDmaFinish;
 			else static_assert("Unknown DMA type given as argument to \"DMA::Init\"");
 		}();
-		N64::EnqueueEvent(n64_event, cycles_until_finish, VR4300::p_cycle_counter);
+		N64::EnqueueEvent(n64_event, cycles_until_finish);
 
-		if constexpr (log_dma)
-		{
+		if constexpr (log_dma) {
 			std::string output = std::format("From {} ${:X} to {} ${:X}; ${:X} bytes",
 				location_to_string_table[std::to_underlying(src)], src_start_addr,
 				location_to_string_table[std::to_underlying(dst)], dst_start_addr, num_bytes_to_copy);
@@ -71,17 +69,8 @@ namespace DMA
 	}
 
 
-	template<Type type, Location source, Location dest>
-	void Init(size_t rows, size_t bytes_per_row, size_t skip, s32 src_start_addr, s32 dst_start_addr)
-	{
-		// TODO
-	}
-
-
 	template void Init <Type::PI, Location::Cartridge, Location::RDRAM> (size_t, s32, s32);
 	template void Init <Type::PI, Location::RDRAM, Location::Cartridge>(size_t, s32, s32);
 	template void Init <Type::SI, Location::PIF, Location::RDRAM>(size_t, s32, s32);
 	template void Init <Type::SI, Location::RDRAM, Location::PIF>(size_t, s32, s32);
-	template void Init <Type::SP, Location::SPRAM, Location::RDRAM>(size_t, size_t, size_t, s32, s32);
-	template void Init <Type::SP, Location::RDRAM, Location::SPRAM>(size_t, size_t, size_t, s32, s32);
 }

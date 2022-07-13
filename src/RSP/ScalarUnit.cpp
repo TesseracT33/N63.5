@@ -1,5 +1,6 @@
 module RSP:ScalarUnit;
 
+import :Interface;
 import :Operation;
 
 import MI;
