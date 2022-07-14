@@ -19,4 +19,8 @@ C++20 is required for compiling. This project uses C++20 modules. As such, this 
 | Peter Lemon's CPUTest/CP1 | :x: |
 | Peter Lemon's CPUTest/CPU | :x: |
 | Peter Lemon's CPUTest/Exceptions | :heavy_check_mark: |
+| Peter Lemon's RSPTest/CP2 | :x: |
 | Peter Lemon's RSPTest/CPU | :heavy_check_mark: |
+| Peter Lemon's RSPTest/DMAAlignment-SP | :x: |
+| Peter Lemon's RSPTest/MEM | :heavy_check_mark: |
+| Peter Lemon's RSPTest/XBUS | :x: |
