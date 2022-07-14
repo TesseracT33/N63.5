@@ -212,7 +212,9 @@ namespace RSP
 		s32 rows, bytes_per_row, skip;
 		u8* src_ptr, * dst_ptr;
 		if constexpr (dma_type == DmaType::RdToSp) {
+			/* The number of bytes is RDLEN plus 1, rounded up to 8 bytes. */
 			bytes_per_row = (regs.dma_rdlen & 0xFFF) + 1;
+			bytes_per_row |= 7;
 			rows = (regs.dma_rdlen >> 12 & 0xFF) + 1;
 			skip = regs.dma_rdlen >> 20 & 0xFFF;
 			src_ptr = RDRAM::GetPointerToMemory(regs.dma_ramaddr);
@@ -220,6 +222,7 @@ namespace RSP
 		}
 		else {
 			bytes_per_row = (regs.dma_wrlen & 0xFFF) + 1;
+			bytes_per_row |= 7;
 			rows = (regs.dma_wrlen >> 12 & 0xFF) + 1;
 			skip = regs.dma_wrlen >> 20 & 0xFFF;
 			src_ptr = RSP::GetPointerToMemory(regs.dma_spaddr);

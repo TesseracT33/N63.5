@@ -450,6 +450,9 @@ namespace RSP
 
 	void Break()
 	{
+		if constexpr (log_rsp_instructions) {
+			current_instr_log_output = "BREAK";
+		}
 		halted = true;
 		if (regs.status & 0x40) {
 			MI::SetInterruptFlag(MI::InterruptType::SP);
