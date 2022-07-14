@@ -32,22 +32,26 @@ namespace RSP
 			case DmaRdlen:
 				/* SP_DMA_WRLEN and SP_DMA_RDLEN both always returns the same data on read, relative to
 				the current transfer, irrespective on the direction of the transfer. */
-				if (dma_in_progress) {
-					return in_progress_dma_type == DmaType::RdToSp
-						? regs.dma_rdlen : regs.dma_wrlen;
-				}
-				else {
-					return regs.dma_rdlen;
-				}
+				return [&] {
+					if (dma_in_progress) {
+						return in_progress_dma_type == DmaType::RdToSp
+							? regs.dma_rdlen : regs.dma_wrlen;
+					}
+					else {
+						return regs.dma_rdlen;
+					}
+				}() & ~7;
 
 			case DmaWrlen:
-				if (dma_in_progress) {
-					return in_progress_dma_type == DmaType::RdToSp
-						? regs.dma_rdlen : regs.dma_wrlen;
-				}
-				else {
-					return regs.dma_wrlen;
-				}
+				return [&] {
+					if (dma_in_progress) {
+						return in_progress_dma_type == DmaType::RdToSp
+							? regs.dma_rdlen : regs.dma_wrlen;
+					}
+					else {
+						return regs.dma_wrlen;
+					}
+				}() & ~7;
 
 			case Status:
 				return regs.status;
@@ -94,28 +98,28 @@ namespace RSP
 
 			case DmaRdlen:
 				if (dma_in_progress) {
-					buffered_dma_rdlen = data & 0xFF8F'FFF8;
+					buffered_dma_rdlen = data & 0xFF8F'FFFF;
 					dma_is_pending = true;
 					regs.dma_full |= 1;
 					regs.status |= 8; /* Mirrors dma_full.0 */
 					init_pending_dma_fun_ptr = InitDMA<DmaType::RdToSp>;
 				}
 				else {
-					regs.dma_rdlen = data & 0xFF8F'FFF8;
+					regs.dma_rdlen = data & 0xFF8F'FFFF;
 					InitDMA<DmaType::RdToSp>();
 				}
 				break;
 
 			case DmaWrlen:
 				if (dma_in_progress) {
-					buffered_dma_wrlen = data & 0xFF8F'FFF8;
+					buffered_dma_wrlen = data & 0xFF8F'FFFF;
 					dma_is_pending = true;
 					regs.dma_full |= 1;
 					regs.status |= 8; /* Mirrors dma_full.0 */
 					init_pending_dma_fun_ptr = InitDMA<DmaType::SpToRd>;
 				}
 				else {
-					regs.dma_wrlen = data & 0xFF8F'FFF8;
+					regs.dma_wrlen = data & 0xFF8F'FFFF;
 					InitDMA<DmaType::SpToRd>();
 				}
 				break;
@@ -212,24 +216,17 @@ namespace RSP
 		s32 rows, bytes_per_row, skip;
 		u8* src_ptr, * dst_ptr;
 		if constexpr (dma_type == DmaType::RdToSp) {
-			/* The number of bytes is RDLEN plus 1, rounded up to 8 bytes. */
-			bytes_per_row = (regs.dma_rdlen & 0xFFF) + 1;
-			if (bytes_per_row & 7) {
-				bytes_per_row &= ~7;
-				bytes_per_row += 8;
-			}
-			bytes_per_row |= 7;
+			/* The number of bytes is RDLEN plus 1, rounded up to 8 bytes.
+			Since the lower three bits of RDLEN are always 0, this effectively results
+			in the number of bytes always being rounded up to the next 8-byte multiple. */
+			bytes_per_row = (regs.dma_rdlen & 0xFF8) + 8;
 			rows = (regs.dma_rdlen >> 12 & 0xFF) + 1;
 			skip = regs.dma_rdlen >> 20 & 0xFFF;
 			src_ptr = RDRAM::GetPointerToMemory(regs.dma_ramaddr);
 			dst_ptr = RSP::GetPointerToMemory(regs.dma_spaddr);
 		}
 		else {
-			bytes_per_row = (regs.dma_wrlen & 0xFFF) + 1;
-			if (bytes_per_row & 7) {
-				bytes_per_row &= ~7;
-				bytes_per_row += 8;
-			}
+			bytes_per_row = (regs.dma_wrlen & 0xFF8) + 8;
 			rows = (regs.dma_wrlen >> 12 & 0xFF) + 1;
 			skip = regs.dma_wrlen >> 20 & 0xFFF;
 			src_ptr = RSP::GetPointerToMemory(regs.dma_spaddr);
@@ -269,14 +266,16 @@ namespace RSP
 		}
 
 		if constexpr (log_dma) {
+			std::string_view rsp_mem_bank = regs.dma_spaddr & 0x1000
+				? "IMEM" : "DMEM";
 			std::string output = [&] {
 				if constexpr (dma_type == DmaType::RdToSp) {
-					return std::format("From RDRAM ${:X} to RSP MEM ${:X}; ${:X} bytes",
-						regs.dma_ramaddr, regs.dma_spaddr, requested_total_bytes);
+					return std::format("From RDRAM ${:X} to RSP {} ${:X}; ${:X} bytes",
+						regs.dma_ramaddr & 0xFF'FFFF, rsp_mem_bank, regs.dma_spaddr & 0xFFF, requested_total_bytes);
 				}
 				else {
-					return std::format("From RSP MEM ${:X} to RDRAM ${:X}; ${:X} bytes",
-						regs.dma_spaddr, regs.dma_ramaddr, requested_total_bytes);
+					return std::format("From RSP {} ${:X} to RDRAM ${:X}; ${:X} bytes",
+						rsp_mem_bank, regs.dma_spaddr & 0xFFF, regs.dma_ramaddr & 0xFF'FFFF, requested_total_bytes);
 				}
 			}();
 			Logging::LogDMA(output);
