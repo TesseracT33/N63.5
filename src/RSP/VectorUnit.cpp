@@ -400,6 +400,10 @@ namespace RSP
 				current_elem = (current_elem + 1) & 0xF;
 			}
 		}
+		else if constexpr (instr == LHV || instr == LFV || instr == SHV || instr == SFV || instr == SWV) {
+			/* TODO */
+			assert(false);
+		}
 		else {
 			static_assert(instr != instr);
 		}
@@ -1011,6 +1015,8 @@ namespace RSP
 	template void VectorLoadStore<VectorInstruction::LPV>(u32);
 	template void VectorLoadStore<VectorInstruction::LUV>(u32);
 	template void VectorLoadStore<VectorInstruction::LTV>(u32);
+	template void VectorLoadStore<VectorInstruction::LHV>(u32);
+	template void VectorLoadStore<VectorInstruction::LFV>(u32);
 
 	template void VectorLoadStore<VectorInstruction::SBV>(u32);
 	template void VectorLoadStore<VectorInstruction::SSV>(u32);
@@ -1021,6 +1027,9 @@ namespace RSP
 	template void VectorLoadStore<VectorInstruction::SPV>(u32);
 	template void VectorLoadStore<VectorInstruction::SUV>(u32);
 	template void VectorLoadStore<VectorInstruction::STV>(u32);
+	template void VectorLoadStore<VectorInstruction::SHV>(u32);
+	template void VectorLoadStore<VectorInstruction::SFV>(u32);
+	template void VectorLoadStore<VectorInstruction::SWV>(u32);
 
 	template void Move<VectorInstruction::MFC2>(u32);
 	template void Move<VectorInstruction::MTC2>(u32);

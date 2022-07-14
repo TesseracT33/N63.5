@@ -183,8 +183,7 @@ namespace RSP
 		case 0b000110: EXEC_SCALAR_INSTR(BLEZ); break;
 		case 0b000101: EXEC_SCALAR_INSTR(BNE); break;
 
-		case 0b110010:
-		{
+		case 0b110010: {
 			auto op_code = instr_code >> 11 & 0x1F;
 			switch (op_code) {
 			case 0x00: EXEC_VECTOR_INSTR(LBV); break;
@@ -195,14 +194,15 @@ namespace RSP
 			case 0x05: EXEC_VECTOR_INSTR(LRV); break;
 			case 0x06: EXEC_VECTOR_INSTR(LPV); break;
 			case 0x07: EXEC_VECTOR_INSTR(LUV); break;
-			case 0x08: EXEC_VECTOR_INSTR(LTV); break;
+			case 0x08: EXEC_VECTOR_INSTR(LHV); break;
+			case 0x09: EXEC_VECTOR_INSTR(LFV); break;
+			case 0x0B: EXEC_VECTOR_INSTR(LTV); break;
 			default: break;
 			}
 			break;
 		}
 
-		;case 0b111010:
-		{
+		case 0b111010: {
 			auto op_code = instr_code >> 11 & 0x1F;
 			switch (op_code)
 			{
@@ -214,7 +214,10 @@ namespace RSP
 			case 0x05: EXEC_VECTOR_INSTR(SRV); break;
 			case 0x06: EXEC_VECTOR_INSTR(SPV); break;
 			case 0x07: EXEC_VECTOR_INSTR(SUV); break;
-			case 0x08: EXEC_VECTOR_INSTR(STV); break;
+			case 0x08: EXEC_VECTOR_INSTR(SHV); break;
+			case 0x09: EXEC_VECTOR_INSTR(SFV); break;
+			case 0x0A: EXEC_VECTOR_INSTR(SWV); break;
+			case 0x0B: EXEC_VECTOR_INSTR(STV); break;
 			default: break;
 			}
 			break;
@@ -289,14 +292,14 @@ namespace RSP
 	{
 		using enum VectorInstruction;
 		
-		if constexpr (instr == LBV || instr == LSV || instr == LLV || instr == LDV ||
-			instr == LQV || instr == LRV || instr == LPV || instr == LUV || instr == LTV)
+		if constexpr (instr == LBV || instr == LSV || instr == LLV || instr == LDV || instr == LQV ||
+			instr == LRV || instr == LPV || instr == LUV || instr == LTV || instr == LHV || instr == LFV)
 		{
 			VectorLoadStore<instr>(instr_code);
 		}
 
-		else if constexpr (instr == SBV || instr == SSV || instr == SLV || instr == SDV ||
-			instr == SQV || instr == SRV || instr == SPV || instr == SUV || instr == STV)
+		else if constexpr (instr == SBV || instr == SSV || instr == SLV || instr == SDV || instr == SQV ||
+			instr == SRV || instr == SPV || instr == SUV || instr == STV || instr == SHV || instr == SFV || instr == SWV)
 		{
 			VectorLoadStore<instr>(instr_code);
 		}
