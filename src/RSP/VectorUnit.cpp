@@ -6,6 +6,8 @@ import :ScalarUnit;
 import Util.Numerics;
 import Util.SSE;
 
+import DebugOptions;
+
 #define vco control_reg[0]
 #define vcc control_reg[1]
 #define vce control_reg[2]
@@ -193,6 +195,11 @@ namespace RSP
 					*(vpr_dst + ((element + i) ^ 1)) = dmem[(addr + i) & 0xFFF];
 				}
 			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("{} {} e{}, ${:X}",
+					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+			}
 		};
 
 		/* SBV, SSV, SLV, SDV */
@@ -208,6 +215,11 @@ namespace RSP
 					dmem[(addr + i) & 0xFFF] = *(vpr_src + (current_elem ^ 1));
 					current_elem = (current_elem + 1) & 0xF;
 				}
+			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("{} {} e{}, ${:X}",
+					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
 			}
 		};
 
@@ -243,6 +255,11 @@ namespace RSP
 			for (int i = 0; i < 16 - num_bytes_until_wrap; ++i) {
 				CopyNextByte();
 			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("{} {} e{}, ${:X}",
+					current_instr_name, vt & 0x18, element & 0xE, static_cast<std::make_unsigned<decltype(start_addr)>::type>(start_addr));
+			}
 		};
 
 		/* LPV, LUV, SPV, SUV */
@@ -274,6 +291,11 @@ namespace RSP
 				}
 				++current_lane;
 				++addr_dword_offset;
+			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("{} {} e{}, ${:X}",
+					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
 			}
 		};
 
@@ -324,6 +346,11 @@ namespace RSP
 			for (u32 i = 0; i < num_bytes_to_copy; ++i) {
 				*(vpr_dst + ((element + i) ^ 1)) = dmem[addr + i];
 			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("{} {} e{}, ${:X}",
+					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+			}
 		}
 		else if constexpr (instr == LTV || instr == STV) {
 			VectorTranspose();
@@ -359,6 +386,11 @@ namespace RSP
 				dmem[(addr & addr_mask) + i] = *(vpr_src + (current_elem ^ 1));
 				current_elem = (current_elem + 1) & 0xF;
 			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("{} {} e{}, ${:X}",
+					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+			}
 		}
 		else {
 			static_assert(instr != instr);
@@ -376,6 +408,11 @@ namespace RSP
 		auto vs_elem = instr_code >> 8 & 0x7;
 		auto vs = instr_code >> 11 & 0x1F;
 		auto rt = instr_code >> 16 & 0x1F;
+
+		if constexpr (log_rsp_instructions) {
+			current_instr_log_output = std::format("{} GPR[{}] VPR[{}] e{}",
+				current_instr_name, rt, vs, vs_elem);
+		}
 
 		if constexpr (instr == MTC2) {
 			/* Pseudo-code:
@@ -442,6 +479,11 @@ namespace RSP
 		auto vd_elem = instr_code >> 11 & 0x07;
 		auto vt = instr_code >> 16 & 0x1F;
 		auto vt_elem = instr_code >> 21 & 0x07;
+
+		if constexpr (log_rsp_instructions) {
+			current_instr_log_output = std::format("{} VD {} e{} VT {} e{}",
+				current_instr_name, vt, vt_elem, vd, vd_elem);
+		}
 
 		auto Rcp = [&](s32 src){
 			static constexpr std::array<u16, 512> rcp_rom = {
@@ -597,6 +639,11 @@ namespace RSP
 		auto vs = instr_code >> 11 & 0x1F;
 		auto vt = instr_code >> 16 & 0x1F;
 		auto element = instr_code >> 21 & 0xF;
+
+		if constexpr (log_rsp_instructions) {
+			current_instr_log_output = std::format("{} {} {} {} e{}",
+				current_instr_name, vd, vs, vt, element);
+		}
 
 		/* Determine which lanes of vpr[vt] to access */
 		__m128i vt_operand = GetVTBroadcast(vt, element);
@@ -784,6 +831,11 @@ namespace RSP
 		auto vs = instr_code >> 11 & 0x1F;
 		auto vt = instr_code >> 16 & 0x1F;
 		auto element = instr_code >> 21 & 0xF;
+
+		if constexpr (log_rsp_instructions) {
+			current_instr_log_output = std::format("{} {} {} {} e{}",
+				current_instr_name, vd, vs, vt, element);
+		}
 
 		/* Determine which lanes (0-7) of vpr[vt] to access */
 		__m128i vt_operand = GetVTBroadcast(vt, element);
