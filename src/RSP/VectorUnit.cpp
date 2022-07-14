@@ -330,7 +330,7 @@ namespace RSP
 			*/
 
 			u8* vpr_dst = (u8*)(vpr.data() + vt);
-			u32 addr = (gpr[base] + offset * 16);
+			u32 addr = gpr[base] + offset * 16;
 			u32 num_bytes_to_copy = [&] {
 				if constexpr (instr == LQV)
 					return 16 - std::max(addr & 0xF, element); // == std::min(16 - (address & 0xF), 16 - element)
@@ -338,18 +338,20 @@ namespace RSP
 					return std::min(addr & 0xF, 16 - element);
 			}();
 
-			if constexpr (instr == LQV)
-				addr &= 0xFFF;
-			else
-				addr &= 0xFF0;
-
-			for (u32 i = 0; i < num_bytes_to_copy; ++i) {
-				*(vpr_dst + ((element + i) ^ 1)) = dmem[addr + i];
-			}
-
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
 					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+			}
+
+			if constexpr (instr == LQV) {
+				addr &= 0xFFF;
+			}
+			else {
+				addr &= 0xFF0;
+			}
+
+			for (u32 i = 0; i < num_bytes_to_copy; ++i) {
+				*(vpr_dst + ((element + i) ^ 1)) = dmem[addr + i];
 			}
 		}
 		else if constexpr (instr == LTV || instr == STV) {
@@ -373,23 +375,29 @@ namespace RSP
 		else if constexpr (instr == SQV || instr == SRV) {
 			const u8* vpr_src = (u8*)(vpr.data() + vt);
 			u32 addr = gpr[base] + offset * 16;
-			size_t num_bytes_to_copy = [&] {
-				if constexpr (instr == SQV) return 16 - (addr & 0xF);
-				else return addr & 0xF;
+			u32 num_bytes_to_copy = [&] {
+				if constexpr (instr == SQV)
+					return 16 - (addr & 0xF);
+				else
+					return addr & 0xF;
 			}();
-			static constexpr auto addr_mask = [&] {
-				if constexpr (instr == SQV) return 0xFFF;
-				else return 0xFF0;
-			}();
-			auto current_elem = element;
-			for (size_t i = 0; i < num_bytes_to_copy; ++i) {
-				dmem[(addr & addr_mask) + i] = *(vpr_src + (current_elem ^ 1));
-				current_elem = (current_elem + 1) & 0xF;
-			}
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
 					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+			}
+
+			if constexpr (instr == SQV) {
+				addr &= 0xFFF;
+			}
+			else {
+				addr &= 0xFF0;
+			}
+
+			auto current_elem = element;
+			for (int i = 0; i < num_bytes_to_copy; ++i) {
+				dmem[addr + i] = *(vpr_src + (current_elem ^ 1));
+				current_elem = (current_elem + 1) & 0xF;
 			}
 		}
 		else {
