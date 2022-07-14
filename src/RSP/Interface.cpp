@@ -7,6 +7,7 @@ import Logging;
 import MI;
 import N64;
 import RDRAM;
+import Util;
 
 #include "../Utils/EnumerateTemplateSpecializations.h"
 
@@ -16,7 +17,7 @@ namespace RSP
 	Int CPUReadRegister(u32 addr)
 	{
 		if (addr == sp_pc_addr) {
-			return pc;
+			return halted ? pc : Int(Random<s32>(0, 0xFFF));
 		}
 		else {
 			u32 reg_offset = (addr & 0x1F) >> 2;
@@ -74,7 +75,7 @@ namespace RSP
 	void CPUWriteRegister(u32 addr, auto data)
 	{
 		if (addr == sp_pc_addr) {
-			pc = data & 0xFFF;
+			pc = data & 0xFFC;
 		}
 		else {
 			u32 reg_offset = (addr & 0x1F) >> 2;
@@ -120,12 +121,12 @@ namespace RSP
 				break;
 
 			case Status: {
-				if (word & 1) {
+				if ((word & 1) && !(word & 2)) {
 					/* CLR_HALT: Start running RSP code from the current RSP PC (clear the HALTED flag) */
 					regs.status &= ~1;
 					halted = false;
 				}
-				else if (word & 2) {
+				else if (!(word & 1) && (word & 2)) {
 					/* 	SET_HALT: Pause running RSP code (set the HALTED flag) */
 					regs.status |= 1;
 					halted = true;
@@ -136,31 +137,31 @@ namespace RSP
 					that remembers whether a BREAK opcode was ever run. */
 					regs.status &= ~2;
 				}
-				if (word & 8) {
+				if ((word & 8) && !(word & 0x10)) {
 					/* 	CLR_INTR: Acknowledge a pending RSP MI interrupt. This must be done any time a RSP MI interrupt
 					was generated, otherwise the interrupt line on the VR4300 will stay asserted. */
 					MI::ClearInterruptFlag(MI::InterruptType::SP);
 				}
-				else if (word & 0x10) {
+				else if (!(word & 8) && (word & 0x10)) {
 					/* 	SET_INTR: Manually trigger a RSP MI interrupt on the VR4300. It might be useful if the RSP wants to
 					manually trigger a VR4300 interrupt at any point during its execution. */
 					MI::SetInterruptFlag(MI::InterruptType::SP);
 				}
-				if (word & 0x20) {
+				if ((word & 0x20) && !(word & 0x40)) {
 					/* CLR_SSTEP: Disable single-step mode. */
 					single_step_mode = false;
 				}
-				else if (word & 0x40) {
+				else if (!(word & 0x20) && (word & 0x40)) {
 					/* 	SET_SSTEP: Enable single-step mode. When this mode is activated, the RSP auto-halts itself after every opcode that is run.
 					The VR4300 can then trigger a new step by unhalting it. */
 					single_step_mode = true;
 				}
-				if (word & 0x80) {
+				if ((word & 0x80) && !(word & 0x100)) {
 					/* CLR_INTBREAK: Disable the INTBREAK flag. When this flag is disabled, running a BREAK opcode will not generate any
 					RSP MI interrupt, but it will still halt the RSP. */
 					regs.status &= ~0x40;
 				}
-				else if (word & 0x100) {
+				else if (!(word & 0x80) && (word & 0x100)) {
 					/* 	SET_INTBREAK: Enable the INTBREAK flag. When this flag is enabled, running a BREAK opcode will generate
 					a RSP MI interrupt, in addition to halting the RSP. */
 					regs.status |= 0x40;
@@ -169,10 +170,10 @@ namespace RSP
 				s32 written_value_mask = 0x200;
 				s32 status_mask = 0x80;
 				for (int i = 0; i < 8; ++i) {
-					if (word & written_value_mask) {
+					if ((word & written_value_mask) && !(word & written_value_mask << 1)) {
 						regs.status &= ~status_mask;
 					}
-					else if (word & written_value_mask << 1) {
+					else if (!(word & written_value_mask) && (word & written_value_mask << 1)) {
 						regs.status |= status_mask;
 					}
 					written_value_mask <<= 2;
