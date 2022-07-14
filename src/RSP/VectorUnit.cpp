@@ -205,7 +205,7 @@ namespace RSP
 			else {
 				auto current_elem = element;
 				for (size_t i = 0; i < sizeof(Int); ++i) {
-					dmem[(addr + i) & 0xFFF] = *(vpr_src + ((current_elem + i) ^ 1));
+					dmem[(addr + i) & 0xFFF] = *(vpr_src + (current_elem ^ 1));
 					current_elem = (current_elem + 1) & 0xF;
 				}
 			}
