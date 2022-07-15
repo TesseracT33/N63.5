@@ -223,45 +223,6 @@ namespace RSP
 			}
 		};
 
-		/* LTV, STV */
-		auto VectorTranspose = [&] {
-			const auto start_addr = gpr[base] + offset * 16;
-			const auto wrap_addr = start_addr & 0xFF8;
-			const auto num_bytes_until_wrap = 16 - (start_addr & 7);
-			auto current_addr = start_addr;
-			auto current_reg = vt & 0x18;
-			auto current_elem = element & 0xE;
-			bool on_odd_byte = 1;
-
-			auto CopyNextByte = [&] {
-				if constexpr (instr == LTV) {
-					u8* vpr_dst = (u8*)(vpr.data() + current_reg);
-					*(vpr_dst + (current_elem & 0xF) + on_odd_byte) = dmem[current_addr & 0xFFF];
-				}
-				else {
-					u8* vpr_src = (u8*)(vpr.data() + current_reg);
-					dmem[current_addr & 0xFFF]  = *(vpr_src + (current_elem & 0xF) + on_odd_byte);
-				}
-				on_odd_byte ^= 1;
-				current_addr++;
-				current_elem++;
-				current_reg += on_odd_byte; /* increment reg every other byte copy */
-			};
-
-			for (int i = 0; i < num_bytes_until_wrap; ++i) {
-				CopyNextByte();
-			}
-			current_addr = wrap_addr;
-			for (int i = 0; i < 16 - num_bytes_until_wrap; ++i) {
-				CopyNextByte();
-			}
-
-			if constexpr (log_rsp_instructions) {
-				current_instr_log_output = std::format("{} {} e{}, ${:X}",
-					current_instr_name, vt & 0x18, element & 0xE, static_cast<std::make_unsigned<decltype(start_addr)>::type>(start_addr));
-			}
-		};
-
 		/* LPV, LUV, SPV, SUV */
 		auto PackedLoadStore = [&] {
 			/* 8-bit packed load;
@@ -354,8 +315,69 @@ namespace RSP
 				*(vpr_dst + ((element + i) ^ 1)) = dmem[addr + i];
 			}
 		}
-		else if constexpr (instr == LTV || instr == STV) {
-			VectorTranspose();
+		else if constexpr (instr == LTV) {
+			const auto start_addr = gpr[base] + offset * 16;
+			const auto wrap_addr = start_addr & 0xFF8;
+			const auto num_bytes_until_addr_wrap = 16 - (start_addr & 7);
+			auto current_addr = start_addr;
+			auto current_reg = vt & 0x18;
+			auto current_elem = (0x10 - element) & 0xE;
+			bool on_odd_byte = 1;
+
+			auto CopyNextByte = [&] {
+				u8* vpr_dst = (u8*)(vpr.data() + current_reg);
+				*(vpr_dst + (current_elem & 0xE) + on_odd_byte) = dmem[current_addr & 0xFFF];
+				on_odd_byte ^= 1;
+				current_addr++;
+				current_elem++; /* increment by two every other byte copy (achieved by ANDing with 0xE above) */
+				current_reg += on_odd_byte; /* increment every other byte copy */
+			};
+
+			for (int i = 0; i < num_bytes_until_addr_wrap; ++i) {
+				CopyNextByte();
+			}
+			current_addr = wrap_addr;
+			for (int i = 0; i < 16 - num_bytes_until_addr_wrap; ++i) {
+				CopyNextByte();
+			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("LTV {} e{}, ${:X}",
+					vt & 0x18, element & 0xE, static_cast<std::make_unsigned<decltype(start_addr)>::type>(start_addr));
+			}
+		}
+		else if constexpr (instr == STV) {
+			const auto start_addr = gpr[base] + offset * 16;
+			const auto wrap_addr = start_addr & 0xFF8;
+			const auto num_bytes_until_addr_wrap = 16 - (start_addr & 7);
+			const auto base_reg = vt & 0x18;
+			auto current_addr = start_addr;
+			auto current_reg = base_reg | element >> 1;
+			auto current_elem = 0;
+			bool on_odd_byte = 1;
+
+			auto CopyNextByte = [&] {
+				u8* vpr_src = (u8*)(vpr.data() + current_reg);
+				dmem[current_addr & 0xFFF] = *(vpr_src + (current_elem & 0xE) + on_odd_byte);
+				on_odd_byte ^= 1;
+				current_addr++;
+				current_elem++; /* increment by two every other byte copy (achieved by ANDing with 0xE above) */
+				current_reg += on_odd_byte; /* increment every other byte copy */
+				current_reg &= base_reg | current_reg & 7;
+			};
+
+			for (int i = 0; i < num_bytes_until_addr_wrap; ++i) {
+				CopyNextByte();
+			}
+			current_addr = wrap_addr;
+			for (int i = 0; i < 16 - num_bytes_until_addr_wrap; ++i) {
+				CopyNextByte();
+			}
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("STV {} e{}, ${:X}",
+					base_reg, element & 0xE, static_cast<std::make_unsigned<decltype(start_addr)>::type>(start_addr));
+			}
 		}
 		else if constexpr (instr == LPV || instr == LUV || instr == SPV || instr == SUV) {
 			PackedLoadStore();
