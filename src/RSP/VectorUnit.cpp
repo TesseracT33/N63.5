@@ -615,6 +615,7 @@ namespace RSP
 
 		if constexpr (instr == VMOV) {
 			_mm_setlane_epi16(&vpr[vd], vd_elem, _mm_getlane_epi16(&vpr[vt], vt_elem));
+			accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCP) {
 			s32 src = _mm_getlane_epi16(&vpr[vt], vt_elem);
