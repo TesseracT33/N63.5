@@ -196,6 +196,7 @@ namespace RSP
 			case 0x07: EXEC_VECTOR_INSTR(LUV); break;
 			case 0x08: EXEC_VECTOR_INSTR(LHV); break;
 			case 0x09: EXEC_VECTOR_INSTR(LFV); break;
+			case 0x0A: EXEC_VECTOR_INSTR(LWV); break;
 			case 0x0B: EXEC_VECTOR_INSTR(LTV); break;
 			default: break;
 			}
@@ -204,8 +205,7 @@ namespace RSP
 
 		case 0b111010: {
 			auto op_code = instr_code >> 11 & 0x1F;
-			switch (op_code)
-			{
+			switch (op_code) {
 			case 0x00: EXEC_VECTOR_INSTR(SBV); break;
 			case 0x01: EXEC_VECTOR_INSTR(SSV); break;
 			case 0x02: EXEC_VECTOR_INSTR(SLV); break;
@@ -293,7 +293,7 @@ namespace RSP
 		using enum VectorInstruction;
 		
 		if constexpr (instr == LBV || instr == LSV || instr == LLV || instr == LDV || instr == LQV ||
-			instr == LRV || instr == LPV || instr == LUV || instr == LTV || instr == LHV || instr == LFV)
+			instr == LRV || instr == LPV || instr == LUV || instr == LTV || instr == LHV || instr == LFV || instr == LWV)
 		{
 			VectorLoadStore<instr>(instr_code);
 		}

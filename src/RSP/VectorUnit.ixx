@@ -25,7 +25,7 @@ namespace RSP
 	enum class VectorInstruction
 	{
 		/* Load instructions */
-		LBV, LSV, LLV, LDV, LQV, LRV, LTV, LPV, LUV, LHV, LFV,
+		LBV, LSV, LLV, LDV, LQV, LRV, LTV, LPV, LUV, LHV, LFV, LWV,
 
 		/* Store instructions*/
 		SBV, SSV, SLV, SDV, SQV, SRV, STV, SPV, SUV, SHV, SFV, SWV,
