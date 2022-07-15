@@ -3,6 +3,7 @@ module RSP:VectorUnit;
 import :Operation;
 import :ScalarUnit;
 
+import Util;
 import Util.Numerics;
 import Util.SSE;
 
@@ -198,7 +199,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
-					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 		};
 
@@ -219,7 +220,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
-					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 		};
 
@@ -256,7 +257,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
-					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 		};
 
@@ -301,7 +302,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
-					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 
 			if constexpr (instr == LQV) {
@@ -343,7 +344,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("LTV {} e{}, ${:X}",
-					vt & 0x18, element & 0xE, static_cast<std::make_unsigned<decltype(start_addr)>::type>(start_addr));
+					vt & 0x18, element & 0xE, MakeUnsigned(start_addr));
 			}
 		}
 		else if constexpr (instr == STV) {
@@ -376,7 +377,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("STV {} e{}, ${:X}",
-					base_reg, element & 0xE, static_cast<std::make_unsigned<decltype(start_addr)>::type>(start_addr));
+					base_reg, element & 0xE, MakeUnsigned(start_addr));
 			}
 		}
 		else if constexpr (instr == LPV || instr == LUV || instr == SPV || instr == SUV) {
@@ -406,7 +407,7 @@ namespace RSP
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
-					current_instr_name, vt, element, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
+					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 
 			if constexpr (instr == SQV) {

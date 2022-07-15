@@ -19,7 +19,7 @@ namespace VR4300
 		s16 offset = instr_code & 0xFFFF;
 		auto rt = instr_code >> 16 & 0x1F;
 		auto base = instr_code >> 21 & 0x1F;
-		auto address = gpr[base] + offset;
+		auto addr = gpr[base] + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base.
@@ -27,43 +27,44 @@ namespace VR4300
 		   virtual address creation. */
 		if constexpr (instr == LD || instr == LDL || instr == LDR || instr == LLD) {
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
-				address = s32(address & 0xFFFF'FFFF);
+				addr = s32(addr & 0xFFFF'FFFF);
 			}
 		}
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+			current_instr_log_output = std::format("{} {}, ${:X}",
+				current_instr_name, rt, MakeUnsigned(addr));
 		}
 
 		auto result = [&] {
 			if constexpr (instr == LB) {
 				/* Load Byte;
 				   Sign-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadVirtual<s8>(address);
+				return ReadVirtual<s8>(addr);
 			}
 			else if constexpr (instr == LBU) {
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadVirtual<u8>(address);
+				return ReadVirtual<u8>(addr);
 			}
 			else if constexpr (instr == LH) {
 				/* Load halfword;
 				   Sign-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadVirtual<s16>(address);
+				return ReadVirtual<s16>(addr);
 			}
 			else if constexpr (instr == LHU) {
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadVirtual<u16>(address);
+				return ReadVirtual<u16>(addr);
 			}
 			else if constexpr (instr == LW) {
 				/* Load Word;
 				   Sign-extends the contents of a word specified by the address and loads the result to register rt. */
-				return ReadVirtual<s32>(address);
+				return ReadVirtual<s32>(addr);
 			}
 			else if constexpr (instr == LWU) {
 				/* Load Word Unsigned;
 				   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
-				return ReadVirtual<u32>(address);
+				return ReadVirtual<u32>(addr);
 			}
 			else if constexpr (instr == LWL) {
 				/* Load Word Left;
@@ -71,7 +72,7 @@ namespace VR4300
 				   the address is at the leftmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(address);
+				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(addr);
 			}
 			else if constexpr (instr == LWR) {
 				/* Load Word Right;
@@ -79,12 +80,12 @@ namespace VR4300
 				   the address is at the rightmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(address);
+				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(addr);
 			}
 			else if constexpr (instr == LD) {
 				/* Load Doubleword;
 				   Loads the contents of a word specified by the address to register rt. */
-				return ReadVirtual<u64>(address);
+				return ReadVirtual<u64>(addr);
 			}
 			else if constexpr (instr == LDL) {
 				/* Load Doubleword Left;
@@ -92,7 +93,7 @@ namespace VR4300
 				   specified by the address is at the leftmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(address);
+				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(addr);
 			}
 			else if constexpr (instr == LDR) {
 				/* Load Doubleword Right;
@@ -100,14 +101,14 @@ namespace VR4300
 				   specified by the address is at the rightmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(address);
+				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(addr);
 			}
 			else if constexpr (instr == LL) {
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
 				store_physical_address_on_load = true;
-				s32 ret = ReadVirtual<s32>(address);
+				s32 ret = ReadVirtual<s32>(addr);
 				store_physical_address_on_load = false;
 				ll_bit = 1;
 				return ret;
@@ -117,7 +118,7 @@ namespace VR4300
 				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
 				store_physical_address_on_load = true;
-				s64 ret = ReadVirtual<s64>(address);
+				s64 ret = ReadVirtual<s64>(addr);
 				store_physical_address_on_load = false;
 				ll_bit = 1;
 				return ret;
@@ -168,7 +169,7 @@ namespace VR4300
 			0
 		};
 		if constexpr (instr == LWL) {
-			u32 bits_from_last_boundary = (address & 3) << 3;
+			u32 bits_from_last_boundary = (addr & 3) << 3;
 			result <<= bits_from_last_boundary;
 			s32 untouched_gpr = s32(gpr.Get(rt) & ((1 << bits_from_last_boundary) - 1));
 			gpr.Set(rt, result | untouched_gpr);
@@ -178,7 +179,7 @@ namespace VR4300
 			}
 		}
 		else if constexpr (instr == LDL) {
-			u32 bits_from_last_boundary = (address & 7) << 3;
+			u32 bits_from_last_boundary = (addr & 7) << 3;
 			result <<= bits_from_last_boundary;
 			u64 untouched_gpr = gpr.Get(rt) & ((1ll << bits_from_last_boundary) - 1);
 			gpr.Set(rt, result | untouched_gpr);
@@ -188,7 +189,7 @@ namespace VR4300
 		}
 		else if constexpr (instr == LWR)
 		{
-			u32 bytes_from_last_boundary = address & 3;
+			u32 bytes_from_last_boundary = addr & 3;
 			result >>= 8 * (3 - bytes_from_last_boundary);
 			s32 untouched_gpr = s32(gpr.Get(rt) & right_load_mask[bytes_from_last_boundary]);
 			gpr.Set(rt, result | untouched_gpr);
@@ -198,7 +199,7 @@ namespace VR4300
 		}
 		else if constexpr (instr == LDR)
 		{
-			u32 bytes_from_last_boundary = address & 7;
+			u32 bytes_from_last_boundary = addr & 7;
 			result >>= 8 * (7 - bytes_from_last_boundary);
 			u64 untouched_gpr = gpr.Get(rt) & right_load_mask[bytes_from_last_boundary];
 			gpr.Set(rt, result | untouched_gpr);
@@ -222,7 +223,7 @@ namespace VR4300
 		s16 offset = instr_code & 0xFFFF;
 		auto rt = instr_code >> 16 & 0x1F;
 		auto base = instr_code >> 21 & 0x1F;
-		auto address = gpr[base] + offset;
+		auto addr = gpr[base] + offset;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base.
@@ -230,28 +231,29 @@ namespace VR4300
 		   virtual address creation. */
 		if constexpr (instr == SD || instr == SDL || instr == SDR || instr == SCD) {
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
-				address = s32(address & 0xFFFF'FFFF);
+				addr = s32(addr & 0xFFFF'FFFF);
 			}
 		}
 
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rt, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+			current_instr_log_output = std::format("{} {}, ${:X}",
+				current_instr_name, rt, MakeUnsigned(addr));
 		}
 
 		if constexpr (instr == SB) {
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			WriteVirtual<s8>(address, s8(gpr[rt]));
+			WriteVirtual<s8>(addr, s8(gpr[rt]));
 		}
 		else if constexpr (instr == SH) {
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			WriteVirtual<s16>(address, s16(gpr[rt]));
+			WriteVirtual<s16>(addr, s16(gpr[rt]));
 		}
 		else if constexpr (instr == SW) {
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			WriteVirtual<s32>(address, s32(gpr[rt]));
+			WriteVirtual<s32>(addr, s32(gpr[rt]));
 		}
 		else if constexpr (instr == SWL)
 		{
@@ -259,37 +261,37 @@ namespace VR4300
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
-			s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (address & 3))) - 1));
-			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
+			s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (addr & 3))) - 1));
+			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(addr, data_to_write);
 		}
 		else if constexpr (instr == SWR) {
 			/* Store Word Right;
 			   Shifts the contents of register rt to the left so that the rightmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
-			s32 data_to_write = s32(gpr[rt] << (8 * (3 - (address & 3))));
-			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
+			s32 data_to_write = s32(gpr[rt] << (8 * (3 - (addr & 3))));
+			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(addr, data_to_write);
 		}
 		else if constexpr (instr == SD) {
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
-			WriteVirtual<s64>(address, gpr[rt]);
+			WriteVirtual<s64>(addr, gpr[rt]);
 		}
 		else if constexpr (instr == SDL) {
 			/* Store Doubleword Left;
 			   Shifts the contents of register rt to the right so that the leftmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
-			s64 data_to_write = gpr[rt] & ~((1ll << (8 * (address & 7))) - 1);
-			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(address, data_to_write);
+			s64 data_to_write = gpr[rt] & ~((1ll << (8 * (addr & 7))) - 1);
+			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(addr, data_to_write);
 		}
 		else if constexpr (instr == SDR) {
 			/* Store Doubleword Right;
 			   Shifts the contents of register rt to the left so that the rightmost byte of a
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
-			s64 data_to_write = gpr[rt] << (8 * (7 - (address & 7)));
-			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(address, data_to_write);
+			s64 data_to_write = gpr[rt] << (8 * (7 - (addr & 7)));
+			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(addr, data_to_write);
 		}
 		else if constexpr (instr == SC) {
 			/* Store Conditional;
@@ -298,7 +300,7 @@ namespace VR4300
 			   If the LL bit is 0, does not store the contents of the word, and clears register
 			   rt to 0. */
 			if (ll_bit == 1) {
-				WriteVirtual<s32>(address, s32(gpr[rt]));
+				WriteVirtual<s32>(addr, s32(gpr[rt]));
 				gpr.Set(rt, 1);
 			}
 			else {
@@ -312,7 +314,7 @@ namespace VR4300
 			   If the LL bit is 0, does not store the contents of the register, and clears register
 			   rt to 0. */
 			if (ll_bit == 1) {
-				WriteVirtual<s64>(address, gpr[rt]);
+				WriteVirtual<s64>(addr, gpr[rt]);
 				gpr.Set(rt, 1);
 			}
 			else {
@@ -970,8 +972,7 @@ namespace VR4300
 				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
-		if (branch_cond)
-		{
+		if (branch_cond) {
 			s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 			PrepareJump(pc + offset);
 			pc_is_inside_branch_delay_slot = true;

@@ -1,15 +1,15 @@
 module Logging;
 
 
+import Util;
+
+
 namespace Logging
 {
 	void LogMemoryRead(u32 physical_address, auto memory_value)
 	{
 		std::string output = std::format(
-			"READ; ${:0X} from ${:08X}\n",
-			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
-			physical_address
-		);
+			"READ; ${:0X} from ${:08X}\n", MakeUnsigned(memory_value), physical_address);
 		instr_logging_ofs << output;
 	}
 
@@ -17,10 +17,7 @@ namespace Logging
 	void LogMemoryWrite(u32 physical_address, auto memory_value)
 	{
 		std::string output = std::format(
-			"WRITE; ${:0X} to ${:08X}\n",
-			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
-			physical_address
-		);
+			"WRITE; ${:0X} to ${:08X}\n", MakeUnsigned(memory_value), physical_address);
 		instr_logging_ofs << output;
 	}
 
@@ -28,11 +25,7 @@ namespace Logging
 	void LogIORead(u32 physical_address, auto memory_value, const std::string_view location)
 	{
 		std::string output = std::format(
-			"{} READ; ${:X} from ${:08X}\n",
-			location,
-			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
-			physical_address
-		);
+			"{} READ; ${:X} from ${:08X}\n", location, MakeUnsigned(memory_value), physical_address);
 		instr_logging_ofs << output;
 	}
 
@@ -40,11 +33,7 @@ namespace Logging
 	void LogIOWrite(u32 physical_address, auto memory_value, const std::string_view location)
 	{
 		std::string output = std::format(
-			"{} WRITE; ${:X} to ${:08X}\n",
-			location,
-			static_cast<std::make_unsigned<decltype(memory_value)>::type>(memory_value),
-			physical_address
-		);
+			"{} WRITE; ${:X} to ${:08X}\n", location, MakeUnsigned(memory_value), physical_address);
 		instr_logging_ofs << output;
 	}
 
@@ -52,19 +41,14 @@ namespace Logging
 	void LogVR4300Instruction(u64 pc, const std::string& instr_output, u32 instr_phys_addr)
 	{
 		std::string output = std::format(
-			"VR4300; ${:016X} \t origin: ${:08X} \t {}\n",
-			pc, instr_phys_addr, instr_output
-		);
+			"VR4300; ${:016X} \t origin: ${:08X} \t {}\n", pc, instr_phys_addr, instr_output);
 		instr_logging_ofs << output;
 	}
 
 
 	void LogRSPInstruction(u32 pc, const std::string& instr_output)
 	{
-		std::string output = std::format(
-			"RSP; ${:03X} \t {}\n",
-			pc, instr_output
-		);
+		std::string output = std::format("RSP; ${:03X} \t {}\n", pc, instr_output);
 		instr_logging_ofs << output;
 	}
 

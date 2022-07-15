@@ -3,6 +3,7 @@ export module Util;
 import <array>;
 import <concepts>;
 import <random>;
+import <type_traits>;
 
 export template<size_t bound>
 constexpr std::array<size_t, bound> range = [] {
@@ -37,4 +38,11 @@ Int Random(Int lower_bound, Int upper_bound)
 {
 	std::uniform_int_distribution<Int> uniform_dist(lower_bound, upper_bound);
 	return uniform_dist(random_engine);
+}
+
+
+export template<std::integral Int>
+auto MakeUnsigned(Int num)
+{
+	return static_cast<std::make_unsigned<Int>::type>(num);
 }
