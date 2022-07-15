@@ -652,11 +652,8 @@ namespace RSP
 		else if constexpr (instr == VRNDP) {
 			assert(false);
 		}
-		else if constexpr (instr == VNOP) {
-			assert(false);
-		}
-		else if constexpr (instr == VNULL) {
-			assert(false);
+		else if constexpr (instr == VNOP || instr == VNULL) {
+			
 		}
 		else {
 			static_assert(instr != instr);
