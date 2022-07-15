@@ -724,8 +724,8 @@ namespace RSP
 					VCO(i + 8) = 0
 				endfor
 			*/
-			vpr[vd] = accumulator.low = _mm_add_epi16(vpr[vs], vt_operand);
 			vco.low = _mm_cmplt_epu16(vpr[vd], vpr[vs]); /* check carry */
+			vpr[vd] = accumulator.low = _mm_add_epi16(vpr[vs], vt_operand);
 			std::memset(&vco.high, 0, sizeof(vco.high));
 		}
 		else if constexpr (instr == VSUBC) {
@@ -738,8 +738,8 @@ namespace RSP
 					VCO(i + 8) = result(16..0) != 0
 				endfor
 			*/
-			vpr[vd] = accumulator.low = _mm_sub_epi16(vpr[vs], vt_operand);
 			vco.low = _mm_cmplt_epu16(vpr[vs], vt_operand); /* check borrow */
+			vpr[vd] = accumulator.low = _mm_sub_epi16(vpr[vs], vt_operand);
 			vco.high = _mm_or_si128(vco.low, _mm_cmpneq_epi16(vpr[vd], m128i_all_zeroes));
 		}
 		else if constexpr (instr == VMULF || instr == VMULU) {
@@ -825,12 +825,14 @@ namespace RSP
 			vpr[vd] = _mm_subs_epi16(vpr[vd], slt);
 		}
 		else if constexpr (instr == VSAR) {
-			switch (element) {
-			case 0x8: vpr[vd] = accumulator.high; break;
-			case 0x9: vpr[vd] = accumulator.mid; break;
-			case 0xA: vpr[vd] = accumulator.low; break;
-			default: assert(false);
-			}
+			vpr[vd] = [&] {
+				switch (element) {
+				case 0x8: return accumulator.high;
+				case 0x9: return accumulator.mid;
+				case 0xA: return accumulator.low;
+				default: return m128i_all_zeroes;
+				}
+			}();
 		}
 		/* Pseudo-code VAND/VNAND/VOR/VNOR/VXOR/VNXOR:
 			for i in 0..7
