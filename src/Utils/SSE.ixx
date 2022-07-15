@@ -32,4 +32,4 @@ export
 	inline const __m128i y = _mm_set_epi64x(s64(-1), 0);
 }
 
-inline const __m128i byteswap_epi16_mask = _mm_set_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+const __m128i byteswap_epi16_mask = _mm_set_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
