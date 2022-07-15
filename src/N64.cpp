@@ -148,6 +148,16 @@ namespace N64
 				}
 				Renderer::Render();
 				Input::Poll();
+
+				auto time_elapsed = std::chrono::steady_clock::now() - prev_time;
+				if (time_elapsed >= std::chrono::milliseconds(1000)) {
+					std::cout << frame_counter << " fps" << std::endl;
+					prev_time = std::chrono::steady_clock::now();
+					frame_counter = 0;
+				}
+				else {
+					frame_counter++;
+				}
 			}
 		}
 	}

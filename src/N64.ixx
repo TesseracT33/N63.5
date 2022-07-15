@@ -2,6 +2,8 @@ export module N64;
 
 import <SDL.h>;
 
+import <chrono>;
+import <iostream>;
 import <list>;
 import <optional>;
 import <string>;
@@ -47,6 +49,9 @@ namespace N64
 	};
 
 	uint cpu_cycles_until_update_queue;
+	uint frame_counter;
 
 	std::list<EventItem> event_queue{};
+
+	std::chrono::steady_clock::time_point prev_time;
 }
