@@ -817,15 +817,12 @@ namespace RSP
 			vpr[vd] = _mm_abs_epi16(vpr[vs]);
 		}
 		else if constexpr (instr == VSAR) {
-			/* Pseudo-code:
-				for i in 0..7
-					a = 16 * e + 15
-					b = 16 * e
-					VD<i>(15..0) = ACC<i>(a..b)
-				endfor
-			*/
-			assert(element < 3);
-			std::memcpy(vpr.data() + vd, (u8*)&accumulator.low + 16 * element, 16);
+			switch (element) {
+			case 0x8: vpr[vd] = accumulator.high; break;
+			case 0x9: vpr[vd] = accumulator.mid; break;
+			case 0xA: vpr[vd] = accumulator.low; break;
+			default: assert(false);
+			}
 		}
 		/* Pseudo-code VAND/VNAND/VOR/VNOR/VXOR/VNXOR:
 			for i in 0..7
