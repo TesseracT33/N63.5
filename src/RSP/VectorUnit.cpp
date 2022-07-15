@@ -723,7 +723,7 @@ namespace RSP
 				endfor
 			*/
 			vpr[vd] = accumulator.low = _mm_add_epi16(vpr[vs], vt_operand);
-			vco.low = _mm_cmplt_epu16(_mm_sub_epi16(m128i_all_ones, vpr[vs]), vt_operand); /* check carry */
+			vco.low = _mm_cmplt_epu16(vpr[vd], vpr[vs]); /* check carry */
 			std::memset(&vco.high, 0, sizeof(vco.high));
 		}
 		else if constexpr (instr == VSUBC) {
@@ -814,7 +814,13 @@ namespace RSP
 			vpr[vd] = ClampSigned(accumulator.mid, accumulator.high);
 		}
 		else if constexpr (instr == VABS) {
-			vpr[vd] = _mm_abs_epi16(vpr[vs]);
+			/* If a lane is 0x8000, store 0x7FFF to vpr[vd], and 0x8000 to the accumulator. */
+			__m128i eq0 = _mm_cmpeq_epi16(vpr[vs], m128i_all_zeroes);
+			__m128i slt = _mm_srai_epi16(vpr[vs], 15);
+			vpr[vd] = _mm_andnot_si128(eq0, vt_operand);
+			vpr[vd] = _mm_xor_si128(vpr[vd], slt);
+			accumulator.low = _mm_sub_epi16(vpr[vd], slt);
+			vpr[vd] = _mm_subs_epi16(vpr[vd], slt);
 		}
 		else if constexpr (instr == VSAR) {
 			switch (element) {
