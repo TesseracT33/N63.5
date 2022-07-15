@@ -724,8 +724,8 @@ namespace RSP
 					VCO(i + 8) = 0
 				endfor
 			*/
-			vco.low = _mm_cmplt_epu16(vpr[vd], vpr[vs]); /* check carry */
 			vpr[vd] = accumulator.low = _mm_add_epi16(vpr[vs], vt_operand);
+			vco.low = _mm_cmplt_epu16(vpr[vd], vt_operand); /* check carry */
 			std::memset(&vco.high, 0, sizeof(vco.high));
 		}
 		else if constexpr (instr == VSUBC) {
