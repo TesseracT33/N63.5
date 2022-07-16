@@ -110,6 +110,7 @@ namespace RSP
 	}
 
 
+	template<VectorInstruction instr>
 	__m128i ClampUnsigned(__m128i low, __m128i high)
 	{
 		/* pseudo-code:
@@ -126,10 +127,16 @@ namespace RSP
 		*/
 		__m128i words1 = _mm_unpacklo_epi16(low, high);
 		__m128i words2 = _mm_unpackhi_epi16(low, high);
-		/* Unsigned saturation in SSE differs from that in the RSP in that
-		the result is set to 65535 only if value >= 65535. */
-		__m128i clamp_sse = _mm_packus_epi32(words1, words2);
-		return _mm_blendv_epi8(clamp_sse, m128i_all_ones, _mm_srai_epi16(clamp_sse, 15));
+		/* Unsigned saturation in SSE can differ from that in the RSP in that
+		the result is set to 65535 only if value >= 65535. It depends on the RSP instruction. */
+		using enum VectorInstruction;
+		if constexpr (instr == VMULU || instr == VMACU) {
+			__m128i clamp_sse = _mm_packus_epi32(words1, words2);
+			return _mm_blendv_epi8(clamp_sse, m128i_all_ones, _mm_srai_epi16(clamp_sse, 15));
+		}
+		else {
+			return _mm_packus_epi32(words1, words2);
+		}
 	}
 
 
@@ -750,7 +757,7 @@ namespace RSP
 					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
 				endfor
 			*/
-			/* Tests indicate the following behavior. The product is 33-bits, and the product + 0x8000 is
+			/* Tests indicate the following behavior. The product is 33-bits, and product + 0x8000 is
 			   also kept in 33 bits. Example:
 			   oper1 = 0xFFEE, oper2 = 0x0011 => prod(32..0) = 0x1'FFFF'FD9C.
 			   prod(32..0) + 0x8000 = 0x0'0000'7D9C. */
@@ -774,10 +781,12 @@ namespace RSP
 			   Notice that high carries are always computed as either 0 or 0xFFFF. */
 			accumulator.high = _mm_xor_si128(high_carry_mul, high_carry_add);
 			vpr[vd] = [&] {
-				if constexpr (instr == VMULF)
+				if constexpr (instr == VMULF) {
 					return ClampSigned(accumulator.mid, accumulator.high);
-				else
-					return ClampUnsigned(accumulator.mid, accumulator.high);
+				}
+				else {
+					return ClampUnsigned<instr>(accumulator.mid, accumulator.high);
+				}
 			}();
 		}
 		else if constexpr (instr == VMULQ) {
@@ -795,10 +804,12 @@ namespace RSP
 			high = _mm_add_epi16(high, low_carry);
 			AddToAccumulator(low, high, high_carry);
 			vpr[vd] = [&] {
-				if constexpr (instr == VMACF)
+				if constexpr (instr == VMACF) {
 					return ClampSigned(accumulator.mid, accumulator.high);
-				else
-					return ClampUnsigned(accumulator.mid, accumulator.high);
+				}
+				else {
+					return ClampUnsigned<instr>(accumulator.mid, accumulator.high);
+				}
 			}();
 		}
 		else if constexpr (instr == VMACQ) {
@@ -806,34 +817,76 @@ namespace RSP
 			assert(false);
 		}
 		else if constexpr (instr == VMUDN || instr == VMADN) {
+			/* Pseudo-code:
+				for i in 0..7
+					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // unsigned by signed
+					ACC<i>(47..0) += sign_extend(prod(31..0))
+					VD<i>(15..0) = clamp_unsigned(ACC<i>(31..0))
+				endfor */
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
+			__m128i sign_ext = _mm_srai_epi16(high, 15);
 			if constexpr (instr == VMUDN) {
 				accumulator.low = low;
 				accumulator.mid = high;
+				accumulator.high = sign_ext;
 			}
 			else {
-				AddToAccumulator(low, high);
+				AddToAccumulator(low, high, sign_ext);
 			}
-			vpr[vd] = ClampUnsigned(accumulator.low, accumulator.mid);
+			vpr[vd] = accumulator.low;
 		}
 		else if constexpr (instr == VMUDL || instr == VMADL) {
-			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			/* Pseudo-code:
+				for i in 0..7
+					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // unsigned multiplication
+					ACC<i>(47..0) = prod(31..16)
+					VD<i>(15..0) = clamp_unsigned(ACC<i>(31..0))
+				endfor
+			*/
 			__m128i high = _mm_mulhi_epu16(vpr[vs], vt_operand);
-			AddToAccumulator(high);
-			vpr[vd] = ClampUnsigned(accumulator.low, accumulator.mid);
+			if constexpr (instr == VMUDL) {
+				accumulator.low = high;
+			}
+			else {
+				AddToAccumulator(high);
+			}
+			vpr[vd] = ClampUnsigned<instr>(accumulator.low, accumulator.mid);
 		}
 		else if constexpr (instr == VMUDM || instr == VMADM) {
+			/* Pseudo-code:
+				for i in 0..7
+					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // signed by unsigned
+					ACC<i>(47..0) += sign_extend(prod(31..0))
+					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
+				endfor
+			*/
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
-			__m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
-			AddToAccumulator(low, high);
+			__m128i high = _mm_mulhi_epu16_epi16(vt_operand, vpr[vs]);
+			__m128i sign_ext = _mm_srai_epi16(high, 15);
+			if constexpr (instr == VMUDM) {
+				accumulator.low = low;
+				accumulator.mid = high;
+				accumulator.high = sign_ext;
+			}
+			else {
+				AddToAccumulator(low, high, sign_ext);
+			}
 			vpr[vd] = ClampSigned(accumulator.mid, accumulator.high);
 		}
 		else if constexpr (instr == VMUDH || instr == VMADH) {
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
-			AddToAccumulatorFromMid(low, high);
+			if constexpr (instr == VMUDH) {
+				accumulator.low = m128i_all_zeroes;
+				accumulator.mid = low;
+				accumulator.high = high;
+			}
+			else {
+				AddToAccumulatorFromMid(low, high);
+			}
 			vpr[vd] = ClampSigned(accumulator.mid, accumulator.high);
+			
 		}
 		else if constexpr (instr == VABS) {
 			/* If a lane is 0x8000, store 0x7FFF to vpr[vd], and 0x8000 to the accumulator. */

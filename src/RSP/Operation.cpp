@@ -45,11 +45,11 @@ namespace RSP
 
 	void Run(const uint cycles_to_run)
 	{
+		p_cycle_counter = 0;
+
 		if (halted) {
 			return;
 		}
-
-		p_cycle_counter = 0;
 
 		while (p_cycle_counter < cycles_to_run) {
 			if (jump_is_pending) {
@@ -60,6 +60,9 @@ namespace RSP
 			}
 			FetchDecodeExecuteInstruction();
 			if (single_step_mode) {
+				return;
+			}
+			if (halted) {
 				return;
 			}
 		}
