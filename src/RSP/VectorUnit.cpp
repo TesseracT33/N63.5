@@ -750,21 +750,29 @@ namespace RSP
 					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
 				endfor
 			*/
+			/* Tests indicate the following behavior. The product is 33-bits, and the product + 0x8000 is
+			   also kept in 33 bits. Example:
+			   oper1 = 0xFFEE, oper2 = 0x0011 => prod(32..0) = 0x1'FFFF'FD9C.
+			   prod(32..0) + 0x8000 = 0x0'0000'7D9C. */
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
-			__m128i carry = _mm_cmpeq_epi16(_mm_and_si128(high, m128i_epi16_sign_mask), m128i_epi16_sign_mask);
+			/* multiply by two */
+			__m128i low_carry_mul = _mm_srli_epi16(low, 15); /* note: either 0 or 1 */
+			__m128i high_carry_mul = _mm_srai_epi16(high, 15); /* note: either 0 or 0xFFFF */
 			low = _mm_slli_epi16(low, 1);
 			high = _mm_slli_epi16(high, 1);
-			// add $8000
+			high = _mm_add_epi16(high, low_carry_mul);
+			/* add $8000 */
 			low = _mm_add_epi16(low, m128i_epi16_sign_mask);
-			__m128i low_carry = _mm_srli_epi16(_mm_cmpgt_epi16(low, m128i_all_ones), 15); // carry if low >= 0
-			high = _mm_add_epi16(high, low_carry);
-			__m128i high_carry = _mm_and_si128(_mm_cmpeq_epi16(high, m128i_all_zeroes), _mm_cmpeq_epi16(low_carry, m128i_epi16_all_lanes_1));
-			carry = _mm_add_epi16(carry, high_carry);
+			__m128i low_carry_add = _mm_srli_epi16(_mm_cmpgt_epi16(low, m128i_all_zeroes), 15); /* carry if low >= 0 */
+			high = _mm_add_epi16(high, low_carry_add);
+			__m128i high_carry_add = _mm_and_si128(_mm_cmpeq_epi16(high, m128i_all_zeroes), _mm_cmpeq_epi16(low_carry_add, m128i_epi16_all_lanes_1));
 			accumulator.low = low;
 			accumulator.mid = high;
-			accumulator.high = carry;
-			// set vd
+			/* The XOR achieves the correct 33-bit overflow behaviour and subsequent sign-extension to 48 bits.
+			   E.g., if prod(32) = 1, but the mid lane overflowed when adding 0x8000, then acc(47..32) = 0.
+			   Notice that high carries are always computed as either 0 or 0xFFFF. */
+			accumulator.high = _mm_xor_si128(high_carry_mul, high_carry_add);
 			vpr[vd] = [&] {
 				if constexpr (instr == VMULF)
 					return ClampSigned(accumulator.mid, accumulator.high);
