@@ -18,6 +18,7 @@ export
 	u16 _mm_getlane_epu16(const __m128i* num, int lane);
 	__m128i _mm_mulhi_epu16_epi16(__m128i a, __m128i b);
 	__m128i _mm_nand_si128(__m128i a, __m128i b);
+	__m128i _mm_neg_epi16(__m128i a);
 	__m128i _mm_nor_si128(__m128i a, __m128i b);
 	__m128i _mm_not_si128(__m128i a);
 	__m128i _mm_nxor_si128(__m128i a, __m128i b);

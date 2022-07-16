@@ -56,7 +56,7 @@ namespace RSP
 	void AddToAccumulatorFromMid(__m128i mid, __m128i high);
 	__m128i ClampSigned(__m128i low, __m128i high);
 	__m128i ClampUnsigned(__m128i low, __m128i high);
-	__m128i GetVTBroadcast(int vt, int element);
+	__m128i GetVTBroadcast(uint vt, uint element);
 
 	struct Accumulator
 	{

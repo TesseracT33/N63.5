@@ -126,7 +126,10 @@ namespace RSP
 		*/
 		__m128i words1 = _mm_unpacklo_epi16(low, high);
 		__m128i words2 = _mm_unpackhi_epi16(low, high);
-		return _mm_packus_epi32(words1, words2);
+		/* Unsigned saturation in SSE differs from that in the RSP in that
+		the result is set to 65535 only if value >= 65535. */
+		__m128i clamp_sse = _mm_packus_epi32(words1, words2);
+		return _mm_blendv_epi8(clamp_sse, m128i_all_ones, _mm_srai_epi16(clamp_sse, 15));
 	}
 
 
@@ -428,7 +431,7 @@ namespace RSP
 			assert(false);
 		}
 		else {
-			static_assert(instr != instr);
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline<1>();
@@ -498,7 +501,7 @@ namespace RSP
 			gpr.Set(rt, s16(high << 8 | low));
 		}
 		else {
-			static_assert(instr != instr);
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline<1>();
@@ -520,8 +523,8 @@ namespace RSP
 				current_instr_name, vt, vt_elem, vd, vd_elem);
 		}
 
-		auto Rcp = [&](s32 src){
-			static constexpr std::array<u16, 512> rcp_rom = {
+		auto Rcp = [&](s32 input){
+			static constexpr std::array<s16, 512> rcp_rom = {
 				0xFFFF, 0xFF00, 0xFE01, 0xFD04, 0xFC07, 0xFB0C, 0xFA11, 0xF918, 0xF81F, 0xF727, 0xF631, 0xF53B, 0xF446, 0xF352, 0xF25F, 0xF16D,
 				0xF07C, 0xEF8B, 0xEE9C, 0xEDAE, 0xECC0, 0xEBD3, 0xEAE8, 0xE9FD, 0xE913, 0xE829, 0xE741, 0xE65A, 0xE573, 0xE48D, 0xE3A9, 0xE2C5,
 				0xE1E1, 0xE0FF, 0xE01E, 0xDF3D, 0xDE5D, 0xDD7E, 0xDCA0, 0xDBC2, 0xDAE6, 0xDA0A, 0xD92F, 0xD854, 0xD77B, 0xD6A2, 0xD5CA, 0xD4F3,
@@ -556,18 +559,18 @@ namespace RSP
 				0x0410, 0x03CE, 0x038C, 0x034A, 0x0309, 0x02C7, 0x0286, 0x0245, 0x0204, 0x01C3, 0x0182, 0x0141, 0x0101, 0x00C0, 0x0080, 0x0040
 			};
 
-			if (src == 0) {
-				return u32(-1);
+			if (input == 0) {
+				return -1;
 			}
-			u32 src_abs = std::abs(src);
-			auto scale_out = std::bit_width(src_abs);
+			auto input_abs = std::abs(input);
+			auto scale_out = std::bit_width(MakeUnsigned(input_abs));
 			auto scale_in = 32 - scale_out;
-			auto result = (0x10000 | rcp_rom[src_abs >> (scale_in - 9) & 0x1FF]) << (scale_out - 16);
-			return u32(src < 0 ? ~result : result);
+			auto result = (0x10000 | rcp_rom[input_abs >> (scale_in - 9) & 0x1FF]) << (scale_out - 16);
+			return input < 0 ? ~result : result;
 		};
 
-		auto Rsq = [&](s32 src) {
-			static constexpr std::array<u16, 512> rsq_rom = {
+		auto Rsq = [&](s32 input) {
+			static constexpr std::array<s16, 512> rsq_rom = {
 				0xFFFF, 0xFF00, 0xFE02, 0xFD06, 0xFC0B, 0xFB12, 0xFA1A, 0xF923, 0xF82E, 0xF73B, 0xF648, 0xF557, 0xF467, 0xF379, 0xF28C, 0xF1A0,
 				0xF0B6, 0xEFCD, 0xEEE5, 0xEDFF, 0xED19, 0xEC35, 0xEB52, 0xEA71, 0xE990, 0xE8B1, 0xE7D3, 0xE6F6, 0xE61B, 0xE540, 0xE467, 0xE38E,
 				0xE2B7, 0xE1E1, 0xE10D, 0xE039, 0xDF66, 0xDE94, 0xDDC4, 0xDCF4, 0xDC26, 0xDB59, 0xDA8C, 0xD9C1, 0xD8F7, 0xD82D, 0xD765, 0xD69E,
@@ -602,15 +605,15 @@ namespace RSP
 				0x0418, 0x03D5, 0x0392, 0x0350, 0x030D, 0x02CB, 0x0289, 0x0247, 0x0206, 0x01C4, 0x0183, 0x0142, 0x0101, 0x00C0, 0x0080, 0x0040
 			};
 
-			if (src == 0) {
-				return u32(-1);
+			if (input == 0) {
+				return -1;
 			}
-			u32 src_abs = std::abs(src);
-			u32 scale_out = std::bit_width(src_abs);
+			auto input_abs = std::abs(input);
+			u32 scale_out = std::bit_width(MakeUnsigned(input_abs));
 			auto scale_in = 32 - scale_out;
 			scale_out >>= 1;
-			auto result = (0x10000 | rsq_rom[(scale_in & 1) << 8 | src_abs >> (scale_in - 8) & 0xFF]) << (scale_out - 16);
-			return u32(src < 0 ? ~result : result);
+			auto result = (0x10000 | rsq_rom[(scale_in & 1) << 8 | input_abs >> (scale_in - 8) & 0xFF]) << (scale_out - 16);
+			return input < 0 ? ~result : result;
 		};
 
 		if constexpr (instr == VMOV) {
@@ -619,14 +622,14 @@ namespace RSP
 		}
 		else if constexpr (instr == VRCP) {
 			s32 src = _mm_getlane_epi16(&vpr[vt], vt_elem);
-			u32 result = Rcp(src);
+			auto result = Rcp(src);
 			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
 			div_out = s16(result >> 16);
 			accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRSQ) {
 			s32 src = _mm_getlane_epi16(&vpr[vt], vt_elem);
-			u32 result = Rsq(src);
+			auto result = Rsq(src);
 			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
 			div_out = s16(result >> 16);
 		}
@@ -637,7 +640,7 @@ namespace RSP
 		}
 		else if constexpr (instr == VRCPL || instr == VRSQL) {
 			s32 src = div_in << 16 | _mm_getlane_epi16(&vpr[vt], vt_elem);
-			u32 result = [&] {
+			auto result = [&] {
 				if constexpr (instr == VRCPL) return Rcp(src);
 				else return Rsq(src);
 			}();
@@ -656,7 +659,7 @@ namespace RSP
 			
 		}
 		else {
-			static_assert(instr != instr);
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline<1>();
@@ -763,8 +766,10 @@ namespace RSP
 			accumulator.high = carry;
 			// set vd
 			vpr[vd] = [&] {
-				if constexpr (instr == VMULF) return ClampSigned(accumulator.mid, accumulator.high);
-				else return ClampUnsigned(accumulator.mid, accumulator.high);
+				if constexpr (instr == VMULF)
+					return ClampSigned(accumulator.mid, accumulator.high);
+				else
+					return ClampUnsigned(accumulator.mid, accumulator.high);
 			}();
 		}
 		else if constexpr (instr == VMULQ) {
@@ -774,14 +779,18 @@ namespace RSP
 		else if constexpr (instr == VMACF || instr == VMACU) {
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
-			__m128i carry = _mm_cmpeq_epi16(_mm_and_si128(high, m128i_epi16_sign_mask), m128i_epi16_sign_mask);
+			/* multiply by two to get a 33-bit product. Sign-extend to 48 bits, and add to the accumulator. */
+			__m128i low_carry = _mm_srli_epi16(low, 15);
+			__m128i high_carry = _mm_srai_epi16(high, 15);
 			low = _mm_slli_epi16(low, 1);
 			high = _mm_slli_epi16(high, 1);
-			AddToAccumulator(low, high, carry);
-			// set vd
+			high = _mm_add_epi16(high, low_carry);
+			AddToAccumulator(low, high, high_carry);
 			vpr[vd] = [&] {
-				if constexpr (instr == VMACF) return ClampSigned(accumulator.mid, accumulator.high);
-				else return ClampUnsigned(accumulator.mid, accumulator.high);
+				if constexpr (instr == VMACF)
+					return ClampSigned(accumulator.mid, accumulator.high);
+				else
+					return ClampUnsigned(accumulator.mid, accumulator.high);
 			}();
 		}
 		else if constexpr (instr == VMACQ) {
@@ -791,7 +800,13 @@ namespace RSP
 		else if constexpr (instr == VMUDN || instr == VMADN) {
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
-			AddToAccumulator(low, high);
+			if constexpr (instr == VMUDN) {
+				accumulator.low = low;
+				accumulator.mid = high;
+			}
+			else {
+				AddToAccumulator(low, high);
+			}
 			vpr[vd] = ClampUnsigned(accumulator.low, accumulator.mid);
 		}
 		else if constexpr (instr == VMUDL || instr == VMADL) {
@@ -823,10 +838,10 @@ namespace RSP
 		}
 		else if constexpr (instr == VSAR) {
 			vpr[vd] = [&] {
-				switch (element) {
-				case 0x8: return accumulator.high;
-				case 0x9: return accumulator.mid;
-				case 0xA: return accumulator.low;
+				switch (element & 7) {
+				case 0: return accumulator.high;
+				case 1: return accumulator.mid;
+				case 2: return accumulator.low;
 				default: return m128i_all_zeroes;
 				}
 			}();
@@ -934,7 +949,7 @@ namespace RSP
 					return _mm_or_si128(vco.high, _mm_cmpneq_epi16(vpr[vs], vt_operand));
 				}
 				else {
-					static_assert(instr != instr);
+					static_assert(AlwaysFalse<instr>);
 				}
 			}();
 			vpr[vd] = accumulator.low = _mm_blendv_epi8(vt_operand, vpr[vs], vcc.low); /* epi8 blending works because each 16-bit lane in vcc is either 0 or $FFFF */
@@ -974,10 +989,10 @@ namespace RSP
 				vt_operand = _mm_add_epi16(vt_operand, correction);
 			}
 			__m128i neg_vt = [&] {
-				if constexpr (instr == VCH) return _mm_sign_epi16(vt_operand, vt_operand);
+				if constexpr (instr == VCH) return _mm_neg_epi16(vt_operand);
 				else return _mm_not_si128(vt_operand);
 			}();
-			vco.low = _mm_cmpneq_epi16(_mm_and_si128(vs_operand, m128i_epi16_sign_mask), _mm_and_si128(vs_operand, m128i_epi16_sign_mask));
+			vco.low = _mm_cmpneq_epi16(_mm_and_si128(vs_operand, m128i_epi16_sign_mask), _mm_and_si128(vt_operand, m128i_epi16_sign_mask));
 			__m128i vt_abs = _mm_blendv_epi8(vt_operand, neg_vt, vco.low);
 			vce.low = _mm_and_si128(vco.low, _mm_cmpeq_epi16(vs_operand, _mm_sub_epi16(neg_vt, m128i_epi16_all_lanes_1)));
 			vco.high = _mm_not_si128(_mm_or_si128(vce.low, _mm_cmpeq_epi16(vs_operand, vt_abs)));
@@ -1003,13 +1018,14 @@ namespace RSP
 					VD<i>(15..0) = ACC<i>(15..0)
 				endfor
 			*/
-			vcc.high = _mm_blendv_epi8(_mm_cmpgt_epi16(vpr[vs], vt_operand), vcc.high, _mm_or_si128(vco.low, vco.high));
-			__m128i neg_vt = _mm_sign_epi16(vt_operand, vt_operand);
-			__m128i lt = _mm_cmplt_epi16(vpr[vs], neg_vt);
+			vcc.high = _mm_blendv_epi8(_mm_cmpge_epi16(vpr[vs], vt_operand),
+				vcc.high, _mm_or_si128(vco.low, vco.high));
+			__m128i neg_vt = _mm_neg_epi16(vt_operand);
+			__m128i le = _mm_cmple_epi16(vpr[vs], neg_vt);
 			__m128i eq = _mm_cmpeq_epi16(vpr[vs], neg_vt);
 			vcc.low = _mm_blendv_epi8(
 				vcc.low,
-				_mm_blendv_epi8(eq, lt, vce.low),
+				_mm_blendv_epi8(eq, le, vce.low),
 				_mm_and_si128(vco.low, _mm_not_si128(vco.high)));
 			__m128i clip = _mm_blendv_epi8(vcc.high, vcc.low, vco.low);
 			__m128i vt_abs = _mm_blendv_epi8(vt_operand, neg_vt, vco.low);
@@ -1025,7 +1041,7 @@ namespace RSP
 			vpr[vd] = accumulator.low = _mm_blendv_epi8(vt_operand, vpr[vs], vcc.low);
 		}
 		else {
-			static_assert(instr != instr);
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline<1>();

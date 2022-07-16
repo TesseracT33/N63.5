@@ -60,6 +60,12 @@ __m128i _mm_nand_si128(__m128i a, __m128i b)
 }
 
 
+__m128i _mm_neg_epi16(__m128i a)
+{
+	return _mm_sign_epi16(a, m128i_all_ones);
+}
+
+
 __m128i _mm_nor_si128(__m128i a, __m128i b)
 {
 	return _mm_not_si128(_mm_or_si128(a, b));
