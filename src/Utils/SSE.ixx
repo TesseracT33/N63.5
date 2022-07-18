@@ -12,6 +12,7 @@ export
 	__m128i _mm_byteswap_epi16(__m128i a);
 	__m128i _mm_cmpge_epi16(__m128i a, __m128i b);
 	__m128i _mm_cmple_epi16(__m128i a, __m128i b);
+	__m128i _mm_cmpgt_epu16(__m128i a, __m128i b);
 	__m128i _mm_cmplt_epu16(__m128i a, __m128i b);
 	__m128i _mm_cmpneq_epi16(__m128i a, __m128i b);
 	s16 _mm_getlane_epi16(const __m128i* num, int lane);

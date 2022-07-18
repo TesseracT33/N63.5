@@ -71,7 +71,7 @@ namespace RSP
 		__m128i high;
 	};
 
-	s16 div_out, div_in;
+	s16 div_out, div_in, div_dp;
 
 	std::array<__m128i, 32> vpr; /* SIMD registers; eight 16-bit lanes */
 	std::array<ControlRegister, 3> control_reg{};

@@ -113,7 +113,7 @@ namespace RSP
 	template<VectorInstruction instr>
 	__m128i ClampUnsigned(__m128i low, __m128i high)
 	{
-		/* pseudo-code:
+		/* pseudo-code (depends on 'instr'):
 			for i in 0..7
 				value = high<i> << 16 | low<i>
 				if value < 0
@@ -130,12 +130,12 @@ namespace RSP
 		/* Unsigned saturation in SSE can differ from that in the RSP in that
 		the result is set to 65535 only if value >= 65535. It depends on the RSP instruction. */
 		using enum VectorInstruction;
+		__m128i clamp_sse = _mm_packus_epi32(words1, words2);
 		if constexpr (instr == VMULU || instr == VMACU) {
-			__m128i clamp_sse = _mm_packus_epi32(words1, words2);
 			return _mm_blendv_epi8(clamp_sse, m128i_all_ones, _mm_srai_epi16(clamp_sse, 15));
 		}
 		else {
-			return _mm_packus_epi32(words1, words2);
+			return clamp_sse;
 		}
 	}
 
@@ -526,11 +526,18 @@ namespace RSP
 		auto vt_elem = instr_code >> 21 & 0x07;
 
 		if constexpr (log_rsp_instructions) {
-			current_instr_log_output = std::format("{} VD {} e{} VT {} e{}",
-				current_instr_name, vt, vt_elem, vd, vd_elem);
+			current_instr_log_output = [&] {
+				if constexpr (instr == VNOP || instr == VNULL) {
+					return current_instr_name;
+				}
+				else {
+					return std::format("{} VD {} e{} VT {} e{}",
+						current_instr_name, vt, vt_elem, vd, vd_elem);
+				}
+			}();
 		}
 
-		auto Rcp = [&](s32 input){
+		auto Rcp = [&](s32 input) {
 			static constexpr std::array<s16, 512> rcp_rom = {
 				0xFFFF, 0xFF00, 0xFE01, 0xFD04, 0xFC07, 0xFB0C, 0xFA11, 0xF918, 0xF81F, 0xF727, 0xF631, 0xF53B, 0xF446, 0xF352, 0xF25F, 0xF16D,
 				0xF07C, 0xEF8B, 0xEE9C, 0xEDAE, 0xECC0, 0xEBD3, 0xEAE8, 0xE9FD, 0xE913, 0xE829, 0xE741, 0xE65A, 0xE573, 0xE48D, 0xE3A9, 0xE2C5,
@@ -565,15 +572,25 @@ namespace RSP
 				0x0842, 0x07FD, 0x07B9, 0x0776, 0x0732, 0x06EE, 0x06AB, 0x0668, 0x0624, 0x05E1, 0x059E, 0x055C, 0x0519, 0x04D6, 0x0494, 0x0452,
 				0x0410, 0x03CE, 0x038C, 0x034A, 0x0309, 0x02C7, 0x0286, 0x0245, 0x0204, 0x01C3, 0x0182, 0x0141, 0x0101, 0x00C0, 0x0080, 0x0040
 			};
-
-			if (input == 0) {
-				return -1;
+			// One's complement absolute value, xor with the sign bit to invert all bits if the sign bit is set
+			auto mask = input >> 31;
+			auto data = input ^ mask;
+			if (input > -32768) {
+				data -= mask;
 			}
-			auto input_abs = std::abs(input);
-			auto scale_out = std::bit_width(MakeUnsigned(input_abs));
-			auto scale_in = 32 - scale_out;
-			auto result = (0x10000 | rcp_rom[input_abs >> (scale_in - 9) & 0x1FF]) << (scale_out - 16);
-			return input < 0 ? ~result : result;
+			if (data == 0) {
+				return 0x7FFF'FFFF;
+			}
+			else if (input == -32768) {
+				return s32(0xFFFF'0000);
+			}
+			else {
+				auto shift = std::countl_zero(MakeUnsigned(data));
+				auto index = (u64(data) << shift & 0x7FC0'0000) >> 22;
+				s32 result = rcp_rom[index];
+				result = (0x10000 | result) << 14;
+				return (result >> (31 - shift)) ^ mask;
+			}
 		};
 
 		auto Rsq = [&](s32 input) {
@@ -611,39 +628,46 @@ namespace RSP
 				0x0865, 0x081E, 0x07D8, 0x0792, 0x074D, 0x0707, 0x06C2, 0x067D, 0x0638, 0x05F3, 0x05AF, 0x056A, 0x0526, 0x04E2, 0x049F, 0x045B,
 				0x0418, 0x03D5, 0x0392, 0x0350, 0x030D, 0x02CB, 0x0289, 0x0247, 0x0206, 0x01C4, 0x0183, 0x0142, 0x0101, 0x00C0, 0x0080, 0x0040
 			};
-
-			if (input == 0) {
-				return -1;
+			auto mask = input >> 31;
+			auto data = input ^ mask;
+			if (input > -32768) {
+				data -= mask;
 			}
-			auto input_abs = std::abs(input);
-			u32 scale_out = std::bit_width(MakeUnsigned(input_abs));
-			auto scale_in = 32 - scale_out;
-			scale_out >>= 1;
-			auto result = (0x10000 | rsq_rom[(scale_in & 1) << 8 | input_abs >> (scale_in - 8) & 0xFF]) << (scale_out - 16);
-			return input < 0 ? ~result : result;
+			if (data == 0) {
+				return 0x7FFF'FFFF;
+			}
+			else if (input == -32768) {
+				return s32(0xFFFF'0000);
+			}
+			else {
+				auto shift = std::countl_zero(MakeUnsigned(data));
+				auto index = (u64(data) << shift & 0x7FC0'0000) >> 22;
+				s32 result = rsq_rom[index & 0x1FE | shift & 1];
+				result = (0x10000 | result) << 14;
+				return result >> ((31 - shift) >> 1) ^ mask;
+			}
 		};
 
 		if constexpr (instr == VMOV) {
 			_mm_setlane_epi16(&vpr[vd], vd_elem, _mm_getlane_epi16(&vpr[vt], vt_elem));
 			accumulator.low = vpr[vt];
 		}
-		else if constexpr (instr == VRCP) {
+		else if constexpr (instr == VRCP || instr == VRSQ) {
 			s32 src = _mm_getlane_epi16(&vpr[vt], vt_elem);
-			auto result = Rcp(src);
+			auto result = [&] {
+				if constexpr (instr == VRCPL) return Rcp(src);
+				else return Rsq(src);
+			}();
 			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
-			div_out = s16(result >> 16);
+			div_out = result >> 16 & 0xFFFF;
+			div_dp = 0;
 			accumulator.low = vpr[vt];
-		}
-		else if constexpr (instr == VRSQ) {
-			s32 src = _mm_getlane_epi16(&vpr[vt], vt_elem);
-			auto result = Rsq(src);
-			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
-			div_out = s16(result >> 16);
 		}
 		else if constexpr (instr == VRCPH || instr == VRSQH) {
 			_mm_setlane_epi16(&vpr[vd], vd_elem, div_out);
 			div_in = _mm_getlane_epi16(&vpr[vt], vt_elem);
-			accumulator.low = vpr[vt]; // TODO accumulator loaded on VRSQH?
+			div_dp = 1;
+			accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCPL || instr == VRSQL) {
 			s32 src = div_in << 16 | _mm_getlane_epi16(&vpr[vt], vt_elem);
@@ -652,15 +676,16 @@ namespace RSP
 				else return Rsq(src);
 			}();
 			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
-			div_out = s16(result >> 16);
+			div_out = result >> 16 & 0xFFFF;
 			div_in = 0;
-			accumulator.low = vpr[vt]; // TODO: accumulator loaded on VRSQL?
+			div_dp = 0;
+			accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRNDN) {
-			assert(false);
+			assert(false); /* TODO */
 		}
 		else if constexpr (instr == VRNDP) {
-			assert(false);
+			assert(false); /* TODO */
 		}
 		else if constexpr (instr == VNOP || instr == VNULL) {
 			
@@ -754,7 +779,7 @@ namespace RSP
 				for i in 0..7
 					prod(32..0) = VS<i>(15..0) * VT<i>(15..0) * 2   // signed multiplication
 					ACC<i>(47..0) = sign_extend(prod(32..0) + 0x8000)
-					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
+					VD<i>(15..0) = clamp(ACC<i>(47..16))
 				endfor
 			*/
 			/* Tests indicate the following behavior. The product is 33-bits, and product + 0x8000 is
@@ -790,10 +815,53 @@ namespace RSP
 			}();
 		}
 		else if constexpr (instr == VMULQ) {
-			/* TODO */
-			assert(false);
+			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
+			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
+			/* add 31 to product if product < 0 */
+			__m128i addend = _mm_and_si128(_mm_srai_epi16(high, 15), _mm_set1_epi16(0x1F));
+			low = _mm_add_epi16(low, addend);
+			__m128i low_carry = _mm_srli_epi16(_mm_cmplt_epu16(low, addend), 15);
+			high = _mm_add_epi16(high, low_carry);
+			accumulator.low = m128i_all_zeroes;
+			accumulator.mid = low;
+			accumulator.high = high;
+			vpr[vd] = _mm_and_si128(_mm_set1_epi16(~0xF),
+				ClampSigned(_mm_srai_epi16(accumulator.mid, 1), _mm_srai_epi16(accumulator.high, 1)));
+		}
+		else if constexpr (instr == VMACQ) {
+			__m128i low = _mm_mullo_epi16(accumulator.mid, accumulator.high);
+			__m128i high = _mm_mulhi_epi16(accumulator.mid, accumulator.high);
+			/* if bit 5 of product is clear, add 32 if product < 0, else if product >= 32, subtract 32. */
+			const __m128i mask = _mm_set1_epi16(32);
+			const __m128i addend = _mm_and_si128(_mm_not_si128(low), mask); /* 0 or 32 */
+			/* Possibly add 32. No carry in low, since bit 5 is clear. */
+			__m128i pos_addend = _mm_and_si128(addend,
+				_mm_cmplt_epi16(high, m128i_all_zeroes)); /* prod < 0 */
+			low = _mm_add_epi16(low, pos_addend);
+			/* Possibly subtract 32. Explanation: If bit 5 is clear, then product >= 64.
+			   First, subtract 32 from low. This subtracts one from the upper 11 bits of low.
+			   If the result underflows (low & 0xFFE0 == 0xFFE0), subtract one from high. This cannot
+			   lead to underflow in high, since product >= 64, and if low underflowed, then 0 <= low <= 31
+			   before the subtraction. Thus, at least one bit of high must be set. */
+			__m128i neg_addend = _mm_and_si128(addend,
+				_mm_and_si128(_mm_cmpge_epi16(high, m128i_all_zeroes), /* prod >= 0 */
+				_mm_or_si128(_mm_cmpgt_epu16(low, mask), _mm_cmpgt_epi16(high, m128i_all_zeroes)))); /* low > 32 or high > 0 */
+			low = _mm_sub_epi16(low, neg_addend);
+			__m128i low_borrow = _mm_srli_epi16(_mm_cmpeq_epi16(
+				_mm_and_si128(low, _mm_set1_epi16(0xFFE0)), _mm_set1_epi16(0xFFE0)), 15);
+			high = _mm_sub_epi16(high, low_borrow);
+			AddToAccumulatorFromMid(low, high);
+			__m128i clamp_input_low = _mm_or_si128(_mm_srli_epi16(accumulator.mid, 1), _mm_slli_epi16(accumulator.high, 15));
+			__m128i clamp_input_high = _mm_srai_epi16(accumulator.high, 1);
+			vpr[vd] = _mm_and_si128(_mm_set1_epi16(~0xF), ClampSigned(clamp_input_low, clamp_input_high));
 		}
 		else if constexpr (instr == VMACF || instr == VMACU) {
+			/* Pseudo-code:
+				for i in 0..7
+					prod(32..0) = VS<i>(15..0) * VT<i>(15..0) * 2   // signed multiplication
+					ACC<i>(47..0) += sign_extend(prod(32..0))
+					VD<i>(15..0) = clamp(ACC<i>(47..16))
+				endfor*/
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
 			/* multiply by two to get a 33-bit product. Sign-extend to 48 bits, and add to the accumulator. */
@@ -812,16 +880,12 @@ namespace RSP
 				}
 			}();
 		}
-		else if constexpr (instr == VMACQ) {
-			/* TODO */
-			assert(false);
-		}
 		else if constexpr (instr == VMUDN || instr == VMADN) {
 			/* Pseudo-code:
 				for i in 0..7
 					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // unsigned by signed
-					ACC<i>(47..0) += sign_extend(prod(31..0))
-					VD<i>(15..0) = clamp_unsigned(ACC<i>(31..0))
+					ACC<i>(47..0) (+)= sign_extend(prod(31..0))
+					VD<i>(15..0) = ACC<i>(15..0)
 				endfor */
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
@@ -840,7 +904,7 @@ namespace RSP
 			/* Pseudo-code:
 				for i in 0..7
 					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // unsigned multiplication
-					ACC<i>(47..0) = prod(31..16)
+					ACC<i>(47..0) (+)= prod(31..16)
 					VD<i>(15..0) = clamp_unsigned(ACC<i>(31..0))
 				endfor
 			*/
@@ -857,7 +921,7 @@ namespace RSP
 			/* Pseudo-code:
 				for i in 0..7
 					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // signed by unsigned
-					ACC<i>(47..0) += sign_extend(prod(31..0))
+					ACC<i>(47..0) (+)= sign_extend(prod(31..0))
 					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
 				endfor
 			*/
@@ -875,10 +939,16 @@ namespace RSP
 			vpr[vd] = ClampSigned(accumulator.mid, accumulator.high);
 		}
 		else if constexpr (instr == VMUDH || instr == VMADH) {
+			/* Pseudo-code:
+				for i in 0..7
+					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // signed multiplication
+					ACC<i>(47..16) (+)= prod(31..0)
+					VD<i>(15..0) = clamp_signed(ACC<i>(47..16))
+				endfor*/
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epi16(vpr[vs], vt_operand);
 			if constexpr (instr == VMUDH) {
-				accumulator.low = m128i_all_zeroes;
+				accumulator.low = m128i_all_zeroes; /* seems necessary given tests */
 				accumulator.mid = low;
 				accumulator.high = high;
 			}
@@ -899,10 +969,10 @@ namespace RSP
 		}
 		else if constexpr (instr == VSAR) {
 			vpr[vd] = [&] {
-				switch (element & 7) {
-				case 0: return accumulator.high;
-				case 1: return accumulator.mid;
-				case 2: return accumulator.low;
+				switch (element) {
+				case 0x8: return accumulator.high;
+				case 0x9: return accumulator.mid;
+				case 0xA: return accumulator.low;
 				default: return m128i_all_zeroes;
 				}
 			}();
