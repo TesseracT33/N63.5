@@ -17,13 +17,17 @@ x86; SSE4.1
 # Tests
 | Test  | Status |
 | ----- | ------ |
-| Dillon's CPU tests | :heavy_check_mark: |
-| Peter Lemon's CPUTest/CP0 | :heavy_check_mark: |
-| Peter Lemon's CPUTest/CP1 | :x: |
-| Peter Lemon's CPUTest/CPU | :x: |
-| Peter Lemon's CPUTest/Exceptions | :heavy_check_mark: |
-| Peter Lemon's RSPTest/CP2 | :x: |
-| Peter Lemon's RSPTest/CPU | :heavy_check_mark: |
-| Peter Lemon's RSPTest/DMAAlignment-SP | :x: |
-| Peter Lemon's RSPTest/MEM | :heavy_check_mark: |
-| Peter Lemon's RSPTest/XBUS | :x: |
+| Dillon's CPU tests | 26/26 :heavy_check_mark: |
+| Peter Lemon's CPUTest/CP0 | 2/2 :heavy_check_mark: |
+| Peter Lemon's CPUTest/CP1 | 28/46 :x: |
+| Peter Lemon's CPUTest/CPU | 43/45 :x: |
+| Peter Lemon's CPUTest/DMAAlignment-PI-cart | 0/6 :x: |
+| Peter Lemon's CPUTest/Exceptions | 16/17 :x: |
+| Peter Lemon's FrameBuffer | 4/4 :heavy_check_mark: |
+| Peter Lemon's RSPTest/CP2 | 24/26 :x: |
+| Peter Lemon's RSPTest/CP2/RESERVED | 0/12 :x: |
+| Peter Lemon's RSPTest/CPU | 14/14 :heavy_check_mark: |
+| Peter Lemon's RSPTest/DMAAlignment-SP | 0/2 :x: |
+| Peter Lemon's RSPTest/MEM | 1/1 :heavy_check_mark: |
+| Peter Lemon's RSPTest/XBUS | 0/1 :x: |
+
