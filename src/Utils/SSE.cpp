@@ -13,9 +13,9 @@ __m128i _mm_cmpge_epi16(__m128i a, __m128i b)
 }
 
 
-__m128i _mm_cmple_epi16(__m128i a, __m128i b)
+__m128i _mm_cmpge_epu16(__m128i a, __m128i b)
 {
-	return _mm_or_si128(_mm_cmplt_epi16(a, b), _mm_cmpeq_epi16(a, b));
+	return _mm_or_si128(_mm_cmpgt_epu16(a, b), _mm_cmpeq_epi16(a, b));
 }
 
 
@@ -23,6 +23,19 @@ __m128i _mm_cmpgt_epu16(__m128i a, __m128i b)
 {
 	return _mm_cmpgt_epi16(_mm_add_epi16(a, m128i_epi16_sign_mask), _mm_add_epi16(b, m128i_epi16_sign_mask));
 }
+
+
+__m128i _mm_cmple_epi16(__m128i a, __m128i b)
+{
+	return _mm_or_si128(_mm_cmplt_epi16(a, b), _mm_cmpeq_epi16(a, b));
+}
+
+
+__m128i _mm_cmple_epu16(__m128i a, __m128i b)
+{
+	return _mm_or_si128(_mm_cmplt_epu16(a, b), _mm_cmpeq_epi16(a, b));
+}
+
 
 
 __m128i _mm_cmplt_epu16(__m128i a, __m128i b)

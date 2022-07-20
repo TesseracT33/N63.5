@@ -144,8 +144,8 @@ namespace RSP
 	{
 		/* Determine which lanes (0-7) of vpr[vt] to access */
 		auto CombineLanes = [&] <int mask> {
-			__m128i bottom_half = _mm_and_si128(_mm_shufflelo_epi16(vpr[vt], mask), x);
-			__m128i top_half = _mm_and_si128(_mm_shufflehi_epi16(vpr[vt], mask), y);
+			__m128i bottom_half = _mm_and_si128(_mm_shufflelo_epi16(vpr[vt], mask), _mm_set_epi64x(0, s64(-1)));
+			__m128i top_half = _mm_and_si128(_mm_shufflehi_epi16(vpr[vt], mask), _mm_set_epi64x(s64(-1), 0));
 			return _mm_or_si128(bottom_half, top_half);
 		};
 
@@ -433,7 +433,36 @@ namespace RSP
 				current_elem = (current_elem + 1) & 0xF;
 			}
 		}
-		else if constexpr (instr == LHV || instr == LFV || instr == SHV || instr == SFV || instr == SWV || instr == LWV) {
+		else if constexpr (instr == LWV) {
+			u8* vpr_dst = (u8*)(vpr.data() + vt);
+			auto addr = gpr[base] + offset * 16;
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("LWV {} e{}, ${:X}",
+					vt, element, MakeUnsigned(addr));
+			}
+
+			for (auto current_elem = 16 - element; current_elem < element + 16; ++current_elem) {
+				*(vpr_dst + ((current_elem & 0xF) ^ 1)) = dmem[addr & 0xFFF];
+				addr += 4;
+			}
+		}
+		else if constexpr (instr == SWV) {
+			u8* vpr_src = (u8*)(vpr.data() + vt);
+			auto addr = gpr[base] + offset * 16;
+
+			if constexpr (log_rsp_instructions) {
+				current_instr_log_output = std::format("SWV {} e{}, ${:X}",
+					vt, element, MakeUnsigned(addr));
+			}
+
+			auto base = addr & 7;
+			addr &= ~7;
+			for (auto current_elem = element; current_elem < element + 16; ++current_elem) {
+				dmem[(addr + (base++ & 0xF)) & 0xFFF] = *(vpr_src + ((current_elem & 0xF) ^ 1));
+			}
+		}
+		else if constexpr (instr == LHV || instr == LFV || instr == SHV || instr == SFV) {
 			/* TODO */
 			assert(false);
 		}
@@ -521,9 +550,25 @@ namespace RSP
 		using enum VectorInstruction;
 
 		auto vd = instr_code >> 6 & 0x1F;
-		auto vd_elem = instr_code >> 11 & 0x07;
+		/* vd_elem is 4 bits long (range 0..15); the highest bit is always ignored so the destination lane de is computed from the lowest 3 bits. */
+		auto vd_elem = instr_code >> 11 & 7;
 		auto vt = instr_code >> 16 & 0x1F;
-		auto vt_elem = instr_code >> 21 & 0x07;
+		/* When vt_elem(3) is 0, a hardware bug is triggered and portions of the lower bits of vt_elem are replaced with portion of the bits of vd_elem
+		while computing se. Specifically, all bits in vt_elem from the topmost set bit and higher are replaced with the same-position bits in vd_elem. */
+		auto vt_elem = instr_code >> 21 & 0xF;
+		if (vt_elem & 7) {
+			bool vt_elem_bit_3 = vt_elem & 8;
+			vt_elem &= 7;
+			if (vt_elem_bit_3 == 0) {
+				auto msb_index = 31 - std::countl_zero(vt_elem); /* in {0, 1, 2}, since vt_elem & 7 != 0*/
+				auto mask = 7 << msb_index; /* Lower three bits: 0 => 0b111; 1 => 0b110; 2 => 0b100. Upper bits are irrelevant for calcs below. */
+				vt_elem &= ~mask;
+				vt_elem |= vd_elem & mask;
+			}
+		}
+		else {
+			vt_elem = 0; /* effectively clear bit 3 */
+		}
 
 		if constexpr (log_rsp_instructions) {
 			current_instr_log_output = [&] {
@@ -572,7 +617,7 @@ namespace RSP
 				0x0842, 0x07FD, 0x07B9, 0x0776, 0x0732, 0x06EE, 0x06AB, 0x0668, 0x0624, 0x05E1, 0x059E, 0x055C, 0x0519, 0x04D6, 0x0494, 0x0452,
 				0x0410, 0x03CE, 0x038C, 0x034A, 0x0309, 0x02C7, 0x0286, 0x0245, 0x0204, 0x01C3, 0x0182, 0x0141, 0x0101, 0x00C0, 0x0080, 0x0040
 			};
-			// One's complement absolute value, xor with the sign bit to invert all bits if the sign bit is set
+
 			auto mask = input >> 31;
 			auto data = input ^ mask;
 			if (input > -32768) {
@@ -628,23 +673,26 @@ namespace RSP
 				0x0865, 0x081E, 0x07D8, 0x0792, 0x074D, 0x0707, 0x06C2, 0x067D, 0x0638, 0x05F3, 0x05AF, 0x056A, 0x0526, 0x04E2, 0x049F, 0x045B,
 				0x0418, 0x03D5, 0x0392, 0x0350, 0x030D, 0x02CB, 0x0289, 0x0247, 0x0206, 0x01C4, 0x0183, 0x0142, 0x0101, 0x00C0, 0x0080, 0x0040
 			};
-			auto mask = input >> 31;
-			auto data = input ^ mask;
-			if (input > -32768) {
-				data -= mask;
-			}
-			if (data == 0) {
+
+			if (input == 0) {
 				return 0x7FFF'FFFF;
 			}
 			else if (input == -32768) {
 				return s32(0xFFFF'0000);
 			}
 			else {
-				auto shift = std::countl_zero(MakeUnsigned(data));
-				auto index = (u64(data) << shift & 0x7FC0'0000) >> 22;
-				s32 result = rsq_rom[index & 0x1FE | shift & 1];
-				result = (0x10000 | result) << 14;
-				return result >> ((31 - shift) >> 1) ^ mask;
+				auto unsigned_input = MakeUnsigned(std::abs(input));
+				auto lshift = std::countl_zero(unsigned_input) + 1;
+				auto rshift = (32 - lshift) >> 1; // Shifted by 1 instead of 0
+				auto index = (unsigned_input << lshift) >> 24; // Shifted by 24 instead of 23
+				auto rom = rsq_rom[(index | ((lshift & 1) << 8))];
+				s32 result = ((0x10000 | rom) << 14) >> rshift;
+				if (unsigned_input != input) {
+					return ~result;
+				}
+				else {
+					return result;
+				}
 			}
 		};
 
@@ -653,10 +701,10 @@ namespace RSP
 			accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCP || instr == VRSQ) {
-			s32 src = _mm_getlane_epi16(&vpr[vt], vt_elem);
+			s32 input = _mm_getlane_epi16(&vpr[vt], vt_elem);
 			auto result = [&] {
-				if constexpr (instr == VRCPL) return Rcp(src);
-				else return Rsq(src);
+				if constexpr (instr == VRCP) return Rcp(input);
+				else return Rsq(input);
 			}();
 			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
 			div_out = result >> 16 & 0xFFFF;
@@ -670,10 +718,10 @@ namespace RSP
 			accumulator.low = vpr[vt];
 		}
 		else if constexpr (instr == VRCPL || instr == VRSQL) {
-			s32 src = div_in << 16 | _mm_getlane_epi16(&vpr[vt], vt_elem);
+			s32 input = div_in << 16 | _mm_getlane_epi16(&vpr[vt], vt_elem);
 			auto result = [&] {
-				if constexpr (instr == VRCPL) return Rcp(src);
-				else return Rsq(src);
+				if constexpr (instr == VRCPL) return Rcp(input);
+				else return Rsq(input);
 			}();
 			_mm_setlane_epi16(&vpr[vd], vd_elem, s16(result));
 			div_out = result >> 16 & 0xFFFF;
@@ -1087,50 +1135,30 @@ namespace RSP
 			std::memset(&vco, 0, sizeof(vco));
 			std::memset(&vcc.high, 0, sizeof(vcc.high));
 		}
-		else if constexpr (instr == VCH || instr == VCR) {
-			/* Pseudo-code:
-				for i in 0..7
-					VCO(i) = VS<i>(15) != VT<i>(15)
-					vt_abs(15..0) = VCO(i) ? -VT<i>(15..0) : VT<i>(15..0)
-					VCE(i) = VCO(i) & (VS<i>(15..0) == -VT<i>(15..0) - 1)
-					VCO(i + 8) = !VCE(i) & (VS<i>(15..0) != vt_abs(15..0))
-					VCC(i) = VS<i>(15..0) <= -VT<i>(15..0)
-					VCC(i + 8) = VS<i>(15..0) >= VT<i>(15..0)
-					clip = VCO(i) ? VCC(i) : VCC(i + 8)
-					ACC<i>(15..0) = clip ? vt_abs(15..0) : VS<i>(15..0)
-					VD<i>(15..0) = ACC<i>(15..0)
-				endfor
-				VCR: works in one's complement (inputs, meaning of '-' operator)
-			*/
-			// TODO: VCR handle case when some number is signed $8000
-			/* Convert vpr[vs] and vt_operand to two's complement */
-			__m128i vs_operand = [&] {
-				if constexpr (instr == VCH) {
-					return vpr[vs];
-				}
-				else {
-					__m128i correction = _mm_cmpeq_epi16(_mm_and_si128(vpr[vs], m128i_epi16_sign_mask), m128i_epi16_sign_mask);
-					correction = _mm_srli_epi16(correction, 15);
-					return _mm_add_epi16(vpr[vs], correction);
-				}
-			}();
-			if constexpr (instr == VCR) {
-				__m128i correction = _mm_cmpeq_epi16(_mm_and_si128(vt_operand, m128i_epi16_sign_mask), m128i_epi16_sign_mask);
-				correction = _mm_srli_epi16(correction, 15);
-				vt_operand = _mm_add_epi16(vt_operand, correction);
-			}
-			__m128i neg_vt = [&] {
-				if constexpr (instr == VCH) return _mm_neg_epi16(vt_operand);
-				else return _mm_not_si128(vt_operand);
-			}();
-			vco.low = _mm_cmpneq_epi16(_mm_and_si128(vs_operand, m128i_epi16_sign_mask), _mm_and_si128(vt_operand, m128i_epi16_sign_mask));
-			__m128i vt_abs = _mm_blendv_epi8(vt_operand, neg_vt, vco.low);
-			vce.low = _mm_and_si128(vco.low, _mm_cmpeq_epi16(vs_operand, _mm_sub_epi16(neg_vt, m128i_epi16_all_lanes_1)));
-			vco.high = _mm_not_si128(_mm_or_si128(vce.low, _mm_cmpeq_epi16(vs_operand, vt_abs)));
-			vcc.low = _mm_cmple_epi16(vs_operand, neg_vt);
-			vcc.high = _mm_cmpge_epi16(vs_operand, vt_operand);
+		else if constexpr (instr == VCR) {
+			__m128i sign = _mm_srai_epi16(_mm_xor_si128(vpr[vs], vt_operand), 15);
+			__m128i dlez = _mm_add_epi16(_mm_and_si128(vpr[vs], sign), vt_operand);
+			vcc.low = _mm_srai_epi16(dlez, 15);
+			__m128i dgez = _mm_min_epi16(_mm_or_si128(vpr[vs], sign), vt_operand);
+			vcc.high = _mm_cmpeq_epi16(dgez, vt_operand);
+			__m128i nvt = _mm_xor_si128(vt_operand, sign);
+			__m128i mask = _mm_blendv_epi8(vcc.high, vcc.low, sign);
+			accumulator.low = _mm_blendv_epi8(vpr[vs], nvt, mask);
+			vpr[vd] = accumulator.low;
+			vco.low = vco.high = vce.low = vce.high = m128i_all_zeroes;
+		}
+		else if constexpr (instr == VCH) {
+			__m128i neg_vt = _mm_neg_epi16(vt_operand);
+			__m128i signs_different = _mm_cmplt_epi16(_mm_xor_si128(vpr[vs], vt_operand), m128i_all_zeroes);
+			vcc.high = _mm_blendv_epi8(vcc.high, m128i_all_ones, _mm_cmplt_epi16(vt_operand, m128i_all_zeroes));
+			vco.low = signs_different;
+			__m128i vt_abs = _mm_blendv_epi8(vt_operand, neg_vt, signs_different);
+			vce.low = _mm_and_si128(vco.low, _mm_cmpeq_epi16(vpr[vs], _mm_sub_epi16(neg_vt, m128i_epi16_all_lanes_1)));
+			vco.high = _mm_not_si128(_mm_or_si128(vce.low, _mm_cmpeq_epi16(vpr[vs], vt_abs)));
+			vcc.low = _mm_cmple_epi16(vpr[vs], neg_vt);
+			vcc.high = _mm_cmpge_epi16(vpr[vs], vt_operand);
 			__m128i clip = _mm_blendv_epi8(vcc.high, vcc.low, vco.low);
-			vpr[vd] = accumulator.low = _mm_blendv_epi8(vs_operand, vt_abs, clip);
+			vpr[vd] = accumulator.low = _mm_blendv_epi8(vpr[vs], vt_abs, clip);
 		}
 		else if constexpr (instr == VCL) {
 			/* Pseudo-code:
@@ -1148,11 +1176,14 @@ namespace RSP
 					ACC<i>(15..0) = clip ? vt_abs(15..0) : VS<i>(15..0)
 					VD<i>(15..0) = ACC<i>(15..0)
 				endfor
+				Note: all comparisons are unsigned
 			*/
-			vcc.high = _mm_blendv_epi8(_mm_cmpge_epi16(vpr[vs], vt_operand),
-				vcc.high, _mm_or_si128(vco.low, vco.high));
+			vcc.high = _mm_blendv_epi8(
+				_mm_cmpge_epu16(vpr[vs], vt_operand),
+				vcc.high,
+				_mm_or_si128(vco.low, vco.high));
 			__m128i neg_vt = _mm_neg_epi16(vt_operand);
-			__m128i le = _mm_cmple_epi16(vpr[vs], neg_vt);
+			__m128i le = _mm_cmple_epu16(vpr[vs], neg_vt);
 			__m128i eq = _mm_cmpeq_epi16(vpr[vs], neg_vt);
 			vcc.low = _mm_blendv_epi8(
 				vcc.low,
