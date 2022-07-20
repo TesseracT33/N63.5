@@ -21,20 +21,17 @@ namespace RDRAM
 	}
 
 
-	size_t GetNumberOfBytesUntilMemoryEnd(const u32 start_addr)
+	size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr)
 	{
-		return std::max(std::size_t(0), rdram.size() - start_addr);
+		start_addr &= rdram.size() - 1;
+		return std::max(size_t(0), rdram.size() - start_addr);
 	}
 
 
-	u8* GetPointerToMemory(const u32 addr)
+	u8* GetPointerToMemory(u32 addr)
 	{
-		if (addr >= rdram_standard_size && rdram.size() == rdram_standard_size) {
-			return nullptr;
-		}
-		else {
-			return rdram.data() + addr;
-		}
+		addr &= rdram.size() - 1;
+		return rdram.data() + addr;
 	}
 
 
