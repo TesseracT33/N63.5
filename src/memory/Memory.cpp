@@ -106,7 +106,7 @@ namespace Memory
 		uint page = 0;
 		for (u8*& ptr : read_page_table) {
 			ptr = [&] {
-				if (page <= 0x007F)                        return RDRAM::GetPointerToMemory(page << 16);
+				if (page <= 0x003F)                        return RDRAM::GetPointerToMemory(page << 16);
 				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
 				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSRAM(page << 16);
 				else if (page >= 0x1000 && page <= 0x1FBF) return Cartridge::GetPointerToROM(page << 16);
@@ -118,7 +118,7 @@ namespace Memory
 		page = 0;
 		for (u8*& ptr : write_page_table) {
 			ptr = [&] {
-				if (page <= 0x007F)                        return RDRAM::GetPointerToMemory(page << 16);
+				if (page <= 0x003F)                        return RDRAM::GetPointerToMemory(page << 16);
 				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
 				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSRAM(page << 16);
 				else                                       return (u8*)nullptr;
