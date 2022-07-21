@@ -89,11 +89,11 @@ namespace RSP
 
 			switch (reg_offset & 7) {
 			case DmaSpaddr:
-				regs.dma_spaddr = data &= ~7;
+				regs.dma_spaddr = data & 0x03FF'FFF8;
 				break;
 
 			case DmaRamaddr:
-				regs.dma_ramaddr = data &= ~7;
+				regs.dma_ramaddr = data &= 0x03FF'FFF8;
 				break;
 
 			case DmaRdlen:
@@ -237,31 +237,34 @@ namespace RSP
 		s32 num_bytes_until_spram_end = 0x1000 - (regs.dma_spaddr & 0xFFF);
 
 		s32 requested_total_bytes = rows * bytes_per_row;
+		s32 bytes_to_copy = std::min(requested_total_bytes,
+			std::min(num_bytes_until_rdram_end, num_bytes_until_spram_end));
 
-		static constexpr uint cpu_cycles_per_byte = 18; /* TODO: essentially no idea about this */
+		/* The speed of transfer is about 3.7 bytes per VR4300 (PClock) cycle (plus some small fixed overhead). */
+		static constexpr uint cpu_cycles_per_byte = 4;
 		uint cpu_cycles_until_finish = cpu_cycles_per_byte * requested_total_bytes;
 
 		N64::EnqueueEvent(N64::Event::SpDmaFinish, cpu_cycles_until_finish);
 
+		/* The DMA engine allows to transfer multiple "rows" of data in RDRAM, separated by a "skip" value. This allows for instance to transfer
+		a rectangular portion of a larger image, by specifying the size of each row of the selection portion, the number of rows, and a "skip" value
+		that corresponds to the bytes between the end of a row and the beginning of the following one. Notice that this applies only to RDRAM: accesses in IMEM/DMEM are always linear. */
 		if (skip == 0) {
-			s32 bytes_to_copy = std::min(requested_total_bytes,
-				std::min(num_bytes_until_rdram_end, num_bytes_until_spram_end));
 			std::memcpy(dst_ptr, src_ptr, bytes_to_copy);
 		}
 		else {
-			s32 requested_total_bytes_incl_skip = requested_total_bytes + skip * (rows - 1);
-			s32 bytes_to_copy_incl_skip = std::min(requested_total_bytes_incl_skip,
-				std::min(num_bytes_until_rdram_end, num_bytes_until_spram_end));
 			for (s32 i = 0; i < rows; ++i) {
-				s32 bytes_to_copy_this_row = std::min(bytes_to_copy_incl_skip, bytes_per_row);
+				s32 bytes_to_copy_this_row = std::min(bytes_to_copy, bytes_per_row);
 				std::memcpy(dst_ptr, src_ptr, bytes_to_copy_this_row);
-				bytes_to_copy_incl_skip -= bytes_to_copy_this_row;
-				if (bytes_to_copy_incl_skip <= skip) {
-					break;
+				bytes_to_copy -= bytes_to_copy_this_row;
+				src_ptr += bytes_to_copy_this_row;
+				dst_ptr += bytes_to_copy_this_row;
+				if constexpr (dma_type == DmaType::RdToSp) {
+					src_ptr += skip;
 				}
-				bytes_to_copy_incl_skip -= skip;
-				src_ptr += bytes_to_copy_this_row + skip;
-				dst_ptr += bytes_to_copy_this_row + skip;
+				else {
+					dst_ptr += skip;
+				}
 			}
 		}
 
@@ -289,8 +292,14 @@ namespace RSP
 			dma_is_pending = false;
 			regs.dma_full &= ~1;
 			regs.status &= ~8; /* Mirrors dma_full.0 */
-			regs.dma_rdlen = buffered_dma_rdlen;
-			regs.dma_wrlen = buffered_dma_wrlen;
+			if (in_progress_dma_type == DmaType::RdToSp) {
+				regs.dma_rdlen = buffered_dma_rdlen;
+				regs.dma_wrlen = buffered_dma_rdlen;
+			}
+			else {
+				regs.dma_rdlen = buffered_dma_wrlen;
+				regs.dma_wrlen = buffered_dma_wrlen;
+			}
 			init_pending_dma_fun_ptr();
 		}
 		else {
@@ -298,11 +307,13 @@ namespace RSP
 			regs.dma_busy &= ~1;
 			regs.status &= ~4; /* Mirrors dma_busy.0 */
 			if (in_progress_dma_type == DmaType::RdToSp) {
-				/* After the transfer is finished, the field RDLEN contains the value 0xFF8,
+				/* After the transfer is finished, the fields RDLEN and WRLEN contains the value 0xFF8,
 				COUNT is reset to 0, and SKIP is unchanged. */
 				regs.dma_rdlen = 0xFF8 | regs.dma_rdlen & 0xFF80'0000;
+				regs.dma_wrlen = 0xFF8 | regs.dma_rdlen & 0xFF80'0000;
 			}
 			else {
+				regs.dma_rdlen = 0xFF8 | regs.dma_wrlen & 0xFF80'0000;
 				regs.dma_wrlen = 0xFF8 | regs.dma_wrlen & 0xFF80'0000;
 			}
 		}
