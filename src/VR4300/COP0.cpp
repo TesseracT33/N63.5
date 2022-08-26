@@ -46,7 +46,7 @@ namespace VR4300
 			/* Doubleword Move From System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			gpr.Set(rt, cop0_reg.Get(rd)); /* TODO The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined */
+			gpr.Set(rt, cop0_reg.Get(rd));
 		}
 		else {
 			static_assert(AlwaysFalse<instr>, "\"CP0_Move\" template function called, but no matching move instruction was found.");

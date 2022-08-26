@@ -20,6 +20,7 @@ namespace Logging
 		void LogRSPInstruction(u32 pc, const std::string& instr_output);
 		void LogDMA(const std::string& output);
 		void LogException(std::string_view exception);
+		void LogMisc(const std::string& output);
 	}
 
 	std::ofstream instr_logging_ofs{ "F:\\n64.txt" };

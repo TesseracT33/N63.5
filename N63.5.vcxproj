@@ -51,6 +51,8 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <EnableASAN>false</EnableASAN>
+    <EnableFuzzer>false</EnableFuzzer>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -82,10 +84,12 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>F:\SDKs\SDL2-2.0.12\include;$(IncludePath)</IncludePath>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>F:\SDKs\SDL2-2.0.12\include;$(IncludePath)</IncludePath>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -127,15 +131,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>F:\SDKs\glm\include;F:\SDKs\glew\include;F:\SDKs\SDL2-2.0.22\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\SDKs\SDL2-2.0.22\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <AdditionalOptions>/wd4267 /wd4244 /wd4309 /wd4005 /MP /DNOMINMAX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,15 +157,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>F:\SDKs\glm\include;F:\SDKs\glew\include;F:\SDKs\SDL2-2.0.22\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\SDKs\SDL2-2.0.22\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <AdditionalOptions>/wd4267 /wd4244 /wd4309 /wd4005 /MP /DNOMINMAX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -245,6 +251,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+    <None Include=".gitattributes" />
+    <None Include=".gitignore" />
+    <None Include=".gitmodules" />
+    <None Include="LICENSE" />
+    <None Include="README.MD" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

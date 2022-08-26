@@ -36,7 +36,27 @@ namespace PIF
 	constexpr size_t rom_size = 0x7C0;
 	constexpr size_t ram_start = rom_size;
 
-	s32 joypad_status;
+	struct JoypadStatus /* TODO: correct endianness? */
+	{
+		u32 a : 1;
+		u32 b : 1;
+		u32 z : 1;
+		u32 s : 1;
+		u32 dU : 1;
+		u32 dD : 1;
+		u32 dL : 1;
+		u32 dR : 1;
+		u32 rst : 1;
+		u32 : 1;
+		u32 lt : 1;
+		u32 rt : 1;
+		u32 cU : 1;
+		u32 cD : 1;
+		u32 cL : 1;
+		u32 cR : 1;
+		u32 x_axis : 8;
+		u32 y_axis : 8;
+	} joypad_status;
 
 	std::array<u8, rom_size + ram_size> memory{}; /* $0-$7BF: rom; $7C0-$7FF: ram */
 }

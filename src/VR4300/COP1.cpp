@@ -32,8 +32,7 @@ namespace VR4300
 
 	constexpr std::string_view FmtToString(FmtTypeID fmt)
 	{
-		switch (fmt)
-		{
+		switch (fmt) {
 		case FmtTypeID::Float32: return "S";
 		case FmtTypeID::Float64: return "D";
 		case FmtTypeID::Int32: return "W";
@@ -77,17 +76,14 @@ namespace VR4300
 		fcr31.cause_V = std::fetestexcept(FE_INVALID);
 		fcr31.cause_E = unimplemented_operation;
 
-		if (fcr31.cause_E == 1)
-		{
+		if (fcr31.cause_E == 1) {
 			SignalException<Exception::FloatingPoint>();
 		}
-		else
-		{
+		else {
 			u32 fcr31_int = fcr31.Get();
 			u32 enables = fcr31_int >> 7;
 			u32 causes = fcr31_int >> 12;
-			if (causes & enables & 0x1F)
-			{
+			if (causes & enables & 0x1F) {
 				SignalException<Exception::FloatingPoint>();
 			}
 			fcr31_int |= (causes & ~enables & 0x1F) << 2;
@@ -99,8 +95,7 @@ namespace VR4300
 	void TestUnimplementedOperationException()
 	{
 		fcr31.cause_E = unimplemented_operation;
-		if (unimplemented_operation)
-		{
+		if (unimplemented_operation) {
 			SignalException<Exception::FloatingPoint>();
 		}
 	}
@@ -108,8 +103,7 @@ namespace VR4300
 
 	void TestInvalidException()
 	{
-		if (fcr31.cause_V)
-		{
+		if (fcr31.cause_V) {
 			SignalException<Exception::FloatingPoint>();
 		}
 	}
@@ -130,7 +124,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPULoad(const u32 instr_code)
+	void FPULoad(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -144,8 +138,7 @@ namespace VR4300
 		}
 
 		auto result = [&] {
-			if constexpr (instr == LWC1)
-			{
+			if constexpr (instr == LWC1) {
 				/* Load Word To FPU;
 				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 				   an address. Loads the contents of the word specified by the address to the
@@ -161,7 +154,7 @@ namespace VR4300
 				return ReadVirtual<s64>(address);
 			}
 			else {
-				static_assert(AlwaysFalse<instr>, "\"FPU_Load\" template function called, but no matching load instruction was found.");
+				static_assert(AlwaysFalse<instr>);
 			}
 		}();
 
@@ -176,7 +169,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUStore(const u32 instr_code)
+	void FPUStore(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -205,7 +198,7 @@ namespace VR4300
 			WriteVirtual<s64>(address, fpr.Get<s64>(ft));
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"FPU_Store\" template function called, but no matching store instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline<1>();
@@ -213,7 +206,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUMove(const u32 instr_code)
+	void FPUMove(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -258,7 +251,7 @@ namespace VR4300
 			gpr.Set(rt, fpr.Get<s64>(fs));
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"FPU_Move\" template function called, but no matching move instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline<1>();
@@ -266,7 +259,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUConvert(const u32 instr_code)
+	void FPUConvert(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -275,8 +268,7 @@ namespace VR4300
 		   For all these instructions, an unimplemented exception will occur if either:
 			 * If the source operand is infinity or NaN, or
 			 * If overflow occurs during conversion to integer format. */
-		auto TestForUnimplementedException = [&] <typename From, typename To> (From source) -> bool
-		{
+		auto TestForUnimplementedException = [&] <typename From, typename To> (From source) -> bool {
 			if constexpr (std::is_integral_v<From> && std::is_same_v<To, f64>) {
 				return false; /* zero-cost shortcut; integers cannot be infinity or NaN, and the operation is then always exact when converting to a double */
 			}
@@ -330,16 +322,10 @@ namespace VR4300
 					}()>();
 				};
 
-				if constexpr (instr == CVT_S)
-					Convert2.template operator() < InputType, f32 > ();
-				else if constexpr (instr == CVT_D)
-					Convert2.template operator() < InputType, f64 > ();
-				else if constexpr (instr == CVT_W)
-					Convert2.template operator() < InputType, s32 > ();
-				else if constexpr (instr == CVT_L)
-					Convert2.template operator() < InputType, s64 > ();
-				else
-					static_assert(AlwaysFalse<instr>, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+				if constexpr (instr == CVT_S) Convert2.template operator() < InputType, f32 > ();
+				if constexpr (instr == CVT_D) Convert2.template operator() < InputType, f64 > ();
+				if constexpr (instr == CVT_W) Convert2.template operator() < InputType, s32 > ();
+				if constexpr (instr == CVT_L) Convert2.template operator() < InputType, s64 > ();
 			};
 
 			switch (fmt) {
@@ -382,11 +368,10 @@ namespace VR4300
 				std::feclearexcept(FE_ALL_EXCEPT);
 
 				OutputInt result = [&] {
-					     if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::nearbyint(source));
-					else if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
-					else if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
-					else if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
-					else static_assert(AlwaysFalse<instr>, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+					if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::nearbyint(source));
+					if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
+					if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
+					if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
 				}();
 
 				unimplemented_operation = TestForUnimplementedException.template operator () < InputFloat, OutputInt > (source);
@@ -445,13 +430,13 @@ namespace VR4300
 			TestAllExceptions();
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"FPU_Convert\" template function called, but no matching convert instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 	}
 
 
 	template<COP1Instruction instr>
-	void FPUCompute(const u32 instr_code)
+	void FPUCompute(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -477,18 +462,16 @@ namespace VR4300
 				std::feclearexcept(FE_ALL_EXCEPT);
 
 				Float result = [&] {
-					     if constexpr (instr == ADD) return op1 + op2;
-					else if constexpr (instr == SUB) return op1 - op2;
-					else if constexpr (instr == MUL) return op1 * op2;
-					else if constexpr (instr == DIV) return op1 / op2;
-					else                             static_assert(AlwaysFalse<instr>);
+					if constexpr (instr == ADD) return op1 + op2;
+					if constexpr (instr == SUB) return op1 - op2;
+					if constexpr (instr == MUL) return op1 * op2;
+					if constexpr (instr == DIV) return op1 / op2;
 				}();
 
 				AdvancePipeline<[&] {
-					     if constexpr (instr == ADD || instr == SUB) return 3;
-					else if constexpr (std::is_same_v<Float, f32>)   return 29;
-					else if constexpr (std::is_same_v<Float, f64>)   return 58;
-					else                                             static_assert(AlwaysFalse<instr>);
+					if constexpr (instr == ADD || instr == SUB) return 3;
+					if constexpr (std::is_same_v<Float, f32>)   return 29;
+					if constexpr (std::is_same_v<Float, f64>)   return 58;
 				}()>();
 
 				fpr.Set<Float>(fd, result);
@@ -537,26 +520,30 @@ namespace VR4300
 
 			auto Compute = [&] <std::floating_point Float> {
 				Float op = fpr.Get<Float>(fs);
-
 				std::feclearexcept(FE_ALL_EXCEPT);
-
 				Float result = [&] {
-					     if constexpr (instr == ABS)  return std::abs(op);
-					else if constexpr (instr == MOV)  return op; 
-					else if constexpr (instr == NEG)  return -op;
-					else if constexpr (instr == SQRT) return std::sqrt(op);
-					else                              static_assert(AlwaysFalse<instr>);
-				}();
-
-				AdvancePipeline<[&] {
-					if constexpr (instr == SQRT) {
-						     if constexpr (std::is_same_v<Float, f32>) return 29;
-						else if constexpr (std::is_same_v<Float, f64>) return 58;
-						else                                           static_assert(AlwaysFalse<instr>);
+					if constexpr (instr == ABS) {
+						AdvancePipeline<1>();
+						return std::abs(op);
 					}
-					else return 1;
-				}()>();
-
+					if constexpr (instr == MOV) {
+						AdvancePipeline<1>();
+						return op;
+					}
+					if constexpr (instr == NEG) {
+						AdvancePipeline<1>();
+						return -op;
+					}
+					if constexpr (instr == SQRT) {
+						if constexpr (std::is_same_v<Float, f32>) {
+							AdvancePipeline<29>();
+						}
+						if constexpr (std::is_same_v<Float, f64>) {
+							AdvancePipeline<58>();
+						}
+						return std::sqrt(op);
+					}
+				}();
 				fpr.Set<Float>(fd, result); // TODO: could this result in host exception flags changing?
 			};
 
@@ -587,13 +574,13 @@ namespace VR4300
 			}
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"FPU_Compute\" template function called, but no matching compute instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 	}
 
 
 	template<COP1Instruction instr>
-	void FPUBranch(const u32 instr_code)
+	void FPUBranch(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -621,9 +608,12 @@ namespace VR4300
 		s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 
 		bool branch_cond = [&] {
-			     if constexpr (instr == BC1T || instr == BC1TL) return fcr31.c;
-			else if constexpr (instr == BC1F || instr == BC1FL) return !fcr31.c;
-			else static_assert(AlwaysFalse<instr>, "\"FPU_Branch\" template function called, but no matching branch instruction was found.");
+			if constexpr (instr == BC1T || instr == BC1TL) {
+				return fcr31.c;
+			}
+			if constexpr (instr == BC1F || instr == BC1FL) {
+				return !fcr31.c;
+			}
 		}();
 
 		if (branch_cond) {
@@ -637,7 +627,7 @@ namespace VR4300
 	}
 
 
-	void FPUCompare(const u32 instr_code)
+	void FPUCompare(u32 instr_code)
 	{
 		/* Floating-point Compare;
 		   Interprets and arithmetically compares the contents of FPU registers fs and ft

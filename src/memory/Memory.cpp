@@ -186,7 +186,7 @@ namespace Memory
 				break;
 			}
 		}
-		else if (physical_address >= 0x1FC007C0 && physical_address <= 0x1FC007FF) {
+		else if (physical_address >= 0x1FC0'0000 && physical_address <= 0x1FC0'07FF) {
 			PIF::WriteMemory<number_of_bytes>(physical_address, data);
 		}
 		if constexpr (log_cpu_memory) {

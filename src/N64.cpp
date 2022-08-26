@@ -37,7 +37,7 @@ namespace N64
 		uint cycles_into_update = VR4300::p_cycle_counter;
 		cpu_cycles_until_update_queue -= cycles_into_update;
 
-		EventItem new_item = { event, cycles_until_fire };
+		EventItem new_item = { event, int(cycles_until_fire) };
 		bool item_inserted = false;
 
 		for (auto it = event_queue.begin(); it != event_queue.end(); it++) {

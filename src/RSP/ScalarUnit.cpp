@@ -166,7 +166,7 @@ namespace RSP
 				   Sign-extends the 16-bit immediate and compares it with register rs as an
 				   unsigned integer. If rs is less than the immediate, stores 1 to register rt;
 				   otherwise, stores 0 to register rt. */
-				return s32(u32(gpr[rs]) < immediate);
+				return s32(u32(gpr[rs]) < u32(immediate));
 			}
 			else if constexpr (instr == ANDI) {
 				/* And Immediate;

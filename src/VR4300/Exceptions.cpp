@@ -15,62 +15,59 @@ namespace VR4300
 	template<Exception exception, MemoryAccess::Operation operation>
 	constexpr int GetExceptionPriority()
 	{
-		using enum Exception;
-		using enum MemoryAccess::Operation;
-
-		if constexpr (exception == AddressError) {
-			if constexpr (operation == InstrFetch) return 17;
+		if constexpr (exception == Exception::AddressError) {
+			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 17;
 			else return 6;
 		}
-		else if constexpr (exception == Breakpoint) {
+		else if constexpr (exception == Exception::Breakpoint) {
 			return 12;
 		}
-		else if constexpr (exception == BusError) {
-			if constexpr (operation == InstrFetch) return 14;
+		else if constexpr (exception == Exception::BusError) {
+			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 14;
 			else return 1;
 		}
-		else if constexpr (exception == ColdReset) {
+		else if constexpr (exception == Exception::ColdReset) {
 			return 20;
 		}
-		else if constexpr (exception == CoprocessorUnusable) {
+		else if constexpr (exception == Exception::CoprocessorUnusable) {
 			return 11;
 		}
-		else if constexpr (exception == FloatingPoint) {
+		else if constexpr (exception == Exception::FloatingPoint) {
 			return 7;
 		}
-		else if constexpr (exception == IntegerOverflow) {
+		else if constexpr (exception == Exception::IntegerOverflow) {
 			return 8;
 		}
-		else if constexpr (exception == Interrupt) {
+		else if constexpr (exception == Exception::Interrupt) {
 			return 0;
 		}
-		else if constexpr (exception == Nmi) {
+		else if constexpr (exception == Exception::Nmi) {
 			return 18;
 		}
-		else if constexpr (exception == ReservedInstruction) {
+		else if constexpr (exception == Exception::ReservedInstruction) {
 			return 10;
 		}
-		else if constexpr (exception == SoftReset) {
+		else if constexpr (exception == Exception::SoftReset) {
 			return 19;
 		}
-		else if constexpr (exception == Syscall) {
+		else if constexpr (exception == Exception::Syscall) {
 			return 13;
 		}
-		else if constexpr (exception == TlbInvalid) {
-			if constexpr (operation == InstrFetch) return 15;
+		else if constexpr (exception == Exception::TlbInvalid) {
+			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 15;
 			else return 4;
 		}
-		else if constexpr (exception == TlbMiss || exception == XtlbMiss) {
-			if constexpr (operation == InstrFetch) return 16;
+		else if constexpr (exception == Exception::TlbMiss || exception == Exception::XtlbMiss) {
+			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 16;
 			else return 5;
 		}
-		else if constexpr (exception == TlbModification) {
+		else if constexpr (exception == Exception::TlbModification) {
 			return 3;
 		}
-		else if constexpr (exception == Trap) {
+		else if constexpr (exception == Exception::Trap) {
 			return 9;
 		}
-		else if constexpr (exception == Watch) {
+		else if constexpr (exception == Exception::Watch) {
 			return 2;
 		}
 		else {
@@ -80,49 +77,44 @@ namespace VR4300
 
 
 	template<Exception exception, MemoryAccess::Operation operation>
-	constexpr ExceptionHandlerFun GetExceptionHandlerFun()
+	constexpr ExceptionHandler GetExceptionHandler()
 	{
-		using enum Exception;
-		using enum MemoryAccess::Operation;
-
-		if constexpr (exception == AddressError)             return AddressErrorException<operation>;
-		else if constexpr (exception == Breakpoint)          return BreakPointException;
-		else if constexpr (exception == BusError)            return BusErrorException<operation>;
-		else if constexpr (exception == ColdReset)           return ColdResetException;
-		else if constexpr (exception == CoprocessorUnusable) return CoprocessorUnusableException;
-		else if constexpr (exception == FloatingPoint)       return FloatingpointException;
-		else if constexpr (exception == IntegerOverflow)     return IntegerOverflowException;
-		else if constexpr (exception == Interrupt)           return InterruptException;
-		else if constexpr (exception == Nmi)                 return NmiException;
-		else if constexpr (exception == ReservedInstruction) return ReservedInstructionException;
-		else if constexpr (exception == SoftReset)           return SoftResetException;
-		else if constexpr (exception == Syscall)             return SyscallException;
-		else if constexpr (exception == TlbInvalid)          return TlbInvalidException<operation>;
-		else if constexpr (exception == TlbMiss)             return TlbMissException<operation>;
-		else if constexpr (exception == TlbModification)     return TlbModException;
-		else if constexpr (exception == Trap)                return TrapException;
-		else if constexpr (exception == Watch)               return WatchException;
-		else if constexpr (exception == XtlbMiss)            return XtlbMissException<operation>;
-		else                                                 static_assert(AlwaysFalse<exception>);
+		     if constexpr (exception == Exception::AddressError)        return AddressErrorException<operation>;
+		else if constexpr (exception == Exception::Breakpoint)          return BreakPointException;
+		else if constexpr (exception == Exception::BusError)            return BusErrorException<operation>;
+		else if constexpr (exception == Exception::ColdReset)           return ColdResetException;
+		else if constexpr (exception == Exception::CoprocessorUnusable) return CoprocessorUnusableException;
+		else if constexpr (exception == Exception::FloatingPoint)       return FloatingpointException;
+		else if constexpr (exception == Exception::IntegerOverflow)     return IntegerOverflowException;
+		else if constexpr (exception == Exception::Interrupt)           return InterruptException;
+		else if constexpr (exception == Exception::Nmi)                 return NmiException;
+		else if constexpr (exception == Exception::ReservedInstruction) return ReservedInstructionException;
+		else if constexpr (exception == Exception::SoftReset)           return SoftResetException;
+		else if constexpr (exception == Exception::Syscall)             return SyscallException;
+		else if constexpr (exception == Exception::TlbInvalid)          return TlbInvalidException<operation>;
+		else if constexpr (exception == Exception::TlbMiss)             return TlbMissException<operation>;
+		else if constexpr (exception == Exception::TlbModification)     return TlbModException;
+		else if constexpr (exception == Exception::Trap)                return TrapException;
+		else if constexpr (exception == Exception::Watch)               return WatchException;
+		else if constexpr (exception == Exception::XtlbMiss)            return XtlbMissException<operation>;
+		else                                                            static_assert(AlwaysFalse<exception>);
 	}
 
 
 	template<Exception exception>
 	u64 GetExceptionVector()
 	{ /* See p. 181, Table 6-3 */
-		using enum Exception;
-
-		if constexpr (exception == ColdReset || exception == SoftReset || exception == Nmi) {
+		if constexpr (exception == Exception::ColdReset || exception == Exception::SoftReset || exception == Exception::Nmi) {
 			return 0xFFFF'FFFF'BFC0'0000;
 		}
 		else {
 			static constexpr std::array<u64, 2> vector_base_addr = { /* Indexed by cop0.status.BEV */
 				0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'BFC0'0200
 			};
-			if constexpr (exception == TlbMiss) {
+			if constexpr (exception == Exception::TlbMiss) {
 				return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0000);
 			}
-			else if constexpr (exception == XtlbMiss) {
+			else if constexpr (exception == Exception::XtlbMiss) {
 				return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0080);
 			}
 			else {
@@ -153,14 +145,14 @@ namespace VR4300
 		pc_is_inside_branch_delay_slot = false;
 		jump_is_pending = false;
 
-		std::invoke(exception_handler_fun);
+		exception_handler();
 	}
 
 
 	template<Exception exception, MemoryAccess::Operation operation>
 	void SignalException()
 	{
-		constexpr static int new_exception_priority = GetExceptionPriority<exception, operation>();
+		constexpr static auto new_exception_priority = GetExceptionPriority<exception, operation>();
 		if (exception_has_occurred) {
 			/* Compare exception priorities; return if the new exception has a lower priority than an already occured one. */
 			if (new_exception_priority < occurred_exception_priority) {
@@ -175,12 +167,12 @@ namespace VR4300
 		   'GetExceptionCauseCode' and 'GetExceptionHandlerFun' could not take 'exception' as a template argument, and would
 		   instead have to take it as a function argument. Then, several run-time branches would have to be taken over this argument. */
 		exception_vector = GetExceptionVector<exception>();
-		exception_handler_fun = GetExceptionHandlerFun<exception, operation>();
+		exception_handler = GetExceptionHandler<exception, operation>();
 	}
 
 
 	template<MemoryAccess::Operation operation>
-	void SignalAddressErrorException(const u64 bad_virt_addr)
+	void SignalAddressErrorException(u64 bad_virt_addr)
 	{
 		SignalException<Exception::AddressError>();
 		address_failure.bad_virt_addr = bad_virt_addr;
@@ -226,9 +218,7 @@ namespace VR4300
 		cop0_reg.config.ep = 0;
 		cop0_reg.config.be = 1;
 		cop0_reg.random.value = 31;
-
-		cop0_reg.status.NotifyCpuAfterWrite();
-
+		cop0_reg.OnWriteToStatus();
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
 
@@ -279,8 +269,9 @@ namespace VR4300
 
 	void SoftResetException()
 	{
-		if (cop0_reg.status.erl == 0)
+		if (cop0_reg.status.erl == 0) {
 			pc = cop0_reg.error_epc.value;
+		}
 		cop0_reg.status.rp = cop0_reg.status.ts = 0;
 		cop0_reg.status.bev = cop0_reg.status.erl = cop0_reg.status.sr = 1;
 	}
@@ -365,28 +356,28 @@ namespace VR4300
 	}
 
 
-	constexpr std::string_view ExceptionToString(const Exception exception)
+	constexpr std::string_view ExceptionToString(Exception exception)
 	{
 		switch (exception) {
-		case Exception::AddressError: return "Address Error";
-		case Exception::Breakpoint: return "Breakpoint";
-		case Exception::BusError: return "Bus Error";
-		case Exception::ColdReset: return "Cold Reset";
+		case Exception::AddressError:        return "Address Error";
+		case Exception::Breakpoint:          return "Breakpoint";
+		case Exception::BusError:            return "Bus Error";
+		case Exception::ColdReset:           return "Cold Reset";
 		case Exception::CoprocessorUnusable: return "Coprocessor Unusable";
-		case Exception::FloatingPoint: return "Floating Point";
-		case Exception::IntegerOverflow: return "Integer Overflow";
-		case Exception::Interrupt: return "Interrupt";
-		case Exception::Nmi: return "NMI";
+		case Exception::FloatingPoint:       return "Floating Point";
+		case Exception::IntegerOverflow:     return "Integer Overflow";
+		case Exception::Interrupt:           return "Interrupt";
+		case Exception::Nmi:                 return "NMI";
 		case Exception::ReservedInstruction: return "Reserved instruction";
-		case Exception::SoftReset: return "Soft Reset";
-		case Exception::Syscall: return "Syscall";
-		case Exception::TlbInvalid: return "Invalid TLB";
-		case Exception::TlbMiss: return "TLB Miss";
-		case Exception::TlbModification: return "TLB Modification";
-		case Exception::Trap: return "Trap";
-		case Exception::Watch: return "Watch";
-		case Exception::XtlbMiss: return "XTLB Miss";
-		default: assert(false); return "";
+		case Exception::SoftReset:           return "Soft Reset";
+		case Exception::Syscall:             return "Syscall";
+		case Exception::TlbInvalid:          return "Invalid TLB";
+		case Exception::TlbMiss:             return "TLB Miss";
+		case Exception::TlbModification:     return "TLB Modification";
+		case Exception::Trap:                return "Trap";
+		case Exception::Watch:               return "Watch";
+		case Exception::XtlbMiss:            return "XTLB Miss";
+		default: assert(false);              return "";
 		}
 	}
 

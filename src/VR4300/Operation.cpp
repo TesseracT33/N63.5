@@ -23,25 +23,21 @@ namespace VR4300
 
 	void CheckInterrupts()
 	{
-		bool interrupts_are_enabled = cop0_reg.status.ie;
-		if (!interrupts_are_enabled) {
+		bool interrupts_enabled = cop0_reg.status.ie;
+		if (!interrupts_enabled) {
 			return;
 		}
-
 		bool currently_handling_exception = cop0_reg.status.exl;
 		if (currently_handling_exception) {
 			return;
 		}
-
 		bool currently_handling_error = cop0_reg.status.erl;
 		if (currently_handling_error) {
 			return;
 		}
-
-		s32 interrupt_pending = cop0_reg.cause.ip;
-		s32 interrupt_enable_mask = cop0_reg.status.im;
-		bool interrupts_are_pending = interrupt_pending & interrupt_enable_mask & 0xFF; /* TODO: Unsure if $FF is needed */
-		if (interrupts_are_pending) {
+		auto interrupt_pending = cop0_reg.cause.ip;
+		auto interrupt_enable_mask = cop0_reg.status.im;
+		if (interrupt_pending & interrupt_enable_mask) {
 			SignalException<Exception::Interrupt>();
 		}
 	}
@@ -73,13 +69,11 @@ namespace VR4300
 		gpr.Set(29, 0xA400'1FF0);
 		cop0_reg.SetRaw(cop0_index_status, 0x2410'00E0);
 		cop0_reg.SetRaw(cop0_index_config, 0x7006'E463);
-
-		for (int i = 0; i < 0x1000; i += 4) {
-			s32 src_addr = s32(0xB000'0000 + i);
-			s32 dest_addr = s32(0xA400'0000 + i);
-			WriteVirtual<s32>(dest_addr, ReadVirtual<s32>(src_addr));
+		for (u64 i = 0; i < 0x1000; i += 4) {
+			u64 src_addr = 0xFFFF'FFFF'B000'0000 + i;
+			u64 dst_addr = 0xFFFF'FFFF'A400'0000 + i;
+			WriteVirtual<u32>(dst_addr, ReadVirtual<u32>(src_addr));
 		}
-
 		pc = 0xFFFF'FFFF'A400'0040;
 	}
 
@@ -141,7 +135,7 @@ namespace VR4300
 	}
 
 
-	void PowerOn(const bool hle_pif)
+	void PowerOn(bool hle_pif)
 	{
 		exception_has_occurred = false;
 		jump_is_pending = false;
@@ -165,7 +159,7 @@ namespace VR4300
 	}
 
 
-	void PrepareJump(const u64 target_address)
+	void PrepareJump(u64 target_address)
 	{
 		jump_is_pending = true;
 		instructions_until_jump = 1;

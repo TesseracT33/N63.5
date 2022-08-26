@@ -43,29 +43,27 @@ namespace VR4300
 		void SignalAddressErrorException(u64 bad_virt_addr);
 
 		void HandleException();
-
-		bool exception_has_occurred = false;
 	}
 
-	using ExceptionHandlerFun = void(*)();
+	using ExceptionHandler = void(*)();
 
-	template<Exception exception, MemoryAccess::Operation operation>
-	constexpr ExceptionHandlerFun GetExceptionHandlerFun();
+	template<Exception, MemoryAccess::Operation>
+	constexpr ExceptionHandler GetExceptionHandlerFun();
 
-	template<Exception exception, MemoryAccess::Operation operation>
+	template<Exception, MemoryAccess::Operation>
 	constexpr int GetExceptionPriority();
 
-	template<Exception exception>
+	template<Exception>
 	u64 GetExceptionVector();
 
 	constexpr std::string_view ExceptionToString(Exception exception);
 
 	/* Exception handlers */
-	template<MemoryAccess::Operation operation> void AddressErrorException();
-	template<MemoryAccess::Operation operation> void BusErrorException();
-	template<MemoryAccess::Operation operation> void TlbInvalidException();
-	template<MemoryAccess::Operation operation> void TlbMissException();
-	template<MemoryAccess::Operation operation> void XtlbMissException();
+	template<MemoryAccess::Operation> void AddressErrorException();
+	template<MemoryAccess::Operation> void BusErrorException();
+	template<MemoryAccess::Operation> void TlbInvalidException();
+	template<MemoryAccess::Operation> void TlbMissException();
+	template<MemoryAccess::Operation> void XtlbMissException();
 	void BreakPointException();
 	void BusErrorException();
 	void ColdResetException();
@@ -90,8 +88,9 @@ namespace VR4300
 	} address_failure;
 
 	Exception occurred_exception;
+	bool exception_has_occurred = false;
 	int occurred_exception_priority = -1;
 	u64 exception_vector;
 	uint coprocessor_unusable_source; /* 0 if COP0 signaled the exception, 1 if COP1 did it. */
-	ExceptionHandlerFun exception_handler_fun;
+	ExceptionHandler exception_handler;
 }

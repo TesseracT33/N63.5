@@ -428,7 +428,7 @@ namespace RSP
 			}
 
 			auto current_elem = element;
-			for (int i = 0; i < num_bytes_to_copy; ++i) {
+			for (uint i = 0; i < num_bytes_to_copy; ++i) {
 				dmem[addr + i] = *(vpr_src + (current_elem ^ 1));
 				current_elem = (current_elem + 1) & 0xF;
 			}
@@ -683,8 +683,8 @@ namespace RSP
 			else {
 				auto unsigned_input = MakeUnsigned(std::abs(input));
 				auto lshift = std::countl_zero(unsigned_input) + 1;
-				auto rshift = (32 - lshift) >> 1; // Shifted by 1 instead of 0
-				auto index = (unsigned_input << lshift) >> 24; // Shifted by 24 instead of 23
+				auto rshift = (32 - lshift) >> 1;
+				auto index = (unsigned_input << lshift) >> 24;
 				auto rom = rsq_rom[(index | ((lshift & 1) << 8))];
 				s32 result = ((0x10000 | rom) << 14) >> rshift;
 				if (unsigned_input != input) {

@@ -65,6 +65,12 @@ namespace Logging
 	}
 
 
+	void LogMisc(const std::string& output)
+	{
+		instr_logging_ofs << output << std::endl;
+	}
+
+
 	template void LogMemoryRead(u32, u8);
 	template void LogMemoryRead(u32, s8);
 	template void LogMemoryRead(u32, u16);

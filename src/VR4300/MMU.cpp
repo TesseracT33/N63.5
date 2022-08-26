@@ -5,6 +5,7 @@ import :Exceptions;
 import :Operation;
 import :Registers;
 
+import Logging;
 import Memory;
 
 namespace VR4300
@@ -170,7 +171,7 @@ namespace VR4300
 	template<MemoryAccess::Operation operation>
 	u32 VirtualToPhysicalAddressKernelMode64(u64 virt_addr)
 	{
-		switch (virt_addr >> 60) {
+		switch (virt_addr >> 60 & 0xF) {
 		case 0x0:
 			if (virt_addr <= 0x0000'00FF'FFFF'FFFF)  {
 				return VirtualToPhysicalAddress<operation>(virt_addr);
@@ -323,7 +324,7 @@ namespace VR4300
 
 
 	template<std::integral Int, MemoryAccess::Alignment alignment>
-	void WriteVirtual(const u64 virtual_address, const Int data)
+	void WriteVirtual(u64 virtual_address, Int data)
 	{
 		if constexpr (sizeof(Int) > 1 && alignment == MemoryAccess::Alignment::Aligned) {
 			if (virtual_address & (sizeof(Int) - 1)) {

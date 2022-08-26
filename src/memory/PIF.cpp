@@ -27,19 +27,19 @@ namespace PIF
 	}
 
 
-	size_t GetNumberOfBytesUntilRAMEnd(const u32 offset)
+	size_t GetNumberOfBytesUntilRAMEnd(u32 offset)
 	{
 		return ram_size - (offset & (ram_size - 1)); /* Size is 0x40 bytes */
 	}
 
 
-	u8* GetPointerToRAM(const u32 address)
+	u8* GetPointerToRAM(u32 address)
 	{
 		return memory.data() + rom_size + (address & (ram_size - 1)); /* Size is 0x40 bytes */
 	}
 
 
-	u8* GetPointerToMemory(const u32 address)
+	u8* GetPointerToMemory(u32 address)
 	{
 		return memory.data() + (address & 0x7FF);
 	}
@@ -60,7 +60,7 @@ namespace PIF
 
 
 	template<std::integral Int>
-	Int ReadMemory(const u32 addr)
+	Int ReadMemory(u32 addr)
 	{ /* CPU precondition: addr is aligned */
 		Int ret;
 		std::memcpy(&ret, memory.data() + (addr & 0x7FF), sizeof(Int));
@@ -70,9 +70,9 @@ namespace PIF
 
 	void RunJoybusProtocol()
 	{
-		switch (memory[ram_start]) {
+		switch (memory[ram_start]) { /* joybus command */
 		case 0x00:/* Info */
-		case 0xFF:
+		case 0xFF: /* Reset & Info */
 			/* Device: controller */
 			memory[ram_start] = 0x05;
 			memory[ram_start + 1] = 0x00;
@@ -84,16 +84,16 @@ namespace PIF
 			std::memcpy(memory.data() + ram_start, &joypad_status, 4);
 			break;
 
-		case 0x02:
+		case 0x02: /* Read Controller Accessory */
 			break;
 
-		case 0x03:
+		case 0x03: /* Write Controller Accessory */
 			break;
 
-		case 0x04:
+		case 0x04: /* Read EEPROM */
 			break;
 
-		case 0x05:
+		case 0x05: /* Write EEPROM */
 			break;
 		}
 	}
@@ -109,15 +109,19 @@ namespace PIF
 			if (addr + number_of_bytes > 0x7FF) {
 				if (memory[command_byte_index] & 0x01) {
 					RunJoybusProtocol();
+					memory[command_byte_index] &= ~0x01;
 				}
 				if (memory[command_byte_index] & 0x02) {
 					ChallengeProtection();
+					memory[command_byte_index] &= ~0x02;
 				}
 				if (memory[command_byte_index] & 0x20) {
 					ChecksumVerification();
+					memory[command_byte_index] &= ~0x20;
 				}
 				if (memory[command_byte_index] & 0x40) {
 					ClearRam();
+					memory[command_byte_index] &= ~0x40;
 				}
 			}
 		}

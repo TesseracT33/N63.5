@@ -27,16 +27,16 @@ namespace AI
 
 	struct
 	{
-		s32 dram_addr, len, control, status, dacrate, bitrate;
+		u32 dram_addr, len, control, status, dacrate, bitrate;
 	} ai{};
 
 	struct
 	{
-		s32 frequency, period, precision;
+		u32 frequency, period, precision;
 	} dac{};
 
-	s32 dma_length_buffer;
-	s32 dma_address_buffer;
+	u32 dma_length_buffer;
+	u32 dma_address_buffer;
 	uint cycles;
 	uint dma_count;
 

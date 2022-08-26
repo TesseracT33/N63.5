@@ -1,49 +1,56 @@
 export module UserMessage;
 
-import <cassert>;
-import <string>;
-
 import <SDL.h>;
+
+import <cassert>;
+import <format>;
+import <iostream>;
+import <string>;
 
 namespace UserMessage
 {
-	SDL_Window* sdl_window = nullptr; /* Must be set via 'SetWindow' before any messages are shown. */
+	SDL_Window* sdl_window; /* Must be set via 'SetWindow' before any messages are shown. */
 
-	export enum class Type {
-		Unspecified, Success, Warning, Error, Fatal
-	};
-
-	export void SetWindow(SDL_Window* sdl_window_)
+	export
 	{
-		sdl_window = sdl_window_;
-	}
+		enum class Type {
+			Unspecified, Success, Warning, Error, Fatal
+		};
 
-	export void Show(const std::string& message, const Type type = Type::Unspecified)
-	{
-		assert(sdl_window != nullptr);
-
-		std::string out_msg_prefix = [&] {
-			switch (type) {
-			case Type::Success: return "Success: ";
-			case Type::Warning: return "Warning: ";
-			case Type::Error: return "Error: ";
-			case Type::Fatal: return "Fatal: ";
-			default: assert(false);
+		void SetWindow(SDL_Window* sdl_window)
+		{
+			if (!sdl_window) {
+				std::cerr << "nullptr given as argument to UserMessage::SetWindow\n";
+				assert(false);
 			}
-		}();
+			UserMessage::sdl_window = sdl_window;
+		}
 
-		auto sdl_msg_type = [&] {
-			switch (type) {
-			case Type::Success: return SDL_MESSAGEBOX_INFORMATION;
-			case Type::Warning: return SDL_MESSAGEBOX_WARNING;
-			case Type::Error: return SDL_MESSAGEBOX_ERROR;
-			case Type::Fatal: return SDL_MESSAGEBOX_ERROR;
-			default: assert(false);
-			}
-		}();
+		void Show(const std::string& message, Type type = Type::Unspecified)
+		{
+			std::string out_msg_prefix = [&] {
+				switch (type) {
+				case Type::Success: return "Success: ";
+				case Type::Warning: return "Warning: ";
+				case Type::Error: return "Error: ";
+				case Type::Fatal: return "Fatal: ";
+				default: return "";
+				}
+			}();
 
-		std::string out_msg = out_msg_prefix + message;
+			auto sdl_msg_type = [&] {
+				switch (type) {
+				case Type::Success: return SDL_MESSAGEBOX_INFORMATION;
+				case Type::Warning: return SDL_MESSAGEBOX_WARNING;
+				case Type::Error: return SDL_MESSAGEBOX_ERROR;
+				case Type::Fatal: return SDL_MESSAGEBOX_ERROR;
+				default: return SDL_MESSAGEBOX_INFORMATION;
+				}
+			}();
 
-		SDL_ShowSimpleMessageBox(sdl_msg_type, "Message", out_msg.c_str(), sdl_window);
+			std::string out_msg = out_msg_prefix + message;
+
+			SDL_ShowSimpleMessageBox(sdl_msg_type, "Message", out_msg.c_str(), sdl_window);
+		}
 	}
 }

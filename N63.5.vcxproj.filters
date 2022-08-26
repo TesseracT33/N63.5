@@ -73,4 +73,12 @@
   <ItemGroup>
     <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="README.MD" />
+    <None Include="LICENSE" />
+    <None Include=".gitmodules" />
+    <None Include=".gitignore" />
+    <None Include=".gitattributes" />
+    <None Include=".editorconfig" />
+  </ItemGroup>
 </Project>
