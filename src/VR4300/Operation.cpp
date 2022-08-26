@@ -5,7 +5,6 @@ import :COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
-import :Registers;
 
 import DebugOptions;
 import Logging;
@@ -132,6 +131,24 @@ namespace VR4300
 				}
 			}
 		}
+	}
+
+
+	void InitializeRegisters()
+	{
+		std::memset(&gpr, 0, sizeof(gpr));
+		std::memset(&fpr, 0, sizeof(fpr));
+		gpr.Set(Reg::sp, 0xFFFF'FFFF'A400'1FF0);
+		cop0_reg.SetRaw(cop0_index_index, 0x3F);
+		cop0_reg.SetRaw(cop0_index_context, 0x007F'FFF0);
+		cop0_reg.SetRaw(cop0_index_bad_v_addr, 0xFFFF'FFFF'FFFF'FFFF);
+		cop0_reg.SetRaw(cop0_index_cause, 0xB000'007C);
+		cop0_reg.SetRaw(cop0_index_epc, 0xFFFF'FFFF'FFFF'FFFF);
+		cop0_reg.SetRaw(cop0_index_ll_addr, 0xFFFF'FFFF);
+		cop0_reg.SetRaw(cop0_index_watch_lo, 0xFFFF'FFFB);
+		cop0_reg.SetRaw(cop0_index_watch_hi, 0xF);
+		cop0_reg.SetRaw(cop0_index_x_context, 0xFFFF'FFFF'FFFF'FFF0);
+		cop0_reg.SetRaw(cop0_index_error_epc, 0xFFFF'FFFF'FFFF'FFFF);
 	}
 
 

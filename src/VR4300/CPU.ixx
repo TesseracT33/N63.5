@@ -9,6 +9,7 @@ import <format>;
 import <limits>;
 import <string>;
 import <type_traits>;
+import <utility>;
 
 #ifdef _MSC_VER
 import <intrin.h>;
@@ -52,6 +53,11 @@ namespace VR4300
 		SYNC, SYSCALL, BREAK
 	};
 
+	enum class Reg {
+		zero, at, v0, v1, a0, a1, a2, a3, t0, t1, t2, t3, t4, t5, t6, t7,
+		s0, s1, s2, s3, s4, s5, s6, s7, t8, t9, k0, k1, gp, sp, fp, ra
+	};
+
 	void PrepareJump(u64 target_address);
 
 	/* Main processor instructions */
@@ -69,6 +75,23 @@ namespace VR4300
 	void Sync();
 	void Syscall();
 	void Break();
+
+	struct GPR
+	{
+		s64 Get(size_t index) const;
+		s64 Get(Reg reg) const;
+		void Set(size_t index, s64 data);
+		void Set(Reg reg, s64 data);
+		s64 operator[](size_t index);
+	private:
+		std::array<s64, 32> gpr{};
+	} gpr;
+
+	u64 pc;
+
+	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
+
+	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */
 
 	bool jump_is_pending = false;
 	bool last_instr_was_load = false;

@@ -245,8 +245,6 @@
     <ClCompile Include="src\VR4300\MMU.ixx" />
     <ClCompile Include="src\VR4300\Operation.cpp" />
     <ClCompile Include="src\VR4300\Operation.ixx" />
-    <ClCompile Include="src\VR4300\Registers.cpp" />
-    <ClCompile Include="src\VR4300\Registers.ixx" />
     <ClCompile Include="src\VR4300\VR4300.ixx" />
   </ItemGroup>
   <ItemGroup>

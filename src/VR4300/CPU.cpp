@@ -3,7 +3,6 @@ module VR4300:CPU;
 import :Exceptions;
 import :MMU;
 import :Operation;
-import :Registers;
 
 import DebugOptions;
 import MemoryAccess;
@@ -11,6 +10,38 @@ import Util;
 
 namespace VR4300
 {
+	s64 GPR::Get(size_t index) const
+	{
+		return gpr[index];
+	}
+
+
+	s64 GPR::Get(Reg reg) const
+	{
+		return gpr[std::to_underlying(reg)];
+	}
+
+
+	void GPR::Set(size_t index, s64 data)
+	{ /* gpr[0] is hardwired to 0. Prefer setting it to zero every time over a branch checking if 'index' is zero. */
+		gpr[index] = data;
+		gpr[0] = 0;
+	}
+
+
+	void GPR::Set(Reg reg, s64 data)
+	{
+		gpr[std::to_underlying(reg)] = data;
+		gpr[0] = 0;
+	}
+
+
+	s64 GPR::operator[](size_t index)
+	{ /* returns by value so that assignments have to made through function "Set". */
+		return gpr[index];
+	}
+
+
 	template<CPUInstruction instr>
 	void CPULoad(const u32 instr_code)
 	{

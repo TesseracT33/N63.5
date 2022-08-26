@@ -5,7 +5,6 @@ import :COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
-import :Registers;
 
 import DebugOptions;
 import Logging;

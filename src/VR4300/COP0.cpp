@@ -1,9 +1,9 @@
 module VR4300:COP0;
 
+import :COP1;
 import :CPU;
 import :Exceptions;
-import :Operation; 
-import :Registers;
+import :Operation;
 import :MMU;
 
 import DebugOptions;
@@ -12,6 +12,80 @@ import Util;
 
 namespace VR4300
 {
+	void COP0Registers::OnWriteToCause()
+	{
+		CheckInterrupts();
+	}
+
+
+	void COP0Registers::OnWriteToCompare()
+	{
+		cop0_reg.cause.ip &= ~0x80; /* TODO: not sure if anything else needs to be done? */
+	}
+
+
+	void COP0Registers::OnWriteToStatus()
+	{
+		fpu_is_enabled = cop0_reg.status.cu1;
+		SetActiveVirtualToPhysicalFunctions();
+		CheckInterrupts();
+	}
+
+
+	void COP0Registers::OnWriteToWired()
+	{
+		random_generator.SetLowerBound(cop0_reg.wired.value);
+	}
+
+
+	u64 COP0Registers::Get(size_t reg_index) const
+	{
+		auto StructToInt = [](auto struct_) {
+			if constexpr (sizeof(struct_) == 4) {
+				u32 ret;
+				std::memcpy(&ret, &struct_, 4);
+				return ret;
+			}
+			else if constexpr (sizeof(struct_) == 8) {
+				u64 ret;
+				std::memcpy(&ret, &struct_, 8);
+				return ret;
+			}
+			else {
+				static_assert(AlwaysFalse<sizeof(struct_)>, "Incorrectly sized struct given.");
+			}
+		};
+
+		switch (reg_index) {
+		case cop0_index_index: return StructToInt(index);
+		case cop0_index_random: return random_generator.Generate(); /* Generate a random number in the interval [wired, 31] */
+		case cop0_index_entry_lo_0: return StructToInt(entry_lo_0);
+		case cop0_index_entry_lo_1: return StructToInt(entry_lo_1);
+		case cop0_index_context: return StructToInt(context);
+		case cop0_index_page_mask: return StructToInt(page_mask);
+		case cop0_index_wired: return StructToInt(wired);
+		case cop0_index_bad_v_addr: return StructToInt(bad_v_addr);
+		case cop0_index_count: return u32(count.value >> 1); /* See the declaration of 'count' */
+		case cop0_index_entry_hi: return StructToInt(entry_hi);
+		case cop0_index_compare: return u32(compare.value >> 1); /* See the declaration of 'compare' */
+		case cop0_index_status: return StructToInt(status);
+		case cop0_index_cause: return StructToInt(cause);
+		case cop0_index_epc: return StructToInt(epc);
+		case cop0_index_pr_id: return StructToInt(pr_id);
+		case cop0_index_config: return StructToInt(config);
+		case cop0_index_ll_addr: return StructToInt(ll_addr);
+		case cop0_index_watch_lo: return StructToInt(watch_lo);
+		case cop0_index_watch_hi: return StructToInt(watch_hi);
+		case cop0_index_x_context: return StructToInt(x_context);
+		case cop0_index_parity_error: return StructToInt(parity_error);
+		case cop0_index_tag_lo: return StructToInt(tag_lo);
+		case cop0_index_tag_hi: return StructToInt(tag_hi);
+		case cop0_index_error_epc: return StructToInt(error_epc);
+		default: return 0;
+		}
+	}
+
+
 	template<COP0Instruction instr>
 	void COP0Move(const u32 instr_code)
 	{

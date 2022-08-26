@@ -1,16 +1,132 @@
 module VR4300:COP1;
 
+import :COP0;
 import :CPU;
 import :Exceptions;
 import :MMU;
 import :Operation;
-import :Registers;
 
 import DebugOptions;
 import Util;
 
 namespace VR4300
 {
+	void FCR31::Set(u32 data)
+	{
+		*this = std::bit_cast<FCR31>(data);
+		auto new_rounding_mode = [&] {
+			switch (rm) {
+			case 0b00: return FE_TONEAREST;  /* RN */
+			case 0b01: return FE_TOWARDZERO; /* RZ */
+			case 0b10: return FE_UPWARD;     /* RP */
+			case 0b11: return FE_DOWNWARD;   /* RM */
+			default: assert(false); return 0;
+			}
+		}();
+		std::fesetround(new_rounding_mode);
+	}
+
+
+	u32 FCR31::Get() const
+	{
+		return std::bit_cast<u32>(*this);
+	}
+
+
+	u32 FPUControl::Get(size_t index) const
+	{
+		static constexpr u32 fcr0 = 0; /* TODO */
+		if (index == 31) {
+			return fcr31.Get();
+		}
+		else if (index == 0) {
+			return fcr0;
+		}
+		else {
+			return 0; /* Only #0 and #31 are "valid". */
+		}
+	}
+
+
+	void FPUControl::Set(size_t index, u32 data)
+	{
+		if (index == 31) {
+			fcr31.Set(data);
+		}
+	}
+
+
+	template<FPUNumericType T>
+	T FGR::Get(size_t index) const
+	{
+		if constexpr (std::is_same_v<T, s32>) {
+			return s32(fpr[index]);
+		}
+		if constexpr (std::is_same_v<T, f32>) {
+			return std::bit_cast<f32>(s32(fpr[index]));
+		}
+		if constexpr (std::is_same_v<T, s64>) {
+			if (cop0_reg.status.fr) {
+				return fpr[index];
+			}
+			else {
+				/* If the index is odd, then the result is undefined.
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				auto aligned_index = (index + (index & 1)) & 0x1F;
+				return fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32;
+			}
+		}
+		if constexpr (std::is_same_v<T, f64>) {
+			if (cop0_reg.status.fr) {
+				return std::bit_cast<f64>(fpr[index]);
+			}
+			else {
+				/* If the index is odd, then the result is undefined.
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				auto aligned_index = (index + (index & 1)) & 0x1F;
+				return std::bit_cast<f64, s64>(fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32);
+			}
+		}
+	}
+
+
+	template<FPUNumericType T>
+	void FGR::Set(size_t index, T data)
+	{
+		if constexpr (std::is_same_v<T, s32>) {
+			fpr[index] = data;
+		}
+		if constexpr (std::is_same_v<T, f32>) {
+			fpr[index] = std::bit_cast<s32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
+		}
+		if constexpr (std::is_same_v<T, s64>) {
+			if (cop0_reg.status.fr) {
+				fpr[index] = data;
+			}
+			else {
+				/* If the index is odd, then the result is undefined.
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				auto aligned_index = (index + (index & 1)) & 0x1F;
+				fpr[aligned_index] = data & 0xFFFFFFFF;
+				fpr[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+			}
+		}
+		if constexpr (std::is_same_v<T, f64>) {
+			if (cop0_reg.status.fr) {
+				fpr[index] = std::bit_cast<s64, f64>(data);
+			}
+			else {
+				/* If the index is odd, then the result is undefined.
+				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
+				auto aligned_index = (index + (index & 1)) & 0x1F;
+				s64 conv = std::bit_cast<s64>(data);
+				fpr[aligned_index] = conv & 0xFFFFFFFF;
+				fpr[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
+			}
+		}
+	}
+
+
 	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.
 	   The below maps formats to identifiers. */
 	enum FmtTypeID
@@ -727,4 +843,14 @@ namespace VR4300
 	template void FPUBranch<COP1Instruction::BC1F>(u32);
 	template void FPUBranch<COP1Instruction::BC1TL>(u32);
 	template void FPUBranch<COP1Instruction::BC1FL>(u32);
+
+	template s32 FGR::Get<s32>(size_t) const;
+	template s64 FGR::Get<s64>(size_t) const;
+	template f32 FGR::Get<f32>(size_t) const;
+	template f64 FGR::Get<f64>(size_t) const;
+
+	template void FGR::Set<s32>(size_t, s32);
+	template void FGR::Set<s64>(size_t, s64);
+	template void FGR::Set<f32>(size_t, f32);
+	template void FGR::Set<f64>(size_t, f64);
 }

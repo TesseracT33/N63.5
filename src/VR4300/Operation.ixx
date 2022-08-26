@@ -4,6 +4,7 @@ import NumericalTypes;
 
 import <bit>;
 import <cassert>;
+import <cstring>;
 import <string>;
 import <string_view>;
 import <utility>;
@@ -37,6 +38,7 @@ namespace VR4300
 
 	void DecodeExecuteInstruction(u32 instr_code);
 	void FetchDecodeExecuteInstruction();
+	void InitializeRegisters();
 	void HlePif();
 	void PrepareJump(u64 target_address);
 

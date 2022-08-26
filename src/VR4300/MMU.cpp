@@ -3,7 +3,6 @@ module VR4300:MMU;
 import :COP0;
 import :Exceptions;
 import :Operation;
-import :Registers;
 
 import Logging;
 import Memory;

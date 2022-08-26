@@ -4,7 +4,6 @@ import :COP0;
 import :CPU;
 import :MMU;
 import :Operation;
-import :Registers;
 
 import DebugOptions;
 import Logging;
