@@ -125,34 +125,7 @@ namespace RSP
 
 	__m128i GetVTBroadcast(uint vt /* 0-31 */, uint element /* 0-15 */)
 	{
-		/* Determine which lanes (0-7) of vpr[vt] to access */
-		auto CombineLanes = [&] <int mask> {
-			__m128i bottom_half = _mm_and_si128(_mm_shufflelo_epi16(vpr[vt], mask), _mm_set_epi64x(0, s64(-1)));
-			__m128i top_half = _mm_and_si128(_mm_shufflehi_epi16(vpr[vt], mask), _mm_set_epi64x(s64(-1), 0));
-			return _mm_or_si128(bottom_half, top_half);
-		};
-
-		switch (element & 0xF) {
-		case 0:
-		case 1: /* 0,1,2,3,4,5,6,7 */
-			return vpr[vt];
-		case 2: /* 0,0,2,2,4,4,6,6 */
-			return CombineLanes.template operator() < 0b1010'0000 > ();
-		case 3: /* 1,1,3,3,5,5,7,7 */
-			return CombineLanes.template operator() < 0b1111'0101 > ();
-		case 4: /* 0,0,0,0,4,4,4,4 */
-			return CombineLanes.template operator() < 0b0000'0000 > ();
-		case 5: /* 1,1,1,1,5,5,5,5 */
-			return CombineLanes.template operator() < 0b0101'0101 > ();
-		case 6: /* 2,2,2,2,6,6,6,6 */
-			return CombineLanes.template operator() < 0b1010'1010 > ();
-		case 7: /* 3,3,3,3,7,7,7,7 */
-			return CombineLanes.template operator() < 0b1111'1111 > ();
-		default: { /* 8x (element - 8) */
-			s16 value = _mm_getlane_epi16(&vpr[vt], element - 8);
-			return _mm_set1_epi16(value);
-		}
-		}
+		return _mm_shuffle_epi8(vpr[vt], broadcast_mask[element]);
 	}
 
 
