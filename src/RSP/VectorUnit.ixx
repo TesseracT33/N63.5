@@ -22,6 +22,15 @@ import <tmmintrin.h>;
 
 namespace RSP
 {
+	using s8x16 = __m128i;
+	using u8x16 = __m128i;
+	using s16x8 = __m128i;
+	using u16x8 = __m128i;
+	using s32x4 = __m128i;
+	using u32x4 = __m128i;
+	using s64x2 = __m128i;
+	using u64x2 = __m128i;
+
 	enum class VectorInstruction
 	{
 		/* Load instructions */
@@ -50,10 +59,10 @@ namespace RSP
 	template<VectorInstruction> void ComputeInstr(u32 instr_code);
 	template<VectorInstruction> void SelectInstr(u32 instr_code);
 
-	void AddToAccumulator(__m128i low);
-	void AddToAccumulator(__m128i low, __m128i mid);
-	void AddToAccumulator(__m128i low, __m128i mid, __m128i high);
-	void AddToAccumulatorFromMid(__m128i mid, __m128i high);
+	void AddToAcc(__m128i low);
+	void AddToAcc(__m128i low, __m128i mid);
+	void AddToAcc(__m128i low, __m128i mid, __m128i high);
+	void AddToAccFromMid(__m128i mid, __m128i high);
 	__m128i ClampSigned(__m128i low, __m128i high);
 	template<VectorInstruction> __m128i ClampUnsigned(__m128i low, __m128i high);
 	__m128i GetVTBroadcast(uint vt, uint element);
@@ -63,7 +72,7 @@ namespace RSP
 		__m128i low;
 		__m128i mid;
 		__m128i high;
-	} accumulator{};
+	} acc;
 
 	struct ControlRegister
 	{
@@ -74,5 +83,5 @@ namespace RSP
 	s16 div_out, div_in, div_dp;
 
 	std::array<__m128i, 32> vpr; /* SIMD registers; eight 16-bit lanes */
-	std::array<ControlRegister, 3> control_reg{};
+	std::array<ControlRegister, 3> control_reg;
 }
