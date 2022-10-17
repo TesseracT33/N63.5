@@ -7,9 +7,8 @@ import Logging;
 import MI;
 import N64;
 import RDRAM;
-import Util;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace RSP
 {
@@ -17,7 +16,9 @@ namespace RSP
 	Int CPUReadRegister(u32 addr)
 	{
 		if (addr == sp_pc_addr) {
-			return halted ? pc : Int(Random<s32>(0, 0xFFF));
+			// TODO: return random number if !halted, else pc
+			//return halted ? pc : Int(Random<s32>(0, 0xFFF));
+			return pc;
 		}
 		else {
 			u32 reg_offset = (addr & 0x1F) >> 2;

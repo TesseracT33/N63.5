@@ -1,6 +1,6 @@
 #pragma once
 
-import NumericalTypes;
+import Util;
 
 /* A lot of functions for reading from and writing to memory looks like this:
    template<std::integer Int> Int Read(const u32 address);

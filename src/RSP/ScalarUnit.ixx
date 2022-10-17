@@ -1,7 +1,7 @@
 export module RSP:ScalarUnit;
 
 import DebugOptions;
-import NumericalTypes;
+import Util;
 
 import <array>;
 import <format>;

@@ -1,7 +1,7 @@
 export module Memory;
 
 import MemoryAccess;
-import NumericalTypes;
+import Util;
 
 import <array>;
 import <concepts>;

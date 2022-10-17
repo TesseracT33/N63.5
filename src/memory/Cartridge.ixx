@@ -1,6 +1,6 @@
 export module Cartridge;
 
-import NumericalTypes;
+import Util;
 
 import <bit>;
 import <cassert>;

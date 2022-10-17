@@ -1,6 +1,6 @@
 export module PI; /* Peripheral Interface */
 
-import NumericalTypes;
+import Util;
 
 import <algorithm>;
 import <concepts>;

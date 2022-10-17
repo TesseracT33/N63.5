@@ -6,7 +6,7 @@ import N64;
 import RDRAM;
 import Renderer;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace VI
 {

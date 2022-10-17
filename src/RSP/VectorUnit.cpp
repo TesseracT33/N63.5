@@ -4,8 +4,6 @@ import :Operation;
 import :ScalarUnit;
 
 import Util;
-import Util.Numerics;
-import Util.SSE;
 
 import DebugOptions;
 

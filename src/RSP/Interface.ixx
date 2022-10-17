@@ -1,6 +1,6 @@
 export module RSP:Interface;
 
-import NumericalTypes;
+import Util;
 
 import <algorithm>;
 import <concepts>;

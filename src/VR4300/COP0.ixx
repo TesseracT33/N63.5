@@ -1,6 +1,6 @@
 export module VR4300:COP0;
 
-import NumericalTypes;
+import Util;
 
 import <array>;
 import <bit>;

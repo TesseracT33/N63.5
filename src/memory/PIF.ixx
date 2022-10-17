@@ -1,6 +1,6 @@
 export module PIF;
 
-import NumericalTypes;
+import Util;
 
 import <algorithm>;
 import <array>;

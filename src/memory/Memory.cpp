@@ -13,7 +13,7 @@ import SI;
 import VI;
 import VR4300;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace Memory
 {

@@ -1,6 +1,6 @@
 export module SI; /* Serial Interface */
 
-import NumericalTypes;
+import Util;
 
 import <concepts>;
 import <cstring>;

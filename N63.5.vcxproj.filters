@@ -2,8 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="src\VR4300\CPU.cpp" />
-    <ClCompile Include="src\NumericalTypes.ixx" />
-    <ClCompile Include="src\Utils\BitUtils.ixx" />
     <ClCompile Include="src\VR4300\COP0.cpp" />
     <ClCompile Include="src\VR4300\COP1.cpp" />
     <ClCompile Include="src\VR4300\Exceptions.cpp" />
@@ -24,7 +22,6 @@
     <ClCompile Include="src\N64.ixx" />
     <ClCompile Include="src\N64.cpp" />
     <ClCompile Include="src\UserMessage.ixx" />
-    <ClCompile Include="src\Host.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
     <ClCompile Include="src\memory\MemoryAccess.ixx" />
@@ -51,7 +48,6 @@
     <ClCompile Include="src\debug\DebugOptions.ixx" />
     <ClCompile Include="src\interface\AI.ixx" />
     <ClCompile Include="src\interface\AI.cpp" />
-    <ClCompile Include="src\Utils\Files.ixx" />
     <ClCompile Include="src\RSP\InstructionDecode.cpp" />
     <ClCompile Include="src\RSP\ScalarUnit.ixx" />
     <ClCompile Include="src\RSP\ScalarUnit.cpp" />
@@ -61,17 +57,24 @@
     <ClCompile Include="src\RSP\Operation.cpp" />
     <ClCompile Include="src\interface\RI.ixx" />
     <ClCompile Include="src\interface\RI.cpp" />
-    <ClCompile Include="src\Utils\Utils.ixx" />
-    <ClCompile Include="src\Utils\SSE.ixx" />
-    <ClCompile Include="src\Utils\SSE.cpp" />
-    <ClCompile Include="src\Utils\Numerics.ixx" />
     <ClCompile Include="src\RSP\Interface.ixx" />
     <ClCompile Include="src\RSP\Interface.cpp" />
     <ClCompile Include="src\RDP\RDP.ixx" />
     <ClCompile Include="src\RDP\RDP.cpp" />
+    <ClCompile Include="external\EmuUtils\src\Arithmetic.ixx" />
+    <ClCompile Include="external\EmuUtils\src\Bit.ixx" />
+    <ClCompile Include="external\EmuUtils\src\Files.ixx" />
+    <ClCompile Include="external\EmuUtils\src\Host.ixx" />
+    <ClCompile Include="external\EmuUtils\src\Misc.ixx" />
+    <ClCompile Include="external\EmuUtils\src\NumericalTypes.ixx" />
+    <ClCompile Include="external\EmuUtils\src\SerializationStream.ixx" />
+    <ClCompile Include="external\EmuUtils\src\Sets.ixx" />
+    <ClCompile Include="external\EmuUtils\src\SSE.cpp" />
+    <ClCompile Include="external\EmuUtils\src\SSE.ixx" />
+    <ClCompile Include="external\EmuUtils\src\Util.ixx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Utils\EnumerateTemplateSpecializations.h" />
+    <ClInclude Include="src\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.MD" />

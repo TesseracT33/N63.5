@@ -1,14 +1,14 @@
 export module VR4300:Exceptions;
 
+import MemoryAccess;
+import Util;
+
 import <array>;
 import <cassert>;
 import <format>;
 import <functional>;
 import <string_view>;
 import <utility>;
-
-import MemoryAccess;
-import NumericalTypes;
 
 namespace VR4300
 {

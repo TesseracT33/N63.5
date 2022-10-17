@@ -6,7 +6,7 @@ import DebugOptions;
 import DMA;
 import MI;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace RSP
 {

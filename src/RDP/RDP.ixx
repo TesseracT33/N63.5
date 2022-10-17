@@ -1,6 +1,6 @@
 export module RDP;
 
-import NumericalTypes;
+import Util;
 
 import <array>;
 import <concepts>;

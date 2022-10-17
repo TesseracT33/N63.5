@@ -1,14 +1,14 @@
 export module VR4300:MMU;
 
+import MemoryAccess;
+import Util;
+
 import <array>;
 import <bit>;
 import <cassert>;
 import <concepts>;
 import <functional>;
 import <type_traits>;
-
-import MemoryAccess;
-import NumericalTypes;
 
 namespace VR4300
 {

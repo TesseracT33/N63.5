@@ -1,5 +1,7 @@
 export module N64;
 
+import Util;
+
 import <SDL.h>;
 
 import <chrono>;
@@ -7,8 +9,6 @@ import <iostream>;
 import <list>;
 import <optional>;
 import <string>;
-
-import NumericalTypes;
 
 namespace N64
 {

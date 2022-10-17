@@ -1,6 +1,6 @@
 export module DMA;
 
-import NumericalTypes;
+import Util;
 
 import <algorithm>;
 import <array>;

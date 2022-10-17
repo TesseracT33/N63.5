@@ -8,7 +8,7 @@ import :MMU;
 
 import DebugOptions;
 import Logging;
-import NumericalTypes;
+import Util;
 
 
 #define EXEC_CPU_INSTR(INSTR) { \

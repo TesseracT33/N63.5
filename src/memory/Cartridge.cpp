@@ -3,9 +3,9 @@ module Cartridge;
 import Memory;
 import UserMessage;
 
-import Util.Files;
+import Util;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace Cartridge
 {
@@ -38,7 +38,7 @@ namespace Cartridge
 
 	bool LoadROM(const std::string& rom_path)
 	{
-		std::optional<std::vector<u8>> optional_rom = FileUtils::LoadBinaryFileVec(rom_path);
+		std::optional<std::vector<u8>> optional_rom = ReadFileIntoVector(rom_path);
 		if (!optional_rom.has_value()) {
 			UserMessage::Show("Failed to open rom file.", UserMessage::Type::Error);
 			return false;
@@ -51,7 +51,7 @@ namespace Cartridge
 
 	bool LoadSRAM(const std::string& ram_path)
 	{
-		std::optional<std::vector<u8>> optional_sram = FileUtils::LoadBinaryFileVec(ram_path);
+		std::optional<std::vector<u8>> optional_sram = ReadFileIntoVector(ram_path);
 		if (!optional_sram.has_value()) {
 			return false;
 		}

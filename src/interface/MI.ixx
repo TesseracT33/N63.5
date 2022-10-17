@@ -1,6 +1,6 @@
 export module MI; /* MIPS Interface */
 
-import NumericalTypes;
+import Util;
 
 import <bit>;
 import <concepts>;

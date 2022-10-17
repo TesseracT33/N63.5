@@ -1,6 +1,6 @@
 export module AI; /* Audio Interface */
 
-import NumericalTypes;
+import Util;
 
 import <SDL.h>;
 

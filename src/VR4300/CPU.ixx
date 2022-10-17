@@ -2,7 +2,7 @@ export module VR4300:CPU;
 
 import :Operation;
 
-import NumericalTypes;
+import Util;
 
 import <array>;
 import <format>;

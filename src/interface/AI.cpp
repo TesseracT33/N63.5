@@ -6,7 +6,7 @@ import MemoryAccess;
 import N64;
 import UserMessage;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace AI
 {

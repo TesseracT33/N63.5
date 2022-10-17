@@ -1,6 +1,6 @@
 export module RSP:VectorUnit;
 
-import NumericalTypes;
+import Util;
 
 import <algorithm>;
 import <array>;

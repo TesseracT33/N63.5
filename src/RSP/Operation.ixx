@@ -2,7 +2,7 @@ export module RSP:Operation;
 
 import Memory;
 import N64;
-import NumericalTypes;
+import Util;
 
 import <array>;
 import <bit>;

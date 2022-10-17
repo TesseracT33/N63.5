@@ -1,6 +1,6 @@
 export module Logging;
 
-import NumericalTypes;
+import Util;
 
 import <format>;
 import <fstream>;

@@ -1,6 +1,6 @@
 export module Renderer;
 
-import NumericalTypes;
+import Util;
 
 import <SDL.h>;
 

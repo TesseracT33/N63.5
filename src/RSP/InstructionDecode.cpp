@@ -5,7 +5,6 @@ import :VectorUnit;
 
 import DebugOptions;
 import Logging;
-import NumericalTypes;
 import Util;
 
 

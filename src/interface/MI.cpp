@@ -3,7 +3,7 @@ module MI;
 import Memory;
 import VR4300;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace MI
 {

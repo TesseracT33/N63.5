@@ -1,6 +1,6 @@
 export module VI; /* Video Interface */
 
-import NumericalTypes;
+import Util;
 
 import <bit>;
 import <cassert>;

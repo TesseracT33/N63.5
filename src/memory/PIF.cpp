@@ -3,9 +3,9 @@ module PIF;
 import Memory;
 import UserMessage;
 
-import Util.Files;
+import Util;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace PIF
 {
@@ -48,7 +48,7 @@ namespace PIF
 	bool LoadIPL12(const std::string& path)
 	{
 		std::optional<std::array<u8, ram_size + rom_size>> optional_rom =
-			FileUtils::LoadBinaryFileArray<ram_size + rom_size>(path);
+			ReadFileIntoArray<ram_size + rom_size>(path);
 		if (!optional_rom.has_value()) {
 			UserMessage::Show("Failed to open boot rom (IPL) file.", UserMessage::Type::Warning);
 			return false;

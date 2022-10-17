@@ -1,5 +1,7 @@
 export module VR4300:COP1;
 
+import Util;
+
 import <array>;
 import <cfenv>;
 import <cmath>;
@@ -7,8 +9,6 @@ import <concepts>;
 import <random>;
 import <string_view>;
 import <type_traits>;
-
-import NumericalTypes;
 
 namespace VR4300
 {

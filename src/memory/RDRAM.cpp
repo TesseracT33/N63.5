@@ -2,7 +2,7 @@ module RDRAM;
 
 import Memory;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace RDRAM
 {

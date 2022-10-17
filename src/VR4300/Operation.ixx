@@ -1,6 +1,6 @@
 export module VR4300:Operation;
 
-import NumericalTypes;
+import Util;
 
 import <bit>;
 import <cassert>;

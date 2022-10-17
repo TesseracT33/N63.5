@@ -1,6 +1,6 @@
 export module RDRAM;
 
-import NumericalTypes;
+import Util;
 
 import <algorithm>;
 import <bit>;

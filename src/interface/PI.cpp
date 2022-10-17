@@ -4,7 +4,7 @@ import DMA;
 import Memory;
 import MI;
 
-#include "../Utils/EnumerateTemplateSpecializations.h"
+#include "../EnumerateTemplateSpecializations.h"
 
 namespace PI
 {
