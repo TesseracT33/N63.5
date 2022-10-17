@@ -107,17 +107,22 @@ namespace VR4300
 			return 0xFFFF'FFFF'BFC0'0000;
 		}
 		else {
-			static constexpr std::array<u64, 2> vector_base_addr = { /* Indexed by cop0.status.BEV */
-				0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'BFC0'0200
-			};
 			if constexpr (exception == Exception::TlbMiss) {
-				return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0000);
+				static constexpr u64 base_addr[2][2] = {
+					0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'8000'0180,
+					0xFFFF'FFFF'BFC0'0200, 0xFFFF'FFFF'BFC0'0380
+				};
+				return base_addr[cop0_reg.status.bev][cop0_reg.status.exl];
 			}
 			else if constexpr (exception == Exception::XtlbMiss) {
-				return vector_base_addr[cop0_reg.status.bev] | (cop0_reg.status.exl ? 0x0180 : 0x0080);
+				static constexpr u64 base_addr[2][2] = {
+					0xFFFF'FFFF'8000'0080, 0xFFFF'FFFF'8000'0180,
+					0xFFFF'FFFF'BFC0'0280, 0xFFFF'FFFF'BFC0'0380
+				};
+				return base_addr[cop0_reg.status.bev][cop0_reg.status.exl];
 			}
 			else {
-				return vector_base_addr[cop0_reg.status.bev] | 0x0180;
+				return cop0_reg.status.bev ? 0xFFFF'FFFF'BFC0'0380 : 0xFFFF'FFFF'8000'0180;
 			}
 		}
 	}
