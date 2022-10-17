@@ -41,6 +41,16 @@ namespace RSP
 	}
 
 
+	u64 RspReadCommandByteswapped(u32 addr)
+	{
+		/* The address may be unaligned */
+		u64 command;
+		for (int i = 0; i < 8; ++i) {
+			*((u8*)(&command) + i) = dmem[(addr + 7 - i) & 0xFFF];
+		}
+		return command;
+	}
+
 
 	void Run(const uint cycles_to_run)
 	{

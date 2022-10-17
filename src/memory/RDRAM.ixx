@@ -30,6 +30,8 @@ namespace RDRAM
 		template<std::integral Int>
 		Int ReadRegisterRegion(u32 addr);
 
+		u64 RspReadCommandByteswapped(u32 addr);
+
 		/* $0000'0000 - $0x003F'FFFF */
 		template<size_t number_of_bytes>
 		void WriteStandardRegion(u32 addr, auto data);

@@ -21,6 +21,8 @@ namespace RSP
 		template<size_t number_of_bytes>
 		void CPUWriteMemory(u32 addr, auto data);
 
+		u64 RspReadCommandByteswapped(u32 addr);
+
 		u8* GetPointerToMemory(u32 addr);
 		void PowerOn();
 		void Run(uint cycles_to_run);

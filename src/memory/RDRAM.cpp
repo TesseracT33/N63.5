@@ -69,6 +69,17 @@ namespace RDRAM
 	}
 
 
+	u64 RspReadCommandByteswapped(u32 addr)
+	{
+		/* addr may be misaligned */
+		u64 command;
+		for (int i = 0; i < 8; ++i) {
+			*((u8*)(&command) + i) = rdram[(addr + 7 - i) & (rdram_standard_size - 1)];
+		}
+		return command;
+	}
+
+
 	/* $0000'0000 - $0003F'FFFF */
 	template<size_t number_of_bytes>
 	void WriteStandardRegion(const u32 addr, auto data)
