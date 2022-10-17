@@ -10,10 +10,9 @@ import MI;
 
 namespace RSP
 {
-	template<u64 number_of_cycles>
-	void AdvancePipeline()
+	void AdvancePipeline(u64 cycles)
 	{
-		p_cycle_counter++;
+		p_cycle_counter += cycles;
 	}
 
 
@@ -122,9 +121,6 @@ namespace RSP
 			dmem[(addr + i) & 0xFFF] = *((u8*)(&data) + sizeof(Int) - i - 1);
 		}
 	}
-
-
-	template void AdvancePipeline<1>();
 
 
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(CPUReadMemory, u32)

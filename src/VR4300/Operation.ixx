@@ -36,17 +36,13 @@ namespace VR4300
 		uint p_cycle_counter = 0;
 	}
 
+	void AdvancePipeline(u64 cycles);
 	void DecodeExecuteInstruction(u32 instr_code);
 	void FetchDecodeExecuteInstruction();
+	void IncrementCountRegister(u64 cycles);
 	void InitializeRegisters();
 	void HlePif();
 	void PrepareJump(u64 target_address);
-
-	template<u64 number_of_cycles>
-	void AdvancePipeline();
-
-	template<u64 number_of_cycles>
-	void IncrementCountRegister();
 
 	bool pc_is_inside_branch_delay_slot = false;
 

@@ -11,12 +11,10 @@ import Logging;
 
 namespace VR4300
 {
-	template<u64 number_of_cycles>
-	void AdvancePipeline()
+	void AdvancePipeline(u64 cycles)
 	{
-		static_assert(number_of_cycles > 0);
-		p_cycle_counter += number_of_cycles;
-		IncrementCountRegister<number_of_cycles>();
+		p_cycle_counter += cycles;
+		IncrementCountRegister(cycles);
 	}
 
 
@@ -77,11 +75,8 @@ namespace VR4300
 	}
 
 
-	template<u64 number_of_cycles>
-	void IncrementCountRegister()
+	void IncrementCountRegister(u64 cycles)
 	{
-		static_assert(number_of_cycles > 0);
-
 		/* The 32-bit 'count' register is supposed to be incremented every other PCycle, and then compared against the 32-bit 'compare' register.
 		   If they match, and interrupt is fired. Here, we make both registers 64 bits, and increment 'count' every PCycle. */
 
@@ -89,46 +84,28 @@ namespace VR4300
 			cop0_reg.cause.ip |= 0x80;
 			CheckInterrupts();
 		};
-
-		auto CheckCompareReg = [&] {
-			if (cop0_reg.count.value == cop0_reg.compare.value) {
-				SetInterrupt();
+		// TODO: remove; change to a scheduling approach where there is an event when 'count' and 'compare' meet.
+		if (cop0_reg.count.value + cycles <= 0x1'FFFF'FFFF) {
+			if (cop0_reg.count.value > cop0_reg.compare.value) {
+				cop0_reg.count.value += cycles;
 			}
-		};
-
-		if constexpr (number_of_cycles == 1) {
-			cop0_reg.count.value = (cop0_reg.count.value + 1) & 0x1'FFFF'FFFF;
-			CheckCompareReg();
-		}
-		else if constexpr (number_of_cycles == 2) {
-			cop0_reg.count.value = (cop0_reg.count.value + 1) & 0x1'FFFF'FFFF;
-			CheckCompareReg();
-			cop0_reg.count.value = (cop0_reg.count.value + 1) & 0x1'FFFF'FFFF;
-			CheckCompareReg();
+			else {
+				cop0_reg.count.value += cycles;
+				if (cop0_reg.count.value >= cop0_reg.compare.value) {
+					SetInterrupt();
+				}
+			}
 		}
 		else {
-			if (cop0_reg.count.value + number_of_cycles <= 0x1'FFFF'FFFF) [[likely]] {
-				if (cop0_reg.count.value > cop0_reg.compare.value) {
-					cop0_reg.count.value += number_of_cycles;
-				}
-				else {
-					cop0_reg.count.value += number_of_cycles;
-					if (cop0_reg.count.value >= cop0_reg.compare.value) {
-						SetInterrupt();
-					}
+			if (cop0_reg.count.value > cop0_reg.compare.value) {
+				cop0_reg.count.value = cycles - (0x2'0000'0000 - cop0_reg.count.value);
+				if (cop0_reg.count.value >= cop0_reg.compare.value) {
+					SetInterrupt();
 				}
 			}
 			else {
-				if (cop0_reg.count.value > cop0_reg.compare.value) {
-					cop0_reg.count.value = number_of_cycles - (0x1'FFFF'FFFF - cop0_reg.count.value + 1);
-					if (cop0_reg.count.value >= cop0_reg.compare.value) {
-						SetInterrupt();
-					}
-				}
-				else {
-					cop0_reg.count.value = (cop0_reg.count.value + number_of_cycles) & 0x1'FFFF'FFFF;
-					SetInterrupt();
-				}
+				cop0_reg.count.value = (cop0_reg.count.value + cycles) & 0x1'FFFF'FFFF;
+				SetInterrupt();
 			}
 		}
 	}
@@ -221,27 +198,4 @@ namespace VR4300
 		cop0_reg.cause.ip |= std::to_underlying(interrupt);
 		CheckInterrupts();
 	}
-
-
-	template void AdvancePipeline<1>();
-	template void AdvancePipeline<2>();
-	template void AdvancePipeline<3>();
-	template void AdvancePipeline<5>();
-	template void AdvancePipeline<8>();
-	template void AdvancePipeline<29>();
-	template void AdvancePipeline<37>();
-	template void AdvancePipeline<58>();
-	template void AdvancePipeline<66>();
-	template void AdvancePipeline<69>();
-
-	template void IncrementCountRegister<1>();
-	template void IncrementCountRegister<2>();
-	template void IncrementCountRegister<3>();
-	template void IncrementCountRegister<5>();
-	template void IncrementCountRegister<8>();
-	template void IncrementCountRegister<29>();
-	template void IncrementCountRegister<37>();
-	template void IncrementCountRegister<58>();
-	template void IncrementCountRegister<66>();
-	template void IncrementCountRegister<69>();
 }

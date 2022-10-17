@@ -65,7 +65,7 @@ namespace RSP
 
 		gpr.Set(rt, result);
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -118,7 +118,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>, "\"Store\" template function called, but no matching store ScalarInstruction was found.");
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -197,7 +197,7 @@ namespace RSP
 			}
 		}());
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 	template<ScalarInstruction instr>
@@ -265,7 +265,7 @@ namespace RSP
 			}
 		}());
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -335,7 +335,7 @@ namespace RSP
 			}
 		}());
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -389,7 +389,7 @@ namespace RSP
 			gpr.Set(rd, pc + 4);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -444,7 +444,7 @@ namespace RSP
 			PrepareJump(pc + offset);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -457,7 +457,7 @@ namespace RSP
 		if (regs.status & 0x40) {
 			MI::SetInterruptFlag(MI::InterruptType::SP);
 		}
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 

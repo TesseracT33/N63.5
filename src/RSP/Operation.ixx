@@ -26,12 +26,10 @@ namespace RSP
 		void Run(uint cycles_to_run);
 	}
 
+	void AdvancePipeline(u64 cycles);
 	void DecodeExecuteInstruction(u32 instr_code);
 	void FetchDecodeExecuteInstruction();
 	void PrepareJump(u32 target_address);
-
-	template<u64 number_of_cycles>
-	void AdvancePipeline();
 
 	template<std::integral Int>
 	Int ReadDMEM(u32 addr);

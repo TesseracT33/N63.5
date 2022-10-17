@@ -126,7 +126,7 @@ namespace VR4300
 			static_assert(AlwaysFalse<instr>, "\"CP0_Move\" template function called, but no matching move instruction was found.");
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -154,7 +154,7 @@ namespace VR4300
 			cop0_reg.index.value = std::distance(tlb_entries.begin(), tlb_index);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -175,7 +175,7 @@ namespace VR4300
 		std::memcpy(&cop0_reg.page_mask , &tlb_entries[tlb_index].page_mask  , 4);
 		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
 		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = tlb_entries[tlb_index].entry_hi.g;
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -202,7 +202,7 @@ namespace VR4300
 		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
 		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -234,7 +234,7 @@ namespace VR4300
 		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
 		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -263,7 +263,7 @@ namespace VR4300
 			SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -278,7 +278,7 @@ namespace VR4300
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = current_instr_name;
 		}
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 

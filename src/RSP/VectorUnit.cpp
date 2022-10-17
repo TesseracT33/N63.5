@@ -426,7 +426,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -496,7 +496,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -698,7 +698,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -1002,7 +1002,7 @@ namespace RSP
 			vpr[vd] = acc.low = _mm_nxor_si128(vpr[vs], vt_operand);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
@@ -1158,7 +1158,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 
-		AdvancePipeline<1>();
+		AdvancePipeline(1);
 	}
 
 
