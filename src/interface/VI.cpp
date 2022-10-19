@@ -11,6 +11,12 @@ import Scheduler;
 
 namespace VI
 {
+	void AddInitialEvents()
+	{
+		Scheduler::AddEvent(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline, OnNewHalflineEvent);
+	}
+
+
 	void CheckVideoInterrupt()
 	{
 		if ((vi.v_current & 0x3FE) == vi.v_intr) {
@@ -33,8 +39,6 @@ namespace VI
 		num_halflines = 262;
 		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
 		Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
-
-		Scheduler::AddEvent(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline, OnNewHalflineEvent);
 	}
 
 

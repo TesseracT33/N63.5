@@ -52,13 +52,13 @@ namespace RSP
 	}
 
 
-	u64 Run(u64 cycles_to_run)
+	u64 Run(u64 rsp_cycles_to_run)
 	{
 		if (halted) {
 			return 0;
 		}
 		p_cycle_counter = 0;
-		while (p_cycle_counter < cycles_to_run) {
+		while (p_cycle_counter < rsp_cycles_to_run) {
 			if (jump_is_pending) {
 				if (instructions_until_jump-- == 0) {
 					pc = addr_to_jump_to;
@@ -67,10 +67,10 @@ namespace RSP
 			}
 			FetchDecodeExecuteInstruction();
 			if (single_step_mode || halted) {
-				return p_cycle_counter <= cycles_to_run ? 0 : p_cycle_counter - cycles_to_run;
+				return p_cycle_counter <= rsp_cycles_to_run ? 0 : p_cycle_counter - rsp_cycles_to_run;
 			}
 		}
-		return p_cycle_counter - cycles_to_run;
+		return p_cycle_counter - rsp_cycles_to_run;
 	}
 
 

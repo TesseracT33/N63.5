@@ -4,16 +4,18 @@ import Input;
 import N64;
 import Renderer;
 import RSP;
+import VI;
 import VR4300;
 
 namespace Scheduler
 {
-	void AddEvent(EventType event_type, Time cpu_cycles_until_fire, EventCallback callback)
+	void AddEvent(EventType event_type, s64 cpu_cycles_until_fire, EventCallback callback)
 	{
 		auto cpu_cycles_this_exec = 0;
-		Time insert_time = cpu_cycles_until_fire + cpu_cycles_per_update - cpu_cycles_this_exec;
+		//Time insert_time = cpu_cycles_until_fire + cpu_cycles_per_update - cpu_cycles_this_exec;
+		s64 insert_time = cpu_cycles_until_fire;
 		for (auto it = events.begin(); it != events.end(); ++it) {
-			if (cpu_cycles_until_fire < it->time_until_fire - cpu_cycles_this_exec) {
+			if (cpu_cycles_until_fire < it->cpu_cycles_until_fire - cpu_cycles_this_exec) {
 				events.emplace(it, event_type, insert_time, callback);
 				return;
 			}
@@ -22,10 +24,11 @@ namespace Scheduler
 	}
 
 
-	void ChangeEventTime(EventType event_type, Time cpu_cycles_until_fire)
+	void ChangeEventTime(EventType event_type, s64 cpu_cycles_until_fire)
 	{
 		auto cpu_cycles_this_exec = 0;
-		Time insert_time = cpu_cycles_until_fire + cpu_cycles_per_update - cpu_cycles_this_exec;
+		//Time insert_time = cpu_cycles_until_fire + cpu_cycles_per_update - cpu_cycles_this_exec;
+		s64 insert_time = cpu_cycles_until_fire;
 		for (auto it = events.begin(); it != events.end(); ++it) {
 			if (it->event_type == event_type) {
 				EventCallback callback = it->callback;
@@ -39,15 +42,14 @@ namespace Scheduler
 
 	void CheckEvents()
 	{
-		label:
 		for (auto it = events.begin(); it != events.end(); ) {
-			it->time_until_fire -= cpu_cycles_per_update;
-			if (it->time_until_fire <= 0) {
+			it->cpu_cycles_until_fire -= cpu_cycles_per_update;
+			if (it->cpu_cycles_until_fire <= 0) {
 				/* erase element before invoking callback, in case it mutates the event list */
 				EventCallback callback = it->callback;
-				it = events.erase(it);
+				events.erase(it);
 				callback();
-				goto label;
+				it = events.begin();
 			}
 			else {
 				++it;
@@ -61,6 +63,7 @@ namespace Scheduler
 		events.clear();
 		events.reserve(16);
 		VR4300::AddInitialEvents();
+		VI::AddInitialEvents();
 		// TODO: remove this in favour of approach used in GBA emu
 		AddEvent(EventType::Render, N64::cpu_cycles_per_frame, OnRenderEvent);
 	}
@@ -87,7 +90,7 @@ namespace Scheduler
 
 	void Run()
 	{
-		Time extra_cpu_cycles = 0, extra_rsp_cycles = 0;
+		s64 extra_cpu_cycles = 0, extra_rsp_cycles = 0;
 		while (true) {
 			extra_cpu_cycles = VR4300::Run(cpu_cycles_per_update - extra_cpu_cycles);
 			extra_rsp_cycles = RSP::Run(cpu_cycles_per_update - extra_rsp_cycles);

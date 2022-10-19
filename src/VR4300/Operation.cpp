@@ -96,7 +96,6 @@ namespace VR4300
 		cop0_reg.SetRaw(cop0_index_watch_hi, 0xF);
 		cop0_reg.SetRaw(cop0_index_x_context, 0xFFFF'FFFF'FFFF'FFF0);
 		cop0_reg.SetRaw(cop0_index_error_epc, 0xFFFF'FFFF'FFFF'FFFF);
-		ReloadCountCompareEvent();
 	}
 
 
@@ -142,10 +141,10 @@ namespace VR4300
 	}
 
 
-	u64 Run(u64 cycles_to_run)
+	u64 Run(u64 cpu_cycles_to_run)
 	{
 		p_cycle_counter = 0;
-		while (p_cycle_counter < cycles_to_run) {
+		while (p_cycle_counter < cpu_cycles_to_run) {
 			if (jump_is_pending) {
 				if (instructions_until_jump-- == 0) {
 					pc = addr_to_jump_to;
@@ -158,7 +157,7 @@ namespace VR4300
 				HandleException();
 			}
 		}
-		return p_cycle_counter - cycles_to_run;
+		return p_cycle_counter - cpu_cycles_to_run;
 	}
 
 

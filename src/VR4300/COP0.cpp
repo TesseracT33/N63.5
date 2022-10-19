@@ -247,7 +247,7 @@ namespace VR4300
 	void ReloadCountCompareEvent()
 	{
 		u64 cycles_until_count_compare_match = cop0_reg.compare.value - cop0_reg.count.value;
-		if (cop0_reg.count.value > cop0_reg.compare.value) {
+		if (cop0_reg.count.value >= cop0_reg.compare.value) {
 			cycles_until_count_compare_match += 0x2'0000'0000;
 		}
 		if constexpr (initial_add) {

@@ -25,7 +25,7 @@ namespace RSP
 
 		u8* GetPointerToMemory(u32 addr);
 		void PowerOn();
-		u64 Run(u64 cycles_to_run);
+		u64 Run(u64 rsp_cycles_to_run);
 	}
 
 	void AdvancePipeline(u64 cycles);

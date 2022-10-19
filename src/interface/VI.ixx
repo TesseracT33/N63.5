@@ -11,6 +11,7 @@ namespace VI
 {
 	export
 	{
+		void AddInitialEvents();
 		void Initialize();
 		template<std::integral Int> Int Read(u32 addr);
 		template<size_t number_of_bytes> void Write(u32 addr, auto data);
