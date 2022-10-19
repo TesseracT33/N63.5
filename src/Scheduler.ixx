@@ -8,7 +8,7 @@ namespace Scheduler
 {
 	export
 	{
-		using EventCallback = void(*)(); /* TODO: make it statically known what callbacks correspond with which event? */
+		using EventCallback = void(*)();
 
 		enum class EventType {
 			AudioSample,
@@ -20,7 +20,7 @@ namespace Scheduler
 			VINewHalfline
 		};
 
-		void AddEvent(EventType event, s64 cycles_until_fire, EventCallback callback);
+		void AddEvent(EventType event, s64 cpu_cycles_until_fire, EventCallback callback);
 		void ChangeEventTime(EventType event, s64 cpu_cycles_until_fire);
 		void Initialize();
 		void RemoveEvent(EventType event);
@@ -34,13 +34,13 @@ namespace Scheduler
 		EventCallback callback;
 	};
 
-	void CheckEvents();
+	void CheckEvents(s64 cpu_cycle_step);
 	void OnRenderEvent();
 
-	constexpr s64 cpu_cycles_per_update = 60;
+	constexpr s64 cpu_cycles_per_update = 90;
 	constexpr s64 rsp_cycles_per_update = 2 * cpu_cycles_per_update / 3;
 	static_assert(2 * cpu_cycles_per_update == 3 * rsp_cycles_per_update,
 		"CPU cycles per update must be divisible by 3.");
 
-	std::vector<Event> events;
+	std::vector<Event> events; /* sorted after when they will occur */
 }

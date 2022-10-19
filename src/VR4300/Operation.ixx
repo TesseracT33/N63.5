@@ -28,6 +28,7 @@ namespace VR4300
 		void AddInitialEvents();
 		void CheckInterrupts();
 		void ClearInterruptPending(ExternalInterruptSource);
+		u64 GetElapsedCycles();
 		void Reset();
 		u64 Run(u64 cpu_cycles_to_run);
 		void PowerOn(bool hle_pif);

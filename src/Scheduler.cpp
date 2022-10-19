@@ -11,39 +11,40 @@ namespace Scheduler
 {
 	void AddEvent(EventType event_type, s64 cpu_cycles_until_fire, EventCallback callback)
 	{
-		auto cpu_cycles_this_exec = 0;
-		//Time insert_time = cpu_cycles_until_fire + cpu_cycles_per_update - cpu_cycles_this_exec;
-		s64 insert_time = cpu_cycles_until_fire;
+		/* Compensate for the fact that we may be in the middle of a CPU update, and times for other events
+			have not updated yet. TODO: We are assuming that only the main CPU can cause an event to be added.
+			Is it ok? */
+		s64 elapsed_cycles_since_step_start = s64(VR4300::GetElapsedCycles());
+		s64 enqueue_time = cpu_cycles_until_fire + elapsed_cycles_since_step_start;
 		for (auto it = events.begin(); it != events.end(); ++it) {
-			if (cpu_cycles_until_fire < it->cpu_cycles_until_fire - cpu_cycles_this_exec) {
-				events.emplace(it, event_type, insert_time, callback);
+			if (enqueue_time < it->cpu_cycles_until_fire) {
+				events.emplace(it, event_type, enqueue_time, callback);
 				return;
 			}
 		}
-		events.emplace_back(event_type, insert_time, callback);
+		events.emplace_back(event_type, enqueue_time, callback);
 	}
 
 
 	void ChangeEventTime(EventType event_type, s64 cpu_cycles_until_fire)
 	{
-		auto cpu_cycles_this_exec = 0;
-		//Time insert_time = cpu_cycles_until_fire + cpu_cycles_per_update - cpu_cycles_this_exec;
-		s64 insert_time = cpu_cycles_until_fire;
+		s64 elapsed_cycles_since_step_start = s64(VR4300::GetElapsedCycles());
+		s64 enqueue_time = cpu_cycles_until_fire + elapsed_cycles_since_step_start;
 		for (auto it = events.begin(); it != events.end(); ++it) {
 			if (it->event_type == event_type) {
 				EventCallback callback = it->callback;
 				events.erase(it);
-				AddEvent(event_type, cpu_cycles_until_fire, callback);
+				AddEvent(event_type, enqueue_time, callback);
 				return;
 			}
 		}
 	}
 
 
-	void CheckEvents()
+	void CheckEvents(s64 cpu_cycle_step)
 	{
 		for (auto it = events.begin(); it != events.end(); ) {
-			it->cpu_cycles_until_fire -= cpu_cycles_per_update;
+			it->cpu_cycles_until_fire -= cpu_cycle_step;
 			if (it->cpu_cycles_until_fire <= 0) {
 				/* erase element before invoking callback, in case it mutates the event list */
 				EventCallback callback = it->callback;
@@ -90,11 +91,13 @@ namespace Scheduler
 
 	void Run()
 	{
-		s64 extra_cpu_cycles = 0, extra_rsp_cycles = 0;
+		s64 cpu_cycle_overrun = 0, rsp_cycle_overrun = 0;
 		while (true) {
-			extra_cpu_cycles = VR4300::Run(cpu_cycles_per_update - extra_cpu_cycles);
-			extra_rsp_cycles = RSP::Run(cpu_cycles_per_update - extra_rsp_cycles);
-			CheckEvents();
+			s64 cpu_step_dur = cpu_cycles_per_update - cpu_cycle_overrun;
+			s64 rsp_step_dur = cpu_cycles_per_update - rsp_cycle_overrun;
+			cpu_cycle_overrun = VR4300::Run(cpu_step_dur);
+			rsp_cycle_overrun = RSP::Run(rsp_step_dur);
+			CheckEvents(cpu_step_dur);
 		}
 	}
 }

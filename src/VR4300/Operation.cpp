@@ -64,6 +64,12 @@ namespace VR4300
 	}
 
 
+	u64 GetElapsedCycles()
+	{
+		return p_cycle_counter;
+	}
+
+
 	void HlePif()
 	{
 		/* https://github.com/Dillonb/n64-resources/blob/master/bootn64.html */
