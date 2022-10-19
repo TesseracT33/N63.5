@@ -11,10 +11,16 @@ import Logging;
 
 namespace VR4300
 {
+	void AddInitialEvents()
+	{
+		ReloadCountCompareEvent<true>();
+	}
+
+
 	void AdvancePipeline(u64 cycles)
 	{
 		p_cycle_counter += cycles;
-		IncrementCountRegister(cycles);
+		cop0_reg.count.value += cycles;
 	}
 
 
@@ -58,6 +64,12 @@ namespace VR4300
 	}
 
 
+	u64 GetElapsedCycles()
+	{
+		return p_cycle_counter;
+	}
+
+
 	void HlePif()
 	{
 		/* https://github.com/Dillonb/n64-resources/blob/master/bootn64.html */
@@ -72,42 +84,6 @@ namespace VR4300
 			WriteVirtual<u32>(dst_addr, ReadVirtual<u32>(src_addr));
 		}
 		pc = 0xFFFF'FFFF'A400'0040;
-	}
-
-
-	void IncrementCountRegister(u64 cycles)
-	{
-		/* The 32-bit 'count' register is supposed to be incremented every other PCycle, and then compared against the 32-bit 'compare' register.
-		   If they match, and interrupt is fired. Here, we make both registers 64 bits, and increment 'count' every PCycle. */
-
-		auto SetInterrupt = [&] {
-			cop0_reg.cause.ip |= 0x80;
-			CheckInterrupts();
-		};
-		// TODO: remove; change to a scheduling approach where there is an event when 'count' and 'compare' meet.
-		if (cop0_reg.count.value + cycles <= 0x1'FFFF'FFFF) {
-			if (cop0_reg.count.value > cop0_reg.compare.value) {
-				cop0_reg.count.value += cycles;
-			}
-			else {
-				cop0_reg.count.value += cycles;
-				if (cop0_reg.count.value >= cop0_reg.compare.value) {
-					SetInterrupt();
-				}
-			}
-		}
-		else {
-			if (cop0_reg.count.value > cop0_reg.compare.value) {
-				cop0_reg.count.value = cycles - (0x2'0000'0000 - cop0_reg.count.value);
-				if (cop0_reg.count.value >= cop0_reg.compare.value) {
-					SetInterrupt();
-				}
-			}
-			else {
-				cop0_reg.count.value = (cop0_reg.count.value + cycles) & 0x1'FFFF'FFFF;
-				SetInterrupt();
-			}
-		}
 	}
 
 
@@ -171,11 +147,10 @@ namespace VR4300
 	}
 
 
-	void Run(uint cycles_to_run)
+	u64 Run(u64 cpu_cycles_to_run)
 	{
 		p_cycle_counter = 0;
-
-		while (p_cycle_counter < cycles_to_run) {
+		while (p_cycle_counter < cpu_cycles_to_run) {
 			if (jump_is_pending) {
 				if (instructions_until_jump-- == 0) {
 					pc = addr_to_jump_to;
@@ -183,13 +158,12 @@ namespace VR4300
 					pc_is_inside_branch_delay_slot = false;
 				}
 			}
-
 			FetchDecodeExecuteInstruction();
-
 			if (exception_has_occurred) {
 				HandleException();
 			}
 		}
+		return p_cycle_counter - cpu_cycles_to_run;
 	}
 
 

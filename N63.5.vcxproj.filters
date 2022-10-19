@@ -72,6 +72,8 @@
     <ClCompile Include="external\EmuUtils\src\SSE.cpp" />
     <ClCompile Include="external\EmuUtils\src\SSE.ixx" />
     <ClCompile Include="external\EmuUtils\src\Util.ixx" />
+    <ClCompile Include="src\Scheduler.ixx" />
+    <ClCompile Include="src\Scheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\EnumerateTemplateSpecializations.h" />

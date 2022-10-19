@@ -3,10 +3,13 @@ module DMA;
 import Cartridge;
 import DebugOptions;
 import Logging;
-import N64;
+import MI;
+import PI;
 import PIF;
 import RDRAM;
 import RSP;
+import SI;
+import Scheduler;
 import VR4300;
 
 namespace DMA
@@ -53,12 +56,26 @@ namespace DMA
 
 		static constexpr auto cycles_per_byte_dma = 18;
 		auto cycles_until_finish = num_bytes_to_copy * cycles_per_byte_dma;
-		N64::Event n64_event = [] {
-			if constexpr (type == DMA::Type::PI) return N64::Event::PiDmaFinish;
-			else if constexpr (type == DMA::Type::SI) return N64::Event::SiDmaFinish;
+		Scheduler::EventType event = [] {
+			if constexpr (type == DMA::Type::PI) return Scheduler::EventType::PiDmaFinish;
+			else if constexpr (type == DMA::Type::SI) return Scheduler::EventType::SiDmaFinish;
 			else static_assert("Unknown DMA type given as argument to \"DMA::Init\"");
 		}();
-		N64::EnqueueEvent(n64_event, cycles_until_finish);
+		Scheduler::AddEvent(event, cycles_until_finish, [] {
+			if constexpr (type == DMA::Type::PI) {
+				MI::SetInterruptFlag(MI::InterruptType::PI);
+				PI::SetStatusFlag(PI::StatusFlag::DmaCompleted);
+				PI::ClearStatusFlag(PI::StatusFlag::DmaBusy);
+				VR4300::CheckInterrupts();
+			}
+			else if constexpr (type == DMA::Type::SI) {
+				MI::SetInterruptFlag(MI::InterruptType::SI);
+				SI::SetStatusFlag(SI::StatusFlag::Interrupt);
+				SI::ClearStatusFlag(SI::StatusFlag::DmaBusy);
+				VR4300::CheckInterrupts();
+			}
+			else static_assert("Unknown DMA type");
+		});
 
 		if constexpr (log_dma) {
 			std::string output = std::format("From {} ${:X} to {} ${:X}; ${:X} bytes",
