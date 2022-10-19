@@ -18,8 +18,6 @@ namespace RSP
 
 		template<size_t number_of_bytes>
 		void CPUWriteRegister(u32 addr, auto data);
-
-		void NotifyDmaFinish();
 	}
 
 	enum class DmaType {
@@ -30,8 +28,8 @@ namespace RSP
 		DmaSpaddr, DmaRamaddr, DmaRdlen, DmaWrlen, Status, DmaFull, DmaBusy, Semaphore
 	};
 
-	template<DmaType dma_type>
-	void InitDMA();
+	template<DmaType dma_type> void InitDMA();
+	void OnDmaFinish();
 
 	struct
 	{

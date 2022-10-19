@@ -5,6 +5,7 @@ import MI;
 import N64;
 import RDRAM;
 import Renderer;
+import Scheduler;
 
 #include "../EnumerateTemplateSpecializations.h"
 
@@ -32,6 +33,16 @@ namespace VI
 		num_halflines = 262;
 		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
 		Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
+
+		Scheduler::AddEvent(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline, OnNewHalflineEvent);
+	}
+
+
+	void OnNewHalflineEvent()
+	{
+		vi.v_current = (vi.v_current + 1) & 0x3FF;
+		CheckVideoInterrupt();
+		Scheduler::AddEvent(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline, OnNewHalflineEvent);
 	}
 
 
@@ -42,13 +53,6 @@ namespace VI
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
 		return Int(ret);
-	}
-
-
-	void SetCurrentHalfline(const u32 halfline)
-	{
-		vi.v_current = halfline & 0x3FF;
-		CheckVideoInterrupt();
 	}
 
 
@@ -109,7 +113,8 @@ namespace VI
 		case RegOffset::VSync:
 			vi.v_sync = word & 0x3FF;
 			num_halflines = vi.v_sync >> 1;
-			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines; /* remainder being non-zero is taken caren of in the scheduler */
+			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
+			Scheduler::ChangeEventTime(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline);
 			break;
 
 		default:

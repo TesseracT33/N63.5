@@ -8,6 +8,7 @@ import :MMU;
 
 import DebugOptions;
 import MemoryAccess;
+import Scheduler;
 import Util;
 
 namespace VR4300
@@ -20,13 +21,20 @@ namespace VR4300
 
 	void COP0Registers::OnWriteToCompare()
 	{
-		cop0_reg.cause.ip &= ~0x80; /* TODO: not sure if anything else needs to be done? */
+		cause.ip &= ~0x80; /* TODO: not sure if anything else needs to be done? */
+		ReloadCountCompareEvent();
+	}
+
+
+	void COP0Registers::OnWriteToCount()
+	{
+		ReloadCountCompareEvent();
 	}
 
 
 	void COP0Registers::OnWriteToStatus()
 	{
-		fpu_is_enabled = cop0_reg.status.cu1;
+		fpu_is_enabled = status.cu1;
 		SetActiveVirtualToPhysicalFunctions();
 		CheckInterrupts();
 	}
@@ -34,7 +42,7 @@ namespace VR4300
 
 	void COP0Registers::OnWriteToWired()
 	{
-		random_generator.SetLowerBound(cop0_reg.wired.value);
+		random_generator.SetLowerBound(wired.value);
 	}
 
 
@@ -82,6 +90,171 @@ namespace VR4300
 		case cop0_index_tag_hi: return StructToInt(tag_hi);
 		case cop0_index_error_epc: return StructToInt(error_epc);
 		default: return 0;
+		}
+	}
+
+
+	template<bool raw>
+	void COP0Registers::Set(size_t reg_index, auto value)
+	{
+		auto IntToStruct = [](auto& struct_, auto value) {
+			/* The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined.
+				Here: simply write to the lower 32 bits. */
+			static_assert(sizeof(struct_) == 4 || sizeof(struct_) == 8);
+			static_assert(sizeof(value) == 4 || sizeof(value) == 8);
+			static constexpr auto num_bytes_to_write = std::min(sizeof(struct_), sizeof(value));
+			std::memcpy(&struct_, &value, num_bytes_to_write);
+		};
+
+		auto IntToStructMasked = [](auto& struct_, auto value, auto mask) {
+			using StructT = std::remove_reference_t<decltype(struct_)>;
+			static_assert(sizeof(struct_) == 4 || sizeof(struct_) == 8);
+			static_assert(sizeof(value) == 4 || sizeof(value) == 8);
+			value &= mask;
+			if constexpr (sizeof(struct_) == 4) {
+				u32 prev_struct = std::bit_cast<u32>(struct_);
+				u32 new_struct = u32(value | prev_struct & ~mask);
+				struct_ = std::bit_cast<StructT>(new_struct);
+			}
+			else {
+				u64 prev_struct = std::bit_cast<u64>(struct_);
+				u64 new_struct = value | prev_struct & ~mask;
+				struct_ = std::bit_cast<StructT>(new_struct);
+			}
+		};
+
+		switch (reg_index) { /* Masks are used for bits that are non-writeable. */
+		case cop0_index_index:
+			if constexpr (raw) IntToStruct(index, value);
+			else               IntToStructMasked(index, value, 0x8000'003F);
+			break;
+
+		case cop0_index_random:
+			if constexpr (raw) IntToStruct(random, value);
+			else               IntToStructMasked(random, value, 0x0000'0040);
+			break;
+
+		case cop0_index_entry_lo_0:
+			if constexpr (raw) IntToStruct(entry_lo_0, value);
+			else               IntToStructMasked(entry_lo_0, value, 0x03FF'FFFF);
+			break;
+
+		case cop0_index_entry_lo_1:
+			if constexpr (raw) IntToStruct(entry_lo_1, value);
+			else               IntToStructMasked(entry_lo_1, value, 0x03FF'FFFF);
+			break;
+
+		case cop0_index_context:
+			if constexpr (raw) IntToStruct(context, value);
+			else               IntToStructMasked(context, value, 0xFFFF'FFFF'FFFF'FFF0);
+			break;
+
+		case cop0_index_page_mask:
+			if constexpr (raw) IntToStruct(page_mask, value);
+			else               IntToStructMasked(page_mask, value, 0x01FF'E000);
+			break;
+
+		case cop0_index_wired:
+			if constexpr (raw) IntToStruct(wired, value);
+			else               IntToStructMasked(wired, value, 0x3F);
+			OnWriteToWired();
+			break;
+
+		case cop0_index_bad_v_addr:
+			IntToStruct(bad_v_addr, value);
+			break;
+
+		case cop0_index_count:
+			IntToStruct(count, value << 1); /* See the declaration of 'count' */
+			OnWriteToCount();
+			break;
+
+		case cop0_index_entry_hi:
+			if constexpr (raw) IntToStruct(entry_hi, value);
+			else               IntToStructMasked(entry_hi, value, 0xC000'00FF'FFFF'E0FF);
+			break;
+
+		case cop0_index_compare:
+			IntToStruct(compare, value << 1); /* See the declaration of 'compare' */
+			OnWriteToCompare();
+			break;
+
+		case cop0_index_status:
+			if constexpr (raw) IntToStruct(status, value);
+			else               IntToStructMasked(status, value, 0xFF57'FFFF);
+			OnWriteToStatus();
+			break;
+
+		case cop0_index_cause:
+			if constexpr (raw) IntToStruct(cause, value);
+			else               IntToStructMasked(cause, value, 0x300);
+			OnWriteToCause();
+			break;
+
+		case cop0_index_epc:
+			IntToStruct(epc, value);
+			break;
+
+		case cop0_index_config:
+			if constexpr (raw) IntToStruct(config, value);
+			else               IntToStructMasked(config, value, 0x7F00'800F);
+			break;
+
+		case cop0_index_ll_addr:
+			IntToStruct(ll_addr, value);
+			break;
+
+		case cop0_index_watch_lo:
+			if constexpr (raw) IntToStruct(watch_lo, value);
+			else               IntToStructMasked(watch_lo, value, 0xFFFF'FFFB);
+			break;
+
+		case cop0_index_watch_hi:
+			IntToStruct(watch_hi, value);
+			break;
+
+		case cop0_index_x_context:
+			if constexpr (raw) IntToStruct(x_context, value);
+			else               IntToStructMasked(x_context, value, 0xFFFF'FFFF'FFFF'FFF0);
+			break;
+
+		case cop0_index_parity_error:
+			if constexpr (raw) IntToStruct(parity_error, value);
+			else               IntToStructMasked(parity_error, value, 0xFF);
+			break;
+
+		case cop0_index_tag_lo:
+			if constexpr (raw) IntToStruct(tag_lo, value);
+			else               IntToStructMasked(tag_lo, value, 0x0FFF'FFC0);
+			break;
+
+		case cop0_index_error_epc:
+			IntToStruct(error_epc, value);
+			break;
+		}
+	}
+
+
+	void OnCountCompareMatchEvent()
+	{
+		cop0_reg.cause.ip |= 0x80;
+		CheckInterrupts();
+		ReloadCountCompareEvent();
+	}
+
+
+	template<bool initial_add>
+	void ReloadCountCompareEvent()
+	{
+		u64 cycles_until_count_compare_match = cop0_reg.compare.value - cop0_reg.count.value;
+		if (cop0_reg.count.value > cop0_reg.compare.value) {
+			cycles_until_count_compare_match += 0x2'0000'0000;
+		}
+		if constexpr (initial_add) {
+			Scheduler::AddEvent(Scheduler::EventType::CountCompareMatch, cycles_until_count_compare_match, OnCountCompareMatchEvent);
+		}
+		else {
+			Scheduler::ChangeEventTime(Scheduler::EventType::CountCompareMatch, cycles_until_count_compare_match);
 		}
 	}
 
@@ -282,8 +455,18 @@ namespace VR4300
 	}
 
 
+	template void COP0Registers::Set<false>(size_t, s32);
+	template void COP0Registers::Set<false>(size_t, u32);
+	template void COP0Registers::Set<false>(size_t, u64);
+	template void COP0Registers::Set<true>(size_t, s32);
+	template void COP0Registers::Set<true>(size_t, u32);
+	template void COP0Registers::Set<true>(size_t, u64);
+
 	template void COP0Move<COP0Instruction::MTC0>(u32);
 	template void COP0Move<COP0Instruction::MFC0>(u32);
 	template void COP0Move<COP0Instruction::DMTC0>(u32);
 	template void COP0Move<COP0Instruction::DMFC0>(u32);
+
+	template void ReloadCountCompareEvent<false>();
+	template void ReloadCountCompareEvent<true>();
 }

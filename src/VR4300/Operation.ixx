@@ -17,8 +17,7 @@ namespace VR4300
 			User, Supervisor, Kernel
 		} operating_mode;
 
-		enum class ExternalInterruptSource
-		{
+		enum class ExternalInterruptSource {
 			MI        = 0x04, /* ip2; MIPS Interface interrupt. Set to 1 when (MI_INTR_REG & MI_INTR_MASK_REG) != 0  */
 			Cartridge = 0x08, /* ip3; This is connected to the cartridge slot. Cartridges with special hardware can trigger this interrupt. */
 			Reset     = 0x10, /* ip4; Becomes 1 when the console's reset button is pressed. */
@@ -26,25 +25,24 @@ namespace VR4300
 			IndyWrite = 0x40  /* ip6; Connected to the Indy dev kit’s RDB port. Set to 1 when a value is written. */
 		};
 
+		void AddInitialEvents();
 		void CheckInterrupts();
 		void ClearInterruptPending(ExternalInterruptSource);
 		void Reset();
-		void Run(uint cycles_to_run);
+		u64 Run(u64 cycles_to_run);
 		void PowerOn(bool hle_pif);
 		void SetInterruptPending(ExternalInterruptSource);
-
-		uint p_cycle_counter = 0;
 	}
 
 	void AdvancePipeline(u64 cycles);
 	void DecodeExecuteInstruction(u32 instr_code);
 	void FetchDecodeExecuteInstruction();
-	void IncrementCountRegister(u64 cycles);
 	void InitializeRegisters();
 	void HlePif();
 	void PrepareJump(u64 target_address);
 
-	bool pc_is_inside_branch_delay_slot = false;
+	bool pc_is_inside_branch_delay_slot;
+	u64 p_cycle_counter;
 
 	/* Debugging */
 	u64 current_instr_pc;

@@ -4,6 +4,7 @@ import MI;
 import Memory;
 import MemoryAccess;
 import N64;
+import Scheduler;
 import UserMessage;
 
 #include "../EnumerateTemplateSpecializations.h"
@@ -27,8 +28,7 @@ namespace AI
 
 		SDL_AudioSpec obtained_spec;
 		audio_device_id = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, &obtained_spec, 0);
-		if (audio_device_id == 0)
-		{
+		if (audio_device_id == 0) {
 			const char* error_msg = SDL_GetError();
 			UserMessage::Show(std::format("Could not open audio device; {}", error_msg), UserMessage::Type::Warning);
 		}
@@ -55,33 +55,20 @@ namespace AI
 
 	void Sample()
 	{
-		if (dma_count == 0) {
-			return;
-		}
-		s32 data = Memory::ReadPhysical<s32, MemoryAccess::Operation::Read>(ai.dram_addr);
-		// TODO output sample
-		ai.dram_addr += 4;
-		ai.len -= 4;
-		if (ai.len == 0) {
-			MI::SetInterruptFlag(MI::InterruptType::AI);
-			if (--dma_count > 0) {
-				ai.dram_addr = dma_address_buffer;
-				ai.len = dma_length_buffer;
+		if (dma_count != 0) {
+			s32 data = Memory::ReadPhysical<s32, MemoryAccess::Operation::Read>(ai.dram_addr);
+			// TODO output sample
+			ai.dram_addr += 4;
+			ai.len -= 4;
+			if (ai.len == 0) {
+				MI::SetInterruptFlag(MI::InterruptType::AI);
+				if (--dma_count > 0) {
+					ai.dram_addr = dma_address_buffer;
+					ai.len = dma_length_buffer;
+				}
 			}
 		}
-	}
-
-
-	void Step(uint cycles)
-	{
-		if (ai.control == 0) {
-			return;
-		}
-		AI::cycles += cycles;
-		while (AI::cycles > dac.period) {
-			Sample();
-			AI::cycles -= dac.period;
-		}
+		Scheduler::AddEvent(Scheduler::EventType::AudioSample, dac.period, Sample);
 	}
 
 
@@ -112,9 +99,18 @@ namespace AI
 			break;
 		}
 
-		case RegOffset::Control:
+		case RegOffset::Control: {
+			auto prev_control = ai.control;
 			ai.control = word & 1;
-			break;
+			if (prev_control ^ ai.control) {
+				if (ai.control) {
+					Scheduler::AddEvent(Scheduler::EventType::AudioSample, dac.period, Sample);
+				}
+				else {
+					Scheduler::RemoveEvent(Scheduler::EventType::AudioSample);
+				}
+			}
+		} break;
 
 		case RegOffset::Status:
 			MI::ClearInterruptFlag(MI::InterruptType::AI);
@@ -124,6 +120,7 @@ namespace AI
 			ai.dacrate = word & 0x3FFF;
 			dac.frequency = std::max(1u, N64::cpu_cycles_per_second / (ai.dacrate + 1));
 			dac.period = N64::cpu_cycles_per_second / dac.frequency;
+			Scheduler::ChangeEventTime(Scheduler::EventType::AudioSample, dac.period);
 			break;
 
 		case RegOffset::Bitrate:

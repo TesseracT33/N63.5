@@ -13,14 +13,9 @@ namespace AI
 {
 	export
 	{
-		template<std::integral Int>
-		Int Read(u32 addr);
-
-		template<size_t number_of_bytes>
-		void Write(u32 addr, auto data);
-
 		void Initialize();
-		void Step(uint cycles);
+		template<std::integral Int> Int Read(u32 addr);
+		template<size_t number_of_bytes> void Write(u32 addr, auto data);
 	}
 
 	void Sample();
@@ -37,7 +32,6 @@ namespace AI
 
 	u32 dma_length_buffer;
 	u32 dma_address_buffer;
-	uint cycles;
 	uint dma_count;
 
 	SDL_AudioDeviceID audio_device_id;

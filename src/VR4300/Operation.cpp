@@ -11,10 +11,16 @@ import Logging;
 
 namespace VR4300
 {
+	void AddInitialEvents()
+	{
+		ReloadCountCompareEvent<true>();
+	}
+
+
 	void AdvancePipeline(u64 cycles)
 	{
 		p_cycle_counter += cycles;
-		IncrementCountRegister(cycles);
+		cop0_reg.count.value += cycles;
 	}
 
 
@@ -75,42 +81,6 @@ namespace VR4300
 	}
 
 
-	void IncrementCountRegister(u64 cycles)
-	{
-		/* The 32-bit 'count' register is supposed to be incremented every other PCycle, and then compared against the 32-bit 'compare' register.
-		   If they match, and interrupt is fired. Here, we make both registers 64 bits, and increment 'count' every PCycle. */
-
-		auto SetInterrupt = [&] {
-			cop0_reg.cause.ip |= 0x80;
-			CheckInterrupts();
-		};
-		// TODO: remove; change to a scheduling approach where there is an event when 'count' and 'compare' meet.
-		if (cop0_reg.count.value + cycles <= 0x1'FFFF'FFFF) {
-			if (cop0_reg.count.value > cop0_reg.compare.value) {
-				cop0_reg.count.value += cycles;
-			}
-			else {
-				cop0_reg.count.value += cycles;
-				if (cop0_reg.count.value >= cop0_reg.compare.value) {
-					SetInterrupt();
-				}
-			}
-		}
-		else {
-			if (cop0_reg.count.value > cop0_reg.compare.value) {
-				cop0_reg.count.value = cycles - (0x2'0000'0000 - cop0_reg.count.value);
-				if (cop0_reg.count.value >= cop0_reg.compare.value) {
-					SetInterrupt();
-				}
-			}
-			else {
-				cop0_reg.count.value = (cop0_reg.count.value + cycles) & 0x1'FFFF'FFFF;
-				SetInterrupt();
-			}
-		}
-	}
-
-
 	void InitializeRegisters()
 	{
 		std::memset(&gpr, 0, sizeof(gpr));
@@ -126,6 +96,7 @@ namespace VR4300
 		cop0_reg.SetRaw(cop0_index_watch_hi, 0xF);
 		cop0_reg.SetRaw(cop0_index_x_context, 0xFFFF'FFFF'FFFF'FFF0);
 		cop0_reg.SetRaw(cop0_index_error_epc, 0xFFFF'FFFF'FFFF'FFFF);
+		ReloadCountCompareEvent();
 	}
 
 
@@ -171,10 +142,9 @@ namespace VR4300
 	}
 
 
-	void Run(uint cycles_to_run)
+	u64 Run(u64 cycles_to_run)
 	{
 		p_cycle_counter = 0;
-
 		while (p_cycle_counter < cycles_to_run) {
 			if (jump_is_pending) {
 				if (instructions_until_jump-- == 0) {
@@ -183,13 +153,12 @@ namespace VR4300
 					pc_is_inside_branch_delay_slot = false;
 				}
 			}
-
 			FetchDecodeExecuteInstruction();
-
 			if (exception_has_occurred) {
 				HandleException();
 			}
 		}
+		return p_cycle_counter - cycles_to_run;
 	}
 
 

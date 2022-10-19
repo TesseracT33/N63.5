@@ -5,8 +5,9 @@ import :Operation;
 import DebugOptions;
 import Logging;
 import MI;
-import N64;
 import RDRAM;
+import Scheduler;
+import VR4300;
 
 #include "../EnumerateTemplateSpecializations.h"
 
@@ -245,7 +246,7 @@ namespace RSP
 		static constexpr uint cpu_cycles_per_byte = 4;
 		uint cpu_cycles_until_finish = cpu_cycles_per_byte * requested_total_bytes;
 
-		N64::EnqueueEvent(N64::Event::SpDmaFinish, cpu_cycles_until_finish);
+		Scheduler::AddEvent(Scheduler::EventType::SpDmaFinish, cpu_cycles_until_finish, OnDmaFinish);
 
 		/* The DMA engine allows to transfer multiple "rows" of data in RDRAM, separated by a "skip" value. This allows for instance to transfer
 		a rectangular portion of a larger image, by specifying the size of each row of the selection portion, the number of rows, and a "skip" value
@@ -287,7 +288,7 @@ namespace RSP
 	}
 
 
-	void NotifyDmaFinish()
+	void OnDmaFinish()
 	{
 		if (dma_is_pending) {
 			dma_is_pending = false;
@@ -318,6 +319,9 @@ namespace RSP
 				regs.dma_wrlen = 0xFF8 | regs.dma_wrlen & 0xFF80'0000;
 			}
 		}
+
+		MI::SetInterruptFlag(MI::InterruptType::SP);
+		VR4300::CheckInterrupts();
 	}
 
 
