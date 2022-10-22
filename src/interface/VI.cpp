@@ -92,7 +92,6 @@ namespace VI
 			break;
 
 		case Register::VCurrent:
-			vi.v_current = word & 0x3FF;
 			MI::ClearInterruptFlag(MI::InterruptType::VI);
 			break;
 
