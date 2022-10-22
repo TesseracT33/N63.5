@@ -6,21 +6,6 @@ import Memory;
 
 namespace RDRAM
 {
-	void AllocateExpansionPackRam()
-	{
-		rdram.resize(rdram_expanded_size);
-		std::fill(rdram.begin() + rdram_standard_size, rdram.end(), 0);
-		Memory::ReloadPageTables();
-	}
-
-
-	void DeallocateExpansionPackRam()
-	{
-		rdram.resize(rdram_standard_size);
-		Memory::ReloadPageTables();
-	}
-
-
 	size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr)
 	{
 		start_addr &= rdram.size() - 1;
@@ -32,6 +17,12 @@ namespace RDRAM
 	{
 		addr &= rdram.size() - 1;
 		return rdram.data() + addr;
+	}
+
+
+	size_t GetSize()
+	{
+		return rdram.size();
 	}
 
 
