@@ -8,21 +8,21 @@ namespace RDRAM
 {
 	size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr)
 	{
-		start_addr &= rdram.size() - 1;
-		return std::max(size_t(0), rdram.size() - start_addr);
+		start_addr &= sizeof(rdram) - 1;
+		return std::max(size_t(0), sizeof(rdram) - start_addr);
 	}
 
 
 	u8* GetPointerToMemory(u32 addr)
 	{
-		addr &= rdram.size() - 1;
-		return rdram.data() + addr;
+		addr &= sizeof(rdram) - 1;
+		return rdram + addr;
 	}
 
 
 	size_t GetSize()
 	{
-		return rdram.size();
+		return sizeof(rdram);
 	}
 
 
@@ -31,7 +31,7 @@ namespace RDRAM
 	Int ReadStandardRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
 		Int ret;
-		std::memcpy(&ret, rdram.data() + addr, sizeof(Int));
+		std::memcpy(&ret, rdram + addr, sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -40,9 +40,9 @@ namespace RDRAM
 	template<std::integral Int>
 	Int ReadExpandedRegion(const u32 addr)
 	{ /* CPU precondition: addr is always aligned */
-		if (rdram.size() == rdram_expanded_size) {
+		if (sizeof(rdram) == rdram_expanded_size) {
 			Int ret;
-			std::memcpy(&ret, rdram.data() + addr, sizeof(Int));
+			std::memcpy(&ret, rdram + addr, sizeof(Int));
 			return std::byteswap(ret);
 		}
 		else {
@@ -76,7 +76,7 @@ namespace RDRAM
 	void WriteStandardRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		data = std::byteswap(data);
-		std::memcpy(rdram.data() + addr, &data, number_of_bytes);
+		std::memcpy(rdram + addr, &data, number_of_bytes);
 	}
 
 
@@ -84,9 +84,9 @@ namespace RDRAM
 	template<size_t number_of_bytes>
 	void WriteExpandedRegion(const u32 addr, auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
-		if (rdram.size() == rdram_expanded_size) {
+		if (sizeof(rdram) == rdram_expanded_size) {
 			data = std::byteswap(data);
-			std::memcpy(rdram.data() + addr, &data, number_of_bytes);
+			std::memcpy(rdram + addr, &data, number_of_bytes);
 		}
 	}
 
