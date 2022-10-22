@@ -1,5 +1,5 @@
 [submodule "src/RDP/parallel-rdp-standalone"]
-	path = src/RDP/parallel-rdp-standalone
+	path = external/parallel-rdp-standalone
 	url = https://github.com/Themaister/parallel-rdp-standalone
 [submodule "external/EmuUtils"]
 	path = external/EmuUtils
