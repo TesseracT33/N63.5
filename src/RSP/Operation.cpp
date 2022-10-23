@@ -16,6 +16,25 @@ namespace RSP
 	}
 
 
+	template<std::integral Int>
+	Int CPUReadMemory(u32 addr)
+	{
+		/* CPU precondition; the address is always aligned */
+		Int ret;
+		std::memcpy(&ret, memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
+		return std::byteswap(ret);
+	}
+
+
+	template<std::size_t number_of_bytes>
+	void CPUWriteMemory(u32 addr, auto data)
+	{
+		/* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
+		data = std::byteswap(data);
+		std::memcpy(memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), &data, number_of_bytes);
+	}
+
+
 	void FetchDecodeExecuteInstruction()
 	{
 		if constexpr (log_rsp_instructions) {
@@ -29,6 +48,18 @@ namespace RSP
 	}
 
 
+	u8* GetPointerToMemory(u32 addr)
+	{
+		return memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF);
+	}
+
+
+	void NotifyIllegalInstrCode(u32 instr_code)
+	{
+		std::cout << std::format("Illegal RSP instruction code {:08X} encountered.\n", instr_code);
+	}
+
+
 	void PowerOn()
 	{
 		jump_is_pending = false;
@@ -37,6 +68,26 @@ namespace RSP
 		imem.fill(0);
 		std::memset(&sp, 0, sizeof(sp));
 		sp.status.halted = true;
+	}
+
+
+	void PrepareJump(u32 target_address)
+	{
+		jump_is_pending = true;
+		instructions_until_jump = 1;
+		addr_to_jump_to = target_address;
+	}
+
+
+	template<std::integral Int>
+	Int ReadDMEM(u32 addr)
+	{
+		/* Addr may be misaligned and the read can go out of bounds */
+		Int ret;
+		for (size_t i = 0; i < sizeof(Int); ++i) {
+			*((u8*)(&ret) + sizeof(Int) - i - 1) = dmem[(addr + i) & 0xFFF];
+		}
+		return ret;
 	}
 
 
@@ -77,52 +128,7 @@ namespace RSP
 
 
 	template<std::integral Int>
-	Int CPUReadMemory(const u32 addr)
-	{
-		/* CPU precondition; the address is always aligned */
-		Int ret;
-		std::memcpy(&ret, memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
-		return std::byteswap(ret);
-	}
-
-
-	template<std::size_t number_of_bytes>
-	void CPUWriteMemory(const u32 addr, auto data)
-	{
-		/* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
-		data = std::byteswap(data);
-		std::memcpy(memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), &data, number_of_bytes);
-	}
-
-
-	u8* GetPointerToMemory(const u32 addr)
-	{
-		return memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF);
-	}
-
-
-	void PrepareJump(const u32 target_address)
-	{
-		jump_is_pending = true;
-		instructions_until_jump = 1;
-		addr_to_jump_to = target_address;
-	}
-
-
-	template<std::integral Int>
-	Int ReadDMEM(const u32 addr)
-	{ 
-		/* Addr may be misaligned and the read can go out of bounds */
-		Int ret;
-		for (size_t i = 0; i < sizeof(Int); ++i) {
-			*((u8*)(&ret) + sizeof(Int) - i - 1) = dmem[(addr + i) & 0xFFF];
-		}
-		return ret;
-	}
-
-
-	template<std::integral Int>
-	void WriteDMEM(const u32 addr, const Int data)
+	void WriteDMEM(u32 addr, Int data)
 	{
 		/* Addr may be misaligned and the write can go out of bounds */
 		for (size_t i = 0; i < sizeof(Int); ++i) {

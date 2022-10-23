@@ -5,6 +5,8 @@ import Util;
 import <bit>;
 import <cassert>;
 import <cstring>;
+import <format>;
+import <iostream>;
 import <string>;
 import <string_view>;
 import <utility>;
@@ -40,6 +42,7 @@ namespace VR4300
 	void FetchDecodeExecuteInstruction();
 	void InitializeRegisters();
 	void HlePif();
+	void NotifyIllegalInstrCode(u32 instr_code);
 	void PrepareJump(u64 target_address);
 
 	bool pc_is_inside_branch_delay_slot;

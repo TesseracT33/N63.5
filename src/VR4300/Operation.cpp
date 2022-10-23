@@ -105,6 +105,12 @@ namespace VR4300
 	}
 
 
+	void NotifyIllegalInstrCode(u32 instr_code)
+	{
+		std::cout << std::format("Illegal CPU instruction code {:08X} encountered.\n", instr_code);
+	}
+
+
 	void PowerOn(bool hle_pif)
 	{
 		exception_has_occurred = false;

@@ -56,7 +56,7 @@ namespace RSP
 
 		case 0b001101: EXEC_SCALAR_INSTR(BREAK); break;
 
-		default: break;
+		default: NotifyIllegalInstrCode(instr_code);
 		}
 	}
 
@@ -71,7 +71,7 @@ namespace RSP
 		case 0b00000: EXEC_SCALAR_INSTR(BLTZ); break;
 		case 0b10000: EXEC_SCALAR_INSTR(BLTZAL); break;
 
-		default: break;
+		default: NotifyIllegalInstrCode(instr_code);
 		}
 	}
 
@@ -84,7 +84,7 @@ namespace RSP
 		case 0b00000: EXEC_SCALAR_INSTR(MFC0); break;
 		case 0b00100: EXEC_SCALAR_INSTR(MTC0); break;
 
-		default: break;
+		default: NotifyIllegalInstrCode(instr_code);
 		}
 	}
 
@@ -138,7 +138,7 @@ namespace RSP
 			case 0x35: EXEC_VECTOR_INSTR(VRSQL); break;
 			case 0x36: EXEC_VECTOR_INSTR(VRSQH); break;
 			case 0x37: EXEC_VECTOR_INSTR(VNOP); break;
-			default: break;
+			default: NotifyIllegalInstrCode(instr_code);
 			}
 		}
 		else {
@@ -148,7 +148,7 @@ namespace RSP
 			case 0b00100: EXEC_VECTOR_INSTR(MTC2); break;
 			case 0b00010: EXEC_VECTOR_INSTR(CFC2); break;
 			case 0b00110: EXEC_VECTOR_INSTR(CTC2); break;
-			default: break;
+			default: NotifyIllegalInstrCode(instr_code);
 			}
 		}
 	}
@@ -158,9 +158,9 @@ namespace RSP
 	{
 		RSP::instr_code = instr_code;
 
-		auto op_code = instr_code >> 26; /* (0-63) */
+		auto opcode = instr_code >> 26; /* (0-63) */
 
-		switch (op_code) {
+		switch (opcode) {
 		case 0b000000: DecodeAndExecuteSpecialInstruction(); break;
 		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
 		case 0b010000: DecodeAndExecuteCOP0Instruction(); break;
@@ -197,8 +197,8 @@ namespace RSP
 		case 0b000101: EXEC_SCALAR_INSTR(BNE); break;
 
 		case 0b110010: {
-			auto op_code = instr_code >> 11 & 0x1F;
-			switch (op_code) {
+			auto opcode = instr_code >> 11 & 0x1F;
+			switch (opcode) {
 			case 0x00: EXEC_VECTOR_INSTR(LBV); break;
 			case 0x01: EXEC_VECTOR_INSTR(LSV); break;
 			case 0x02: EXEC_VECTOR_INSTR(LLV); break;
@@ -211,14 +211,14 @@ namespace RSP
 			case 0x09: EXEC_VECTOR_INSTR(LFV); break;
 			case 0x0A: EXEC_VECTOR_INSTR(LWV); break;
 			case 0x0B: EXEC_VECTOR_INSTR(LTV); break;
-			default: break;
+			default: NotifyIllegalInstrCode(instr_code);
 			}
 			break;
 		}
 
 		case 0b111010: {
-			auto op_code = instr_code >> 11 & 0x1F;
-			switch (op_code) {
+			auto opcode = instr_code >> 11 & 0x1F;
+			switch (opcode) {
 			case 0x00: EXEC_VECTOR_INSTR(SBV); break;
 			case 0x01: EXEC_VECTOR_INSTR(SSV); break;
 			case 0x02: EXEC_VECTOR_INSTR(SLV); break;
@@ -231,12 +231,12 @@ namespace RSP
 			case 0x09: EXEC_VECTOR_INSTR(SFV); break;
 			case 0x0A: EXEC_VECTOR_INSTR(SWV); break;
 			case 0x0B: EXEC_VECTOR_INSTR(STV); break;
-			default: break;
+			default: NotifyIllegalInstrCode(instr_code);
 			}
 			break;
 		}
 
-		default: break;
+		default: NotifyIllegalInstrCode(instr_code);
 		}
 	}
 

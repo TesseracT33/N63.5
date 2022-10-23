@@ -39,9 +39,9 @@ namespace VR4300
 
 	void DecodeAndExecuteSpecialInstruction()
 	{
-		auto sub_op_code = instr_code & 0x3F;
+		auto opcode = instr_code & 0x3F;
 
-		switch (sub_op_code) {
+		switch (opcode) {
 		case 0b100000: EXEC_CPU_INSTR(ADD); break; 
 		case 0b100001: EXEC_CPU_INSTR(ADDU); break;
 		case 0b100100: EXEC_CPU_INSTR(AND); break;
@@ -102,6 +102,7 @@ namespace VR4300
 		case 0b001100: EXEC_CPU_INSTR(SYSCALL); break;
 
 		default:
+			NotifyIllegalInstrCode(instr_code);
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}
@@ -109,9 +110,9 @@ namespace VR4300
 
 	void DecodeAndExecuteRegimmInstruction()
 	{
-		auto sub_op_code = instr_code >> 16 & 0x1F;
+		auto opcode = instr_code >> 16 & 0x1F;
 
-		switch (sub_op_code) {
+		switch (opcode) {
 		case 0b00001: EXEC_CPU_INSTR(BGEZ); break;
 		case 0b10001: EXEC_CPU_INSTR(BGEZAL); break;
 		case 0b10011: EXEC_CPU_INSTR(BGEZALL); break;
@@ -129,6 +130,7 @@ namespace VR4300
 		case 0b01110: EXEC_CPU_INSTR(TNEI); break;
 
 		default:
+			NotifyIllegalInstrCode(instr_code);
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}
@@ -136,12 +138,12 @@ namespace VR4300
 
 	void DecodeAndExecuteCOP0Instruction()
 	{
-		auto sub_op_code = instr_code >> 21 & 0x1F;
+		auto opcode = instr_code >> 21 & 0x1F;
 
-		switch (sub_op_code) {
+		switch (opcode) {
 		case 0b10000: {
-			auto sub_op_code = instr_code & 0x3F;
-			switch (sub_op_code) {
+			auto opcode = instr_code & 0x3F;
+			switch (opcode) {
 			case 0b011000: EXEC_COP0_INSTR(ERET); break;
 			case 0b001000: EXEC_COP0_INSTR(TLBP); break;
 			case 0b000001: EXEC_COP0_INSTR(TLBR); break;
@@ -150,7 +152,7 @@ namespace VR4300
 
 			default:
 				/* "Invalid", but does not cause a reserved instruction exception. */
-				assert(false); /* TODO what to do here */
+				NotifyIllegalInstrCode(instr_code);
 			}
 			break;
 		}
@@ -161,6 +163,7 @@ namespace VR4300
 		 case 0b00100: EXEC_COP0_INSTR(MTC0); break;
 
 		default:
+			NotifyIllegalInstrCode(instr_code);
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}
@@ -176,18 +179,19 @@ namespace VR4300
 		}
 		*/
 
-		auto sub_op_code = instr_code >> 21 & 0x1F;
+		auto opcode = instr_code >> 21 & 0x1F;
 
-		switch (sub_op_code) {
+		switch (opcode) {
 		case 0b01000: {
-			auto sub_op_code = instr_code >> 16 & 0x1F;
-			switch (sub_op_code) {
+			auto opcode = instr_code >> 16 & 0x1F;
+			switch (opcode) {
 			 case 0b00000: EXEC_COP1_INSTR(BC1F); break;
 			 case 0b00010: EXEC_COP1_INSTR(BC1FL); break;
 			 case 0b00001: EXEC_COP1_INSTR(BC1T); break;
 			 case 0b00011: EXEC_COP1_INSTR(BC1TL); break;
 
 			default:
+				NotifyIllegalInstrCode(instr_code);
 				SignalException<Exception::ReservedInstruction>();
 			}
 			break;
@@ -205,8 +209,8 @@ namespace VR4300
 				EXEC_COP1_INSTR(C);
 			}
 			else {
-				auto sub_op_code = instr_code & 0x3F;
-				switch (sub_op_code) {
+				auto opcode = instr_code & 0x3F;
+				switch (opcode) {
 				case 0b000101: EXEC_COP1_INSTR(ABS); break;
 				case 0b000000: EXEC_COP1_INSTR(ADD); break;
 				case 0b000011: EXEC_COP1_INSTR(DIV); break;
@@ -230,6 +234,7 @@ namespace VR4300
 				case 0b001101: EXEC_COP1_INSTR(TRUNC_W); break;
 
 				default: /* TODO: Reserved instruction exception?? */
+					NotifyIllegalInstrCode(instr_code);
 					break; // UnimplementedOperationException(); // TODO: also set flags in FCR31
 				}
 			}
@@ -243,9 +248,9 @@ namespace VR4300
 	{
 		VR4300::instr_code = instr_code;
 
-		auto op_code = instr_code >> 26; /* (0-63) */
+		auto opcode = instr_code >> 26; /* (0-63) */
 
-		switch (op_code) {
+		switch (opcode) {
 		case 0b000000: DecodeAndExecuteSpecialInstruction(); break;
 		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
 		case 0b010000: DecodeAndExecuteCOP0Instruction(); break;
@@ -336,6 +341,7 @@ namespace VR4300
 			break;
 		*/
 		default:
+			NotifyIllegalInstrCode(instr_code);
 			SignalException<Exception::ReservedInstruction>();
 		}
 	}

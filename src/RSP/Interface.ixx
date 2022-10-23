@@ -14,11 +14,8 @@ namespace RSP
 {
 	export
 	{
-		template<std::integral Int>
-		Int ReadReg(u32 addr);
-
-		template<size_t number_of_bytes>
-		void WriteReg(u32 addr, auto data);
+		template<std::integral Int> Int ReadReg(u32 addr);
+		template<size_t number_of_bytes> void WriteReg(u32 addr, auto data);
 	}
 
 	enum class DmaType {
@@ -32,23 +29,21 @@ namespace RSP
 	template<DmaType dma_type> void InitDMA();
 	void OnDmaFinish();
 
-	struct StatusRegister
-	{
-		u32 halted : 1;
-		u32 broke : 1;
-		u32 dma_busy : 1;
-		u32 dma_full : 1;
-		u32 io_busy : 1;
-		u32 sstep : 1;
-		u32 intbreak : 1;
-		u32 sig : 8;
-		u32 : 17;
-	};
-
 	struct
 	{
 		u32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen;
-		StatusRegister status;
+		struct
+		{
+			u32 halted : 1;
+			u32 broke : 1;
+			u32 dma_busy : 1;
+			u32 dma_full : 1;
+			u32 io_busy : 1;
+			u32 sstep : 1;
+			u32 intbreak : 1;
+			u32 sig : 8;
+			u32 : 17;
+		} status;
 		u32 dma_full, dma_busy, semaphore;
 	} sp;
 
