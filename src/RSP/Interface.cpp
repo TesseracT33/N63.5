@@ -26,10 +26,10 @@ namespace RSP
 
 			switch (reg_offset & 7) {
 			case DmaSpaddr:
-				return regs.dma_spaddr;
+				return sp.dma_spaddr;
 
 			case DmaRamaddr:
-				return regs.dma_ramaddr;
+				return sp.dma_ramaddr;
 
 			case DmaRdlen:
 				/* SP_DMA_WRLEN and SP_DMA_RDLEN both always returns the same data on read, relative to
@@ -37,10 +37,10 @@ namespace RSP
 				return [&] {
 					if (dma_in_progress) {
 						return in_progress_dma_type == DmaType::RdToSp
-							? regs.dma_rdlen : regs.dma_wrlen;
+							? sp.dma_rdlen : sp.dma_wrlen;
 					}
 					else {
-						return regs.dma_rdlen;
+						return sp.dma_rdlen;
 					}
 				}() & ~7;
 
@@ -48,25 +48,25 @@ namespace RSP
 				return [&] {
 					if (dma_in_progress) {
 						return in_progress_dma_type == DmaType::RdToSp
-							? regs.dma_rdlen : regs.dma_wrlen;
+							? sp.dma_rdlen : sp.dma_wrlen;
 					}
 					else {
-						return regs.dma_wrlen;
+						return sp.dma_wrlen;
 					}
 				}() & ~7;
 
 			case Status:
-				return regs.status;
+				return std::bit_cast<u32>(sp.status);
 
 			case DmaFull:
-				return regs.dma_full;
+				return sp.dma_full;
 
 			case DmaBusy:
-				return regs.dma_busy;
+				return sp.dma_busy;
 
 			case Semaphore: {
-				auto ret = regs.semaphore;
-				regs.semaphore |= 1;
+				auto ret = sp.semaphore;
+				sp.semaphore |= 1;
 				return ret;
 			}
 
@@ -91,23 +91,23 @@ namespace RSP
 
 			switch (reg_offset & 7) {
 			case DmaSpaddr:
-				regs.dma_spaddr = data & 0x03FF'FFF8;
+				sp.dma_spaddr = data & 0x03FF'FFF8;
 				break;
 
 			case DmaRamaddr:
-				regs.dma_ramaddr = data &= 0x03FF'FFF8;
+				sp.dma_ramaddr = data &= 0x03FF'FFF8;
 				break;
 
 			case DmaRdlen:
 				if (dma_in_progress) {
 					buffered_dma_rdlen = data & 0xFF8F'FFFF;
 					dma_is_pending = true;
-					regs.dma_full |= 1;
-					regs.status |= 8; /* Mirrors dma_full.0 */
+					sp.dma_full |= 1;
+					sp.status.dma_full = 1; /* Mirrors dma_full.0 */
 					init_pending_dma_fun_ptr = InitDMA<DmaType::RdToSp>;
 				}
 				else {
-					regs.dma_rdlen = data & 0xFF8F'FFFF;
+					sp.dma_rdlen = data & 0xFF8F'FFFF;
 					InitDMA<DmaType::RdToSp>();
 				}
 				break;
@@ -116,12 +116,12 @@ namespace RSP
 				if (dma_in_progress) {
 					buffered_dma_wrlen = data & 0xFF8F'FFFF;
 					dma_is_pending = true;
-					regs.dma_full |= 1;
-					regs.status |= 8; /* Mirrors dma_full.0 */
+					sp.dma_full |= 1;
+					sp.status.dma_full = 1; /* Mirrors dma_full.0 */
 					init_pending_dma_fun_ptr = InitDMA<DmaType::SpToRd>;
 				}
 				else {
-					regs.dma_wrlen = data & 0xFF8F'FFFF;
+					sp.dma_wrlen = data & 0xFF8F'FFFF;
 					InitDMA<DmaType::SpToRd>();
 				}
 				break;
@@ -129,19 +129,17 @@ namespace RSP
 			case Status: {
 				if ((word & 1) && !(word & 2)) {
 					/* CLR_HALT: Start running RSP code from the current RSP PC (clear the HALTED flag) */
-					regs.status &= ~1;
-					halted = false;
+					sp.status.halted = 0;
 				}
 				else if (!(word & 1) && (word & 2)) {
 					/* 	SET_HALT: Pause running RSP code (set the HALTED flag) */
-					regs.status |= 1;
-					halted = true;
+					sp.status.halted = 1;
 				}
 				if (word & 4) {
 					/* CLR_BROKE: Clear the BROKE flag, that is automatically set every time a BREAK opcode is run.
 					This flag has no effect on the running/idle state of the RSP; it is just a latch
 					that remembers whether a BREAK opcode was ever run. */
-					regs.status &= ~2;
+					sp.status.broke = 0;
 				}
 				if ((word & 8) && !(word & 0x10)) {
 					/* 	CLR_INTR: Acknowledge a pending RSP MI interrupt. This must be done any time a RSP MI interrupt
@@ -155,32 +153,32 @@ namespace RSP
 				}
 				if ((word & 0x20) && !(word & 0x40)) {
 					/* CLR_SSTEP: Disable single-step mode. */
-					single_step_mode = false;
+					sp.status.sstep = 0;
 				}
 				else if (!(word & 0x20) && (word & 0x40)) {
 					/* 	SET_SSTEP: Enable single-step mode. When this mode is activated, the RSP auto-halts itself after every opcode that is run.
 					The VR4300 can then trigger a new step by unhalting it. */
-					single_step_mode = true;
+					sp.status.sstep = 1;
 				}
 				if ((word & 0x80) && !(word & 0x100)) {
 					/* CLR_INTBREAK: Disable the INTBREAK flag. When this flag is disabled, running a BREAK opcode will not generate any
 					RSP MI interrupt, but it will still halt the RSP. */
-					regs.status &= ~0x40;
+					sp.status.intbreak = 0;
 				}
 				else if (!(word & 0x80) && (word & 0x100)) {
 					/* 	SET_INTBREAK: Enable the INTBREAK flag. When this flag is enabled, running a BREAK opcode will generate
 					a RSP MI interrupt, in addition to halting the RSP. */
-					regs.status |= 0x40;
+					sp.status.intbreak = 1;
 				}
 				/* 	CLR_SIG<n>/SET_SIG<n>: Set to 0 or 1 the 8 available bitflags that can be used as communication protocol between RSP and CPU. */
-				s32 written_value_mask = 0x200;
-				s32 status_mask = 0x80;
+				u32 written_value_mask = 0x200;
+				u32 status_mask = 1;
 				for (int i = 0; i < 8; ++i) {
 					if ((word & written_value_mask) && !(word & written_value_mask << 1)) {
-						regs.status &= ~status_mask;
+						sp.status.sig &= ~status_mask;
 					}
 					else if (!(word & written_value_mask) && (word & written_value_mask << 1)) {
-						regs.status |= status_mask;
+						sp.status.sig |= status_mask;
 					}
 					written_value_mask <<= 2;
 					status_mask <<= 1;
@@ -195,7 +193,7 @@ namespace RSP
 				break;
 
 			case Semaphore:
-				regs.semaphore = word;
+				sp.semaphore = word;
 				break;
 
 			default:
@@ -212,8 +210,8 @@ namespace RSP
 
 		dma_in_progress = true;
 		in_progress_dma_type = dma_type;
-		regs.dma_busy |= 1;
-		regs.status |= 4; /* Mirrors dma_busy.0 */
+		sp.dma_busy |= 1;
+		sp.status.dma_busy = 1; /* Mirrors dma_busy.0 */
 
 		s32 rows, bytes_per_row, skip;
 		u8* src_ptr, * dst_ptr;
@@ -221,22 +219,22 @@ namespace RSP
 			/* The number of bytes is RDLEN plus 1, rounded up to 8 bytes.
 			Since the lower three bits of RDLEN are always 0, this effectively results
 			in the number of bytes always being rounded up to the next 8-byte multiple. */
-			bytes_per_row = (regs.dma_rdlen & 0xFF8) + 8;
-			rows = (regs.dma_rdlen >> 12 & 0xFF) + 1;
-			skip = regs.dma_rdlen >> 20 & 0xFFF;
-			src_ptr = RDRAM::GetPointerToMemory(regs.dma_ramaddr);
-			dst_ptr = RSP::GetPointerToMemory(regs.dma_spaddr);
+			bytes_per_row = (sp.dma_rdlen & 0xFF8) + 8;
+			rows = (sp.dma_rdlen >> 12 & 0xFF) + 1;
+			skip = sp.dma_rdlen >> 20 & 0xFFF;
+			src_ptr = RDRAM::GetPointerToMemory(sp.dma_ramaddr);
+			dst_ptr = RSP::GetPointerToMemory(sp.dma_spaddr);
 		}
 		else {
-			bytes_per_row = (regs.dma_wrlen & 0xFF8) + 8;
-			rows = (regs.dma_wrlen >> 12 & 0xFF) + 1;
-			skip = regs.dma_wrlen >> 20 & 0xFFF;
-			src_ptr = RSP::GetPointerToMemory(regs.dma_spaddr);
-			dst_ptr = RDRAM::GetPointerToMemory(regs.dma_ramaddr);
+			bytes_per_row = (sp.dma_wrlen & 0xFF8) + 8;
+			rows = (sp.dma_wrlen >> 12 & 0xFF) + 1;
+			skip = sp.dma_wrlen >> 20 & 0xFFF;
+			src_ptr = RSP::GetPointerToMemory(sp.dma_spaddr);
+			dst_ptr = RDRAM::GetPointerToMemory(sp.dma_ramaddr);
 		}
 
-		s32 num_bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(regs.dma_ramaddr);
-		s32 num_bytes_until_spram_end = 0x1000 - (regs.dma_spaddr & 0xFFF);
+		s32 num_bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(sp.dma_ramaddr);
+		s32 num_bytes_until_spram_end = 0x1000 - (sp.dma_spaddr & 0xFFF);
 
 		s32 requested_total_bytes = rows * bytes_per_row;
 		s32 bytes_to_copy = std::min(requested_total_bytes,
@@ -271,16 +269,16 @@ namespace RSP
 		}
 
 		if constexpr (log_dma) {
-			std::string_view rsp_mem_bank = regs.dma_spaddr & 0x1000
+			std::string_view rsp_mem_bank = sp.dma_spaddr & 0x1000
 				? "IMEM" : "DMEM";
 			std::string output = [&] {
 				if constexpr (dma_type == DmaType::RdToSp) {
 					return std::format("From RDRAM ${:X} to RSP {} ${:X}; ${:X} bytes",
-						regs.dma_ramaddr & 0xFF'FFFF, rsp_mem_bank, regs.dma_spaddr & 0xFFF, requested_total_bytes);
+						sp.dma_ramaddr & 0xFF'FFFF, rsp_mem_bank, sp.dma_spaddr & 0xFFF, requested_total_bytes);
 				}
 				else {
 					return std::format("From RSP {} ${:X} to RDRAM ${:X}; ${:X} bytes",
-						rsp_mem_bank, regs.dma_spaddr & 0xFFF, regs.dma_ramaddr & 0xFF'FFFF, requested_total_bytes);
+						rsp_mem_bank, sp.dma_spaddr & 0xFFF, sp.dma_ramaddr & 0xFF'FFFF, requested_total_bytes);
 				}
 			}();
 			Logging::LogDMA(output);
@@ -292,31 +290,31 @@ namespace RSP
 	{
 		if (dma_is_pending) {
 			dma_is_pending = false;
-			regs.dma_full &= ~1;
-			regs.status &= ~8; /* Mirrors dma_full.0 */
+			sp.dma_full &= ~1;
+			sp.status.dma_full = 0; /* Mirrors dma_full.0 */
 			if (in_progress_dma_type == DmaType::RdToSp) {
-				regs.dma_rdlen = buffered_dma_rdlen;
-				regs.dma_wrlen = buffered_dma_rdlen;
+				sp.dma_rdlen = buffered_dma_rdlen;
+				sp.dma_wrlen = buffered_dma_rdlen;
 			}
 			else {
-				regs.dma_rdlen = buffered_dma_wrlen;
-				regs.dma_wrlen = buffered_dma_wrlen;
+				sp.dma_rdlen = buffered_dma_wrlen;
+				sp.dma_wrlen = buffered_dma_wrlen;
 			}
 			init_pending_dma_fun_ptr();
 		}
 		else {
 			dma_in_progress = false;
-			regs.dma_busy &= ~1;
-			regs.status &= ~4; /* Mirrors dma_busy.0 */
+			sp.dma_busy &= ~1;
+			sp.status.dma_busy = 0; /* Mirrors dma_busy.0 */
 			if (in_progress_dma_type == DmaType::RdToSp) {
 				/* After the transfer is finished, the fields RDLEN and WRLEN contains the value 0xFF8,
 				COUNT is reset to 0, and SKIP is unchanged. */
-				regs.dma_rdlen = 0xFF8 | regs.dma_rdlen & 0xFF80'0000;
-				regs.dma_wrlen = 0xFF8 | regs.dma_rdlen & 0xFF80'0000;
+				sp.dma_rdlen = 0xFF8 | sp.dma_rdlen & 0xFF80'0000;
+				sp.dma_wrlen = 0xFF8 | sp.dma_rdlen & 0xFF80'0000;
 			}
 			else {
-				regs.dma_rdlen = 0xFF8 | regs.dma_wrlen & 0xFF80'0000;
-				regs.dma_wrlen = 0xFF8 | regs.dma_wrlen & 0xFF80'0000;
+				sp.dma_rdlen = 0xFF8 | sp.dma_wrlen & 0xFF80'0000;
+				sp.dma_wrlen = 0xFF8 | sp.dma_wrlen & 0xFF80'0000;
 			}
 		}
 

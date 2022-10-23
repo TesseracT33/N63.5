@@ -39,9 +39,7 @@ namespace RSP
 	template<std::integral Int>
 	void WriteDMEM(u32 addr, Int data);
 
-	bool halted = false;
 	bool jump_is_pending = false;
-	bool single_step_mode = false;
 	uint pc;
 	uint p_cycle_counter;
 	uint instructions_until_jump = 0;

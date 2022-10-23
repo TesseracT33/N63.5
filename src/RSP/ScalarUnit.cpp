@@ -453,8 +453,8 @@ namespace RSP
 		if constexpr (log_rsp_instructions) {
 			current_instr_log_output = "BREAK";
 		}
-		halted = true;
-		if (regs.status & 0x40) {
+		sp.status.halted = sp.status.broke = true;
+		if (sp.status.intbreak) {
 			MI::SetInterruptFlag(MI::InterruptType::SP);
 		}
 		AdvancePipeline(1);

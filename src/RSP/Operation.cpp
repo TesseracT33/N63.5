@@ -31,13 +31,12 @@ namespace RSP
 
 	void PowerOn()
 	{
-		jump_is_pending = single_step_mode = false;
-		halted = true;
+		jump_is_pending = false;
 		pc = 0;
 		dmem.fill(0);
 		imem.fill(0);
-		std::memset(&regs, 0, sizeof(decltype(regs)));
-		regs.status |= 1; /* halted == true */
+		std::memset(&sp, 0, sizeof(sp));
+		sp.status.halted = true;
 	}
 
 
@@ -54,7 +53,7 @@ namespace RSP
 
 	u64 Run(u64 rsp_cycles_to_run)
 	{
-		if (halted) {
+		if (sp.status.halted) {
 			return 0;
 		}
 		p_cycle_counter = 0;
@@ -66,7 +65,10 @@ namespace RSP
 				}
 			}
 			FetchDecodeExecuteInstruction();
-			if (single_step_mode || halted) {
+			if (sp.status.sstep || sp.status.halted) {
+				if (sp.status.sstep) {
+					sp.status.halted = true;
+				}
 				return p_cycle_counter <= rsp_cycles_to_run ? 0 : p_cycle_counter - rsp_cycles_to_run;
 			}
 		}

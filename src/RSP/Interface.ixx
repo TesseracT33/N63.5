@@ -3,6 +3,7 @@ export module RSP:Interface;
 import Util;
 
 import <algorithm>;
+import <bit>;
 import <concepts>;
 import <cstring>;
 import <format>;
@@ -31,11 +32,25 @@ namespace RSP
 	template<DmaType dma_type> void InitDMA();
 	void OnDmaFinish();
 
+	struct StatusRegister
+	{
+		u32 halted : 1;
+		u32 broke : 1;
+		u32 dma_busy : 1;
+		u32 dma_full : 1;
+		u32 io_busy : 1;
+		u32 sstep : 1;
+		u32 intbreak : 1;
+		u32 sig : 8;
+		u32 : 17;
+	};
+
 	struct
 	{
-		s32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen,
-			status, dma_full, dma_busy, semaphore;
-	} regs;
+		u32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen;
+		StatusRegister status;
+		u32 dma_full, dma_busy, semaphore;
+	} sp;
 
 	constexpr s32 sp_pc_addr = 0x0408'0000;
 
