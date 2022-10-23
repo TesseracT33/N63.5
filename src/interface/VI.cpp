@@ -27,8 +27,7 @@ namespace VI
 
 	void Initialize()
 	{
-		vi.ctrl = 0;
-		vi.origin = 0;
+		std::memset(&vi, 0, sizeof(vi));
 		vi.v_intr = 0x3FF;
 		vi.burst = 1;
 		vi.v_sync = 0x20C;
@@ -43,7 +42,10 @@ namespace VI
 
 	void OnNewHalflineEvent()
 	{
-		vi.v_current = (vi.v_current + 1) & 0x3FF;
+		if (++vi.v_current == num_halflines) {
+			vi.v_current = 0;
+			RDP::implementation->UpdateScreen();
+		}
 		CheckVideoInterrupt();
 		Scheduler::AddEvent(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline, OnNewHalflineEvent);
 	}

@@ -1,8 +1,5 @@
 module Scheduler;
 
-import Input;
-import N64;
-import Renderer;
 import RSP;
 import VI;
 import VR4300;
@@ -65,16 +62,6 @@ namespace Scheduler
 		events.reserve(16);
 		VR4300::AddInitialEvents();
 		VI::AddInitialEvents();
-		// TODO: remove this in favour of approach used in GBA emu
-		AddEvent(EventType::Render, N64::cpu_cycles_per_frame, OnRenderEvent);
-	}
-
-
-	void OnRenderEvent()
-	{
-		Renderer::Render();
-		Input::Poll();
-		AddEvent(EventType::Render, N64::cpu_cycles_per_frame, OnRenderEvent);
 	}
 
 

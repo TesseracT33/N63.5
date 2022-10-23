@@ -14,7 +14,6 @@ namespace Scheduler
 			AudioSample,
 			CountCompareMatch,
 			PiDmaFinish,
-			Render,
 			SiDmaFinish,
 			SpDmaFinish,
 			VINewHalfline
@@ -35,7 +34,6 @@ namespace Scheduler
 	};
 
 	void CheckEvents(s64 cpu_cycle_step);
-	void OnRenderEvent();
 
 	constexpr s64 cpu_cycles_per_update = 90;
 	constexpr s64 rsp_cycles_per_update = 2 * cpu_cycles_per_update / 3;

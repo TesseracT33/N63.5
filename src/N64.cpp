@@ -7,11 +7,12 @@ import Memory;
 import MI;
 import PI;
 import PIF;
-import Renderer;
+import RDP;
 import RI;
 import RSP;
 import Scheduler;
 import SI;
+import UserMessage;
 import VI;
 import VR4300;
 
@@ -20,9 +21,7 @@ namespace N64
 	bool PowerOn(
 		const std::string& rom_path,
 		const std::optional<std::string>& ipl_path,
-		SDL_Renderer* renderer,
-		uint window_width,
-		uint window_height)
+		RDP::Implementation rdp_implementation)
 	{
 		if (!Cartridge::LoadROM(rom_path)) {
 			return false;
@@ -41,9 +40,18 @@ namespace N64
 		/* Power CPU after RSP, since CPU reads to RSP memory if hle_ipl and RSP clears it. */
 		RSP::PowerOn();
 		VR4300::PowerOn(hle_ipl);
-		Renderer::Initialize(renderer);
-		Renderer::SetWindowSize(window_width, window_height);
+
+		if (!RDP::Initialize(rdp_implementation)) {
+			return false;
+		}
+		SDL_Window* sdl_window = RDP::implementation->GetWindow();
+		if (!sdl_window) {
+			return false;
+		}
+		UserMessage::SetWindow(sdl_window);
+
 		Scheduler::Initialize(); /* init last */
+
 		return true;
 	}
 
