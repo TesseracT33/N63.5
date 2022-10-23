@@ -14,7 +14,7 @@ import VR4300;
 namespace RSP
 {
 	template<std::integral Int>
-	Int CPUReadRegister(u32 addr)
+	Int ReadReg(u32 addr)
 	{
 		if (addr == sp_pc_addr) {
 			// TODO: return random number if !halted, else pc
@@ -78,7 +78,7 @@ namespace RSP
 
 
 	template<size_t number_of_bytes>
-	void CPUWriteRegister(u32 addr, auto data)
+	void WriteReg(u32 addr, auto data)
 	{
 		if (addr == sp_pc_addr) {
 			pc = data & 0xFFC;
@@ -323,6 +323,6 @@ namespace RSP
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(CPUReadRegister, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(CPUWriteRegister, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadReg, u32)
+	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteReg, u32)
 }

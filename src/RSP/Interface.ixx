@@ -15,10 +15,10 @@ namespace RSP
 	export
 	{
 		template<std::integral Int>
-		Int CPUReadRegister(u32 addr);
+		Int ReadReg(u32 addr);
 
 		template<size_t number_of_bytes>
-		void CPUWriteRegister(u32 addr, auto data);
+		void WriteReg(u32 addr, auto data);
 	}
 
 	enum class DmaType {

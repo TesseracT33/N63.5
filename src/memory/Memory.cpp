@@ -41,7 +41,7 @@ namespace Memory
 					return Int(0);
 
 				case 1: /* $0400'0000 - $040F'FFFF */
-					return RSP::CPUReadRegister<Int>(physical_address);
+					return RSP::ReadReg<Int>(physical_address);
 
 				case 2: /* $0410'0000 - $041F'FFFF */
 					return Int(0);
@@ -144,7 +144,7 @@ namespace Memory
 				break;
 
 			case 1: /* $0400'0000 - $040F'FFFF */
-				RSP::CPUWriteRegister<number_of_bytes>(physical_address, data);
+				RSP::WriteReg<number_of_bytes>(physical_address, data);
 				break;
 
 			case 2: /* $0410'0000 - $041F'FFFF */

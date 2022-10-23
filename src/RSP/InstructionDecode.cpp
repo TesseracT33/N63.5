@@ -30,9 +30,9 @@ namespace RSP
 
 	void DecodeAndExecuteSpecialInstruction()
 	{
-		auto sub_op_code = instr_code & 0x3F;
+		auto opcode = instr_code & 0x3F;
 
-		switch (sub_op_code) {
+		switch (opcode) {
 		case 0b100000: EXEC_SCALAR_INSTR(ADD); break;
 		case 0b100001: EXEC_SCALAR_INSTR(ADDU); break;
 		case 0b100100: EXEC_SCALAR_INSTR(AND); break;
@@ -63,9 +63,9 @@ namespace RSP
 
 	void DecodeAndExecuteRegimmInstruction()
 	{
-		auto sub_op_code = instr_code >> 16 & 0x1F;
+		auto opcode = instr_code >> 16 & 0x1F;
 
-		switch (sub_op_code) {
+		switch (opcode) {
 		case 0b00001: EXEC_SCALAR_INSTR(BGEZ); break;
 		case 0b10001: EXEC_SCALAR_INSTR(BGEZAL); break;
 		case 0b00000: EXEC_SCALAR_INSTR(BLTZ); break;
@@ -76,11 +76,24 @@ namespace RSP
 	}
 
 
+	void DecodeAndExecuteCOP0Instruction()
+	{
+		auto opcode = instr_code >> 21 & 0x1F;
+
+		switch (opcode) {
+		case 0b00000: EXEC_SCALAR_INSTR(MFC0); break;
+		case 0b00100: EXEC_SCALAR_INSTR(MTC0); break;
+
+		default: break;
+		}
+	}
+
+
 	void DecodeAndExecuteCOP2Instruction()
 	{
 		if (instr_code & 1 << 25) {
-			auto op_code = instr_code & 0x3F;
-			switch (op_code) {
+			auto opcode = instr_code & 0x3F;
+			switch (opcode) {
 			case 0x00: EXEC_VECTOR_INSTR(VMULF); break;
 			case 0x01: EXEC_VECTOR_INSTR(VMULU); break;
 			case 0x02: EXEC_VECTOR_INSTR(VRNDP); break;
@@ -129,8 +142,8 @@ namespace RSP
 			}
 		}
 		else {
-			auto op_code = instr_code >> 21 & 0x1F;
-			switch (op_code) {
+			auto opcode = instr_code >> 21 & 0x1F;
+			switch (opcode) {
 			case 0b00000: EXEC_VECTOR_INSTR(MFC2); break;
 			case 0b00100: EXEC_VECTOR_INSTR(MTC2); break;
 			case 0b00010: EXEC_VECTOR_INSTR(CFC2); break;
@@ -150,6 +163,7 @@ namespace RSP
 		switch (op_code) {
 		case 0b000000: DecodeAndExecuteSpecialInstruction(); break;
 		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
+		case 0b010000: DecodeAndExecuteCOP0Instruction(); break;
 		case 0b010010: DecodeAndExecuteCOP2Instruction(); break;
 
 		case 0b100000: EXEC_SCALAR_INSTR(LB); break;
@@ -267,6 +281,11 @@ namespace RSP
 		else if constexpr (instr == BEQ || instr == BNE || instr == BLEZ || instr == BGTZ || instr == BLTZ || instr == BGEZ || instr == BLTZAL || instr == BGEZAL)
 		{
 			Branch<instr>(instr_code);
+		}
+
+		else if constexpr (instr == MFC0 || instr == MTC0)
+		{
+			Move<instr>(instr_code);
 		}
 
 		else if constexpr (instr == BREAK)

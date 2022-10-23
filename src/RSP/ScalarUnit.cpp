@@ -10,7 +10,7 @@ import Util;
 namespace RSP
 {
 	template<ScalarInstruction instr>
-	void ScalarLoad(const u32 instr_code)
+	void ScalarLoad(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -70,7 +70,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void ScalarStore(const u32 instr_code)
+	void ScalarStore(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -123,7 +123,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void ALUImmediate(const u32 instr_code)
+	void ALUImmediate(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -201,7 +201,7 @@ namespace RSP
 	}
 
 	template<ScalarInstruction instr>
-	void ALUThreeOperand(const u32 instr_code)
+	void ALUThreeOperand(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -270,7 +270,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void ALUShift(const u32 instr_code)
+	void ALUShift(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -340,7 +340,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void Jump(const u32 instr_code)
+	void Jump(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -394,7 +394,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void Branch(const u32 instr_code)
+	void Branch(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -442,6 +442,40 @@ namespace RSP
 		if (branch_cond) {
 			s32 offset = s32(s16(instr_code & 0xFFFF)) << 2;
 			PrepareJump(pc + offset);
+		}
+
+		AdvancePipeline(1);
+	}
+
+
+	template<ScalarInstruction instr>
+	void Move(u32 instr_code)
+	{
+		using enum ScalarInstruction;
+
+		/* Registers are c0-c7 begin SP_DMA_SP_ADDR to SP_SEMAPHORE */
+		auto rd = instr_code >> 11 & 7;
+		auto rt = instr_code >> 16 & 7;
+		u32 sp_reg_addr = 0x0404'0000 + rd * 4;
+
+		if constexpr (log_rsp_instructions) {
+			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, rd);
+		}
+
+		if constexpr (instr == MFC0) {
+			/* Move From System Control Coprocessor;
+			   Loads the contents of the word of the general purpose register rd of CP0
+			   to the general purpose register rt of the CPU. */
+			gpr.Set(rt, ReadReg<s32>(sp_reg_addr));
+		}
+		else if constexpr (instr == MTC0) {
+			/* Move To System Control Coprocessor;
+			   Loads the contents of the word of the general purpose register rt of the CPU
+			   to the general purpose register rd of CP0. */
+			WriteReg<4>(sp_reg_addr, gpr[rt]);
+		}
+		else {
+			static_assert(AlwaysFalse<instr>, "\"RSP Move\" template function called, but no matching move instruction was found.");
 		}
 
 		AdvancePipeline(1);
@@ -514,4 +548,7 @@ namespace RSP
 	template void Branch<ScalarInstruction::BGEZ>(u32);
 	template void Branch<ScalarInstruction::BLTZAL>(u32);
 	template void Branch<ScalarInstruction::BGEZAL>(u32);
+
+	template void Move<ScalarInstruction::MTC0>(u32);
+	template void Move<ScalarInstruction::MFC0>(u32);
 }

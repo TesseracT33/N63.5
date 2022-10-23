@@ -32,7 +32,10 @@ namespace RSP
 		BEQ, BNE, BLEZ, BGTZ, BLTZ, BGEZ, BLTZAL, BGEZAL,
 
 		/* Special instructions */
-		BREAK
+		BREAK,
+
+		/* COP0 Move instructions */
+		MFC0, MTC0
 	};
 
 	/* Main processor instructions */
@@ -43,6 +46,7 @@ namespace RSP
 	template<ScalarInstruction> void ALUShift(u32 instr_code);
 	template<ScalarInstruction> void Jump(u32 instr_code);
 	template<ScalarInstruction> void Branch(u32 instr_code);
+	template<ScalarInstruction> void Move(u32 instr_code);
 	void Break();
 
 	struct GPR /* scalar general-purpose registers */
