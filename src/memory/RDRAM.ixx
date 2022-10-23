@@ -3,20 +3,19 @@ export module RDRAM;
 import Util;
 
 import <algorithm>;
+import <array>;
 import <bit>;
 import <cassert>;
 import <concepts>;
 import <cstring>;
-import <vector>;
 
 namespace RDRAM
 {
 	export
 	{
-		void AllocateExpansionPackRam();
-		void DeallocateExpansionPackRam();
 		size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr);
-		u8* GetPointerToMemory(u32 addr);
+		u8* GetPointerToMemory(u32 addr = 0);
+		size_t GetSize();
 
 		/* $0000'0000 - $0x003F'FFFF */
 		template<std::integral Int>
@@ -48,5 +47,7 @@ namespace RDRAM
 	constexpr size_t rdram_standard_size = 0x40'0000;
 	constexpr size_t rdram_expanded_size = 0x80'0000;
 
-	std::vector<u8> rdram(rdram_standard_size, 0);
+	/* Note: could not use std::array here as .data() does not become properly aligned */
+	/* TODO: parallel-rdp required 4096 on my system. Investigate further. */
+	alignas(4096) u8 rdram[rdram_expanded_size]; /* TODO: make it dynamic? */
 }

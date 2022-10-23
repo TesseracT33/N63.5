@@ -1,15 +1,35 @@
 module RDP;
 
+import MI;
+import ParallelRDPWrapper;
 import RDRAM;
 import RSP;
 
 namespace RDP
 {
-	template<CommandLocation command_location>
+	bool Initialize(Implementation rdp_implementation)
+	{
+		std::memset(&dp, 0, sizeof(dp));
+
+		switch (rdp_implementation) {
+		case Implementation::None:
+			return false; // TODO
+
+		case Implementation::ParallelRDP:
+			implementation = std::make_unique<ParallelRDPWrapper>();
+			return implementation->Initialize();
+
+		default:
+			assert(false);
+			return false;
+		}
+	}
+
+
+	template<CommandLocation cmd_loc>
 	u64 LoadCommandDword(u32 addr)
 	{
-		dp.current_reg += 8;
-		if constexpr (command_location == CommandLocation::DMEM) {
+		if constexpr (cmd_loc == CommandLocation::DMEM) {
 			return RSP::RspReadCommandByteswapped(addr);
 		}
 		else {
@@ -18,31 +38,57 @@ namespace RDP
 	}
 
 
-	template<CommandLocation command_location>
-	void LoadDecodeExecuteCommand()
+	template<CommandLocation cmd_loc>
+	void LoadExecuteCommands()
 	{
-		u64 command = LoadCommandDword<command_location>(dp.start_reg);
-		switch (command >> 56 & 0x3F) {
-		case 0x24: {
-			if (dp.end_reg - dp.start_reg > 8 || dp.end_reg < dp.start_reg) {
-				u64 command_upper_dword = LoadCommandDword<command_location>(dp.start_reg + 8);
-				TextureRectangle(command, command_upper_dword);
-			}
-		} break;
-		case 0x27: SyncPipe       (command); break;
-		case 0x28: SyncTile       (command); break;
-		case 0x29: SyncFull       (command); break;
-		case 0x2D: SetScissor     (command); break;
-		case 0x2F: SetOtherModes  (command); break;
-		case 0x31: SyncLoad       (command); break;
-		case 0x34: LoadTile       (command); break;
-		case 0x35: SetTile        (command); break;
-		case 0x36: FillRectangle  (command); break;
-		case 0x37: SetFillColor   (command); break;
-		case 0x3D: SetTextureImage(command); break;
-		case 0x3E: SetZImage      (command); break;
-		case 0x3F: SetColorImage  (command); break;
+		dp.status.pipe_busy = dp.status.start_gclk = true;
+
+		u32 current = dp.current;
+		u32 end = dp.end;
+		if (end <= current) {
+			return;
 		}
+		u32 num_dwords = (end - current) / 8;
+		if (num_queued_dwords + num_dwords >= cmd_buffer.size() / 2) {
+			return;
+		}
+
+		do {
+			u64 dword = LoadCommandDword<cmd_loc>(current);
+			current += 8;
+			std::memcpy(cmd_buffer.data() + num_queued_dwords * 2, &dword, 8);
+			++num_queued_dwords;
+		} while (--num_dwords > 0);
+
+		while (cmd_buffer_dword_idx < num_queued_dwords) {
+			u32 cmd = cmd_buffer[cmd_buffer_dword_idx * 2];
+			u32 opcode = cmd >> 24 & 0x3F;
+			static constexpr std::array cmd_lens = {
+				1, 1, 1, 1, 1, 1, 1, 1, 4, 6,12,14,12,14,20,22,
+				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+			};
+			u32 cmd_len = cmd_lens[opcode];
+			if (cmd_buffer_dword_idx + cmd_len > num_queued_dwords) {
+				/* partial command; keep data around for next processing call */
+				dp.start = dp.current = dp.end;
+				return;
+			}
+			if (opcode >= 8) {
+				implementation->EnqueueCommand(cmd_len * 2, cmd_buffer.data() + cmd_buffer_dword_idx * 2);
+			}
+			if (opcode == 0x29) { /* full sync command */
+				implementation->OnFullSync();
+				dp.status.pipe_busy = dp.status.start_gclk = false;
+				MI::SetInterruptFlag(MI::InterruptType::DP);
+				
+			}
+			cmd_buffer_dword_idx += cmd_len;
+		}
+
+		cmd_buffer_dword_idx = num_queued_dwords = 0;
+		dp.current = dp.end;
 	}
 
 
@@ -53,9 +99,9 @@ namespace RDP
 		Luckily, this is the correct behavior for 8-bit and 16-bit accesses (as explained above), so the VR4300 will
 		be able to extract the correct portion. 64-bit reads instead will completely freeze the VR4300
 		(and thus the whole console), because it will stall waiting for the second word to appear on the bus that the RCP will never put. */
-		auto offset = addr >> 2 & 7;
+		auto reg_index = addr >> 2 & 7;
 		u32 ret;
-		std::memcpy(&ret, (u32*)(&dp) + offset, 4);
+		std::memcpy(&ret, (u32*)(&dp) + reg_index, 4);
 		return Int(ret);
 	}
 
@@ -63,78 +109,75 @@ namespace RDP
 	template<std::integral Int>
 	void WriteReg(u32 addr, Int data)
 	{
-		auto offset = addr >> 2 & 7;
+		auto ProcessCommands = [&] {
+			dp.status.dmem_dma_status
+				? LoadExecuteCommands<CommandLocation::DMEM>()
+				: LoadExecuteCommands<CommandLocation::RDRAM>();
+		};
+
+		auto reg_index = addr >> 2 & 7;
 		auto word = u32(data);
 
-		enum RegOffset {
+		enum Register {
 			StartReg, EndReg, CurrentReg, StatusReg, ClockReg, BufBusyReg, PipeBusyReg, TmemReg
 		};
 
-		switch (offset) {
-		case StartReg:
-			dp.start_reg = word;
+		switch (reg_index) {
+		case Register::StartReg:
+			if (!dp.status.start_valid) {
+				dp.start = word & ~7;
+				dp.status.start_valid = true;
+			}
 			break;
 
-		case EndReg:
-			dp.end_reg = word;
-			dp.current_reg = dp.start_reg;
-			dp.status_reg.dmem_dma_status
-				? LoadDecodeExecuteCommand<CommandLocation::DMEM>()
-				: LoadDecodeExecuteCommand<CommandLocation::RDRAM>();
+		case Register::EndReg:
+			dp.end = word & ~7;
+			if (dp.status.start_valid) {
+				dp.current = dp.start;
+				dp.status.start_valid = false;
+			}
+			if (!dp.status.freeze_status) {
+				ProcessCommands();
+			}
 			break;
 
-		case CurrentReg:
-			dp.current_reg = word;
-			break;
-
-		case StatusReg:
+		case Register::StatusReg: {
+			bool unfrozen = false;
 			if (word & 1) {
-				dp.status_reg.dmem_dma_status = 0;
+				dp.status.dmem_dma_status = 0;
 			}
 			else if (word & 2) {
-				dp.status_reg.dmem_dma_status = 1;
+				dp.status.dmem_dma_status = 1;
 			}
 			if (word & 4) {
-				dp.status_reg.freeze_status = 0;
+				dp.status.freeze_status = 0;
+				unfrozen = true;
 			}
 			else if (word & 8) {
-				dp.status_reg.freeze_status = 1;
+				dp.status.freeze_status = 1;
 			}
 			if (word & 0x10) {
-				dp.status_reg.flush_status = 0;
+				dp.status.flush_status = 0;
 			}
 			else if (word & 0x20) {
-				dp.status_reg.flush_status = 1;
+				dp.status.flush_status = 1;
 			}
 			if (word & 0x40) {
-				dp.tmem_reg = 0;
+				dp.tmem = 0;
 			}
 			if (word & 0x80) {
-				dp.pipebusy_reg = 0;
+				dp.pipebusy = 0;
 			}
 			if (word & 0x100) {
-				dp.bufbusy_reg = 0;
+				dp.bufbusy = 0;
 			}
 			if (word & 0x200) {
-				dp.clock_reg = 0;
+				dp.clock = 0;
 			}
-			break;
-
-		case ClockReg:
-			dp.start_reg = word;
-			break;
-
-		case BufBusyReg:
-			dp.start_reg = word;
-			break;
-
-		case PipeBusyReg:
-			dp.start_reg = word;
-			break;
-
-		case TmemReg:
-			dp.start_reg = word;
-			break;
+			if (unfrozen) {
+				ProcessCommands();
+			}
+		} break;
 		}
 	}
 }

@@ -131,11 +131,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT;VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(SDL_SDK)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL_SDK)\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
@@ -157,11 +157,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT;VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(SDL_SDK)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL_SDK)\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
@@ -191,6 +191,41 @@
     <ClCompile Include="external\EmuUtils\src\SSE.cpp" />
     <ClCompile Include="external\EmuUtils\src\SSE.ixx" />
     <ClCompile Include="external\EmuUtils\src\Util.ixx" />
+    <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\command_ring.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\rdp_device.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\rdp_dump_write.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\rdp_renderer.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\video_interface.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\util\aligned_alloc.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\util\logging.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\util\thread_id.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\util\thread_name.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\util\timeline_trace_file.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\util\timer.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\volk\volk.c" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\buffer.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\buffer_pool.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\command_buffer.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\command_pool.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\context.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\cookie.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\descriptor_set.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\device.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\event_manager.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\fence.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\fence_manager.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\image.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\memory_allocator.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\pipeline_event.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\query_pool.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\render_pass.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\sampler.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\semaphore.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\semaphore_manager.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\shader.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\texture_format.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi.cpp" />
+    <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi_timing.cpp" />
     <ClCompile Include="src\debug\DebugOptions.ixx" />
     <ClCompile Include="src\debug\Logging.cpp" />
     <ClCompile Include="src\debug\Logging.ixx" />
@@ -201,10 +236,11 @@
     <ClCompile Include="src\interface\RI.cpp" />
     <ClCompile Include="src\interface\RI.ixx" />
     <ClCompile Include="src\memory\PIF.cpp" />
+    <ClCompile Include="src\RDP\parallel-rdp-wrapper\ParallelRDPWrapper.cpp" />
+    <ClCompile Include="src\RDP\parallel-rdp-wrapper\ParallelRDPWrapper.ixx" />
     <ClCompile Include="src\RDP\RDP.cpp" />
     <ClCompile Include="src\RDP\RDP.ixx" />
-    <ClCompile Include="src\Renderer.cpp" />
-    <ClCompile Include="src\Renderer.ixx" />
+    <ClCompile Include="src\RDP\RDPImplementation.ixx" />
     <ClCompile Include="src\RSP\InstructionDecode.cpp" />
     <ClCompile Include="src\RSP\Interface.cpp" />
     <ClCompile Include="src\RSP\Interface.ixx" />
@@ -255,6 +291,116 @@
     <ClCompile Include="src\VR4300\VR4300.ixx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\command_ring.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\luts.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\rdp_common.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\rdp_data_structures.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\rdp_device.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\rdp_dump_write.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\rdp_renderer.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\binning.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\blender.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\clamping.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\combiner.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\coverage.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\data_structures.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\data_structures_buffers.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\debug.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\depth_test.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\dither.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\fb_formats.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\interpolation.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_attribute_setup.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_depth_blend_state.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_derived_setup.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_scissor_state.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_span_offsets.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_span_setup.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_static_raster_state.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_tile_info.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\load_triangle_setup.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\memory_interfacing.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\noise.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\perspective.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\shading.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\slangmosh.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\small_types.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\store_span_setup.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\texture.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\vi_debug.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\vi_status.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\z_encode.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\video_interface.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\worker_thread.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\aligned_alloc.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\bitops.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\enum_cast.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\hash.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\intrusive.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\intrusive_hash_map.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\intrusive_list.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\logging.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\object_pool.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\read_write_lock.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\small_vector.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\stack_allocator.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\temporary_hashmap.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\thread_id.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\thread_name.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\timeline_trace_file.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\util\timer.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\volk\volk.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vk_icd.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vk_layer.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vk_platform.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vk_sdk_platform.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_android.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_beta.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_core.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_directfb.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_fuchsia.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_ggp.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_ios.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_macos.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_metal.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_screen.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_vi.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_wayland.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_win32.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xcb.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xlib.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xlib_xrandr.h" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\buffer.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\buffer_pool.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\command_buffer.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\command_pool.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\context.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\cookie.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\descriptor_set.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\device.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\event_manager.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\fence.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\fence_manager.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\format.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\image.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\limits.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\memory_allocator.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\pipeline_event.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\query_pool.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\quirks.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\render_pass.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\sampler.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\semaphore.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\semaphore_manager.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\shader.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\texture_format.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\type_to_string.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\vulkan_common.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\vulkan_headers.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\vulkan_prerotate.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\wsi.hpp" />
+    <ClInclude Include="external\parallel-rdp-standalone\vulkan\wsi_timing.hpp" />
     <ClInclude Include="src\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
   <ItemGroup>
@@ -264,6 +410,8 @@
     <None Include=".gitmodules" />
     <None Include="LICENSE" />
     <None Include="README.MD" />
+    <None Include="src\RDP\parallel-rdp-wrapper\shaders\fullscreen_quad.frag" />
+    <None Include="src\RDP\parallel-rdp-wrapper\shaders\fullscreen_quad.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

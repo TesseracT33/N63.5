@@ -1,17 +1,29 @@
 export module RDP;
 
+import RDPImplementation;
 import Util;
 
+import <SDL.h>;
+
 import <array>;
+import <cassert>;
 import <concepts>;
 import <cstring>;
+import <memory>;
 
 namespace RDP
 {
 	export
 	{
+		enum class Implementation {
+			None, ParallelRDP
+		};
+
+		bool Initialize(Implementation rdp_implementation);
 		template<std::integral Int> Int ReadReg(u32 addr);
 		template<std::integral Int> void WriteReg(u32 addr, Int data);
+
+		std::unique_ptr<RDPImplementation> implementation;
 	}
 
 	enum class CommandLocation {
@@ -36,29 +48,15 @@ namespace RDP
 
 	struct
 	{
-		u32 start_reg, end_reg, current_reg;
-		StatusReg status_reg;
-		u32 clock_reg, bufbusy_reg, pipebusy_reg, tmem_reg;
+		u32 start, end, current;
+		StatusReg status;
+		u32 clock, bufbusy, pipebusy, tmem;
 	} dp;
 
-	template<CommandLocation command_location> u64 LoadCommandDword(u32 addr);
-	template<CommandLocation> void LoadDecodeExecuteCommand();
+	template<CommandLocation> u64 LoadCommandDword(u32 addr);
+	template<CommandLocation> void LoadExecuteCommands();
 
-	/* Commands */
-	void FillRectangle(u64 command){};
-	void LoadTile(u64 command){};
-	void SetColorImage(u64 command){};
-	void SetFillColor(u64 command){};
-	void SetOtherModes(u64 command){};
-	void SetScissor(u64 command){};
-	void SetTextureImage(u64 command){};
-	void SetTile(u64 command){};
-	void SetZImage(u64 command){};
-	void SyncFull(u64 command){};
-	void SyncLoad(u64 command){};
-	void SyncPipe(u64 command){};
-	void SyncTile(u64 command){};
-	void TextureRectangle(u64 command_low, u64 command_high){};
-
-	std::array<u8, 0x1000> tmem;
+	u32 cmd_buffer_dword_idx;
+	u32 num_queued_dwords;
+	std::array<u32, 0x100000> cmd_buffer;
 }

@@ -1,5 +1,6 @@
 export module N64;
 
+import RDP;
 import Util;
 
 import <SDL.h>;
@@ -24,9 +25,7 @@ namespace N64
 		bool PowerOn(
 			const std::string& rom_path,
 			const std::optional<std::string>& ipl_path,
-			SDL_Renderer* renderer,
-			uint window_width,
-			uint window_height);
+			RDP::Implementation rdp_implementation);
 		void Run();
 	}
 }

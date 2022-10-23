@@ -4,7 +4,7 @@ import Memory;
 import MI;
 import N64;
 import RDRAM;
-import Renderer;
+import RDP;
 import Scheduler;
 
 #include "../EnumerateTemplateSpecializations.h"
@@ -27,8 +27,7 @@ namespace VI
 
 	void Initialize()
 	{
-		vi.ctrl = 0;
-		vi.origin = 0;
+		std::memset(&vi, 0, sizeof(vi));
 		vi.v_intr = 0x3FF;
 		vi.burst = 1;
 		vi.v_sync = 0x20C;
@@ -38,13 +37,15 @@ namespace VI
 		num_fields = 1;
 		num_halflines = 262;
 		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
-		Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
 	}
 
 
 	void OnNewHalflineEvent()
 	{
-		vi.v_current = (vi.v_current + 1) & 0x3FF;
+		if (++vi.v_current == num_halflines) {
+			vi.v_current = 0;
+			RDP::implementation->UpdateScreen();
+		}
 		CheckVideoInterrupt();
 		Scheduler::AddEvent(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline, OnNewHalflineEvent);
 	}
@@ -60,69 +61,83 @@ namespace VI
 	}
 
 
+	const Registers& ReadAllRegisters()
+	{
+		return vi;
+	}
+
+
 	template<size_t number_of_bytes>
 	void Write(const u32 addr, const auto data)
 	{
 		u32 offset = (addr >> 2) & 0xF;
 		auto word = s32(data);
 
-		enum RegOffset {
-			Ctrl, Origin, Width, VIntr, VCurrent, Burst,
-			VSync, HSync, HSyncLeap, HVideo, VVideo,
-			VBurst, XScale, YScale, TestAddr, StatedData
-		};
-
 		switch (offset) {
-		case RegOffset::Ctrl:
+		case Register::Ctrl:
 			vi.ctrl = word;
-			/* Video pixel size */
-			switch (vi.ctrl & 3) {
-			case 0b00: /* blank (no data and no sync, TV screens will either show static or nothing) */
-			case 0b01: /* reserved */
-				Renderer::SetPixelFormat<Renderer::PixelFormat::Blank>();
-				break;
-
-			case 0b10: /* 5/5/5/3 */
-				Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA5553>();
-				break;
-
-			case 0b11: /* 8/8/8/8 */
-				Renderer::SetPixelFormat<Renderer::PixelFormat::RGBA8888>();
-				break;
-			}
 			/* Interlaced vs. progressive. Interlaced if bit 6 is set, otherwise progressive. */
 			num_fields = 1 + bool(vi.ctrl & 0x40);
 			break;
 
-		case RegOffset::Origin:
+		case Register::Origin:
 			vi.origin = word & 0x7F'FFFF;
-			Renderer::SetFramebufferPtr(RDRAM::GetPointerToMemory(vi.origin));
 			break;
 
-		case RegOffset::Width:
+		case Register::Width:
 			vi.width = word & 0xFFF;
-			Renderer::SetFramebufferWidth(vi.width);
 			break;
 
-		case RegOffset::VIntr:
+		case Register::VIntr:
 			vi.v_intr = word & 0x3FF; /* only bits 9-0 are writable. */
 			CheckVideoInterrupt();
 			break;
 
-		case RegOffset::VCurrent:
-			vi.v_current = word & 0x3FF;
+		case Register::VCurrent:
 			MI::ClearInterruptFlag(MI::InterruptType::VI);
 			break;
 
-		case RegOffset::VSync:
+		case Register::Burst:
+			vi.burst = word & ~(3 << 30);
+			break;
+
+		case Register::VSync:
 			vi.v_sync = word & 0x3FF;
 			num_halflines = vi.v_sync >> 1;
 			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
 			Scheduler::ChangeEventTime(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline);
 			break;
 
+		case Register::HSync:
+			vi.h_sync = word & 0x1F'0FFF;
+			break;
+
+		case Register::HSyncLeap:
+			vi.h_sync_leap = word & 0x3FF'03FF;
+			break;
+
+		case Register::HVideo:
+			vi.h_video = word & 0x3FF'03FF;
+			break;
+
+		case Register::VVideo:
+			vi.v_video = word & 0x3FF'03FF;
+			break;
+
+		case Register::VBurst:
+			vi.v_burst = word & 0x3FF'03FF;
+			break;
+
+		case Register::XScale:
+			vi.x_scale = 0xFFF'0FFF;
+			break;
+
+		case Register::YScale:
+			vi.y_scale = 0xFFF'0FFFF;
+			break;
+
 		default:
-			break; /* TODO */
+			assert(false);
 		}
 	}
 
