@@ -245,61 +245,37 @@ namespace RSP
 	void ExecuteScalarInstruction()
 	{
 		using enum ScalarInstruction;
-
-		if constexpr (instr == LB || instr == LBU || instr == LH || instr == LHU || instr == LW || instr == LWU || instr == LL)
-		{
+		if constexpr (OneOf(instr, LB, LBU, LH, LHU, LW, LWU, LL)) {
 			ScalarLoad<instr>(instr_code);
 		}
-
-		else if constexpr (instr == SB || instr == SH || instr == SW || instr == SC)
-		{
+		else if constexpr (OneOf(instr, SB, SH, SW, SC)) {
 			ScalarStore<instr>(instr_code);
 		}
-
-		else if constexpr (instr == ADDI || instr == ADDIU || instr == SLTI || instr == SLTIU || instr == ANDI ||
-			instr == ORI || instr == XORI || instr == LUI)
-		{
+		else if constexpr (OneOf(instr, ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI)) {
 			ALUImmediate<instr>(instr_code);
 		}
-
-		else if constexpr (instr == ADD || instr == ADDU || instr == AND || instr == NOR || instr == OR ||
-			instr == SLT || instr == SLTU || instr == SUB || instr == SUBU || instr == XOR)
-		{
+		else if constexpr (OneOf(instr, ADD, ADDU, AND, NOR, OR, SLT, SLTU, SUB, SUBU, XOR)) {
 			ALUThreeOperand<instr>(instr_code);
 		}
-
-		else if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == SLLV || instr == SRLV || instr == SRAV)
-		{
+		else if constexpr (OneOf(instr, SLL, SRL, SRA, SLLV, SRLV, SRAV)) {
 			ALUShift<instr>(instr_code);
 		}
-
-		else if constexpr (instr == J || instr == JAL || instr == JR || instr == JALR)
-		{
+		else if constexpr (OneOf(instr, J, JAL, JR, JALR)) {
 			Jump<instr>(instr_code);
 		}
-
-		else if constexpr (instr == BEQ || instr == BNE || instr == BLEZ || instr == BGTZ || instr == BLTZ || instr == BGEZ || instr == BLTZAL || instr == BGEZAL)
-		{
+		else if constexpr (OneOf(instr, BEQ, BNE, BLEZ, BGTZ, BLTZ, BGEZ, BLTZAL, BGEZAL)) {
 			Branch<instr>(instr_code);
 		}
-
-		else if constexpr (instr == MFC0 || instr == MTC0)
-		{
+		else if constexpr (OneOf(instr, MFC0, MTC0)) {
 			Move<instr>(instr_code);
 		}
-
-		else if constexpr (instr == BREAK)
-		{
+		else if constexpr (instr == BREAK) {
 			Break();
 		}
-
-		else
-		{
+		else {
 			static_assert(AlwaysFalse<instr>);
 		}
-
-		if constexpr (log_rsp_instructions)
-		{
+		if constexpr (log_rsp_instructions) {
 			Logging::LogRSPInstruction(current_instr_pc, current_instr_log_output);
 		}
 	}
@@ -309,53 +285,29 @@ namespace RSP
 	void ExecuteVectorInstruction()
 	{
 		using enum VectorInstruction;
-		
-		if constexpr (instr == LBV || instr == LSV || instr == LLV || instr == LDV || instr == LQV ||
-			instr == LRV || instr == LPV || instr == LUV || instr == LTV || instr == LHV || instr == LFV || instr == LWV)
-		{
+		if constexpr (OneOf(instr, LBV, LSV, LLV, LDV, LQV, LRV, LPV, LUV, LTV, LHV, LFV, LWV)) {
 			VectorLoadStore<instr>(instr_code);
 		}
-
-		else if constexpr (instr == SBV || instr == SSV || instr == SLV || instr == SDV || instr == SQV ||
-			instr == SRV || instr == SPV || instr == SUV || instr == STV || instr == SHV || instr == SFV || instr == SWV)
-		{
+		else if constexpr (OneOf(instr, SBV, SSV, SLV, SDV, SQV, SRV, SPV, SUV, STV, SHV, SFV, SWV)) {
 			VectorLoadStore<instr>(instr_code);
 		}
-
-		else if constexpr (instr == MTC2 || instr == MFC2 || instr == CTC2 || instr == CFC2)
-		{
+		else if constexpr (OneOf(instr, MTC2, MFC2, CTC2, CFC2)) {
 			Move<instr>(instr_code);
 		}
-
-		else if constexpr (instr == VMOV || instr == VRCP || instr == VRSQ || instr == VRCPH || instr == VRSQH ||
-			instr == VRCPL || instr == VRSQL || instr == VRNDN || instr == VRNDP || instr == VNOP || instr == VNULL)
-		{
+		else if constexpr (OneOf(instr, VMOV, VRCP, VRSQ, VRCPH, VRSQH, VRCPL, VRSQL, VRNDN, VRNDP, VNOP, VNULL)) {
 			SingleLaneInstr<instr>(instr_code);
 		}
-
-		else if constexpr (instr == VMULF || instr == VMULU || instr == VMULQ || instr == VMUDL ||
-			instr == VMUDM || instr == VMUDN || instr == VMUDH || instr == VMACF || instr == VMACU ||
-			instr == VMADL || instr == VMADM || instr == VADMN || instr == VADMH || instr == VADD ||
-			instr == VMACQ || instr == VABS || instr == VADDC || instr == VSUB || instr == VSUBC ||
-			instr == VMADN || instr == VMADH || instr == VSAR || instr == VAND || instr == VNAND ||
-			instr == VOR || instr == VNOR || instr == VXOR || instr == VNXOR)
-		{
+		else if constexpr (OneOf(instr, VMULF, VMULU, VMULQ, VMUDL, VMUDM, VMUDN, VMUDH, VMACF, VMACU, VMADL, VMADM,
+			VADMN, VADMH, VADD, VMACQ, VABS, VADDC, VSUB, VSUBC, VMADN, VMADH, VSAR, VAND, VNAND, VOR, VNOR, VXOR, VNXOR)) {
 			ComputeInstr<instr>(instr_code);
 		}
-
-		else if constexpr (instr == VLT || instr == VEQ || instr == VNE ||instr == VGE ||
-			instr == VCH || instr == VCR || instr == VCL || instr == VMRG)
-		{
+		else if constexpr (OneOf(instr, VLT, VEQ, VNE, VGE, VCH, VCR, VCL, VMRG)) {
 			SelectInstr<instr>(instr_code);
 		}
-
-		else
-		{
+		else {
 			static_assert(AlwaysFalse<instr>);
 		}
-
-		if constexpr (log_rsp_instructions)
-		{
+		if constexpr (log_rsp_instructions) {
 			Logging::LogRSPInstruction(current_instr_pc, current_instr_log_output);
 		}
 	}

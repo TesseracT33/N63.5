@@ -352,82 +352,49 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		if constexpr (instr == LB || instr == LBU || instr == LH || instr == LHU || instr == LW || instr == LWU || instr == LWL ||
-			instr == LWR || instr == LD || instr == LDL || instr == LDR || instr == LL || instr == LLD)
-		{
+		if constexpr (OneOf(instr, LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD)) {
 			CPULoad<instr>(instr_code);
 		}
-
-		else if constexpr (instr == SB || instr == SH || instr == SW || instr == SWL || instr == SWR ||
-			instr == SC || instr == SCD || instr == SD || instr == SDL || instr == SDR)
-		{
+		else if constexpr (OneOf(instr, SB, SH, SW, SWL, SWR, SC, SCD, SD, SDL, SDR)) {
 			CPUStore<instr>(instr_code);
 		}
-
-		else if constexpr (instr == ADDI || instr == ADDIU || instr == SLTI || instr == SLTIU || instr == ANDI ||
-			instr == ORI || instr == XORI || instr == LUI || instr == DADDI || instr == DADDIU)
-		{
+		else if constexpr (OneOf(instr, ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI, DADDI, DADDIU)) {
 			ALUImmediate<instr>(instr_code);
 		}
-
-		else if constexpr (instr == ADD || instr == ADDU || instr == AND || instr == DADD || instr == DADDU || instr == DSUB || instr == DSUBU ||
-			instr == NOR || instr == OR || instr == SLT || instr == SLTU || instr == SUB || instr == SUBU || instr == XOR)
-		{
+		else if constexpr (OneOf(instr, ADD, ADDU, AND, DADD, DADDU, DSUB, DSUBU, NOR, OR, SLT, SLTU, SUB, SUBU, XOR)) {
 			ALUThreeOperand<instr>(instr_code);
 		}
-
-		else if constexpr (instr == SLL || instr == SRL || instr == SRA || instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLL ||
-			instr == DSRL || instr == DSRA || instr == DSLLV || instr == DSRLV || instr == DSRAV || instr == DSLL32 || instr == DSRL32 || instr == DSRA32)
-		{
+		else if constexpr (OneOf(instr, SLL, SRL, SRA, SLLV, SRLV, SRAV, DSLL, DSRL, DSRA, DSLLV, DSRLV, DSRAV, DSLL32, DSRL32, DSRA32)) {
 			ALUShift<instr>(instr_code);
 		}
-
-		else if constexpr (instr == MULT || instr == MULTU || instr == DIV || instr == DIVU ||
-			instr == DMULT || instr == DMULTU || instr == DDIV || instr == DDIVU)
-		{
+		else if constexpr (OneOf(instr, MULT, MULTU, DIV, DIVU, DMULT, DMULTU, DDIV, DDIVU)) {
 			ALUMulDiv<instr>(instr_code);
 		}
-
-		else if constexpr (instr == MFHI || instr == MFLO || instr == MTHI || instr == MTLO)
-		{
+		else if constexpr (OneOf(instr, MFHI, MFLO, MTHI, MTLO)) {
 			CPUMove<instr>(instr_code);
 		}
-
-		else if constexpr (instr == J || instr == JAL || instr == JR || instr == JALR)
-		{
+		else if constexpr (OneOf(instr, J, JAL, JR, JALR)) {
 			Jump<instr>(instr_code);
 		}
-
-		else if constexpr (instr == BEQ || instr == BNE || instr == BLEZ || instr == BGTZ || instr == BLTZ || instr == BGEZ || instr == BLTZAL ||
-			instr == BGEZAL || instr == BEQL || instr == BNEL || instr == BLEZL || instr == BGTZL || instr == BLTZL || instr == BGEZL || instr == BLTZALL || instr == BGEZALL)
-		{
+		else if constexpr (OneOf(instr, BEQ, BNE, BLEZ, BGTZ, BLTZ, BGEZ, BLTZAL, BGEZAL, BEQL, BNEL, BLEZL, BGTZL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
 			CPUBranch<instr>(instr_code);
 		}
-
-		else if constexpr (instr == TGE || instr == TGEU || instr == TLT || instr == TLTU || instr == TEQ || instr == TNE)
-		{
+		else if constexpr (OneOf(instr, TGE, TGEU, TLT, TLTU, TEQ, TNE)) {
 			TrapThreeOperand<instr>(instr_code);
 		}
-
-		else if constexpr (instr == TGEI || instr == TGEIU || instr == TLTI || instr == TLTIU || instr == TEQI || instr == TNEI)
-		{
+		else if constexpr (OneOf(instr, TGEI, TGEIU, TLTI, TLTIU, TEQI, TNEI)) {
 			TrapImmediate<instr>(instr_code);
 		}
-
-		else if constexpr (instr == BREAK)
-		{
+		else if constexpr (instr == BREAK) {
 			Break();
 		}
-		else if constexpr (instr == SYNC)
-		{
+		else if constexpr (instr == SYNC) {
 			Sync();
 		}
-		else if constexpr (instr == SYSCALL)
-		{
+		else if constexpr (instr == SYSCALL) {
 			Syscall();
 		}
-		else
-		{
+		else {
 			static_assert(AlwaysFalse<instr>);
 		}
 
@@ -441,20 +408,17 @@ namespace VR4300
 	template<COP0Instruction instr>
 	void ExecuteCOP0Instruction()
 	{
-		if constexpr (instr == COP0Instruction::MTC0 || instr == COP0Instruction::MFC0 || instr == COP0Instruction::DMTC0 || instr == COP0Instruction::DMFC0)
-		{
+		if constexpr (OneOf(instr, COP0Instruction::MTC0, COP0Instruction::MFC0, COP0Instruction::DMTC0, COP0Instruction::DMFC0)) {
 			COP0Move<instr>(instr_code);
 		}
-		else if constexpr (instr == COP0Instruction::TLBP) TLBP();
-		else if constexpr (instr == COP0Instruction::TLBR) TLBR();
+		else if constexpr (instr == COP0Instruction::TLBP)  TLBP();
+		else if constexpr (instr == COP0Instruction::TLBR)  TLBR();
 		else if constexpr (instr == COP0Instruction::TLBWI) TLBWI();
 		else if constexpr (instr == COP0Instruction::TLBWR) TLBWR();
-		else if constexpr (instr == COP0Instruction::ERET) ERET();
+		else if constexpr (instr == COP0Instruction::ERET)  ERET();
 		else if constexpr (instr == COP0Instruction::CACHE) CACHE(instr_code);
 		else static_assert(AlwaysFalse<instr>);
-
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
 		}
 	}
@@ -464,44 +428,31 @@ namespace VR4300
 	void ExecuteCOP1Instruction()
 	{
 		using enum COP1Instruction;
-
-		if constexpr (instr == LWC1 || instr == LDC1)
-		{
+		if constexpr (OneOf(instr, LWC1, LDC1)) {
 			FPULoad<instr>(instr_code);
 		}
-		else if constexpr (instr == SWC1 || instr == SDC1)
-		{
+		else if constexpr (OneOf(instr, SWC1, SDC1)) {
 			FPUStore<instr>(instr_code);
 		}
-		else if constexpr (instr == MTC1 || instr == MFC1 || instr == CTC1 || instr == CFC1 || instr == DMTC1 || instr == DMFC1)
-		{
+		else if constexpr (OneOf(instr, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1)) {
 			FPUMove<instr>(instr_code);
 		}
-		else if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_L || instr == CVT_W || instr == ROUND_L || instr == ROUND_W ||
-			instr == TRUNC_L || instr == TRUNC_W || instr == CEIL_L || instr == CEIL_W || instr == FLOOR_L || instr == FLOOR_W)
-		{
+		else if constexpr (OneOf(instr, CVT_S, CVT_D, CVT_L, CVT_W, ROUND_L, ROUND_W, TRUNC_L, TRUNC_W, CEIL_L, CEIL_W, FLOOR_L, FLOOR_W)) {
 			FPUConvert<instr>(instr_code);
 		}
-		else if constexpr (instr == ADD || instr == SUB || instr == MUL || instr == DIV ||
-			instr == ABS || instr == MOV || instr == NEG || instr == SQRT)
-		{
+		else if constexpr (OneOf(instr, ADD, SUB, MUL, DIV, ABS, MOV, NEG, SQRT)) {
 			FPUCompute<instr>(instr_code);
 		}
-		else if constexpr (instr == BC1T || instr == BC1F || instr == BC1TL || instr == BC1FL)
-		{
+		else if constexpr (OneOf(instr, BC1T, BC1F, BC1TL, BC1FL)) {
 			FPUBranch<instr>(instr_code);
 		}
-		else if constexpr (instr == C)
-		{
+		else if constexpr (instr == C) {
 			FPUCompare(instr_code);
 		}
-		else
-		{
+		else {
 			static_assert(AlwaysFalse<instr>);
 		}
-
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
 		}
 	}
