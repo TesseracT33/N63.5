@@ -455,7 +455,7 @@ namespace RSP
 
 		/* Registers are c0-c7 begin SP_DMA_SP_ADDR to SP_SEMAPHORE */
 		auto rd = instr_code >> 11 & 7;
-		auto rt = instr_code >> 16 & 7;
+		auto rt = instr_code >> 16 & 0x1F;
 		u32 sp_reg_addr = 0x0404'0000 + rd * 4;
 
 		if constexpr (log_rsp_instructions) {
