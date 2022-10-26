@@ -407,7 +407,7 @@ namespace VR4300
 			current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
 		}
 
-		if constexpr (instr == CVT_S || instr == CVT_D || instr == CVT_W || instr == CVT_L) {
+		if constexpr (OneOf(instr, CVT_S, CVT_D, CVT_W, CVT_L)) {
 			/* CVT.S/CVT.D: Convert To Single/Double Floating-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a single/double-precision floating-point format. Stores the rounded result to floating-point register fd.
@@ -471,9 +471,7 @@ namespace VR4300
 
 			TestAllExceptions();
 		}
-		else if constexpr (instr == ROUND_W || instr == TRUNC_W || instr == CEIL_W || instr == FLOOR_W ||
-			               instr == ROUND_L || instr == TRUNC_L || instr == CEIL_L || instr == FLOOR_L)
-		{
+		else if constexpr (OneOf(instr, ROUND_W, TRUNC_W, CEIL_W, FLOOR_W, ROUND_L, TRUNC_L, CEIL_L, FLOOR_L)) {
 			/* ROUND.L/ROUND.W/TRUNC.L/TRUNC.W/CEIL.L/CEIL.W/FLOOR.L/FLOOR.W: Round/Truncate/Ceiling/Floor To Single/Long Fixed-point Format;
 			   Rounds the contents of floating-point register fs to a value closest to the 32/64-bit
 			   fixed-point format and converts them from the specified format (fmt). Stores the result to floating-point register fd. */
@@ -485,10 +483,10 @@ namespace VR4300
 				std::feclearexcept(FE_ALL_EXCEPT);
 
 				OutputInt result = [&] {
-					if constexpr (instr == ROUND_W || instr == ROUND_L) return OutputInt(std::nearbyint(source));
-					if constexpr (instr == TRUNC_W || instr == TRUNC_L) return OutputInt(std::trunc(source));
-					if constexpr (instr == CEIL_W  || instr == CEIL_L)  return OutputInt(std::ceil(source));
-					if constexpr (instr == FLOOR_W || instr == FLOOR_L) return OutputInt(std::floor(source));
+					if constexpr (OneOf(instr, ROUND_W, ROUND_L)) return OutputInt(std::nearbyint(source));
+					if constexpr (OneOf(instr, TRUNC_W, TRUNC_L)) return OutputInt(std::trunc(source));
+					if constexpr (OneOf(instr, CEIL_W, CEIL_L))   return OutputInt(std::ceil(source));
+					if constexpr (OneOf(instr, FLOOR_W, FLOOR_L)) return OutputInt(std::floor(source));
 				}();
 
 				unimplemented_operation = TestForUnimplementedException.template operator () < InputFloat, OutputInt > (source);
@@ -504,8 +502,7 @@ namespace VR4300
 				}());
 			};
 
-			constexpr static bool rounding_is_made_to_s32 =
-				instr == ROUND_W || instr == TRUNC_W || instr == CEIL_W || instr == FLOOR_W;
+			constexpr static bool rounding_is_made_to_s32 = OneOf(instr, ROUND_W, TRUNC_W, CEIL_W, FLOOR_W);
 
 			switch (fmt) {
 			case FmtTypeID::Float32:
@@ -561,7 +558,7 @@ namespace VR4300
 		auto fs = instr_code >> 11 & 0x1F;
 		auto fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (instr == ADD || instr == SUB || instr == MUL || instr == DIV) {
+		if constexpr (OneOf(instr, ADD, SUB, MUL, DIV)) {
 			/* Floating-point Add/Subtract/Multiply/Divide;
 			   Arithmetically adds/subtracts/multiplies/divides the contents of floating-point registers
 			   fs and ft in the specified format (fmt). Stores the rounded result to floating-point register fd. */
@@ -620,7 +617,7 @@ namespace VR4300
 
 			TestAllExceptions();
 		}
-		else if constexpr (instr == ABS || instr == MOV || instr == NEG || instr == SQRT) {
+		else if constexpr (OneOf(instr, ABS, MOV, NEG, SQRT)) {
 			/* Floating-point Absolute Value;
 			   Calculates the arithmetic absolute value of the contents of floating-point
 			   register fs in the specified format (fmt). Stores the result to floating-point register fd.
@@ -731,10 +728,10 @@ namespace VR4300
 		s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 
 		bool branch_cond = [&] {
-			if constexpr (instr == BC1T || instr == BC1TL) {
+			if constexpr (OneOf(instr, BC1T, BC1TL)) {
 				return fcr31.c;
 			}
-			if constexpr (instr == BC1F || instr == BC1FL) {
+			if constexpr (OneOf(instr, BC1F, BC1FL)) {
 				return !fcr31.c;
 			}
 		}();
@@ -742,7 +739,7 @@ namespace VR4300
 		if (branch_cond) {
 			PrepareJump(pc + offset);
 		}
-		else if constexpr (instr == BC1TL || instr == BC1FL) {
+		else if constexpr (OneOf(instr, BC1TL, BC1FL)) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. TODO: manual says "invalidated" */
 		}
 

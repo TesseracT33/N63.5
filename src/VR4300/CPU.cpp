@@ -56,7 +56,7 @@ namespace VR4300
 		   Generates an address by adding a sign-extended offset to the contents of register base.
 		   In the 32-bit Kernel mode, the high-order 32 bits are ignored during
 		   virtual address creation. */
-		if constexpr (instr == LD || instr == LDL || instr == LDR || instr == LLD) {
+		if constexpr (OneOf(instr, LD, LDL, LDR, LLD)) {
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
 				addr = s32(addr & 0xFFFF'FFFF);
 			}
@@ -251,7 +251,7 @@ namespace VR4300
 		   Generates an address by adding a sign-extended offset to the contents of register base.
 		   For "doubleword instructions", in the 32-bit Kernel mode, the high-order 32 bits are ignored during
 		   virtual address creation. */
-		if constexpr (instr == SD || instr == SDL || instr == SDR || instr == SCD) {
+		if constexpr (OneOf(instr, SD, SDL, SDR, SCD)) {
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
 				addr = s32(addr & 0xFFFF'FFFF);
 			}
@@ -360,7 +360,7 @@ namespace VR4300
 		auto rs = instr_code >> 21 & 0x1F;
 
 		auto immediate = [&] {
-			if constexpr (instr == ANDI || instr == LUI || instr == ORI || instr == XORI)
+			if constexpr (OneOf(instr, ANDI, LUI, ORI, XORI))
 				return u16(instr_code & 0xFFFF);
 			else
 				return s16(instr_code & 0xFFFF);
@@ -618,7 +618,7 @@ namespace VR4300
 			current_instr_log_output = [&] {
 				if (instr_code == 0)
 					return std::string("NOP");
-				if constexpr (instr == SLLV || instr == SRLV || instr == SRAV || instr == DSLLV || instr == DSRLV || instr == DSRAV)
+				if constexpr (OneOf(instr, SLLV, SRLV, SRAV, DSLLV, DSRLV, DSRAV))
 					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, rs);
 				else
 					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
@@ -880,10 +880,10 @@ namespace VR4300
 			static_assert(AlwaysFalse<instr>, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}
 		static constexpr int cycles = [&] {
-			     if constexpr (instr == MULT  || instr == MULTU)  return 5;
-			else if constexpr (instr == DMULT || instr == DMULTU) return 8;
-			else if constexpr (instr == DIV   || instr == DIVU)   return 37;
-			else if constexpr (instr == DDIV  || instr == DDIVU)  return 69;
+			     if constexpr (OneOf(instr, MULT, MULTU))   return 5;
+			else if constexpr (OneOf(instr, DMULT, DMULTU)) return 8;
+			else if constexpr (OneOf(instr, DIV, DIVU))     return 37;
+			else if constexpr (OneOf(instr, DDIV, DDIVU))   return 69;
 			else static_assert(AlwaysFalse<instr>, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
 		}();
 		AdvancePipeline(cycles);
@@ -911,14 +911,14 @@ namespace VR4300
 		   Jumps to the address of register rs, delayed by one instruction.
 		   Stores the address of the instruction following the delay slot to register rd. */
 		u64 target = [&] {
-			if constexpr (instr == J || instr == JAL) {
+			if constexpr (OneOf(instr, J, JAL)) {
 				u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
 				if constexpr (log_cpu_instructions) {
 					current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
 				}
 				return pc & 0xFFFF'FFFF'F000'0000 | target;
 			}
-			else if constexpr (instr == JR || instr == JALR) {
+			else if constexpr (OneOf(instr, JR, JALR)) {
 				auto rs = instr_code >> 21 & 0x1F;
 				if constexpr (log_cpu_instructions) {
 					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
@@ -958,7 +958,7 @@ namespace VR4300
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = [&] {
 				s16 offset = instr_code & 0xFFFF;
-				if constexpr (instr == BEQ || instr == BNE || instr == BEQL || instr == BNEL)
+				if constexpr (OneOf(instr, BEQ, BNE, BEQL, BNEL))
 					return std::format("{} {}, {}, ${:X}", current_instr_name, rs, rt, offset);
 				else
 					return std::format("{} {}, ${:X}", current_instr_name, rs, offset);
@@ -969,26 +969,26 @@ namespace VR4300
 		   For "likely" instructions: if the branch condition is not satisfied, the instruction in the branch delay slot is discarded.
 		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
 
-		if constexpr (instr == BLTZAL || instr == BGEZAL || instr == BLTZALL || instr == BGEZALL) {
+		if constexpr (OneOf(instr, BLTZAL, BGEZAL, BLTZALL, BGEZALL)) {
 			gpr.Set(31, pc + 4);
 		}
 
 		bool branch_cond = [&] {
-			if constexpr (instr == BEQ || instr == BEQL) /* Branch On Equal (Likely) */
+			if constexpr (OneOf(instr, BEQ, BEQL)) /* Branch On Equal (Likely) */
 				return gpr[rs] == gpr[rt];
-			else if constexpr (instr == BNE || instr == BNEL) /* Branch On Not Equal (Likely) */
+			else if constexpr (OneOf(instr, BNE, BNEL)) /* Branch On Not Equal (Likely) */
 				return gpr[rs] != gpr[rt];
-			else if constexpr (instr == BLEZ || instr == BLEZL) /* Branch On Less Than Or Equal To Zero (Likely) */
+			else if constexpr (OneOf(instr, BLEZ, BLEZL)) /* Branch On Less Than Or Equal To Zero (Likely) */
 				return gpr[rs] <= 0;
-			else if constexpr (instr == BGTZ || instr == BGTZL) /* Branch On Greater Than Zero (Likely) */
+			else if constexpr (OneOf(instr, BGTZ, BGTZL)) /* Branch On Greater Than Zero (Likely) */
 				return gpr[rs] > 0;
-			else if constexpr (instr == BLTZ || instr == BLTZL) /* Branch On Less Than Zero (Likely) */
+			else if constexpr (OneOf(instr, BLTZ, BLTZL)) /* Branch On Less Than Zero (Likely) */
 				return gpr[rs] < 0;
-			else if constexpr (instr == BGEZ || instr == BGEZL) /* Branch On Greater Than or Equal To Zero (Likely) */
+			else if constexpr (OneOf(instr, BGEZ, BGEZL)) /* Branch On Greater Than or Equal To Zero (Likely) */
 				return gpr[rs] >= 0;
-			else if constexpr (instr == BLTZAL || instr == BLTZALL) /* Branch On Less Than Zero and Link (Likely) */
+			else if constexpr (OneOf(instr, BLTZAL, BLTZALL)) /* Branch On Less Than Zero and Link (Likely) */
 				return gpr[rs] < 0;
-			else if constexpr (instr == BGEZAL || instr == BGEZALL) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
+			else if constexpr (OneOf(instr, BGEZAL, BGEZALL)) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
 				return gpr[rs] >= 0;
 			else
 				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch instruction was found.");
@@ -999,9 +999,7 @@ namespace VR4300
 			PrepareJump(pc + offset);
 			pc_is_inside_branch_delay_slot = true;
 		}
-		else if constexpr (instr == BEQL || instr == BNEL || instr == BLEZL || instr == BGTZL ||
-			instr == BEQL || instr == BLTZL || instr == BGEZL || instr == BLTZALL || instr == BGEZALL)
-		{
+		else if constexpr (OneOf(instr, BEQL, BNEL, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. */
 		}
 
@@ -1076,7 +1074,7 @@ namespace VR4300
 
 		auto rs = instr_code >> 21 & 0x1F;
 		auto immediate = [&] {
-			if constexpr (instr == TGEI || instr == TLTI)
+			if constexpr (OneOf(instr, TGEI, TLTI))
 				return s16(instr_code & 0xFFFF);
 			else
 				return u16(instr_code & 0xFFFF);
@@ -1139,7 +1137,7 @@ namespace VR4300
 	{
 		using enum CPUInstruction;
 
-		if constexpr (instr == MFLO || instr == MFHI) {
+		if constexpr (OneOf(instr, MFLO, MFHI)) {
 			/* Move From LO/HI;
 			   Transfers the contents of special register LO/HI to register rd. */
 			auto rd = instr_code >> 11 & 0x1F;
@@ -1153,7 +1151,7 @@ namespace VR4300
 				current_instr_log_output = std::format("{} {}", current_instr_name, rd);
 			}
 		}
-		else if constexpr (instr == MTLO || instr == MTHI) {
+		else if constexpr (OneOf(instr, MTLO, MTHI)) {
 			/* Move To LO/HI;
 			   Transfers the contents of register rs to special register LO/HI. */
 			auto rs = instr_code >> 21 & 0x1F;
