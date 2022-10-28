@@ -13,10 +13,8 @@ import <type_traits>;
 namespace VR4300
 {
 	template<typename T> concept FPUNumericType =
-		std::is_same_v<f32, T> ||
-		std::is_same_v<f64, T> ||
-		std::is_same_v<s32, T> ||
-		std::is_same_v<s64, T>;
+		std::is_same_v<f32, T> || std::is_same_v<f64, T> ||
+		std::is_same_v<s32, T> || std::is_same_v<s64, T>;
 
 	enum class COP1Instruction
 	{
@@ -77,7 +75,6 @@ namespace VR4300
 		u32 : 7;
 
 		void Set(u32 data);
-		u32 Get() const;
 	} fcr31{};
 
 	/* Floating point control registers. Only #0 and #31 are "valid", and #0 is read-only. */

@@ -16,20 +16,14 @@ namespace VR4300
 		*this = std::bit_cast<FCR31>(data);
 		auto new_rounding_mode = [&] {
 			switch (rm) {
-			case 0b00: return FE_TONEAREST;  /* RN */
-			case 0b01: return FE_TOWARDZERO; /* RZ */
-			case 0b10: return FE_UPWARD;     /* RP */
-			case 0b11: return FE_DOWNWARD;   /* RM */
-			default: assert(false); return 0;
+			case 0: return FE_TONEAREST;  /* RN */
+			case 1: return FE_TOWARDZERO; /* RZ */
+			case 2: return FE_UPWARD;     /* RP */
+			case 3: return FE_DOWNWARD;   /* RM */
+			default: std::unreachable();
 			}
 		}();
 		std::fesetround(new_rounding_mode);
-	}
-
-
-	u32 FCR31::Get() const
-	{
-		return std::bit_cast<u32>(*this);
 	}
 
 
@@ -37,7 +31,7 @@ namespace VR4300
 	{
 		static constexpr u32 fcr0 = 0; /* TODO */
 		if (index == 31) {
-			return fcr31.Get();
+			return std::bit_cast<u32>(fcr31);
 		}
 		else if (index == 0) {
 			return fcr0;
@@ -196,7 +190,7 @@ namespace VR4300
 			SignalException<Exception::FloatingPoint>();
 		}
 		else {
-			u32 fcr31_int = fcr31.Get();
+			u32 fcr31_int = std::bit_cast<u32>(fcr31);
 			u32 enables = fcr31_int >> 7;
 			u32 causes = fcr31_int >> 12;
 			if (causes & enables & 0x1F) {
@@ -233,7 +227,7 @@ namespace VR4300
 
 	void ClearAllExceptions()
 	{
-		u32 fcr31_int = fcr31.Get();
+		u32 fcr31_int = std::bit_cast<u32>(fcr31);
 		fcr31_int &= ~0x3F000;
 		fcr31.Set(fcr31_int);
 	}
@@ -417,7 +411,7 @@ namespace VR4300
 			   to a 32/64-bit fixed-point format. Stores the rounded result to floating-point register fd. */
 			auto Convert = [&] <FPUNumericType InputType> {
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
-				auto Convert2 = [&] <FPUNumericType From, FPUNumericType To> { // TODO think of a new lambda name ;)
+				auto Convert = [&] <FPUNumericType From, FPUNumericType To> {
 					From source = fpr.Get<From>(fs);
 					std::feclearexcept(FE_ALL_EXCEPT);
 					To conv = To(source); 
@@ -439,15 +433,15 @@ namespace VR4300
 					AdvancePipeline(cycles);
 				};
 
-				if constexpr (instr == CVT_S) Convert2.template operator() < InputType, f32 > ();
-				if constexpr (instr == CVT_D) Convert2.template operator() < InputType, f64 > ();
-				if constexpr (instr == CVT_W) Convert2.template operator() < InputType, s32 > ();
-				if constexpr (instr == CVT_L) Convert2.template operator() < InputType, s64 > ();
+				if constexpr (instr == CVT_S) Convert.template operator() < InputType, f32 > ();
+				if constexpr (instr == CVT_D) Convert.template operator() < InputType, f64 > ();
+				if constexpr (instr == CVT_W) Convert.template operator() < InputType, s32 > ();
+				if constexpr (instr == CVT_L) Convert.template operator() < InputType, s64 > ();
 			};
 
 			switch (fmt) {
 			case FmtTypeID::Float32:
-				Convert.template operator() <f32 /* input format */> ();
+				Convert.template operator() <f32> ();
 				break;
 
 			case FmtTypeID::Float64:
@@ -492,21 +486,19 @@ namespace VR4300
 				unimplemented_operation = TestForUnimplementedException.template operator () < InputFloat, OutputInt > (source);
 
 				/* If the invalid operation exception occurs, but the exception is not enabled, return INT_MAX */
-				fpr.Set<OutputInt>(fd, [&] {
-					if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I) {
-						return std::numeric_limits<OutputInt>::max();
-					}
-					else {
-						return result;
-					}
-				}());
+				if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I) {
+					fpr.Set<OutputInt>(fd, std::numeric_limits<OutputInt>::max());
+				}
+				else {
+					fpr.Set<OutputInt>(fd, result);
+				}
 			};
 
-			constexpr static bool rounding_is_made_to_s32 = OneOf(instr, ROUND_W, TRUNC_W, CEIL_W, FLOOR_W);
+			constexpr static bool round_to_s32 = OneOf(instr, ROUND_W, TRUNC_W, CEIL_W, FLOOR_W);
 
 			switch (fmt) {
 			case FmtTypeID::Float32:
-				if constexpr (rounding_is_made_to_s32) {
+				if constexpr (round_to_s32) {
 					Round.template operator() < f32 /* input format */, s32 /* output format */ > ();
 				}
 				else {
@@ -516,7 +508,7 @@ namespace VR4300
 				break;
 
 			case FmtTypeID::Float64:
-				if constexpr (rounding_is_made_to_s32) {
+				if constexpr (round_to_s32) {
 					Round.template operator() < f64, s32 > ();
 				}
 				else {
@@ -556,14 +548,13 @@ namespace VR4300
 
 		auto fd = instr_code >> 6 & 0x1F;
 		auto fs = instr_code >> 11 & 0x1F;
+		auto ft = instr_code >> 16 & 0x1F;
 		auto fmt = instr_code >> 21 & 0x1F;
 
 		if constexpr (OneOf(instr, ADD, SUB, MUL, DIV)) {
 			/* Floating-point Add/Subtract/Multiply/Divide;
 			   Arithmetically adds/subtracts/multiplies/divides the contents of floating-point registers
 			   fs and ft in the specified format (fmt). Stores the rounded result to floating-point register fd. */
-
-			auto ft = instr_code >> 16 & 0x1F;
 
 			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToString(fmt), fd, fs, ft);
@@ -572,29 +563,23 @@ namespace VR4300
 			auto Compute = [&] <std::floating_point Float> {
 				Float op1 = fpr.Get<Float>(fs);
 				Float op2 = fpr.Get<Float>(ft);
-
 				std::feclearexcept(FE_ALL_EXCEPT);
-
-				Float result = [&] {
-					if constexpr (instr == ADD) {
-						AdvancePipeline(3);
-						return op1 + op2;
-					}
-					if constexpr (instr == SUB) {
-						AdvancePipeline(3);
-						return op1 - op2;
-					}
-					if constexpr (instr == MUL) {
-						AdvancePipeline(29);
-						return op1 * op2;
-					}
-					if constexpr (instr == DIV) {
-						AdvancePipeline(58);
-						return op1 / op2;
-					}
-				}();
-
-				fpr.Set<Float>(fd, result);
+				if constexpr (instr == ADD) {
+					fpr.Set<Float>(fd, op1 + op2);
+					AdvancePipeline(3);
+				}
+				if constexpr (instr == SUB) {
+					fpr.Set<Float>(fd, op1 - op2);
+					AdvancePipeline(3);
+				}
+				if constexpr (instr == MUL) {
+					fpr.Set<Float>(fd, op1 * op2);
+					AdvancePipeline(29);
+				}
+				if constexpr (instr == DIV) {
+					fpr.Set<Float>(fd, op1 / op2);
+					AdvancePipeline(58);
+				}
 			};
 
 			switch (fmt) {
@@ -641,30 +626,27 @@ namespace VR4300
 			auto Compute = [&] <std::floating_point Float> {
 				Float op = fpr.Get<Float>(fs);
 				std::feclearexcept(FE_ALL_EXCEPT);
-				Float result = [&] {
-					if constexpr (instr == ABS) {
-						AdvancePipeline(1);
-						return std::abs(op);
+				if constexpr (instr == ABS) {
+					fpr.Set<Float>(fd, std::abs(op)); // TODO: could this result in host exception flags changing?
+					AdvancePipeline(1);
+				}
+				if constexpr (instr == MOV) {
+					fpr.Set<Float>(fd, op);
+					AdvancePipeline(1);
+				}
+				if constexpr (instr == NEG) {
+					fpr.Set<Float>(fd, -op);
+					AdvancePipeline(1);
+				}
+				if constexpr (instr == SQRT) {
+					fpr.Set<Float>(fd, std::sqrt(op));
+					if constexpr (std::is_same_v<Float, f32>) {
+						AdvancePipeline(29);
 					}
-					if constexpr (instr == MOV) {
-						AdvancePipeline(1);
-						return op;
+					else { /* f64 */
+						AdvancePipeline(58);
 					}
-					if constexpr (instr == NEG) {
-						AdvancePipeline(1);
-						return -op;
-					}
-					if constexpr (instr == SQRT) {
-						if constexpr (std::is_same_v<Float, f32>) {
-							AdvancePipeline(29);
-						}
-						if constexpr (std::is_same_v<Float, f64>) {
-							AdvancePipeline(58);
-						}
-						return std::sqrt(op);
-					}
-				}();
-				fpr.Set<Float>(fd, result); // TODO: could this result in host exception flags changing?
+				}
 			};
 
 			switch (fmt) {
