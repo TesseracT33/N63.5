@@ -1,7 +1,5 @@
 export module RSP:Operation;
 
-import Memory;
-import N64;
 import Util;
 
 import <array>;
@@ -17,12 +15,16 @@ namespace RSP
 {
 	export
 	{
-		template<std::integral Int> Int CPUReadMemory(u32 addr);
-		template<size_t number_of_bytes> void CPUWriteMemory(u32 addr, auto data);
 		u8* GetPointerToMemory(u32 addr);
 		void PowerOn();
 		u64 RspReadCommandByteswapped(u32 addr);
 		u64 Run(u64 rsp_cycles_to_run);
+
+		template<std::signed_integral Int>
+		Int ReadMemoryCpu(u32 addr);
+
+		template<size_t num_bytes>
+		void WriteMemoryCpu(u32 addr, std::signed_integral auto data);
 	}
 
 	void AdvancePipeline(u64 cycles);
@@ -30,8 +32,12 @@ namespace RSP
 	void FetchDecodeExecuteInstruction();
 	void NotifyIllegalInstrCode(u32 instr_code);
 	void PrepareJump(u32 target_address);
-	template<std::integral Int> Int ReadDMEM(u32 addr);
-	template<std::integral Int> void WriteDMEM(u32 addr, Int data);
+
+	template<std::signed_integral Int>
+	Int ReadDMEM(u32 addr);
+
+	template<std::signed_integral Int>
+	void WriteDMEM(u32 addr, Int data);
 
 	bool jump_is_pending = false;
 	uint pc;

@@ -3,7 +3,6 @@ export module MI; /* MIPS Interface */
 import Util;
 
 import <bit>;
-import <concepts>;
 import <cstring>;
 import <utility>;
 
@@ -21,15 +20,11 @@ namespace MI
 			DP = 1 << 5  /* Set when a full sync completes */
 		};
 
-		template<std::integral Int>
-		Int Read(u32 addr);
-
-		template<size_t number_of_bytes>
-		void Write(u32 addr, auto data);
-
 		void ClearInterruptFlag(InterruptType);
 		void Initialize();
+		s32 ReadWord(u32 addr);
 		void SetInterruptFlag(InterruptType);
+		void WriteWord(u32 addr, s32 data);
 	}
 
 	void ClearInterruptMask(InterruptType);

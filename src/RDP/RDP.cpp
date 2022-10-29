@@ -92,8 +92,7 @@ namespace RDP
 	}
 
 
-	template<std::integral Int>
-	Int ReadReg(u32 addr)
+	s32 ReadReg(u32 addr)
 	{
 		/* TODO: RCP will ignore the requested access size and will just put the requested 32-bit word on the bus.
 		Luckily, this is the correct behavior for 8-bit and 16-bit accesses (as explained above), so the VR4300 will
@@ -102,12 +101,11 @@ namespace RDP
 		auto reg_index = addr >> 2 & 7;
 		u32 ret;
 		std::memcpy(&ret, (u32*)(&dp) + reg_index, 4);
-		return Int(ret);
+		return ret;
 	}
 
 
-	template<std::integral Int>
-	void WriteReg(u32 addr, Int data)
+	void WriteWord(u32 addr, s32 data)
 	{
 		auto ProcessCommands = [&] {
 			dp.status.dmem_dma_status
@@ -116,7 +114,6 @@ namespace RDP
 		};
 
 		auto reg_index = addr >> 2 & 7;
-		auto word = u32(data);
 
 		enum Register {
 			StartReg, EndReg, CurrentReg, StatusReg, ClockReg, BufBusyReg, PipeBusyReg, TmemReg
@@ -125,13 +122,13 @@ namespace RDP
 		switch (reg_index) {
 		case Register::StartReg:
 			if (!dp.status.start_valid) {
-				dp.start = word & ~7;
+				dp.start = data & ~7;
 				dp.status.start_valid = true;
 			}
 			break;
 
 		case Register::EndReg:
-			dp.end = word & ~7;
+			dp.end = data & ~7;
 			if (dp.status.start_valid) {
 				dp.current = dp.start;
 				dp.status.start_valid = false;
@@ -143,35 +140,35 @@ namespace RDP
 
 		case Register::StatusReg: {
 			bool unfrozen = false;
-			if (word & 1) {
+			if (data & 1) {
 				dp.status.dmem_dma_status = 0;
 			}
-			else if (word & 2) {
+			else if (data & 2) {
 				dp.status.dmem_dma_status = 1;
 			}
-			if (word & 4) {
+			if (data & 4) {
 				dp.status.freeze_status = 0;
 				unfrozen = true;
 			}
-			else if (word & 8) {
+			else if (data & 8) {
 				dp.status.freeze_status = 1;
 			}
-			if (word & 0x10) {
+			if (data & 0x10) {
 				dp.status.flush_status = 0;
 			}
-			else if (word & 0x20) {
+			else if (data & 0x20) {
 				dp.status.flush_status = 1;
 			}
-			if (word & 0x40) {
+			if (data & 0x40) {
 				dp.tmem = 0;
 			}
-			if (word & 0x80) {
+			if (data & 0x80) {
 				dp.pipebusy = 0;
 			}
-			if (word & 0x100) {
+			if (data & 0x100) {
 				dp.bufbusy = 0;
 			}
-			if (word & 0x200) {
+			if (data & 0x200) {
 				dp.clock = 0;
 			}
 			if (unfrozen) {

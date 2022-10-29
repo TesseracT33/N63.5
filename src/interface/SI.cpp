@@ -4,8 +4,6 @@ import DMA;
 import Memory;
 import MI;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace SI
 {
 	void ClearStatusFlag(StatusFlag status_flag)
@@ -20,13 +18,12 @@ namespace SI
 	}
 
 
-	template<std::integral Int>
-	Int Read(const u32 addr)
+	s32 ReadWord(u32 addr)
 	{
 		u32 offset = (addr >> 2) & 7;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&si) + offset, 4);
-		return Int(ret);
+		return ret;
 	}
 
 
@@ -36,12 +33,9 @@ namespace SI
 	}
 
 
-	template<size_t number_of_bytes>
-	void Write(const u32 addr, const auto data)
+	void WriteWord(u32 addr, s32 data)
 	{
-		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
 		u32 offset = (addr >> 2) & 7;
-		auto word = static_cast<s32>(data);
 
 		enum RegOffset {
 			DramAddr = 0, AddrRd64B = 1, AddrWr4B = 2,
@@ -51,26 +45,26 @@ namespace SI
 		switch (offset)
 		{
 		case RegOffset::DramAddr:
-			si.dram_addr = word;
+			si.dram_addr = data;
 			break;
 
 		case RegOffset::AddrRd4B:
-			si.pif_addr_rd4b = word;
+			si.pif_addr_rd4b = data;
 			DMA::Init<DMA::Type::SI, DMA::Location::PIF, DMA::Location::RDRAM>(4, si.pif_addr_rd4b, si.dram_addr);
 			break;
 
 		case RegOffset::AddrRd64B:
-			si.pif_addr_rd64b = word;
+			si.pif_addr_rd64b = data;
 			DMA::Init<DMA::Type::SI, DMA::Location::PIF, DMA::Location::RDRAM>(64, si.pif_addr_rd64b, si.dram_addr);
 			break;
 
 		case RegOffset::AddrWr4B:
-			si.pif_addr_wr4b = word;
+			si.pif_addr_wr4b = data;
 			DMA::Init<DMA::Type::SI, DMA::Location::RDRAM, DMA::Location::PIF>(4, si.dram_addr, si.pif_addr_wr4b);
 			break;
 
 		case RegOffset::AddrWr64B:
-			si.pif_addr_wr64b = word;
+			si.pif_addr_wr64b = data;
 			DMA::Init<DMA::Type::SI, DMA::Location::RDRAM, DMA::Location::PIF>(64, si.dram_addr, si.pif_addr_wr64b);
 			break;
 
@@ -86,8 +80,4 @@ namespace SI
 			break;
 		}
 	}
-
-
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32)
 }

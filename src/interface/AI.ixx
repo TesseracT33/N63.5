@@ -4,8 +4,8 @@ import Util;
 
 import <SDL.h>;
 
+import <algorithm>;
 import <array>;
-import <concepts>;
 import <cstring>;
 import <format>;
 
@@ -14,8 +14,8 @@ namespace AI
 	export
 	{
 		void Initialize();
-		template<std::integral Int> Int Read(u32 addr);
-		template<size_t number_of_bytes> void Write(u32 addr, auto data);
+		s32 ReadWord(u32 addr);
+		void WriteWord(u32 addr, s32 data);
 	}
 
 	void Sample();

@@ -4,7 +4,6 @@ import Util;
 
 import <algorithm>;
 import <bit>;
-import <concepts>;
 import <cstring>;
 import <format>;
 import <string>;
@@ -14,8 +13,8 @@ namespace RSP
 {
 	export
 	{
-		template<std::integral Int> Int ReadReg(u32 addr);
-		template<size_t number_of_bytes> void WriteReg(u32 addr, auto data);
+		s32 ReadReg(u32 addr);
+		void WriteReg(u32 addr, s32 data);
 	}
 
 	enum class DmaType {

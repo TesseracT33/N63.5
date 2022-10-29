@@ -113,7 +113,6 @@
     <ClCompile Include="src\vr4300\Cache.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\EnumerateTemplateSpecializations.h" />
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\binning.h" />
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\blender.h" />
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\clamping.h" />

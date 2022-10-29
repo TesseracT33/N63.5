@@ -11,7 +11,7 @@ namespace VR4300
 {
 	u32 FetchInstruction(u64 virtual_address)
 	{
-		return ReadVirtual<u32, Alignment::Aligned, Memory::Operation::InstrFetch>(virtual_address);
+		return ReadVirtual<s32, Alignment::Aligned, Memory::Operation::InstrFetch>(virtual_address);
 	}
 
 
@@ -26,7 +26,7 @@ namespace VR4300
 	}
 
 
-	template<std::integral Int, Alignment alignment, Memory::Operation operation>
+	template<std::signed_integral Int, Alignment alignment, Memory::Operation operation>
 	Int ReadVirtual(u64 virtual_address)
 	{
 		/* For aligned accesses, check if the address is misaligned. No need to do it for instruction fetches.
@@ -330,11 +330,11 @@ namespace VR4300
 	}
 
 
-	template<std::integral Int, Alignment alignment>
-	void WriteVirtual(u64 virtual_address, Int data)
+	template<Alignment alignment>
+	void WriteVirtual(u64 virtual_address, std::signed_integral auto data)
 	{
-		if constexpr (sizeof(Int) > 1 && alignment == Alignment::Aligned) {
-			if (virtual_address & (sizeof(Int) - 1)) {
+		if constexpr (sizeof(data) > 1 && alignment == Alignment::Aligned) {
+			if (virtual_address & (sizeof(data) - 1)) {
 				SignalAddressErrorException<Memory::Operation::Write>(virtual_address);
 				return;
 			}
@@ -349,26 +349,26 @@ namespace VR4300
 		if (cacheable_area) WriteCacheableArea<NUM_BYTES>(physical_address, data); \
 		else { p_cycle_counter += cache_miss_cycle_delay; Memory::WritePhysical<NUM_BYTES>(physical_address, data); } }
 
-		if constexpr (sizeof(Int) == 1 || alignment == Alignment::Aligned) {
-			WRITE(sizeof(Int));
+		if constexpr (sizeof(data) == 1 || alignment == Alignment::Aligned) {
+			WRITE(sizeof(data));
 		}
 		else {
 			/* Find out how many bytes to write. The result will differ from sizeof(Int) only for unaligned memory accesses. */
-			size_t number_of_bytes = [&] {
+			size_t num_bytes = [&] {
 				if constexpr (alignment == Alignment::UnalignedLeft) { /* Store (Double)Word Left */
-					return sizeof(Int) - (physical_address & (sizeof(Int) - 1));
+					return sizeof(data) - (physical_address & (sizeof(data) - 1));
 				}
 				else { /* UnalignedRight; Store (Double)Word Right */
-					return (physical_address & (sizeof(Int) - 1)) + 1;
+					return (physical_address & (sizeof(data) - 1)) + 1;
 				}
 			}();
 			if constexpr (alignment == Alignment::UnalignedRight) {
-				physical_address &= ~(sizeof(Int) - 1);
+				physical_address &= ~(sizeof(data) - 1);
 			}
 			/* This branch will be worth it; the fact that we can pass the number of bytes to access
 			   as a template argument means that, among other things, memcpy will be optimized away
 			   to a single or just a few 'mov' instructions, when we later go to actually access data. */
-			switch (number_of_bytes) {
+			switch (num_bytes) {
 			case 1: WRITE(1); break;
 			case 2: if constexpr (sizeof(data) >= 2) WRITE(2); break;
 			case 3: if constexpr (sizeof(data) >= 3) WRITE(3); break;
@@ -383,55 +383,23 @@ namespace VR4300
 	}
 
 
-	template u8 ReadVirtual<u8, Alignment::Aligned>(u64);
 	template s8 ReadVirtual<s8, Alignment::Aligned>(u64);
-	template u16 ReadVirtual<u16, Alignment::Aligned>(u64);
 	template s16 ReadVirtual<s16, Alignment::Aligned>(u64);
-	template u32 ReadVirtual<u32, Alignment::Aligned>(u64);
 	template s32 ReadVirtual<s32, Alignment::Aligned>(u64);
-	template u64 ReadVirtual<u64, Alignment::Aligned>(u64);
 	template s64 ReadVirtual<s64, Alignment::Aligned>(u64);
-	template u8 ReadVirtual<u8, Alignment::UnalignedLeft>(u64);
-	template s8 ReadVirtual<s8, Alignment::UnalignedLeft>(u64);
-	template u16 ReadVirtual<u16, Alignment::UnalignedLeft>(u64);
-	template s16 ReadVirtual<s16, Alignment::UnalignedLeft>(u64);
-	template u32 ReadVirtual<u32, Alignment::UnalignedLeft>(u64);
 	template s32 ReadVirtual<s32, Alignment::UnalignedLeft>(u64);
-	template u64 ReadVirtual<u64, Alignment::UnalignedLeft>(u64);
 	template s64 ReadVirtual<s64, Alignment::UnalignedLeft>(u64);
-	template u8 ReadVirtual<u8, Alignment::UnalignedRight>(u64);
-	template s8 ReadVirtual<s8, Alignment::UnalignedRight>(u64);
-	template u16 ReadVirtual<u16, Alignment::UnalignedRight>(u64);
-	template s16 ReadVirtual<s16, Alignment::UnalignedRight>(u64);
-	template u32 ReadVirtual<u32, Alignment::UnalignedRight>(u64);
 	template s32 ReadVirtual<s32, Alignment::UnalignedRight>(u64);
-	template u64 ReadVirtual<u64, Alignment::UnalignedRight>(u64);
 	template s64 ReadVirtual<s64, Alignment::UnalignedRight>(u64);
 
-	template void WriteVirtual<u8, Alignment::Aligned>(u64, u8);
-	template void WriteVirtual<s8, Alignment::Aligned>(u64, s8);
-	template void WriteVirtual<u16, Alignment::Aligned>(u64, u16);
-	template void WriteVirtual<s16, Alignment::Aligned>(u64, s16);
-	template void WriteVirtual<u32, Alignment::Aligned>(u64, u32);
-	template void WriteVirtual<s32, Alignment::Aligned>(u64, s32);
-	template void WriteVirtual<u64, Alignment::Aligned>(u64, u64);
-	template void WriteVirtual<s64, Alignment::Aligned>(u64, s64);
-	template void WriteVirtual<u8, Alignment::UnalignedLeft>(u64, u8);
-	template void WriteVirtual<s8, Alignment::UnalignedLeft>(u64, s8);
-	template void WriteVirtual<u16, Alignment::UnalignedLeft>(u64, u16);
-	template void WriteVirtual<s16, Alignment::UnalignedLeft>(u64, s16);
-	template void WriteVirtual<u32, Alignment::UnalignedLeft>(u64, u32);
-	template void WriteVirtual<s32, Alignment::UnalignedLeft>(u64, s32);
-	template void WriteVirtual<u64, Alignment::UnalignedLeft>(u64, u64);
-	template void WriteVirtual<s64, Alignment::UnalignedLeft>(u64, s64);
-	template void WriteVirtual<u8, Alignment::UnalignedRight>(u64, u8);
-	template void WriteVirtual<s8, Alignment::UnalignedRight>(u64, s8);
-	template void WriteVirtual<u16, Alignment::UnalignedRight>(u64, u16);
-	template void WriteVirtual<s16, Alignment::UnalignedRight>(u64, s16);
-	template void WriteVirtual<u32, Alignment::UnalignedRight>(u64, u32);
-	template void WriteVirtual<s32, Alignment::UnalignedRight>(u64, s32);
-	template void WriteVirtual<u64, Alignment::UnalignedRight>(u64, u64);
-	template void WriteVirtual<s64, Alignment::UnalignedRight>(u64, s64);
+	template void WriteVirtual<Alignment::Aligned>(u64, s8);
+	template void WriteVirtual<Alignment::Aligned>(u64, s16);
+	template void WriteVirtual<Alignment::Aligned>(u64, s32);
+	template void WriteVirtual<Alignment::Aligned>(u64, s64);
+	template void WriteVirtual<Alignment::UnalignedLeft>(u64, s32);
+	template void WriteVirtual<Alignment::UnalignedLeft>(u64, s64);
+	template void WriteVirtual<Alignment::UnalignedRight>(u64, s32);
+	template void WriteVirtual<Alignment::UnalignedRight>(u64, s64);
 
 	template u32 VirtualToPhysicalAddressUserMode32<Memory::Operation::Read>(u64, bool&);
 	template u32 VirtualToPhysicalAddressUserMode32<Memory::Operation::Write>(u64, bool&);

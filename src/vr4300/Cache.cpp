@@ -162,7 +162,7 @@ namespace VR4300
 	}
 
 
-	template<std::integral Int, Memory::Operation operation>
+	template<std::signed_integral Int, Memory::Operation operation>
 	Int ReadCacheableArea(u32 phys_addr)
 	{ /* Precondition: phys_addr is aligned to sizeof(Int) */
 		static_assert(OneOf(operation, Memory::Operation::InstrFetch, Memory::Operation::Read));
@@ -199,8 +199,8 @@ namespace VR4300
 	}
 
 
-	template<size_t number_of_bytes>
-	void WriteCacheableArea(u32 phys_addr, auto data)
+	template<size_t num_bytes>
+	void WriteCacheableArea(u32 phys_addr, std::signed_integral auto data)
 	{ /* Precondition: phys_addr may not be aligned to sizeof(Int),
 		but phys_addr + number_of_bytes is at most the byte of the next boundary of sizeof(Int) */
 		DCacheLine& cache_line = d_cache[phys_addr >> 4 & 0x1FF];
@@ -216,7 +216,7 @@ namespace VR4300
 			p_cycle_counter += cache_miss_cycle_delay;
 		}
 		data = std::byteswap(data);
-		std::memcpy(cache_line.data + (phys_addr & (sizeof(cache_line.data) - 1)), &data, number_of_bytes);
+		std::memcpy(cache_line.data + (phys_addr & (sizeof(cache_line.data) - 1)), &data, num_bytes);
 		cache_line.dirty = true;
 	}
 
@@ -232,47 +232,24 @@ namespace VR4300
 		}
 	}
 
-	template u32 ReadCacheableArea<u32, Memory::Operation::InstrFetch>(u32);
-
-	template u8 ReadCacheableArea<u8, Memory::Operation::Read>(u32);
-	template u16 ReadCacheableArea<u16, Memory::Operation::Read>(u32);
-	template u32 ReadCacheableArea<u32, Memory::Operation::Read>(u32);
-	template u64 ReadCacheableArea<u64, Memory::Operation::Read>(u32);
+	template s32 ReadCacheableArea<s32, Memory::Operation::InstrFetch>(u32);
 	template s8 ReadCacheableArea<s8, Memory::Operation::Read>(u32);
 	template s16 ReadCacheableArea<s16, Memory::Operation::Read>(u32);
 	template s32 ReadCacheableArea<s32, Memory::Operation::Read>(u32);
 	template s64 ReadCacheableArea<s64, Memory::Operation::Read>(u32);
-
-	template void WriteCacheableArea<1>(u32, u8);
 	template void WriteCacheableArea<1>(u32, s8);
-	template void WriteCacheableArea<1>(u32, u16);
 	template void WriteCacheableArea<1>(u32, s16);
-	template void WriteCacheableArea<1>(u32, u32);
 	template void WriteCacheableArea<1>(u32, s32);
-	template void WriteCacheableArea<1>(u32, u64);
 	template void WriteCacheableArea<1>(u32, s64);
-	template void WriteCacheableArea<2>(u32, u16);
 	template void WriteCacheableArea<2>(u32, s16);
-	template void WriteCacheableArea<2>(u32, u32);
 	template void WriteCacheableArea<2>(u32, s32);
-	template void WriteCacheableArea<2>(u32, u64);
 	template void WriteCacheableArea<2>(u32, s64);
-	template void WriteCacheableArea<3>(u32, u16);
-	template void WriteCacheableArea<3>(u32, s16);
-	template void WriteCacheableArea<3>(u32, u32);
 	template void WriteCacheableArea<3>(u32, s32);
-	template void WriteCacheableArea<3>(u32, u64);
 	template void WriteCacheableArea<3>(u32, s64);
-	template void WriteCacheableArea<4>(u32, u32);
 	template void WriteCacheableArea<4>(u32, s32);
-	template void WriteCacheableArea<4>(u32, u64);
 	template void WriteCacheableArea<4>(u32, s64);
-	template void WriteCacheableArea<5>(u32, u64);
 	template void WriteCacheableArea<5>(u32, s64);
-	template void WriteCacheableArea<6>(u32, u64);
 	template void WriteCacheableArea<6>(u32, s64);
-	template void WriteCacheableArea<7>(u32, u64);
 	template void WriteCacheableArea<7>(u32, s64);
-	template void WriteCacheableArea<8>(u32, u64);
 	template void WriteCacheableArea<8>(u32, s64);
 }

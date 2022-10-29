@@ -7,7 +7,6 @@ import <SDL.h>;
 
 import <array>;
 import <cassert>;
-import <concepts>;
 import <cstring>;
 import <memory>;
 
@@ -20,8 +19,8 @@ namespace RDP
 		};
 
 		bool Initialize(Implementation rdp_implementation);
-		template<std::integral Int> Int ReadReg(u32 addr);
-		template<std::integral Int> void WriteReg(u32 addr, Int data);
+		s32 ReadWord(u32 addr);
+		void WriteWord(u32 addr, s32 data);
 
 		std::unique_ptr<RDPImplementation> implementation;
 	}
@@ -30,26 +29,24 @@ namespace RDP
 		DMEM, RDRAM
 	};
 
-	struct StatusReg
-	{
-		u32 dmem_dma_status : 1;
-		u32 freeze_status : 1;
-		u32 flush_status : 1;
-		u32 start_gclk : 1;
-		u32 tmem_busy : 1;
-		u32 pipe_busy : 1;
-		u32 command_busy : 1;
-		u32 command_buffer_busy : 1;
-		u32 dma_busy : 1;
-		u32 end_valid : 1;
-		u32 start_valid : 1;
-		u32 : 21;
-	};
-
 	struct
 	{
 		u32 start, end, current;
-		StatusReg status;
+		struct
+		{
+			u32 dmem_dma_status : 1;
+			u32 freeze_status : 1;
+			u32 flush_status : 1;
+			u32 start_gclk : 1;
+			u32 tmem_busy : 1;
+			u32 pipe_busy : 1;
+			u32 command_busy : 1;
+			u32 command_buffer_busy : 1;
+			u32 dma_busy : 1;
+			u32 end_valid : 1;
+			u32 start_valid : 1;
+			u32 : 21;
+		} status;
 		u32 clock, bufbusy, pipebusy, tmem;
 	} dp;
 

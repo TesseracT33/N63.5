@@ -17,31 +17,23 @@ namespace RDRAM
 		u8* GetPointerToMemory(u32 addr = 0);
 		size_t GetSize();
 
-		/* $0000'0000 - $0x003F'FFFF */
-		template<std::integral Int>
-		Int ReadStandardRegion(u32 addr);
-
-		/* $0040'0000 - $007F'FFFF */
-		template<std::integral Int>
-		Int ReadExpandedRegion(u32 addr);
+		/* 0 - $7F'FFFF */
+		template<std::signed_integral Int>
+		Int Read(u32 addr);
 
 		/* $03F0'0000 - $03FF'FFFF */
-		template<std::integral Int>
+		template<std::signed_integral Int>
 		Int ReadRegisterRegion(u32 addr);
 
 		u64 RspReadCommandByteswapped(u32 addr);
 
-		/* $0000'0000 - $0x003F'FFFF */
-		template<size_t number_of_bytes>
-		void WriteStandardRegion(u32 addr, auto data);
-
-		/* $0040'0000 - $007F'FFFF */
-		template<size_t number_of_bytes>
-		void WriteExpandedRegion(u32 addr, auto data);
+		/* 0 - $7F'FFFF */
+		template<size_t num_bytes>
+		void Write(u32 addr, std::signed_integral auto data);
 
 		/* $03F0'0000 - $03FF'FFFF */
-		template<size_t number_of_bytes>
-		void WriteRegisterRegion(u32 addr, auto data);
+		template<size_t num_bytes>
+		void WriteRegisterRegion(u32 addr, std::signed_integral auto data);
 	}
 
 	constexpr size_t rdram_standard_size = 0x40'0000;

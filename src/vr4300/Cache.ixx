@@ -29,9 +29,13 @@ namespace VR4300
 
 	void Cache(u32 instr_code);
 	void FillCacheLine(auto& cache_line, u32 phys_addr);
-	template<std::integral Int, Memory::Operation> Int ReadCacheableArea(u32 phys_addr);
-	template<size_t number_of_bytes> void WriteCacheableArea(u32 phys_addr, auto data);
 	void WritebackCacheLine(auto& cache_line, u32 new_phys_addr);
+
+	template<std::signed_integral Int, Memory::Operation>
+	Int ReadCacheableArea(u32 phys_addr);
+
+	template<size_t num_bytes>
+	void WriteCacheableArea(u32 phys_addr, std::signed_integral auto data);
 
 	/* TODO: making these anything but 0 makes NM64 not get to the title screen */
 	constexpr uint cache_hit_read_cycle_delay = 0;

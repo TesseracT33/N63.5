@@ -6,8 +6,6 @@ import N64;
 import Scheduler;
 import UserMessage;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace AI
 {
 	void Initialize()
@@ -37,8 +35,7 @@ namespace AI
 	}
 
 
-	template<std::integral Int>
-	Int Read(const u32 addr)
+	s32 ReadWord(u32 addr)
 	{
 		ai.status = 1 << 20 | 1 << 24;
 		ai.status |= (dma_count > 1);
@@ -48,7 +45,7 @@ namespace AI
 		auto offset = (addr & 0xF) >> 2;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&ai) + offset, 4);
-		return Int(ret);
+		return ret;
 	}
 
 
@@ -71,12 +68,10 @@ namespace AI
 	}
 
 
-	template<size_t number_of_bytes>
-	void Write(const u32 addr, const auto data)
+	void WriteWord(u32 addr, s32 data)
 	{
 		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
 		u32 offset = addr >> 2 & 7;
-		auto word = static_cast<s32>(data);
 
 		enum RegOffset {
 			DramAddr, Len, Control, Status, Dacrate, Bitrate
@@ -85,12 +80,12 @@ namespace AI
 		switch (offset) {
 		case RegOffset::DramAddr:
 			if (dma_count < 2) {
-				dma_count == 0 ? ai.dram_addr = word & 0xFF'FFF8 : dma_address_buffer = word & 0xFF'FFF8;
+				dma_count == 0 ? ai.dram_addr = data & 0xFF'FFF8 : dma_address_buffer = data & 0xFF'FFF8;
 			}
 			break;
 
 		case RegOffset::Len: {
-			s32 length = word & 0x3'FFF8;
+			s32 length = data & 0x3'FFF8;
 			if (dma_count < 2 && length > 0) {
 				dma_count == 0 ? ai.len = length : dma_length_buffer = length;
 				++dma_count;
@@ -100,7 +95,7 @@ namespace AI
 
 		case RegOffset::Control: {
 			auto prev_control = ai.control;
-			ai.control = word & 1;
+			ai.control = data & 1;
 			if (prev_control ^ ai.control) {
 				if (ai.control) {
 					Scheduler::AddEvent(Scheduler::EventType::AudioSample, dac.period, Sample);
@@ -116,22 +111,18 @@ namespace AI
 			break;
 
 		case RegOffset::Dacrate:
-			ai.dacrate = word & 0x3FFF;
+			ai.dacrate = data & 0x3FFF;
 			dac.frequency = std::max(1u, N64::cpu_cycles_per_second / (ai.dacrate + 1));
 			dac.period = N64::cpu_cycles_per_second / dac.frequency;
 			Scheduler::ChangeEventTime(Scheduler::EventType::AudioSample, dac.period);
 			break;
 
 		case RegOffset::Bitrate:
-			ai.bitrate = word & 0xF;
+			ai.bitrate = data & 0xF;
 			break;
 
 		default:
 			break;
 		}
 	}
-
-
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32);
 }

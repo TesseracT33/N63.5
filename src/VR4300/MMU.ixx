@@ -65,11 +65,11 @@ namespace VR4300
 	template<Memory::Operation> u32 VirtualToPhysicalAddressKernelMode64(u64, bool&);
 	template<Memory::Operation> u32 VirtualToPhysicalAddressTlb(u64);
 
-	template<std::integral Int, Alignment alignment = Alignment::Aligned, Memory::Operation operation = Memory::Operation::Read>
+	template<std::signed_integral Int, Alignment alignment = Alignment::Aligned, Memory::Operation operation = Memory::Operation::Read>
 	Int ReadVirtual(u64 virtual_address);
 
-	template<std::integral Int, Alignment alignment = Alignment::Aligned>
-	void WriteVirtual(u64 virtual_address, Int data);
+	template<Alignment alignment = Alignment::Aligned>
+	void WriteVirtual(u64 virtual_address, std::signed_integral auto data);
 
 	u32 FetchInstruction(u64 virtual_address);
 	void InitializeMMU();

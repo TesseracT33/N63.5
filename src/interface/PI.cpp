@@ -4,8 +4,6 @@ import DMA;
 import Memory;
 import MI;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace PI
 {
 	void ClearStatusFlag(StatusFlag status_flag)
@@ -20,13 +18,12 @@ namespace PI
 	}
 
 
-	template<std::integral Int>
-	Int Read(const u32 addr)
+	s32 ReadWord(u32 addr)
 	{
 		const u32 offset = (addr >> 2) & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&pi) + offset, 4);
-		return Int(ret);
+		return ret;
 	}
 
 
@@ -36,11 +33,8 @@ namespace PI
 	}
 
 
-	template<size_t number_of_bytes>
-	void Write(const u32 addr, const auto data)
+	void WriteWord(u32 addr, s32 data)
 	{
-		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
-		auto word = static_cast<s32>(data);
 		u32 offset = (addr >> 2) & 0xF;
 
 		enum RegOffset {
@@ -52,15 +46,15 @@ namespace PI
 		switch (offset) 
 		{
 		case RegOffset::DramAddr:
-			pi.dram_addr = word;
+			pi.dram_addr = data;
 			break;
 
 		case RegOffset::CartAddr:
-			pi.cart_addr = word;
+			pi.cart_addr = data;
 			break;
 
 		case RegOffset::RdLen:
-			pi.rd_len = word;
+			pi.rd_len = data;
 			/* Initialize DMA transfer */
 			DMA::Init<DMA::Type::PI, DMA::Location::RDRAM, DMA::Location::Cartridge>(pi.rd_len + 1, pi.dram_addr, pi.cart_addr);
 			SetStatusFlag(StatusFlag::DmaBusy);
@@ -69,7 +63,7 @@ namespace PI
 			break;
 
 		case RegOffset::WrLen:
-			pi.wr_len = word;
+			pi.wr_len = data;
 			/* Initialize DMA transfer */
 			DMA::Init<DMA::Type::PI, DMA::Location::Cartridge, DMA::Location::RDRAM>(pi.wr_len + 1, pi.cart_addr, pi.dram_addr);
 			SetStatusFlag(StatusFlag::DmaBusy);
@@ -81,13 +75,13 @@ namespace PI
 		{
 			constexpr static s32 reset_dma_mask = 0x01;
 			constexpr static s32 clear_interrupt_mask = 0x02;
-			if (word & reset_dma_mask) {
+			if (data & reset_dma_mask) {
 				/* Reset the DMA controller and stop any transfer being done */
 				pi.status = 0;
 				MI::ClearInterruptFlag(MI::InterruptType::PI);
 
 			}
-			if (word & clear_interrupt_mask) {
+			if (data & clear_interrupt_mask) {
 				/* Clear Interrupt */
 				ClearStatusFlag(StatusFlag::DmaCompleted);
 				MI::ClearInterruptFlag(MI::InterruptType::PI);
@@ -99,8 +93,4 @@ namespace PI
 			break;
 		}
 	}
-
-
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32);
 }

@@ -82,7 +82,7 @@ namespace VR4300
 		for (u64 i = 0; i < 0x1000; i += 4) {
 			u64 src_addr = 0xFFFF'FFFF'B000'0000 + i;
 			u64 dst_addr = 0xFFFF'FFFF'A400'0000 + i;
-			WriteVirtual<u32>(dst_addr, ReadVirtual<u32>(src_addr));
+			WriteVirtual(dst_addr, ReadVirtual<s32>(src_addr));
 		}
 		pc = 0xFFFF'FFFF'A400'0040;
 	}

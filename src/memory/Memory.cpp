@@ -8,92 +8,113 @@ import MI;
 import PI;
 import PIF;
 import RDRAM;
+import RI;
 import RSP;
 import SI;
 import VI;
 import VR4300;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace Memory
 {
+#define READ_INTERFACE(INTERFACE, INT, ADDR) [&] {                         \
+if constexpr (sizeof(INT) == 4) {                                          \
+	if constexpr (log_cpu_memory) {                                        \
+		io_location = #INTERFACE;                                          \
+	}                                                                      \
+	return INTERFACE::ReadWord(ADDR);                                      \
+}                                                                          \
+else {                                                                     \
+	Logging::LogMisc(std::format(                                          \
+		"Attempted to read IO region at address ${:08X} for sized int {}", \
+		ADDR, sizeof(INT)));                                               \
+	return INT{};                                                          \
+}                                                                          \
+}()
+
+
+#define WRITE_INTERFACE(INTERFACE, NUM_BYTES, ADDR, DATA)                   \
+if constexpr (NUM_BYTES == 4) {                                             \
+	if constexpr (log_cpu_memory) {                                         \
+		io_location = #INTERFACE;                                           \
+	}                                                                       \
+	INTERFACE::WriteWord(ADDR, DATA);                                       \
+}                                                                           \
+else {                                                                      \
+	Logging::LogMisc(std::format(                                           \
+		"Attempted to write IO region at address ${:08X} for sized int {}", \
+		ADDR, NUM_BYTES));                                                  \
+}
+
 	void Initialize()
 	{
 		ReloadPageTables();
 	}
 
 
-	template<std::integral Int, Memory::Operation operation>
-	Int ReadPhysical(u32 physical_address)
-	{
-		/* Precondition: 'physical_address' is aligned according to the size of 'Int' */
-		u32 page = physical_address >> 16;
+	template<std::signed_integral Int, Memory::Operation operation>
+	Int ReadPhysical(u32 addr)
+	{ /* Precondition: 'addr' is aligned according to the size of 'Int' */
+		u32 page = addr >> 16;
 		u8* ptr = read_page_table[page];
 		Int value = [&] {
-			if (ptr != nullptr) {
+			if (ptr) {
 				Int ret;
-				std::memcpy(&ret, ptr + (physical_address & 0xFFFF), sizeof(Int));
+				std::memcpy(&ret, ptr + (addr & 0xFFFF), sizeof(Int));
 				return std::byteswap(ret);
 			}
 			else if (page >= 0x03F0 && page <= 0x04FF) {
-				switch (((physical_address >> 20) - 0x03F) & 0xF) {
+				switch (((addr >> 20) - 0x03F) & 0xF) {
 				case 0: /* $03F0'0000 - $03FF'FFFF */
-					return Int(0);
+					return Int{};
 
 				case 1: /* $0400'0000 - $040F'FFFF */
-					return RSP::ReadReg<Int>(physical_address);
+					return RSP::ReadMemoryCpu<Int>(addr);
 
 				case 2: /* $0410'0000 - $041F'FFFF */
-					return Int(0);
+					return Int{};
 
 				case 3: /* $0420'0000 - $042F'FFFF */
-					return Int(0);
+					return Int{};
 
 				case 4: /* $0430'0000 - $043F'FFFF */
-					if constexpr (log_cpu_memory) io_location = "MI";
-					return MI::Read<Int>(physical_address);
+					return READ_INTERFACE(MI, Int, addr);
 
 				case 5: /* $0440'0000 - $044F'FFFF */
-					if constexpr (log_cpu_memory) io_location = "VI";
-					return VI::Read<Int>(physical_address);
+					return READ_INTERFACE(VI, Int, addr);
 
 				case 6: /* $0450'0000 - $045F'FFFF */
-					if constexpr (log_cpu_memory) io_location = "AI";
-					return AI::Read<Int>(physical_address);
+					return READ_INTERFACE(AI, Int, addr);
 
 				case 7: /* $0460'0000 - $046F'FFFF */
-					if constexpr (log_cpu_memory) io_location = "PI";
-					return PI::Read<Int>(physical_address);
+					return READ_INTERFACE(PI, Int, addr);
 
 				case 8: /* $0470'0000 - $047F'FFFF */
-					if constexpr (log_cpu_memory) io_location = "RI";
-					return Int(0);
+					return READ_INTERFACE(RI, Int, addr);
 
 				case 9: /* $0480'0000 - $048F'FFFF */
-					if constexpr (log_cpu_memory) io_location = "SI";
-					return SI::Read<Int>(physical_address);
+					return READ_INTERFACE(SI, Int, addr);
 
 				default: /* $0490'0000 - $04EF'FFFF */
-					return Int(0);
+					return Int{};
 				}
-				return Int(0);
+				return Int{};
 			}
 			else {
-				return Int(0);
+				return Int{};
 			}
 		}(); 
 		if constexpr (operation == Memory::Operation::InstrFetch) {
 			if constexpr (log_cpu_instructions) {
-				VR4300::last_instr_fetch_phys_addr = physical_address;
+				VR4300::last_instr_fetch_phys_addr = addr;
 			}
 		}
 		else {
 			if constexpr (log_cpu_memory) {
-				if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000) {
-					Logging::LogIORead(physical_address, value, io_location);
+				if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
+					Logging::LogIORead(addr, value, io_location);
 				}
 				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-					Logging::LogMemoryRead(physical_address, value);
+					Logging::LogMemoryRead(addr, value);
 				}
 			}
 		}
@@ -128,24 +149,22 @@ namespace Memory
 	}
 
 
-	template<size_t number_of_bytes>
-	void WritePhysical(u32 physical_address, auto data)
-	{
-		/* Precondition: 'physical_address' is aligned according to the size of 'Int' */
-		u32 page = physical_address >> 16;
+	template<size_t num_bytes>
+	void WritePhysical(u32 addr, std::signed_integral auto data)
+	{ /* Precondition: 'addr' is aligned according to the size of 'Int' */
+		u32 page = addr >> 16;
 		u8* ptr = write_page_table[page];
-		if (ptr != nullptr) {
+		if (ptr) {
 			data = std::byteswap(data);
-			std::memcpy(ptr + (physical_address & 0xFFFF), &data, number_of_bytes);
+			std::memcpy(ptr + (addr & 0xFFFF), &data, num_bytes);
 		}
 		else if (page >= 0x03F0 && page <= 0x04FF) {
-			switch (((physical_address >> 20) - 0x03F) & 0xF) {
+			switch (((addr >> 20) - 0x03F) & 0xF) {
 			case 0: /* $03F0'0000 - $03FF'FFFF */
 				break;
 
 			case 1: /* $0400'0000 - $040F'FFFF */
-				RSP::WriteReg<number_of_bytes>(physical_address, data);
-				break;
+				RSP::WriteMemoryCpu<num_bytes>(addr, data); break;
 
 			case 2: /* $0410'0000 - $041F'FFFF */
 				break;
@@ -154,62 +173,60 @@ namespace Memory
 				break;
 
 			case 4: /* $0430'0000 - $043F'FFFF */
-				if constexpr (log_cpu_memory) io_location = "MI";
-				MI::Write<number_of_bytes>(physical_address, data);
-				break;
+				WRITE_INTERFACE(MI, num_bytes, addr, data); break;
 
 			case 5: /* $0440'0000 - $044F'FFFF */
-				if constexpr (log_cpu_memory) io_location = "VI";
-				VI::Write<number_of_bytes>(physical_address, data);
-				break;
+				WRITE_INTERFACE(VI, num_bytes, addr, data); break;
 
 			case 6: /* $0450'0000 - $045F'FFFF */
-				if constexpr (log_cpu_memory) io_location = "AI";
-				AI::Write<number_of_bytes>(physical_address, data);
-				break;
+				WRITE_INTERFACE(AI, num_bytes, addr, data); break;
 
 			case 7: /* $0460'0000 - $046F'FFFF */
-				if constexpr (log_cpu_memory) io_location = "PI";
-				PI::Write<number_of_bytes>(physical_address, data);
-				break;
+				WRITE_INTERFACE(PI, num_bytes, addr, data); break;
 
 			case 8: /* $0470'0000 - $047F'FFFF */
-				if constexpr (log_cpu_memory) io_location = "RI";
-				break;
+				WRITE_INTERFACE(RI, num_bytes, addr, data); break;
 
 			case 9: /* $0480'0000 - $048F'FFFF */
-				if constexpr (log_cpu_memory) io_location = "SI";
-				SI::Write<number_of_bytes>(physical_address, data);
-				break;
+				WRITE_INTERFACE(SI, num_bytes, addr, data); break;
 
 			default: /* $0490'0000 - $04EF'FFFF */
 				break;
 			}
 		}
-		else if (physical_address >= 0x1FC0'0000 && physical_address <= 0x1FC0'07FF) {
-			PIF::WriteMemory<number_of_bytes>(physical_address, data);
+		else if (addr >= 0x1FC0'0000 && addr <= 0x1FC0'07FF) {
+			PIF::WriteMemory<num_bytes>(addr, data);
 		}
 		if constexpr (log_cpu_memory) {
-			if (physical_address >= 0x0430'0000 && physical_address < 0x0490'0000) {
-				Logging::LogIOWrite(physical_address, data, io_location);
+			if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
+				Logging::LogIOWrite(addr, data, io_location);
 			}
 			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-				Logging::LogMemoryWrite(physical_address, data);
+				Logging::LogMemoryWrite(addr, data);
 			}
 		}
 	}
 
 
-	template u8 ReadPhysical<u8, Memory::Operation::Read>(u32);
+	template s32 ReadPhysical<s32, Memory::Operation::InstrFetch>(u32);
 	template s8 ReadPhysical<s8, Memory::Operation::Read>(u32);
-	template u16 ReadPhysical<u16, Memory::Operation::Read>(u32);
 	template s16 ReadPhysical<s16, Memory::Operation::Read>(u32);
-	template u32 ReadPhysical<u32, Memory::Operation::Read>(u32);
 	template s32 ReadPhysical<s32, Memory::Operation::Read>(u32);
-	template u64 ReadPhysical<u64, Memory::Operation::Read>(u32);
 	template s64 ReadPhysical<s64, Memory::Operation::Read>(u32);
-	template u32 ReadPhysical<u32, Memory::Operation::InstrFetch>(u32);
 
-
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WritePhysical, u32)
+	template void WritePhysical<1>(u32, s8);
+	template void WritePhysical<1>(u32, s16);
+	template void WritePhysical<1>(u32, s32);
+	template void WritePhysical<1>(u32, s64);
+	template void WritePhysical<2>(u32, s16);
+	template void WritePhysical<2>(u32, s32);
+	template void WritePhysical<2>(u32, s64);
+	template void WritePhysical<3>(u32, s32);
+	template void WritePhysical<3>(u32, s64);
+	template void WritePhysical<4>(u32, s32);
+	template void WritePhysical<4>(u32, s64);
+	template void WritePhysical<5>(u32, s64);
+	template void WritePhysical<6>(u32, s64);
+	template void WritePhysical<7>(u32, s64);
+	template void WritePhysical<8>(u32, s64);
 }

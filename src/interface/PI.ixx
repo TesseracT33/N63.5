@@ -3,7 +3,6 @@ export module PI; /* Peripheral Interface */
 import Util;
 
 import <algorithm>;
-import <concepts>;
 import <cstring>;
 import <utility>;
 
@@ -21,13 +20,9 @@ namespace PI
 
 		void ClearStatusFlag(StatusFlag);
 		void Initialize();
+		s32 ReadWord(u32 addr);
 		void SetStatusFlag(StatusFlag);
-
-		template<std::integral Int>
-		Int Read(u32 addr);
-
-		template<size_t number_of_bytes>
-		void Write(u32 addr, auto data);
+		void WriteWord(u32 addr, s32 data);
 	}
 
 	struct

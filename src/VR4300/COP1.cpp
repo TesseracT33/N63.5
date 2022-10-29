@@ -297,7 +297,7 @@ namespace VR4300
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose register ft to the
 			   memory position specified by the address. */
-			WriteVirtual<s32>(address, fpr.Get<s32>(ft));
+			WriteVirtual(address, fpr.Get<s32>(ft));
 		}
 		else if constexpr (instr == SDC1) {
 			/* Store Doubleword From FPU;
@@ -305,7 +305,7 @@ namespace VR4300
 			   an address. Stores the contents of the FPU general purpose registers ft and
 			   ft+1 to the memory position specified by the address when FR = 0, and the
 			   contents of the FPU general purpose register ft when FR = 1. */
-			WriteVirtual<s64>(address, fpr.Get<s64>(ft));
+			WriteVirtual(address, fpr.Get<s64>(ft));
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);

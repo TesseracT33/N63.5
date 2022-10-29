@@ -34,7 +34,7 @@ namespace RSP
 			else if constexpr (instr == LBU) {
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadDMEM<u8>(address);
+				return u8(ReadDMEM<s8>(address));
 			}
 			else if constexpr (instr == LH) {
 				/* Load halfword;
@@ -44,7 +44,7 @@ namespace RSP
 			else if constexpr (instr == LHU) {
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadDMEM<u16>(address);
+				return u16(ReadDMEM<s16>(address));
 			}
 			else if constexpr (instr == LW || instr == LWU) {
 				/* Load Word (Unsigned);
@@ -466,13 +466,13 @@ namespace RSP
 			/* Move From System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			gpr.Set(rt, ReadReg<s32>(sp_reg_addr));
+			gpr.Set(rt, ReadReg(sp_reg_addr));
 		}
 		else if constexpr (instr == MTC0) {
 			/* Move To System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			WriteReg<4>(sp_reg_addr, gpr[rt]);
+			WriteReg(sp_reg_addr, gpr[rt]);
 		}
 		else {
 			static_assert(AlwaysFalse<instr>, "\"RSP Move\" template function called, but no matching move instruction was found.");

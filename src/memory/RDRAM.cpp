@@ -2,8 +2,6 @@ module RDRAM;
 
 import Memory;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace RDRAM
 {
 	size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr)
@@ -26,33 +24,19 @@ namespace RDRAM
 	}
 
 
-	/* $0000'0000 - $0003F'FFFF */
-	template<std::integral Int>
-	Int ReadStandardRegion(u32 addr)
+	/* 0 - $7F'FFFF */
+	template<std::signed_integral Int>
+	Int Read(u32 addr)
 	{ /* CPU precondition: addr is always aligned */
+		static_assert(sizeof(rdram) >= 0x80'0000);
 		Int ret;
 		std::memcpy(&ret, rdram + addr, sizeof(Int));
 		return std::byteswap(ret);
 	}
 
 
-	/* $0040'0000 - $007F'FFFF */
-	template<std::integral Int>
-	Int ReadExpandedRegion(u32 addr)
-	{ /* CPU precondition: addr is always aligned */
-		if (sizeof(rdram) == rdram_expanded_size) {
-			Int ret;
-			std::memcpy(&ret, rdram + addr, sizeof(Int));
-			return std::byteswap(ret);
-		}
-		else {
-			return Int(0);
-		}
-	}
-
-
 	/* $03F0'0000 - $03FF'FFFF */
-	template<std::integral Int>
+	template<std::signed_integral Int>
 	Int ReadRegisterRegion(u32 addr)
 	{ /* CPU precondition: addr is always aligned */
 		/* TODO */
@@ -71,38 +55,44 @@ namespace RDRAM
 	}
 
 
-	/* $0000'0000 - $0003F'FFFF */
-	template<size_t number_of_bytes>
-	void WriteStandardRegion(u32 addr, auto data)
+	/* 0 - $7F'FFFF */
+	template<size_t num_bytes>
+	void Write(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		data = std::byteswap(data);
-		std::memcpy(rdram + addr, &data, number_of_bytes);
-	}
-
-
-	/* $0040'0000 - $007F'FFFF */
-	template<size_t number_of_bytes>
-	void WriteExpandedRegion(u32 addr, auto data)
-	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
-		if (sizeof(rdram) == rdram_expanded_size) {
-			data = std::byteswap(data);
-			std::memcpy(rdram + addr, &data, number_of_bytes);
-		}
+		std::memcpy(rdram + addr, &data, num_bytes);
 	}
 
 
 	/* $03F0'0000 - $03FF'FFFF */
-	template<size_t number_of_bytes>
-	void WriteRegisterRegion(const u32 addr, auto data)
+	template< size_t num_bytes>
+	void WriteRegisterRegion(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		/* TODO */
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadStandardRegion, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadExpandedRegion, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadRegisterRegion, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteStandardRegion, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteExpandedRegion, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteRegisterRegion, u32);
+	template s8 Read<s8>(u32);
+	template s16 Read<s16>(u32);
+	template s32 Read<s32>(u32);
+	template s64 Read<s64>(u32);
+	template s8 ReadRegisterRegion<s8>(u32);
+	template s16 ReadRegisterRegion<s16>(u32);
+	template s32 ReadRegisterRegion<s32>(u32);
+	template s64 ReadRegisterRegion<s64>(u32);
+	template void Write<1>(u32, s8);
+	template void Write<1>(u32, s16);
+	template void Write<1>(u32, s32);
+	template void Write<1>(u32, s64);
+	template void Write<2>(u32, s16);
+	template void Write<2>(u32, s32);
+	template void Write<2>(u32, s64);
+	template void Write<3>(u32, s32);
+	template void Write<3>(u32, s64);
+	template void Write<4>(u32, s32);
+	template void Write<4>(u32, s64);
+	template void Write<5>(u32, s64);
+	template void Write<6>(u32, s64);
+	template void Write<7>(u32, s64);
+	template void Write<8>(u32, s64);
 }

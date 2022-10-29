@@ -5,18 +5,16 @@ import UserMessage;
 
 import Util;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace Cartridge
 {
-	size_t GetNumberOfBytesUntilROMEnd(const u32 addr)
+	size_t GetNumberOfBytesUntilROMEnd(u32 addr)
 	{
 		u32 offset = (addr & 0x0FFF'FFFF) % rom.size();
 		return rom.size() - offset;
 	}
 
 
-	u8* GetPointerToROM(const u32 addr)
+	u8* GetPointerToROM(u32 addr)
 	{
 		if (rom.size() == 0) {
 			return nullptr;
@@ -26,7 +24,7 @@ namespace Cartridge
 	}
 
 
-	u8* GetPointerToSRAM(const u32 addr)
+	u8* GetPointerToSRAM(u32 addr)
 	{
 		if (sram.size() == 0) {
 			return nullptr;
@@ -61,8 +59,8 @@ namespace Cartridge
 	}
 
 
-	template<std::integral Int>
-	Int ReadROM(const u32 addr)
+	template<std::signed_integral Int>
+	Int ReadROM(u32 addr)
 	{
 		Int ret;
 		std::memcpy(&ret, GetPointerToROM(addr), sizeof(Int));
@@ -70,8 +68,8 @@ namespace Cartridge
 	}
 
 
-	template<std::integral Int>
-	Int ReadSRAM(const u32 addr)
+	template<std::signed_integral Int>
+	Int ReadSRAM(u32 addr)
 	{ /* CPU precondition: addr is always aligned */
 		if (sram.size() == 0) {
 			return 0;
@@ -84,25 +82,37 @@ namespace Cartridge
 	}
 
 
-	template<size_t number_of_bytes>
-	void WriteROM(const u32 addr, const auto data)
-	{
-		assert(false);
-	}
-
-
-	template<size_t number_of_bytes>
-	void WriteSRAM(const u32 addr, auto data)
+	template<size_t num_bytes>
+	void WriteSRAM(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		if (sram.size() != 0) {
 			data = std::byteswap(data);
-			std::memcpy(GetPointerToSRAM(addr), &data, number_of_bytes);
+			std::memcpy(GetPointerToSRAM(addr), &data, num_bytes);
 		}
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadROM, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadSRAM, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteROM, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteSRAM, u32)
+	template s8 ReadROM<s8>(u32);
+	template s16 ReadROM<s16>(u32);
+	template s32 ReadROM<s32>(u32);
+	template s64 ReadROM<s64>(u32);
+	template s8 ReadSRAM<s8>(u32);
+	template s16 ReadSRAM<s16>(u32);
+	template s32 ReadSRAM<s32>(u32);
+	template s64 ReadSRAM<s64>(u32);
+	template void WriteSRAM<1>(u32, s8);
+	template void WriteSRAM<1>(u32, s16);
+	template void WriteSRAM<1>(u32, s32);
+	template void WriteSRAM<1>(u32, s64);
+	template void WriteSRAM<2>(u32, s16);
+	template void WriteSRAM<2>(u32, s32);
+	template void WriteSRAM<2>(u32, s64);
+	template void WriteSRAM<3>(u32, s32);
+	template void WriteSRAM<3>(u32, s64);
+	template void WriteSRAM<4>(u32, s32);
+	template void WriteSRAM<4>(u32, s64);
+	template void WriteSRAM<5>(u32, s64);
+	template void WriteSRAM<6>(u32, s64);
+	template void WriteSRAM<7>(u32, s64);
+	template void WriteSRAM<8>(u32, s64);
 }

@@ -44,7 +44,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void CPULoad(const u32 instr_code)
+	void CPULoad(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -76,7 +76,7 @@ namespace VR4300
 			else if constexpr (instr == LBU) {
 				/* Load Byte Unsigned;
 				   Zero-extends the contents of a byte specified by the address and loads the result to register rt. */
-				return ReadVirtual<u8>(addr);
+				return u8(ReadVirtual<s8>(addr));
 			}
 			else if constexpr (instr == LH) {
 				/* Load halfword;
@@ -86,7 +86,7 @@ namespace VR4300
 			else if constexpr (instr == LHU) {
 				/* Load Halfword Unsigned;
 				   Zero-extends the contents of a halfword specified by the address and loads the result to register rt. */
-				return ReadVirtual<u16>(addr);
+				return u16(ReadVirtual<s16>(addr));
 			}
 			else if constexpr (instr == LW) {
 				/* Load Word;
@@ -96,7 +96,7 @@ namespace VR4300
 			else if constexpr (instr == LWU) {
 				/* Load Word Unsigned;
 				   Zero-extends the contents of a word specified by the address and loads the result to register rt. */
-				return ReadVirtual<u32>(addr);
+				return u32(ReadVirtual<s32>(addr));
 			}
 			else if constexpr (instr == LWL) {
 				/* Load Word Left;
@@ -117,7 +117,7 @@ namespace VR4300
 			else if constexpr (instr == LD) {
 				/* Load Doubleword;
 				   Loads the contents of a word specified by the address to register rt. */
-				return ReadVirtual<u64>(addr);
+				return ReadVirtual<s64>(addr);
 			}
 			else if constexpr (instr == LDL) {
 				/* Load Doubleword Left;
@@ -125,7 +125,7 @@ namespace VR4300
 				   specified by the address is at the leftmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, Alignment::UnalignedLeft>(addr);
+				return ReadVirtual<s64, Alignment::UnalignedLeft>(addr);
 			}
 			else if constexpr (instr == LDR) {
 				/* Load Doubleword Right;
@@ -133,7 +133,7 @@ namespace VR4300
 				   specified by the address is at the rightmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, Alignment::UnalignedRight>(addr);
+				return ReadVirtual<s64, Alignment::UnalignedRight>(addr);
 			}
 			else if constexpr (instr == LL) {
 				/* Load Linked;
@@ -237,7 +237,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void CPUStore(const u32 instr_code)
+	void CPUStore(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -264,17 +264,17 @@ namespace VR4300
 		if constexpr (instr == SB) {
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			WriteVirtual<s8>(addr, s8(gpr[rt]));
+			WriteVirtual(addr, s8(gpr[rt]));
 		}
 		else if constexpr (instr == SH) {
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			WriteVirtual<s16>(addr, s16(gpr[rt]));
+			WriteVirtual(addr, s16(gpr[rt]));
 		}
 		else if constexpr (instr == SW) {
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			WriteVirtual<s32>(addr, s32(gpr[rt]));
+			WriteVirtual(addr, s32(gpr[rt]));
 		}
 		else if constexpr (instr == SWL)
 		{
@@ -283,7 +283,7 @@ namespace VR4300
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
 			s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (addr & 3))) - 1));
-			WriteVirtual<s32, Alignment::UnalignedLeft>(addr, data_to_write);
+			WriteVirtual<Alignment::UnalignedLeft>(addr, data_to_write);
 		}
 		else if constexpr (instr == SWR) {
 			/* Store Word Right;
@@ -291,12 +291,12 @@ namespace VR4300
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
 			s32 data_to_write = s32(gpr[rt] << (8 * (3 - (addr & 3))));
-			WriteVirtual<s32, Alignment::UnalignedRight>(addr, data_to_write);
+			WriteVirtual<Alignment::UnalignedRight>(addr, data_to_write);
 		}
 		else if constexpr (instr == SD) {
 			/* Store Doublword;
 			   Stores the contents of register rt to the memory specified by the address. */
-			WriteVirtual<s64>(addr, gpr[rt]);
+			WriteVirtual(addr, s64(gpr[rt]));
 		}
 		else if constexpr (instr == SDL) {
 			/* Store Doubleword Left;
@@ -304,7 +304,7 @@ namespace VR4300
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
 			s64 data_to_write = gpr[rt] & ~((1ll << (8 * (addr & 7))) - 1);
-			WriteVirtual<s64, Alignment::UnalignedLeft>(addr, data_to_write);
+			WriteVirtual<Alignment::UnalignedLeft>(addr, data_to_write);
 		}
 		else if constexpr (instr == SDR) {
 			/* Store Doubleword Right;
@@ -312,7 +312,7 @@ namespace VR4300
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
 			s64 data_to_write = gpr[rt] << (8 * (7 - (addr & 7)));
-			WriteVirtual<s64, Alignment::UnalignedRight>(addr, data_to_write);
+			WriteVirtual<Alignment::UnalignedRight>(addr, data_to_write);
 		}
 		else if constexpr (instr == SC) {
 			/* Store Conditional;
@@ -321,7 +321,7 @@ namespace VR4300
 			   If the LL bit is 0, does not store the contents of the word, and clears register
 			   rt to 0. */
 			if (ll_bit == 1) {
-				WriteVirtual<s32>(addr, s32(gpr[rt]));
+				WriteVirtual(addr, s32(gpr[rt]));
 				gpr.Set(rt, 1);
 			}
 			else {
@@ -335,7 +335,7 @@ namespace VR4300
 			   If the LL bit is 0, does not store the contents of the register, and clears register
 			   rt to 0. */
 			if (ll_bit == 1) {
-				WriteVirtual<s64>(addr, gpr[rt]);
+				WriteVirtual(addr, s64(gpr[rt]));
 				gpr.Set(rt, 1);
 			}
 			else {
@@ -351,7 +351,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void ALUImmediate(const u32 instr_code)
+	void ALUImmediate(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -466,7 +466,7 @@ namespace VR4300
 	}
 
 	template<CPUInstruction instr>
-	void ALUThreeOperand(const u32 instr_code)
+	void ALUThreeOperand(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -604,7 +604,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void ALUShift(const u32 instr_code)
+	void ALUShift(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -736,7 +736,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void ALUMulDiv(const u32 instr_code)
+	void ALUMulDiv(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -890,7 +890,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void Jump(const u32 instr_code)
+	void Jump(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -947,7 +947,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void CPUBranch(const u32 instr_code)
+	void CPUBranch(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -1007,7 +1007,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void TrapThreeOperand(const u32 instr_code)
+	void TrapThreeOperand(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -1067,7 +1067,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void TrapImmediate(const u32 instr_code)
+	void TrapImmediate(u32 instr_code)
 	{
 		using enum CPUInstruction;
 
@@ -1132,7 +1132,7 @@ namespace VR4300
 
 
 	template<CPUInstruction instr>
-	void CPUMove(const u32 instr_code)
+	void CPUMove(u32 instr_code)
 	{
 		using enum CPUInstruction;
 

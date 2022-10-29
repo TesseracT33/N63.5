@@ -5,8 +5,6 @@ import UserMessage;
 
 import Util;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace PIF
 {
 	void ChallengeProtection()
@@ -59,7 +57,7 @@ namespace PIF
 	}
 
 
-	template<std::integral Int>
+	template<std::signed_integral Int>
 	Int ReadMemory(u32 addr)
 	{ /* CPU precondition: addr is aligned */
 		Int ret;
@@ -99,14 +97,14 @@ namespace PIF
 	}
 
 
-	template<size_t number_of_bytes>
-	void WriteMemory(u32 addr, auto data)
+	template<size_t num_bytes>
+	void WriteMemory(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: write does not go to the next boundary */
 		addr &= 0x7FF;
 		if (addr >= ram_start) { /* $0-$7BF: rom; $7C0-$7FF: ram */
 			data = std::byteswap(data);
-			std::memcpy(memory.data() + addr, &data, number_of_bytes);
-			if (addr + number_of_bytes > 0x7FF) {
+			std::memcpy(memory.data() + addr, &data, num_bytes);
+			if (addr + num_bytes > 0x7FF) {
 				if (memory[command_byte_index] & 0x01) {
 					RunJoybusProtocol();
 					memory[command_byte_index] &= ~0x01;
@@ -128,6 +126,23 @@ namespace PIF
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(ReadMemory, u32);
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WriteMemory, u32);
+	template s8 ReadMemory<s8>(u32);
+	template s16 ReadMemory<s16>(u32);
+	template s32 ReadMemory<s32>(u32);
+	template s64 ReadMemory<s64>(u32);
+	template void WriteMemory<1>(u32, s8);
+	template void WriteMemory<1>(u32, s16);
+	template void WriteMemory<1>(u32, s32);
+	template void WriteMemory<1>(u32, s64);
+	template void WriteMemory<2>(u32, s16);
+	template void WriteMemory<2>(u32, s32);
+	template void WriteMemory<2>(u32, s64);
+	template void WriteMemory<3>(u32, s32);
+	template void WriteMemory<3>(u32, s64);
+	template void WriteMemory<4>(u32, s32);
+	template void WriteMemory<4>(u32, s64);
+	template void WriteMemory<5>(u32, s64);
+	template void WriteMemory<6>(u32, s64);
+	template void WriteMemory<7>(u32, s64);
+	template void WriteMemory<8>(u32, s64);
 }

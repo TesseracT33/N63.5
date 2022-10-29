@@ -19,11 +19,11 @@ namespace PIF
 		u8* GetPointerToMemory(u32 address);
 		bool LoadIPL12(const std::string& path);
 
-		template<std::integral Int>
+		template<std::signed_integral Int>
 		Int ReadMemory(u32 addr);
 
-		template<size_t number_of_bytes>
-		void WriteMemory(u32 addr, auto data);
+		template<size_t num_bytes>
+		void WriteMemory(u32 addr, std::signed_integral auto data);
 	}
 
 	void ChallengeProtection();

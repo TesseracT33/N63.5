@@ -402,7 +402,6 @@
     <ClInclude Include="external\parallel-rdp-standalone\vulkan\vulkan_prerotate.hpp" />
     <ClInclude Include="external\parallel-rdp-standalone\vulkan\wsi.hpp" />
     <ClInclude Include="external\parallel-rdp-standalone\vulkan\wsi_timing.hpp" />
-    <ClInclude Include="src\EnumerateTemplateSpecializations.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />

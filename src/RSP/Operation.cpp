@@ -4,34 +4,14 @@ import :Interface;
 
 import DebugOptions;
 import DMA;
+import Logging;
 import MI;
-
-#include "../EnumerateTemplateSpecializations.h"
 
 namespace RSP
 {
 	void AdvancePipeline(u64 cycles)
 	{
 		p_cycle_counter += cycles;
-	}
-
-
-	template<std::integral Int>
-	Int CPUReadMemory(u32 addr)
-	{
-		/* CPU precondition; the address is always aligned */
-		Int ret;
-		std::memcpy(&ret, memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
-		return std::byteswap(ret);
-	}
-
-
-	template<std::size_t number_of_bytes>
-	void CPUWriteMemory(u32 addr, auto data)
-	{
-		/* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
-		data = std::byteswap(data);
-		std::memcpy(memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), &data, number_of_bytes);
 	}
 
 
@@ -79,7 +59,7 @@ namespace RSP
 	}
 
 
-	template<std::integral Int>
+	template<std::signed_integral Int>
 	Int ReadDMEM(u32 addr)
 	{
 		/* Addr may be misaligned and the read can go out of bounds */
@@ -88,6 +68,26 @@ namespace RSP
 			*((u8*)(&ret) + sizeof(Int) - i - 1) = dmem[(addr + i) & 0xFFF];
 		}
 		return ret;
+	}
+
+
+	template<std::signed_integral Int>
+	Int ReadMemoryCpu(u32 addr)
+	{ /* CPU precondition; the address is always aligned */
+		if (addr < 0x0404'0000) {
+			Int ret;
+			std::memcpy(&ret, memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
+			return std::byteswap(ret);
+		}
+		else if constexpr (sizeof(Int) == 4) {
+			return ReadReg(addr);
+		}
+		else {
+			Logging::LogMisc(std::format(
+				"Attempted to read RSP memory region at address ${:08X} for sized int {}",
+				addr, sizeof(Int)));
+			return {};
+		}
 	}
 
 
@@ -127,7 +127,7 @@ namespace RSP
 	}
 
 
-	template<std::integral Int>
+	template<std::signed_integral Int>
 	void WriteDMEM(u32 addr, Int data)
 	{
 		/* Addr may be misaligned and the write can go out of bounds */
@@ -137,20 +137,51 @@ namespace RSP
 	}
 
 
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(CPUReadMemory, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(CPUWriteMemory, u32)
+	template<size_t num_bytes>
+	void WriteMemoryCpu(u32 addr, std::signed_integral auto data)
+	{ /* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
+		if (addr < 0x0404'0000) {
+			data = std::byteswap(data);
+			std::memcpy(memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), &data, num_bytes);
+		}
+		else if constexpr (num_bytes == 4) {
+			WriteReg(addr, data);
+		}
+		else {
+			Logging::LogMisc(std::format(
+				"Attempted to write to RSP memory region at address ${:08X} for sized int {}",
+				addr, num_bytes));
+		}
+	}
 
 
-	template u8 ReadDMEM<u8>(u32);
 	template s8 ReadDMEM<s8>(u32);
-	template u16 ReadDMEM<u16>(u32);
 	template s16 ReadDMEM<s16>(u32);
-	template u32 ReadDMEM<u32>(u32);
 	template s32 ReadDMEM<s32>(u32);
-	template u64 ReadDMEM<u64>(u32);
 	template s64 ReadDMEM<s64>(u32);
-
 	template void WriteDMEM<s8>(u32, s8);
 	template void WriteDMEM<s16>(u32, s16);
 	template void WriteDMEM<s32>(u32, s32);
+	template void WriteDMEM<s64>(u32, s64);
+
+	template s8 ReadMemoryCpu<s8>(u32);
+	template s16 ReadMemoryCpu<s16>(u32);
+	template s32 ReadMemoryCpu<s32>(u32);
+	template s64 ReadMemoryCpu<s64>(u32);
+
+	template void WriteMemoryCpu<1>(u32, s8);
+	template void WriteMemoryCpu<1>(u32, s16);
+	template void WriteMemoryCpu<1>(u32, s32);
+	template void WriteMemoryCpu<1>(u32, s64);
+	template void WriteMemoryCpu<2>(u32, s16);
+	template void WriteMemoryCpu<2>(u32, s32);
+	template void WriteMemoryCpu<2>(u32, s64);
+	template void WriteMemoryCpu<3>(u32, s32);
+	template void WriteMemoryCpu<3>(u32, s64);
+	template void WriteMemoryCpu<4>(u32, s32);
+	template void WriteMemoryCpu<4>(u32, s64);
+	template void WriteMemoryCpu<5>(u32, s64);
+	template void WriteMemoryCpu<6>(u32, s64);
+	template void WriteMemoryCpu<7>(u32, s64);
+	template void WriteMemoryCpu<8>(u32, s64);
 }

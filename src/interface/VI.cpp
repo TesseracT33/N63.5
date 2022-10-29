@@ -7,8 +7,6 @@ import RDRAM;
 import RDP;
 import Scheduler;
 
-#include "../EnumerateTemplateSpecializations.h"
-
 namespace VI
 {
 	void AddInitialEvents()
@@ -28,9 +26,11 @@ namespace VI
 	void Initialize()
 	{
 		std::memset(&vi, 0, sizeof(vi));
+		vi.ctrl = 3;
+		vi.width = 320;
 		vi.v_intr = 0x3FF;
 		vi.burst = 1;
-		vi.v_sync = 0x20C;
+		vi.v_sync = 0x20D;
 		vi.h_sync = 0x15'07FF;
 
 		/* NTSC "defaults" (?) */
@@ -51,45 +51,42 @@ namespace VI
 	}
 
 
-	template<std::integral Int>
-	Int Read(const u32 addr)
-	{
-		u32 offset = (addr >> 2) & 0xF;
-		s32 ret;
-		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
-		return Int(ret);
-	}
-
-
 	const Registers& ReadAllRegisters()
 	{
 		return vi;
 	}
 
 
-	template<size_t number_of_bytes>
-	void Write(const u32 addr, const auto data)
+	s32 ReadWord(u32 addr)
 	{
 		u32 offset = (addr >> 2) & 0xF;
-		auto word = s32(data);
+		s32 ret;
+		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
+		return ret;
+	}
+
+
+	void WriteWord(u32 addr, s32 data)
+	{
+		u32 offset = (addr >> 2) & 0xF;
 
 		switch (offset) {
 		case Register::Ctrl:
-			vi.ctrl = word;
+			vi.ctrl = data;
 			/* Interlaced vs. progressive. Interlaced if bit 6 is set, otherwise progressive. */
 			num_fields = 1 + bool(vi.ctrl & 0x40);
 			break;
 
 		case Register::Origin:
-			vi.origin = word & 0x7F'FFFF;
+			vi.origin = data & 0x7F'FFFF;
 			break;
 
 		case Register::Width:
-			vi.width = word & 0xFFF;
+			vi.width = data & 0xFFF;
 			break;
 
 		case Register::VIntr:
-			vi.v_intr = word & 0x3FF; /* only bits 9-0 are writable. */
+			vi.v_intr = data & 0x3FF;
 			CheckVideoInterrupt();
 			break;
 
@@ -98,34 +95,34 @@ namespace VI
 			break;
 
 		case Register::Burst:
-			vi.burst = word & ~(3 << 30);
+			vi.burst = data & ~(3 << 30);
 			break;
 
 		case Register::VSync:
-			vi.v_sync = word & 0x3FF;
+			vi.v_sync = data & 0x3FF;
 			num_halflines = vi.v_sync >> 1;
 			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
 			Scheduler::ChangeEventTime(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline);
 			break;
 
 		case Register::HSync:
-			vi.h_sync = word & 0x1F'0FFF;
+			vi.h_sync = data & 0x1F'0FFF;
 			break;
 
 		case Register::HSyncLeap:
-			vi.h_sync_leap = word & 0x3FF'03FF;
+			vi.h_sync_leap = data & 0xFFF'0FFF;
 			break;
 
 		case Register::HVideo:
-			vi.h_video = word & 0x3FF'03FF;
+			vi.h_video = data & 0x3FF'03FF;
 			break;
 
 		case Register::VVideo:
-			vi.v_video = word & 0x3FF'03FF;
+			vi.v_video = data & 0x3FF'03FF;
 			break;
 
 		case Register::VBurst:
-			vi.v_burst = word & 0x3FF'03FF;
+			vi.v_burst = data & 0x3FF'03FF;
 			break;
 
 		case Register::XScale:
@@ -133,15 +130,11 @@ namespace VI
 			break;
 
 		case Register::YScale:
-			vi.y_scale = 0xFFF'0FFFF;
+			vi.y_scale = 0xFFF'0FFF;
 			break;
 
 		default:
 			assert(false);
 		}
 	}
-
-
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_READ(Read, u32)
-	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(Write, u32)
 }
