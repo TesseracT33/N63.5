@@ -127,7 +127,6 @@ namespace RSP
 		}
 
 		MI::SetInterruptFlag(MI::InterruptType::SP);
-		VR4300::CheckInterrupts();
 	}
 
 
@@ -151,7 +150,7 @@ namespace RSP
 			case DmaRdlen:
 				/* SP_DMA_WRLEN and SP_DMA_RDLEN both always returns the same data on read, relative to
 				the current transfer, irrespective on the direction of the transfer. */
-				return [&] {
+				return ~7 & [&] {
 					if (dma_in_progress) {
 						return in_progress_dma_type == DmaType::RdToSp
 							? sp.dma_rdlen : sp.dma_wrlen;
@@ -159,10 +158,10 @@ namespace RSP
 					else {
 						return sp.dma_rdlen;
 					}
-				}() & ~7;
+				}();
 
 			case DmaWrlen:
-				return [&] {
+				return ~7 & [&] {
 					if (dma_in_progress) {
 						return in_progress_dma_type == DmaType::RdToSp
 							? sp.dma_rdlen : sp.dma_wrlen;
@@ -170,7 +169,7 @@ namespace RSP
 					else {
 						return sp.dma_wrlen;
 					}
-				}() & ~7;
+				}();
 
 			case Status:
 				return std::bit_cast<u32>(sp.status);
@@ -183,7 +182,7 @@ namespace RSP
 
 			case Semaphore: {
 				auto ret = sp.semaphore;
-				sp.semaphore |= 1;
+				sp.semaphore = 1;
 				return ret;
 			}
 
@@ -306,7 +305,7 @@ namespace RSP
 				break;
 
 			case Semaphore:
-				sp.semaphore = data;
+				sp.semaphore = 0; /* goes against n64brew, but is according to ares */
 				break;
 
 			default:
