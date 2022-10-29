@@ -17,7 +17,9 @@ namespace VI
 
 	void CheckVideoInterrupt()
 	{
-		if ((vi.v_current & 0x3FE) == vi.v_intr) {
+		bool prev_interrupt = interrupt;
+		interrupt = (vi.v_current & 0x3FE) == vi.v_intr;
+		if (interrupt && !prev_interrupt) {
 			MI::SetInterruptFlag(MI::InterruptType::VI);
 		}
 	}

@@ -34,6 +34,7 @@ namespace VI
 
 	Registers vi;
 
+	bool interrupt;
 	uint cpu_cycles_per_halfline;
 	uint num_fields;
 	uint num_halflines;

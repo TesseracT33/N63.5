@@ -27,16 +27,9 @@ namespace VR4300
 
 	void CheckInterrupts()
 	{
-		bool interrupts_enabled = cop0_reg.status.ie;
-		if (!interrupts_enabled) {
-			return;
-		}
-		bool currently_handling_exception = cop0_reg.status.exl;
-		if (currently_handling_exception) {
-			return;
-		}
-		bool currently_handling_error = cop0_reg.status.erl;
-		if (currently_handling_error) {
+		/* on real HW, these conditions are checked every cycle */
+		if (!cop0_reg.status.ie || cop0_reg.status.exl || cop0_reg.status.erl) {
+			/* interrupts disabled, or already handling exception or error */
 			return;
 		}
 		auto interrupt_pending = cop0_reg.cause.ip;
