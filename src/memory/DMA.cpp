@@ -18,7 +18,7 @@ namespace DMA
 	size_t GetNumberOfBytesUntilMemoryEnd(u32 addr)
 	{
 		if constexpr (location == Location::Cartridge)
-			return Cartridge::GetNumberOfBytesUntilROMEnd(addr);
+			return Cartridge::GetNumberOfBytesUntilRomEnd(addr);
 		else if constexpr (location == Location::PIF)
 			return PIF::GetNumberOfBytesUntilRAMEnd(addr);
 		else if constexpr (location == Location::RDRAM)
@@ -32,7 +32,7 @@ namespace DMA
 	u8* GetPointerFromAddress(u32 addr)
 	{
 		if constexpr (location == Location::Cartridge)
-			return Cartridge::GetPointerToROM(addr);
+			return Cartridge::GetPointerToRom(addr);
 		else if constexpr (location == Location::PIF)
 			return PIF::GetPointerToRAM(addr);
 		else if constexpr (location == Location::RDRAM)

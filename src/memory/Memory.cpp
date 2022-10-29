@@ -132,8 +132,8 @@ else {                                                                      \
 			ptr = [&] {
 				if (page <= 0x003F)                        return RDRAM::GetPointerToMemory(page << 16);
 				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
-				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSRAM(page << 16);
-				else if (page >= 0x1000 && page <= 0x1FBF) return Cartridge::GetPointerToROM(page << 16);
+				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSram(page << 16);
+				else if (page >= 0x1000 && page <= 0x1FBF) return Cartridge::GetPointerToRom(page << 16);
 				else if (page == 0x1FC0)                   return PIF::GetPointerToMemory(page << 16);
 				else                                       return (u8*)nullptr;
 			}();
@@ -144,7 +144,7 @@ else {                                                                      \
 			ptr = [&] {
 				if (page <= 0x003F)                        return RDRAM::GetPointerToMemory(page << 16);
 				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
-				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSRAM(page << 16);
+				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSram(page << 16);
 				else                                       return (u8*)nullptr;
 			}();
 			++page;

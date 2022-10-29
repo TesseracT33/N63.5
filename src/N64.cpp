@@ -23,7 +23,7 @@ namespace N64
 		const std::optional<std::string>& ipl_path,
 		RDP::Implementation rdp_implementation)
 	{
-		if (!Cartridge::LoadROM(rom_path)) {
+		if (!Cartridge::LoadRom(rom_path)) {
 			return false;
 		}
 		bool hle_ipl = true;

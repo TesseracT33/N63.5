@@ -2,10 +2,12 @@ export module Cartridge;
 
 import Util;
 
+import <algorithm>;
 import <bit>;
 import <cassert>;
 import <concepts>;
 import <cstring>;
+import <format>;
 import <optional>;
 import <string>;
 import <vector>;
@@ -14,25 +16,31 @@ namespace Cartridge
 {
 	export
 	{
-		size_t GetNumberOfBytesUntilROMEnd(u32 addr);
-		u8* GetPointerToROM(u32 addr);
-		u8* GetPointerToSRAM(u32 addr);
-		bool LoadROM(const std::string& rom_path);
-		bool LoadSRAM(const std::string& ram_path);
+		size_t GetNumberOfBytesUntilRomEnd(u32 addr);
+		u8* GetPointerToRom(u32 addr);
+		u8* GetPointerToSram(u32 addr);
+		bool LoadRom(const std::string& rom_path);
+		bool LoadSram(const std::string& sram_path);
 
 		template<std::signed_integral Int>
-		Int ReadROM(u32 addr);
+		Int ReadRom(u32 addr);
 
 		template<std::signed_integral Int>
-		Int ReadSRAM(u32 addr);
+		Int ReadSram(u32 addr);
 
 		template<size_t num_bytes>
-		void WriteSRAM(u32 addr, std::signed_integral auto data);
+		void WriteSram(u32 addr, std::signed_integral auto data);
 	}
 
-	constexpr size_t rom_region_size = 0x0FC0'0000;
-	constexpr size_t sram_region_size = 0x0800'0000;
+	void AllocateSram();
+	void ResizeRomToPowerOfTwo();
 
-	std::vector<u8> rom{};
-	std::vector<u8> sram{};
+	constexpr size_t rom_region_size = 0x0FC0'0000;
+	constexpr size_t sram_size = 0x10000; 
+
+	u32 original_rom_size;
+	u32 rom_access_mask;
+
+	std::vector<u8> sram;
+	std::vector<u8> rom;
 }
