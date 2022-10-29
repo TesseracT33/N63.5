@@ -9,6 +9,7 @@ import PI;
 import PIF;
 import RDRAM;
 import RI;
+import RDP;
 import RSP;
 import SI;
 import VI;
@@ -21,7 +22,7 @@ if constexpr (sizeof(INT) == 4) {                                          \
 	if constexpr (log_cpu_memory) {                                        \
 		io_location = #INTERFACE;                                          \
 	}                                                                      \
-	return INTERFACE::ReadWord(ADDR);                                      \
+	return INTERFACE::ReadReg(ADDR);                                       \
 }                                                                          \
 else {                                                                     \
 	Logging::LogMisc(std::format(                                          \
@@ -37,7 +38,7 @@ if constexpr (NUM_BYTES == 4) {                                             \
 	if constexpr (log_cpu_memory) {                                         \
 		io_location = #INTERFACE;                                           \
 	}                                                                       \
-	INTERFACE::WriteWord(ADDR, DATA);                                       \
+	INTERFACE::WriteReg(ADDR, DATA);                                        \
 }                                                                           \
 else {                                                                      \
 	Logging::LogMisc(std::format(                                           \
@@ -62,18 +63,19 @@ else {                                                                      \
 				std::memcpy(&ret, ptr + (addr & 0xFFFF), sizeof(Int));
 				return std::byteswap(ret);
 			}
-			else if (page >= 0x03F0 && page <= 0x04FF) {
-				switch (((addr >> 20) - 0x03F) & 0xF) {
+			else if (page >= 0x3F0 && page <= 0x4FF) {
+				switch (((addr >> 20) - 0x3F) & 0xF) {
 				case 0: /* $03F0'0000 - $03FF'FFFF */
-					return Int{};
+					return READ_INTERFACE(RDRAM, Int, addr);
 
 				case 1: /* $0400'0000 - $040F'FFFF */
 					return RSP::ReadMemoryCpu<Int>(addr);
 
 				case 2: /* $0410'0000 - $041F'FFFF */
-					return Int{};
+					return READ_INTERFACE(RDP, Int, addr);
 
 				case 3: /* $0420'0000 - $042F'FFFF */
+					Logging::LogMisc(std::format("Unexpected cpu read to address ${:08X}", addr));
 					return Int{};
 
 				case 4: /* $0430'0000 - $043F'FFFF */
@@ -95,11 +97,12 @@ else {                                                                      \
 					return READ_INTERFACE(SI, Int, addr);
 
 				default: /* $0490'0000 - $04EF'FFFF */
+					Logging::LogMisc(std::format("Unexpected cpu read to address ${:08X}", addr));
 					return Int{};
 				}
-				return Int{};
 			}
 			else {
+				Logging::LogMisc(std::format("Unexpected cpu read to address ${:08X}", addr));
 				return Int{};
 			}
 		}(); 
@@ -158,19 +161,19 @@ else {                                                                      \
 			data = std::byteswap(data);
 			std::memcpy(ptr + (addr & 0xFFFF), &data, num_bytes);
 		}
-		else if (page >= 0x03F0 && page <= 0x04FF) {
-			switch (((addr >> 20) - 0x03F) & 0xF) {
+		else if (page >= 0x3F0 && page <= 0x4FF) {
+			switch (((addr >> 20) - 0x3F) & 0xF) {
 			case 0: /* $03F0'0000 - $03FF'FFFF */
-				break;
+				WRITE_INTERFACE(RDRAM, num_bytes, addr, data); break;
 
 			case 1: /* $0400'0000 - $040F'FFFF */
 				RSP::WriteMemoryCpu<num_bytes>(addr, data); break;
 
 			case 2: /* $0410'0000 - $041F'FFFF */
-				break;
+				WRITE_INTERFACE(RDP, num_bytes, addr, data); break;
 
 			case 3: /* $0420'0000 - $042F'FFFF */
-				break;
+				Logging::LogMisc(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
 
 			case 4: /* $0430'0000 - $043F'FFFF */
 				WRITE_INTERFACE(MI, num_bytes, addr, data); break;
@@ -191,11 +194,14 @@ else {                                                                      \
 				WRITE_INTERFACE(SI, num_bytes, addr, data); break;
 
 			default: /* $0490'0000 - $04EF'FFFF */
-				break;
+				Logging::LogMisc(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
 			}
 		}
-		else if (addr >= 0x1FC0'0000 && addr <= 0x1FC0'07FF) {
+		else if ((addr & 0xFFFF'F800) == 0x1FC0'0000) { /* $1FC0'0000 - $1FC0'07FF */
 			PIF::WriteMemory<num_bytes>(addr, data);
+		}
+		else {
+			Logging::LogMisc(std::format("Unexpected cpu write to address ${:08X}", addr));
 		}
 		if constexpr (log_cpu_memory) {
 			if (addr >= 0x0430'0000 && addr < 0x0490'0000) {

@@ -105,7 +105,7 @@ namespace RDP
 	}
 
 
-	void WriteWord(u32 addr, s32 data)
+	void WriteReg(u32 addr, s32 data)
 	{
 		auto ProcessCommands = [&] {
 			dp.status.dmem_dma_status

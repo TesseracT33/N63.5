@@ -18,7 +18,7 @@ namespace SI
 	}
 
 
-	s32 ReadWord(u32 addr)
+	s32 ReadReg(u32 addr)
 	{
 		u32 offset = (addr >> 2) & 7;
 		s32 ret;
@@ -33,7 +33,7 @@ namespace SI
 	}
 
 
-	void WriteWord(u32 addr, s32 data)
+	void WriteReg(u32 addr, s32 data)
 	{
 		u32 offset = (addr >> 2) & 7;
 

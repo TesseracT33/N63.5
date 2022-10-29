@@ -22,9 +22,9 @@ namespace MI
 
 		void ClearInterruptFlag(InterruptType);
 		void Initialize();
-		s32 ReadWord(u32 addr);
+		s32 ReadReg(u32 addr);
 		void SetInterruptFlag(InterruptType);
-		void WriteWord(u32 addr, s32 data);
+		void WriteReg(u32 addr, s32 data);
 	}
 
 	void ClearInterruptMask(InterruptType);

@@ -20,9 +20,9 @@ namespace SI
 
 		void ClearStatusFlag(StatusFlag);
 		void Initialize();
-		s32 ReadWord(u32 addr);
+		s32 ReadReg(u32 addr);
 		void SetStatusFlag(StatusFlag);
-		void WriteWord(u32 addr, s32 data);
+		void WriteReg(u32 addr, s32 data);
 	}
 
 	struct

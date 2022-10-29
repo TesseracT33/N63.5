@@ -35,7 +35,7 @@ namespace AI
 	}
 
 
-	s32 ReadWord(u32 addr)
+	s32 ReadReg(u32 addr)
 	{
 		ai.status = 1 << 20 | 1 << 24;
 		ai.status |= (dma_count > 1);
@@ -68,7 +68,7 @@ namespace AI
 	}
 
 
-	void WriteWord(u32 addr, s32 data)
+	void WriteReg(u32 addr, s32 data)
 	{
 		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
 		u32 offset = addr >> 2 & 7;

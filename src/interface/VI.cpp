@@ -57,7 +57,7 @@ namespace VI
 	}
 
 
-	s32 ReadWord(u32 addr)
+	s32 ReadReg(u32 addr)
 	{
 		u32 offset = (addr >> 2) & 0xF;
 		s32 ret;
@@ -66,7 +66,7 @@ namespace VI
 	}
 
 
-	void WriteWord(u32 addr, s32 data)
+	void WriteReg(u32 addr, s32 data)
 	{
 		u32 offset = (addr >> 2) & 0xF;
 

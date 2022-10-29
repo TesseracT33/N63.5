@@ -22,8 +22,7 @@ namespace RDRAM
 		Int Read(u32 addr);
 
 		/* $03F0'0000 - $03FF'FFFF */
-		template<std::signed_integral Int>
-		Int ReadRegisterRegion(u32 addr);
+		s32 ReadReg(u32 addr);
 
 		u64 RspReadCommandByteswapped(u32 addr);
 
@@ -32,8 +31,7 @@ namespace RDRAM
 		void Write(u32 addr, std::signed_integral auto data);
 
 		/* $03F0'0000 - $03FF'FFFF */
-		template<size_t num_bytes>
-		void WriteRegisterRegion(u32 addr, std::signed_integral auto data);
+		void WriteReg(u32 addr, s32 data);
 	}
 
 	constexpr size_t rdram_standard_size = 0x40'0000;

@@ -19,8 +19,8 @@ namespace RDP
 		};
 
 		bool Initialize(Implementation rdp_implementation);
-		s32 ReadWord(u32 addr);
-		void WriteWord(u32 addr, s32 data);
+		s32 ReadReg(u32 addr);
+		void WriteReg(u32 addr, s32 data);
 
 		std::unique_ptr<RDPImplementation> implementation;
 	}

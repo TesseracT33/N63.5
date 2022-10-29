@@ -30,7 +30,7 @@ namespace MI
 	}
 
 
-	s32 ReadWord(u32 addr)
+	s32 ReadReg(u32 addr)
 	{
 		u32 offset = (addr & 0xF) >> 2;
 		s32 ret;
@@ -57,7 +57,7 @@ namespace MI
 	}
 
 
-	void WriteWord(u32 addr, s32 data)
+	void WriteReg(u32 addr, s32 data)
 	{
 		u32 offset = (addr & 0xF) >> 2;
 

@@ -36,11 +36,10 @@ namespace RDRAM
 
 
 	/* $03F0'0000 - $03FF'FFFF */
-	template<std::signed_integral Int>
-	Int ReadRegisterRegion(u32 addr)
-	{ /* CPU precondition: addr is always aligned */
+	s32 ReadReg(u32 addr)
+	{
 		/* TODO */
-		return Int(0);
+		return 0;
 	}
 
 
@@ -65,9 +64,8 @@ namespace RDRAM
 
 
 	/* $03F0'0000 - $03FF'FFFF */
-	template< size_t num_bytes>
-	void WriteRegisterRegion(u32 addr, std::signed_integral auto data)
-	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
+	void WriteReg(u32 addr, s32 data)
+	{
 		/* TODO */
 	}
 
@@ -76,10 +74,6 @@ namespace RDRAM
 	template s16 Read<s16>(u32);
 	template s32 Read<s32>(u32);
 	template s64 Read<s64>(u32);
-	template s8 ReadRegisterRegion<s8>(u32);
-	template s16 ReadRegisterRegion<s16>(u32);
-	template s32 ReadRegisterRegion<s32>(u32);
-	template s64 ReadRegisterRegion<s64>(u32);
 	template void Write<1>(u32, s8);
 	template void Write<1>(u32, s16);
 	template void Write<1>(u32, s32);

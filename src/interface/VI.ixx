@@ -25,8 +25,8 @@ namespace VI
 		void AddInitialEvents();
 		void Initialize();
 		const Registers& ReadAllRegisters();
-		s32 ReadWord(u32 addr);
-		void WriteWord(u32 addr, s32 data);
+		s32 ReadReg(u32 addr);
+		void WriteReg(u32 addr, s32 data);
 	}
 
 	void CheckVideoInterrupt();
