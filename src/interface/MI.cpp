@@ -25,7 +25,7 @@ namespace MI
 	void Initialize()
 	{
 		mi.mode = mi.interrupt = mi.mask = 0;
-		mi.version = 0x02010202;
+		mi.version = 0x0202'0102;
 	}
 
 
@@ -56,6 +56,9 @@ namespace MI
 
 		if (offset == offset_mode) {
 			mi.mode = data;
+			if (mi.mode & 0x800) {
+				mi.interrupt &= ~std::to_underlying(InterruptType::DP);
+			}
 		}
 		else if (offset == offset_mask) {
 			static constexpr s32 clear_sp_mask = 1 << 0;
