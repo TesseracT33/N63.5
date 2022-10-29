@@ -1,5 +1,6 @@
 module VR4300:Operation;
 
+import :Cache;
 import :COP0;
 import :COP1;
 import :CPU;
@@ -304,7 +305,7 @@ namespace VR4300
 		case 0b000101: EXEC_CPU_INSTR(BNE); break;
 		case 0b010101: EXEC_CPU_INSTR(BNEL); break;
 
-		case 0b101111: EXEC_COP0_INSTR(CACHE); break;
+		case 0b101111: EXEC_CPU_INSTR(CACHE); break;
 
 		case 0b110101: EXEC_COP1_INSTR(LDC1); break;
 		case 0b110001: EXEC_COP1_INSTR(LWC1); break;
@@ -394,12 +395,14 @@ namespace VR4300
 		else if constexpr (instr == SYSCALL) {
 			Syscall();
 		}
+		else if constexpr (instr == CACHE) {
+			Cache(instr_code);
+		}
 		else {
 			static_assert(AlwaysFalse<instr>);
 		}
 
-		if constexpr (log_cpu_instructions)
-		{
+		if constexpr (log_cpu_instructions) {
 			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
 		}
 	}
@@ -416,7 +419,6 @@ namespace VR4300
 		else if constexpr (instr == COP0Instruction::TLBWI) TLBWI();
 		else if constexpr (instr == COP0Instruction::TLBWR) TLBWR();
 		else if constexpr (instr == COP0Instruction::ERET)  ERET();
-		else if constexpr (instr == COP0Instruction::CACHE) CACHE(instr_code);
 		else static_assert(AlwaysFalse<instr>);
 		if constexpr (log_cpu_instructions) {
 			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);

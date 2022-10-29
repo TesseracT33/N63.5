@@ -23,8 +23,8 @@ namespace Memory
 	}
 
 
-	template<std::integral Int, MemoryAccess::Operation operation>
-	Int ReadPhysical(const u32 physical_address)
+	template<std::integral Int, Memory::Operation operation>
+	Int ReadPhysical(u32 physical_address)
 	{
 		/* Precondition: 'physical_address' is aligned according to the size of 'Int' */
 		u32 page = physical_address >> 16;
@@ -82,7 +82,7 @@ namespace Memory
 				return Int(0);
 			}
 		}(); 
-		if constexpr (operation == MemoryAccess::Operation::InstrFetch) {
+		if constexpr (operation == Memory::Operation::InstrFetch) {
 			if constexpr (log_cpu_instructions) {
 				VR4300::last_instr_fetch_phys_addr = physical_address;
 			}
@@ -129,7 +129,7 @@ namespace Memory
 
 
 	template<size_t number_of_bytes>
-	void WritePhysical(const u32 physical_address, auto data)
+	void WritePhysical(u32 physical_address, auto data)
 	{
 		/* Precondition: 'physical_address' is aligned according to the size of 'Int' */
 		u32 page = physical_address >> 16;
@@ -200,15 +200,15 @@ namespace Memory
 	}
 
 
-	template u8 ReadPhysical<u8, MemoryAccess::Operation::Read>(u32);
-	template s8 ReadPhysical<s8, MemoryAccess::Operation::Read>(u32);
-	template u16 ReadPhysical<u16, MemoryAccess::Operation::Read>(u32);
-	template s16 ReadPhysical<s16, MemoryAccess::Operation::Read>(u32);
-	template u32 ReadPhysical<u32, MemoryAccess::Operation::Read>(u32);
-	template s32 ReadPhysical<s32, MemoryAccess::Operation::Read>(u32);
-	template u64 ReadPhysical<u64, MemoryAccess::Operation::Read>(u32);
-	template s64 ReadPhysical<s64, MemoryAccess::Operation::Read>(u32);
-	template u32 ReadPhysical<u32, MemoryAccess::Operation::InstrFetch>(u32);
+	template u8 ReadPhysical<u8, Memory::Operation::Read>(u32);
+	template s8 ReadPhysical<s8, Memory::Operation::Read>(u32);
+	template u16 ReadPhysical<u16, Memory::Operation::Read>(u32);
+	template s16 ReadPhysical<s16, Memory::Operation::Read>(u32);
+	template u32 ReadPhysical<u32, Memory::Operation::Read>(u32);
+	template s32 ReadPhysical<s32, Memory::Operation::Read>(u32);
+	template u64 ReadPhysical<u64, Memory::Operation::Read>(u32);
+	template s64 ReadPhysical<s64, Memory::Operation::Read>(u32);
+	template u32 ReadPhysical<u32, Memory::Operation::InstrFetch>(u32);
 
 
 	ENUMERATE_TEMPLATE_SPECIALIZATIONS_WRITE(WritePhysical, u32)

@@ -24,7 +24,6 @@
     <ClCompile Include="src\UserMessage.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
-    <ClCompile Include="src\memory\MemoryAccess.ixx" />
     <ClCompile Include="src\interface\MI.ixx" />
     <ClCompile Include="src\interface\PI.ixx" />
     <ClCompile Include="src\interface\SI.ixx" />
@@ -110,6 +109,8 @@
     <ClCompile Include="external\parallel-rdp-standalone\vulkan\texture_format.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi_timing.cpp" />
+    <ClCompile Include="src\vr4300\Cache.ixx" />
+    <ClCompile Include="src\vr4300\Cache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\EnumerateTemplateSpecializations.h" />

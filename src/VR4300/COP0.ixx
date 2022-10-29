@@ -18,7 +18,7 @@ namespace VR4300
 		TLBP, TLBR, TLBWI, TLBWR,
 
 		/* Misc. instructions */
-		ERET, CACHE
+		ERET
 	};
 
 	void OnCountCompareMatchEvent();
@@ -31,7 +31,6 @@ namespace VR4300
 	void TLBWR();
 	void TLBP();
 	void ERET();
-	void CACHE(u32 instr_code);
 
 	constexpr uint cop0_index_index = 0;
 	constexpr uint cop0_index_random = 1;
@@ -238,8 +237,8 @@ namespace VR4300
 		struct /* (28) */
 		{
 			u32 : 6;
-			u32 p_state : 2; /* Specified the primary cache state (Data cache: 11 => valid; 00 => invalid) (Instruction cache: 10 => valid; 00 => invalid). All others: undefined. */
-			u32 p_tag_lo : 20; /* Physical address bits 31..12. */
+			u32 pstate : 2; /* Specified the primary cache state (Data cache: 11 => valid; 00 => invalid) (Instruction cache: 10 => valid; 00 => invalid). All others: undefined. */
+			u32 ptag : 20; /* Physical address bits 31..12. */
 			u32 : 4;
 		} tag_lo{}; /* Holds the primary cache tag for cache initialization, cache diagnostics, or cache error processing. The Tag registers are written by the CACHE and MTC0 instructions. */
 

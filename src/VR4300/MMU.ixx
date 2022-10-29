@@ -1,13 +1,14 @@
 export module VR4300:MMU;
 
-import MemoryAccess;
+import :Operation;
+
+import Memory;
 import Util;
 
 import <array>;
-import <bit>;
 import <cassert>;
 import <concepts>;
-import <functional>;
+import <cstring>;
 import <type_traits>;
 
 namespace VR4300
@@ -15,7 +16,7 @@ namespace VR4300
 	/* Used for logging. Set when memory is read during an instruction fetch. */
 	export u32 last_instr_fetch_phys_addr;
 
-	using VirtualToPhysicalAddressFun = u32(*)(u64); /* Used in both 32-bit and 64-bit mode */
+	using VirtualToPhysicalAddressFun = u32(*)(u64 /* in: v_addr */, bool& /* out: cache area? */);
 
 	enum class AddressingMode {
 		_32bit, _64bit
@@ -56,23 +57,18 @@ namespace VR4300
 		u64 address_vpn_even_odd_mask;
 	};
 
-	template<MemoryAccess::Operation> u32 VirtualToPhysicalAddressUserMode32(u64);
-	template<MemoryAccess::Operation> u32 VirtualToPhysicalAddressUserMode64(u64);
-	template<MemoryAccess::Operation> u32 VirtualToPhysicalAddressSupervisorMode32(u64);
-	template<MemoryAccess::Operation> u32 VirtualToPhysicalAddressSupervisorMode64(u64);
-	template<MemoryAccess::Operation> u32 VirtualToPhysicalAddressKernelMode32(u64);
-	template<MemoryAccess::Operation> u32 VirtualToPhysicalAddressKernelMode64(u64);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressUserMode32(u64, bool&);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressUserMode64(u64, bool&);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressSupervisorMode32(u64, bool&);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressSupervisorMode64(u64, bool&);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressKernelMode32(u64, bool&);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressKernelMode64(u64, bool&);
+	template<Memory::Operation> u32 VirtualToPhysicalAddressTlb(u64);
 
-	template<MemoryAccess::Operation>
-	u32 VirtualToPhysicalAddress(u64 virt_addr);
-
-	template<
-		std::integral Int,
-		MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned,
-		MemoryAccess::Operation operation = MemoryAccess::Operation::Read>
+	template<std::integral Int, Alignment alignment = Alignment::Aligned, Memory::Operation operation = Memory::Operation::Read>
 	Int ReadVirtual(u64 virtual_address);
 
-	template<std::integral Int, MemoryAccess::Alignment alignment = MemoryAccess::Alignment::Aligned>
+	template<std::integral Int, Alignment alignment = Alignment::Aligned>
 	void WriteVirtual(u64 virtual_address, Int data);
 
 	u32 FetchInstruction(u64 virtual_address);
@@ -96,10 +92,10 @@ namespace VR4300
 		return table;
 	}();
 
-	bool store_physical_address_on_load = false; /* For LL and LLD instructions; the phys addr is stored to the LLAddr register. */
+	u32 last_physical_address_on_load;
 
 	std::array<TlbEntry, 32> tlb_entries{};
 
-	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read = nullptr;
-	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write = nullptr;
+	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read;
+	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write;
 }

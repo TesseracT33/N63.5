@@ -7,7 +7,7 @@ import :Operation;
 import :MMU;
 
 import DebugOptions;
-import MemoryAccess;
+import Memory;
 import Scheduler;
 import Util;
 
@@ -433,24 +433,9 @@ namespace VR4300
 		   Then, there is no need to check if the pc is misaligned every time an instruction is fetched
 		   (this is one of the few places where the pc can be set to a misaligned value). */
 		if (pc & 3) {
-			SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
+			SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
 		}
 
-		AdvancePipeline(1);
-	}
-
-
-	void CACHE(const u32 instr_code)
-	{
-		/* Cache op;
-		   Sign-extends the 16-bit offset to 32 bits and adds it to register base to
-		   generate a virtual address. The virtual address is converted into a physical
-		   address by using the TLB, and a cache operation indicated by a 5-bit sub op
-		   code is executed to that address. */
-		/* Currently not emulated. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
 		AdvancePipeline(1);
 	}
 

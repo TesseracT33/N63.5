@@ -8,6 +8,7 @@ import :MMU;
 
 import DebugOptions;
 import Logging;
+import RDRAM;
 
 namespace VR4300
 {
@@ -113,6 +114,7 @@ namespace VR4300
 
 	void PowerOn(bool hle_pif)
 	{
+		rdram_ptr = RDRAM::GetPointerToMemory();
 		exception_has_occurred = false;
 		jump_is_pending = false;
 

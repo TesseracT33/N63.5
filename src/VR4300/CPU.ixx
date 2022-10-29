@@ -50,7 +50,7 @@ namespace VR4300
 		TGE, TGEU, TLT, TLTU, TEQ, TNE, TGEI, TGEIU, TLTI, TLTIU, TEQI, TNEI,
 
 		/* Special instructions */
-		SYNC, SYSCALL, BREAK
+		SYNC, SYSCALL, BREAK, CACHE
 	};
 
 	enum class Reg {

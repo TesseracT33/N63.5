@@ -11,18 +11,18 @@ import Util;
 
 namespace VR4300
 {
-	template<Exception exception, MemoryAccess::Operation operation>
+	template<Exception exception, Memory::Operation operation>
 	constexpr int GetExceptionPriority()
 	{
 		if constexpr (exception == Exception::AddressError) {
-			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 17;
+			if constexpr (operation == Memory::Operation::InstrFetch) return 17;
 			else return 6;
 		}
 		else if constexpr (exception == Exception::Breakpoint) {
 			return 12;
 		}
 		else if constexpr (exception == Exception::BusError) {
-			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 14;
+			if constexpr (operation == Memory::Operation::InstrFetch) return 14;
 			else return 1;
 		}
 		else if constexpr (exception == Exception::ColdReset) {
@@ -53,11 +53,11 @@ namespace VR4300
 			return 13;
 		}
 		else if constexpr (exception == Exception::TlbInvalid) {
-			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 15;
+			if constexpr (operation == Memory::Operation::InstrFetch) return 15;
 			else return 4;
 		}
 		else if constexpr (exception == Exception::TlbMiss || exception == Exception::XtlbMiss) {
-			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 16;
+			if constexpr (operation == Memory::Operation::InstrFetch) return 16;
 			else return 5;
 		}
 		else if constexpr (exception == Exception::TlbModification) {
@@ -75,7 +75,7 @@ namespace VR4300
 	}
 
 
-	template<Exception exception, MemoryAccess::Operation operation>
+	template<Exception exception, Memory::Operation operation>
 	constexpr ExceptionHandler GetExceptionHandler()
 	{
 		     if constexpr (exception == Exception::AddressError)        return AddressErrorException<operation>;
@@ -153,7 +153,7 @@ namespace VR4300
 	}
 
 
-	template<Exception exception, MemoryAccess::Operation operation>
+	template<Exception exception, Memory::Operation operation>
 	void SignalException()
 	{
 		constexpr static auto new_exception_priority = GetExceptionPriority<exception, operation>();
@@ -175,7 +175,7 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccess::Operation operation>
+	template<Memory::Operation operation>
 	void SignalAddressErrorException(u64 bad_virt_addr)
 	{
 		SignalException<Exception::AddressError>();
@@ -185,12 +185,12 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccess::Operation operation>
+	template<Memory::Operation operation>
 	void AddressErrorException()
 	{
 		cop0_reg.cause.exc_code = [&] {
-			if constexpr (operation == MemoryAccess::Operation::Write) return 5;
-			else                                                       return 4;
+			if constexpr (operation == Memory::Operation::Write) return 5;
+			else                                                 return 4;
 		}();
 		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
@@ -204,12 +204,12 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccess::Operation operation>
+	template<Memory::Operation operation>
 	void BusErrorException()
 	{
 		cop0_reg.cause.exc_code = [&] {
-			if constexpr (operation == MemoryAccess::Operation::InstrFetch) return 6;
-			else                                                            return 7;
+			if constexpr (operation == Memory::Operation::InstrFetch) return 6;
+			else                                                      return 7;
 		}();
 		cop0_reg.cause.ce = 0;
 	}
@@ -288,12 +288,12 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccess::Operation operation>
+	template<Memory::Operation operation>
 	void TlbInvalidException()
 	{
 		cop0_reg.cause.exc_code = [&] {
-			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
-			else                                                       return 2;
+			if constexpr (operation == Memory::Operation::Write) return 3;
+			else                                                 return 2;
 		}();
 		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
@@ -304,12 +304,12 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccess::Operation operation>
+	template<Memory::Operation operation>
 	void TlbMissException()
 	{
 		cop0_reg.cause.exc_code = [&] {
-			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
-			else                                                       return 2;
+			if constexpr (operation == Memory::Operation::Write) return 3;
+			else                                                 return 2;
 		}();
 		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
@@ -344,12 +344,12 @@ namespace VR4300
 	}
 
 
-	template<MemoryAccess::Operation operation>
+	template<Memory::Operation operation>
 	void XtlbMissException()
 	{
 		cop0_reg.cause.exc_code = [&] {
-			if constexpr (operation == MemoryAccess::Operation::Write) return 3;
-			else                                                       return 2;
+			if constexpr (operation == Memory::Operation::Write) return 3;
+			else                                                 return 2;
 		}();
 		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
@@ -406,11 +406,11 @@ namespace VR4300
 	template void SignalException<Exception::Watch, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::XtlbMiss, MEMORY_OPERATION>();
 
-	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemoryAccess::Operation::Read)
-	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemoryAccess::Operation::Write)
-	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemoryAccess::Operation::InstrFetch)
+	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(Memory::Operation::Read)
+	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(Memory::Operation::Write)
+	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(Memory::Operation::InstrFetch)
 
-	template void SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(u64);
-	template void SignalAddressErrorException<MemoryAccess::Operation::Read>(u64);
-	template void SignalAddressErrorException<MemoryAccess::Operation::Write>(u64);
+	template void SignalAddressErrorException<Memory::Operation::InstrFetch>(u64);
+	template void SignalAddressErrorException<Memory::Operation::Read>(u64);
+	template void SignalAddressErrorException<Memory::Operation::Write>(u64);
 }

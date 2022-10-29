@@ -1,11 +1,12 @@
 module VR4300:CPU;
 
+import :COP0;
 import :Exceptions;
 import :MMU;
 import :Operation;
 
 import DebugOptions;
-import MemoryAccess;
+import Memory;
 import Util;
 
 namespace VR4300
@@ -103,7 +104,7 @@ namespace VR4300
 				   the address is at the leftmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(addr);
+				return ReadVirtual<s32, Alignment::UnalignedLeft>(addr);
 			}
 			else if constexpr (instr == LWR) {
 				/* Load Word Right;
@@ -111,7 +112,7 @@ namespace VR4300
 				   the address is at the rightmost position of the word. Sign-extends (in the 64-
 				   bit mode), merges the result of the shift and the contents of register rt, and
 				   loads the result to register rt. */
-				return ReadVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(addr);
+				return ReadVirtual<s32, Alignment::UnalignedRight>(addr);
 			}
 			else if constexpr (instr == LD) {
 				/* Load Doubleword;
@@ -124,7 +125,7 @@ namespace VR4300
 				   specified by the address is at the leftmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedLeft>(addr);
+				return ReadVirtual<u64, Alignment::UnalignedLeft>(addr);
 			}
 			else if constexpr (instr == LDR) {
 				/* Load Doubleword Right;
@@ -132,15 +133,14 @@ namespace VR4300
 				   specified by the address is at the rightmost position of the doubleword.
 				   Merges the result of the shift and the contents of register rt, and loads the
 				   result to register rt. */
-				return ReadVirtual<u64, MemoryAccess::Alignment::UnalignedRight>(addr);
+				return ReadVirtual<u64, Alignment::UnalignedRight>(addr);
 			}
 			else if constexpr (instr == LL) {
 				/* Load Linked;
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
-				store_physical_address_on_load = true;
 				s32 ret = ReadVirtual<s32>(addr);
-				store_physical_address_on_load = false;
+				cop0_reg.ll_addr.p_addr = last_physical_address_on_load;
 				ll_bit = 1;
 				return ret;
 			}
@@ -148,9 +148,8 @@ namespace VR4300
 				/* Load Linked Doubleword;
 				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
-				store_physical_address_on_load = true;
 				s64 ret = ReadVirtual<s64>(addr);
-				store_physical_address_on_load = false;
+				cop0_reg.ll_addr.p_addr = last_physical_address_on_load;
 				ll_bit = 1;
 				return ret;
 			}
@@ -284,7 +283,7 @@ namespace VR4300
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the lower portion of the word in memory. */
 			s32 data_to_write = s32(gpr[rt] & ~((1 << (8 * (addr & 3))) - 1));
-			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedLeft>(addr, data_to_write);
+			WriteVirtual<s32, Alignment::UnalignedLeft>(addr, data_to_write);
 		}
 		else if constexpr (instr == SWR) {
 			/* Store Word Right;
@@ -292,7 +291,7 @@ namespace VR4300
 			   word is at the position of the byte specified by the address. Stores the result
 			   of the shift to the higher portion of the word in memory. */
 			s32 data_to_write = s32(gpr[rt] << (8 * (3 - (addr & 3))));
-			WriteVirtual<s32, MemoryAccess::Alignment::UnalignedRight>(addr, data_to_write);
+			WriteVirtual<s32, Alignment::UnalignedRight>(addr, data_to_write);
 		}
 		else if constexpr (instr == SD) {
 			/* Store Doublword;
@@ -305,7 +304,7 @@ namespace VR4300
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the lower portion of the doubleword in memory. */
 			s64 data_to_write = gpr[rt] & ~((1ll << (8 * (addr & 7))) - 1);
-			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedLeft>(addr, data_to_write);
+			WriteVirtual<s64, Alignment::UnalignedLeft>(addr, data_to_write);
 		}
 		else if constexpr (instr == SDR) {
 			/* Store Doubleword Right;
@@ -313,7 +312,7 @@ namespace VR4300
 			   doubleword is at the position of the byte specified by the address. Stores the
 			   result of the shift to the higher portion of the doubleword in memory. */
 			s64 data_to_write = gpr[rt] << (8 * (7 - (addr & 7)));
-			WriteVirtual<s64, MemoryAccess::Alignment::UnalignedRight>(addr, data_to_write);
+			WriteVirtual<s64, Alignment::UnalignedRight>(addr, data_to_write);
 		}
 		else if constexpr (instr == SC) {
 			/* Store Conditional;
@@ -924,7 +923,7 @@ namespace VR4300
 					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
 				}
 				if (gpr[rs] & 3) {
-					SignalAddressErrorException<MemoryAccess::Operation::InstrFetch>(pc);
+					SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
 				}
 				return gpr[rs];
 			}

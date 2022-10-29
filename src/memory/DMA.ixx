@@ -22,8 +22,8 @@ namespace DMA
 			PI, SI
 		};
 
-		template<Type type, Location source, Location dest>
-		void Init(size_t length, s32 source_start_addr, s32 dest_start_addr);
+		template<Type type, Location src, Location dst>
+		void Init(size_t length, s32 src_start_addr, s32 dst_start_addr);
 	}
 
 	template<Location>

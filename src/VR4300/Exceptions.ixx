@@ -1,12 +1,11 @@
 export module VR4300:Exceptions;
 
-import MemoryAccess;
+import Memory;
 import Util;
 
 import <array>;
 import <cassert>;
 import <format>;
-import <functional>;
 import <string_view>;
 import <utility>;
 
@@ -14,8 +13,7 @@ namespace VR4300
 {
 	export
 	{
-		enum class Exception
-		{
+		enum class Exception {
 			AddressError,
 			Breakpoint,
 			BusError,
@@ -36,10 +34,10 @@ namespace VR4300
 			XtlbMiss
 		};
 
-		template<Exception exception, MemoryAccess::Operation operation = MemoryAccess::Operation::Read>
+		template<Exception exception, Memory::Operation operation = Memory::Operation::Read>
 		void SignalException();
 
-		template<MemoryAccess::Operation operation>
+		template<Memory::Operation operation>
 		void SignalAddressErrorException(u64 bad_virt_addr);
 
 		void HandleException();
@@ -47,10 +45,10 @@ namespace VR4300
 
 	using ExceptionHandler = void(*)();
 
-	template<Exception, MemoryAccess::Operation>
+	template<Exception, Memory::Operation>
 	constexpr ExceptionHandler GetExceptionHandlerFun();
 
-	template<Exception, MemoryAccess::Operation>
+	template<Exception, Memory::Operation>
 	constexpr int GetExceptionPriority();
 
 	template<Exception>
@@ -59,11 +57,11 @@ namespace VR4300
 	constexpr std::string_view ExceptionToString(Exception exception);
 
 	/* Exception handlers */
-	template<MemoryAccess::Operation> void AddressErrorException();
-	template<MemoryAccess::Operation> void BusErrorException();
-	template<MemoryAccess::Operation> void TlbInvalidException();
-	template<MemoryAccess::Operation> void TlbMissException();
-	template<MemoryAccess::Operation> void XtlbMissException();
+	template<Memory::Operation> void AddressErrorException();
+	template<Memory::Operation> void BusErrorException();
+	template<Memory::Operation> void TlbInvalidException();
+	template<Memory::Operation> void TlbMissException();
+	template<Memory::Operation> void XtlbMissException();
 	void BreakPointException();
 	void BusErrorException();
 	void ColdResetException();

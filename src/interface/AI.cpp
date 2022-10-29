@@ -2,7 +2,6 @@ module AI;
 
 import MI;
 import Memory;
-import MemoryAccess;
 import N64;
 import Scheduler;
 import UserMessage;
@@ -56,7 +55,7 @@ namespace AI
 	void Sample()
 	{
 		if (dma_count != 0) {
-			s32 data = Memory::ReadPhysical<s32, MemoryAccess::Operation::Read>(ai.dram_addr);
+			s32 data = Memory::ReadPhysical<s32, Memory::Operation::Read>(ai.dram_addr);
 			// TODO output sample
 			ai.dram_addr += 4;
 			ai.len -= 4;

@@ -7,7 +7,7 @@ export
 	constexpr bool logging_is_enabled = false;
 
 	constexpr bool log_cpu_instructions = logging_is_enabled && true;
-	constexpr bool log_cpu_memory       = logging_is_enabled && true;
+	constexpr bool log_cpu_memory       = logging_is_enabled && false;
 	constexpr bool log_cpu_exceptions   = logging_is_enabled && true;
 	constexpr bool log_dma              = logging_is_enabled && true;
 	constexpr bool log_rsp_instructions = logging_is_enabled && true;

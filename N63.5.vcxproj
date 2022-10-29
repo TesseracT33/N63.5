@@ -266,7 +266,6 @@
     <ClCompile Include="src\memory\DMA.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\Memory.ixx" />
-    <ClCompile Include="src\memory\MemoryAccess.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />
     <ClCompile Include="src\memory\RDRAM.cpp" />
     <ClCompile Include="src\memory\RDRAM.ixx" />
@@ -275,6 +274,8 @@
     <ClCompile Include="src\Scheduler.cpp" />
     <ClCompile Include="src\Scheduler.ixx" />
     <ClCompile Include="src\UserMessage.ixx" />
+    <ClCompile Include="src\vr4300\Cache.cpp" />
+    <ClCompile Include="src\vr4300\Cache.ixx" />
     <ClCompile Include="src\vr4300\COP0.cpp" />
     <ClCompile Include="src\vr4300\COP0.ixx" />
     <ClCompile Include="src\vr4300\COP1.cpp" />
