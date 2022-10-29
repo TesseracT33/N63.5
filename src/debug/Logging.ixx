@@ -21,7 +21,9 @@ namespace Logging
 		void LogDMA(const std::string& output);
 		void LogException(std::string_view exception);
 		void LogMisc(const std::string& output);
+		void SetPath(const std::string& log_path);
 	}
 
-	std::ofstream instr_logging_ofs{ "F:\\n64.txt" };
+	bool enabled;
+	std::ofstream log;
 }
