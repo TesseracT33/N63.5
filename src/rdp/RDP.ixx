@@ -29,14 +29,12 @@ namespace RDP
 		DMEM, RDRAM
 	};
 
-	struct
-	{
+	struct {
 		u32 start, end, current;
-		struct
-		{
-			u32 dmem_dma_status : 1;
-			u32 freeze_status : 1;
-			u32 flush_status : 1;
+		struct {
+			u32 dmem_dma : 1;
+			u32 freeze : 1;
+			u32 flush : 1;
 			u32 start_gclk : 1;
 			u32 tmem_busy : 1;
 			u32 pipe_busy : 1;

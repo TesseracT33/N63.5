@@ -41,7 +41,7 @@ namespace RDP
 	template<CommandLocation cmd_loc>
 	void LoadExecuteCommands()
 	{
-		dp.status.pipe_busy = dp.status.start_gclk = true;
+		dp.status.pipe_busy = dp.status.start_gclk = dp.status.freeze = true;
 
 		u32 current = dp.current;
 		u32 end = dp.end;
@@ -88,6 +88,7 @@ namespace RDP
 		}
 
 		cmd_buffer_dword_idx = num_queued_dwords = 0;
+		dp.status.pipe_busy = dp.status.start_gclk = dp.status.freeze = 0;
 		dp.current = dp.end;
 	}
 
@@ -99,8 +100,8 @@ namespace RDP
 		be able to extract the correct portion. 64-bit reads instead will completely freeze the VR4300
 		(and thus the whole console), because it will stall waiting for the second word to appear on the bus that the RCP will never put. */
 		auto reg_index = addr >> 2 & 7;
-		u32 ret;
-		std::memcpy(&ret, (u32*)(&dp) + reg_index, 4);
+		s32 ret;
+		std::memcpy(&ret, (s32*)(&dp) + reg_index, 4);
 		return ret;
 	}
 
@@ -108,9 +109,9 @@ namespace RDP
 	void WriteReg(u32 addr, s32 data)
 	{
 		auto ProcessCommands = [&] {
-			dp.status.dmem_dma_status
-				? LoadExecuteCommands<CommandLocation::DMEM>()
-				: LoadExecuteCommands<CommandLocation::RDRAM>();
+			dp.status.dmem_dma
+				? LoadExecuteCommands<CommandLocation::RDRAM>()
+				: LoadExecuteCommands<CommandLocation::DMEM>();
 		};
 
 		auto reg_index = addr >> 2 & 7;
@@ -122,18 +123,18 @@ namespace RDP
 		switch (reg_index) {
 		case Register::StartReg:
 			if (!dp.status.start_valid) {
-				dp.start = data & ~7;
+				dp.start = data & 0xFF'FFF8;
 				dp.status.start_valid = true;
 			}
 			break;
 
 		case Register::EndReg:
-			dp.end = data & ~7;
+			dp.end = data & 0xFF'FFF8;
 			if (dp.status.start_valid) {
 				dp.current = dp.start;
 				dp.status.start_valid = false;
 			}
-			if (!dp.status.freeze_status) {
+			if (!dp.status.freeze) {
 				ProcessCommands();
 			}
 			break;
@@ -141,23 +142,23 @@ namespace RDP
 		case Register::StatusReg: {
 			bool unfrozen = false;
 			if (data & 1) {
-				dp.status.dmem_dma_status = 0;
+				dp.status.dmem_dma = 0;
 			}
 			else if (data & 2) {
-				dp.status.dmem_dma_status = 1;
+				dp.status.dmem_dma = 1;
 			}
 			if (data & 4) {
-				dp.status.freeze_status = 0;
+				dp.status.freeze = 0;
 				unfrozen = true;
 			}
 			else if (data & 8) {
-				dp.status.freeze_status = 1;
+				dp.status.freeze = 1;
 			}
 			if (data & 0x10) {
-				dp.status.flush_status = 0;
+				dp.status.flush = 0;
 			}
 			else if (data & 0x20) {
-				dp.status.flush_status = 1;
+				dp.status.flush = 1;
 			}
 			if (data & 0x40) {
 				dp.tmem = 0;
