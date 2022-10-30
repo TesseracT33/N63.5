@@ -27,17 +27,18 @@ namespace SI
 		if constexpr (type == DmaType::PifToRdram) {
 			pif_addr = si.pif_addr_rd64b;
 			pif_addr_reg_last_dma = &si.pif_addr_rd64b;
-			bytes_until_pif_end = PIF::GetNumberOfBytesUntilMemoryEnd(pif_addr);
 		}
 		else { /* RDRAM to PIF */
 			pif_addr = si.pif_addr_wr64b;
 			pif_addr_reg_last_dma = &si.pif_addr_wr64b;
-			bytes_until_pif_end = PIF::GetNumberOfBytesUntilRamStart(pif_addr);
 		}
+		// TODO: if we let 'bytes_until_pif_end' == 0 for RDRAM => PIF RAM DMAs, then NM64 intro videos will show for some reason (otherwise, they don't).
+		bytes_until_pif_end = PIF::GetNumberOfBytesUntilMemoryEnd(pif_addr);
 		u8* rdram_ptr = RDRAM::GetPointerToMemory(si.dram_addr);
 		u8* pif_ptr = PIF::GetPointerToMemory(pif_addr);
 		size_t bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(si.dram_addr);
-		dma_len = std::min(size_t(64), std::min(bytes_until_rdram_end, bytes_until_pif_end));
+		static constexpr size_t max_dma_len = 64;
+		dma_len = std::min(max_dma_len, std::min(bytes_until_rdram_end, bytes_until_pif_end));
 		if constexpr (type == DmaType::PifToRdram) {
 			std::memcpy(rdram_ptr, pif_ptr, dma_len);
 			if constexpr (log_dma) {
@@ -46,9 +47,20 @@ namespace SI
 			}
 		}
 		else { /* RDRAM to PIF */
-			std::memcpy(pif_ptr, rdram_ptr, dma_len);
-			Logging::LogDMA(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
-				si.dram_addr, pif_addr, dma_len));
+			size_t num_bytes_in_rom_area = PIF::GetNumberOfBytesUntilRamStart(pif_addr);
+			if (num_bytes_in_rom_area < dma_len) {
+				std::memcpy(pif_ptr, rdram_ptr, dma_len - num_bytes_in_rom_area);
+				if constexpr (log_dma) {
+					Logging::LogDMA(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
+						si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
+				}
+			}
+			else if constexpr (log_dma) {
+				Logging::LogDMA(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
+					si.dram_addr, pif_addr));
+				OnDmaFinish();
+				return;
+			}
 		}
 
 		static constexpr auto cycles_per_byte_dma = 18;
@@ -102,12 +114,6 @@ namespace SI
 			si.dram_addr = data & 0xFF'FFFF;
 			break;
 
-		case RegOffset::AddrRd4B:
-			si.pif_addr_rd4b = data;
-			/* TODO */
-			Logging::LogMisc("Tried to start SI RD4B DMA, which is currently unimplemented.");
-			break;
-
 		case RegOffset::AddrRd64B:
 			si.pif_addr_rd64b = data & 0x7FC;
 			InitDma<DmaType::PifToRdram>();
@@ -122,6 +128,12 @@ namespace SI
 		case RegOffset::AddrWr64B:
 			si.pif_addr_wr64b = data & 0x7FC;
 			InitDma<DmaType::RdramToPif>();
+			break;
+
+		case RegOffset::AddrRd4B:
+			si.pif_addr_rd4b = data;
+			/* TODO */
+			Logging::LogMisc("Tried to start SI RD4B DMA, which is currently unimplemented.");
 			break;
 
 		case RegOffset::Status:
