@@ -28,12 +28,15 @@ namespace SI
 		PifToRdram, RdramToPif
 	};
 
-	template<DmaType>
-	void InitDma();
+	template<DmaType> void InitDma();
+	void OnDmaFinish();
 
 	struct
 	{
 		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy_reg_at_0x0C,
 			pif_addr_wr64b, pif_addr_rd4b, status, s32dummy_reg_at_0x1C;
 	} si;
+
+	size_t dma_len;
+	s32* pif_addr_reg_last_dma;
 }
