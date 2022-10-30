@@ -4,7 +4,7 @@ import :Interface;
 import :Operation;
 
 import MI;
-import N64;
+import RDP;
 import Util;
 
 namespace RSP
@@ -453,26 +453,26 @@ namespace RSP
 	{
 		using enum ScalarInstruction;
 
-		/* Registers are c0-c7 begin SP_DMA_SP_ADDR to SP_SEMAPHORE */
-		auto rd = instr_code >> 11 & 7;
+		/* Registers are c0-c7 beginning from SP_DMA_SP_ADDR to SP_SEMAPHORE if bit 3 is clear,
+			else DP_START_REG to DP_TMEM_REG. */
+		auto rd = instr_code >> 11 & 0x1F;
 		auto rt = instr_code >> 16 & 0x1F;
-		u32 sp_reg_addr = 0x0404'0000 + rd * 4;
+		auto reg_addr = (rd & 7) << 2;
+		bool rdp_reg = rd & 8;
 
 		if constexpr (log_rsp_instructions) {
 			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, rd);
 		}
 
 		if constexpr (instr == MFC0) {
-			/* Move From System Control Coprocessor;
-			   Loads the contents of the word of the general purpose register rd of CP0
-			   to the general purpose register rt of the CPU. */
-			gpr.Set(rt, ReadReg(sp_reg_addr));
+			/* Move From System Control Coprocessor */
+			if (rdp_reg) gpr.Set(rt, ::RDP::ReadReg(reg_addr));
+			else         gpr.Set(rt, ::RSP::ReadReg(reg_addr));
 		}
 		else if constexpr (instr == MTC0) {
-			/* Move To System Control Coprocessor;
-			   Loads the contents of the word of the general purpose register rt of the CPU
-			   to the general purpose register rd of CP0. */
-			WriteReg(sp_reg_addr, gpr[rt]);
+			/* Move To System Control Coprocessor */
+			if (rdp_reg) ::RDP::WriteReg(reg_addr, gpr[rt]);
+			else         ::RSP::WriteReg(reg_addr, gpr[rt]);
 		}
 		else {
 			static_assert(AlwaysFalse<instr>, "\"RSP Move\" template function called, but no matching move instruction was found.");
