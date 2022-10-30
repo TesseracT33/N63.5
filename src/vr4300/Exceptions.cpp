@@ -136,17 +136,17 @@ namespace VR4300
 
 		exception_has_occurred = false;
 
-		cop0_reg.cause.bd = pc_is_inside_branch_delay_slot;
 		if (cop0_reg.status.exl == 0) {
+			cop0_reg.cause.bd = in_branch_delay_slot; /* Peter Lemon exception tests indicate that this should only be set if !exl */
 			/* Store to the EPC register the address of the instruction causing the exception.
 			   If the instruction was executing in a branch delay slot, the CPU loads the EPC register
 			   to the address of the branch instruction immediately preceding the branch delay slot. */
-			cop0_reg.epc.value = pc - 4 * (1 + pc_is_inside_branch_delay_slot);
+			cop0_reg.epc.value = pc - (in_branch_delay_slot ? 8 : 4);
 			cop0_reg.status.exl = 1;
 			SetActiveVirtualToPhysicalFunctions();
 		}
 		pc = exception_vector;
-		pc_is_inside_branch_delay_slot = false;
+		in_branch_delay_slot = false;
 		jump_is_pending = false;
 
 		exception_handler();

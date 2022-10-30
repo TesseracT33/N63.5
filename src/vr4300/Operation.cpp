@@ -135,7 +135,6 @@ namespace VR4300
 		jump_is_pending = true;
 		instructions_until_jump = 1;
 		addr_to_jump_to = target_address;
-		pc_is_inside_branch_delay_slot = true;
 	}
 
 
@@ -156,7 +155,10 @@ namespace VR4300
 				if (instructions_until_jump-- == 0) {
 					pc = addr_to_jump_to;
 					jump_is_pending = false;
-					pc_is_inside_branch_delay_slot = false;
+					in_branch_delay_slot = false;
+				}
+				else {
+					in_branch_delay_slot = true;
 				}
 			}
 			FetchDecodeExecuteInstruction();

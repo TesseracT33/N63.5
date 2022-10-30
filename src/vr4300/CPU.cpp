@@ -996,7 +996,6 @@ namespace VR4300
 		if (branch_cond) {
 			s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 			PrepareJump(pc + offset);
-			pc_is_inside_branch_delay_slot = true;
 		}
 		else if constexpr (OneOf(instr, BEQL, BNEL, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. */

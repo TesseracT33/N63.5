@@ -51,7 +51,7 @@ namespace VR4300
 	void NotifyIllegalInstrCode(u32 instr_code);
 	void PrepareJump(u64 target_address);
 
-	bool pc_is_inside_branch_delay_slot;
+	bool in_branch_delay_slot;
 	u64 p_cycle_counter;
 	u8* rdram_ptr;
 
