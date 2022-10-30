@@ -21,7 +21,7 @@ x86; SSE4.1
 | Peter Lemon's CPUTest/CP0 | 2/2 :heavy_check_mark: | |
 | Peter Lemon's CPUTest/CP1 | 28/46 :x: | Most failing are in C/FPUCompare/ |
 | Peter Lemon's CPUTest/CPU | 44/45 :x: | Failing: CPUTIMINGNTSC |
-| Peter Lemon's CPUTest/DMAAlignment-PI-cart | 0/6 :x: | |
+| Peter Lemon's CPUTest/DMAAlignment-PI-cart | 3/4 :x: | Failing: DMAAlignment-PI-ROM-FROM |
 | Peter Lemon's CPUTest/Exceptions | 16/17 :x: | Failing: ExceptionCompareDisabled. Logs suggest that it wants cause.ip7 to be set? |
 | Peter Lemon's FrameBuffer | 4/4 :heavy_check_mark: | |
 | Peter Lemon's RSPTest/CP2 | 24/26 :x: | Failing: RSPCP2LWV, RSPTransposeMatrixVMOV |

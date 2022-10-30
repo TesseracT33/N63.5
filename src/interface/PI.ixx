@@ -29,8 +29,8 @@ namespace PI
 		CartToRdram, RdramToCart
 	};
 
-	template<DmaType>
-	void InitDma(DmaType type);
+	template<DmaType> void InitDma(DmaType type);
+	void OnDmaFinish();
 
 	struct
 	{
@@ -39,4 +39,6 @@ namespace PI
 		s32 bsd_dom2_lat, bsd_dom2_pwd, bsd_dom2_pgs, bsd_dom2_rls;
 		s32 dummy_reg_at_0x34, dummy_reg_at_0x38, dummy_reg_at_0x3C;
 	} pi;
+
+	size_t dma_len;
 }

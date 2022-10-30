@@ -20,35 +20,46 @@ namespace PI
 	{
 		SetStatusFlag(StatusFlag::DmaBusy);
 		ClearStatusFlag(StatusFlag::DmaCompleted);
-		MI::ClearInterruptFlag(MI::InterruptType::PI);
+		MI::ClearInterruptFlag(MI::InterruptType::PI); /* TODO: should we clear? */
 
 		u8* rdram_ptr = RDRAM::GetPointerToMemory(pi.dram_addr);
 		u8* cart_ptr = Cartridge::GetPointerToRom(pi.cart_addr);
 		size_t bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(pi.dram_addr);
 		size_t bytes_until_cart_end = Cartridge::GetNumberOfBytesUntilRomEnd(pi.cart_addr);
-		size_t dma_len = std::min(bytes_until_rdram_end, bytes_until_cart_end);
+		dma_len = std::min(bytes_until_rdram_end, bytes_until_cart_end);
 		if constexpr (type == DmaType::CartToRdram) {
 			dma_len = std::min(dma_len, size_t(pi.wr_len + 1));
-			std::memcpy(rdram_ptr, cart_ptr, dma_len);
+			/* See https://n64brew.dev/wiki/Peripheral_Interface#Unaligned_DMA_transfer for behavior when addr is unaligned */
+			static constexpr size_t block_size = 128;
+			size_t num_bytes_first_block = block_size - (pi.dram_addr & (block_size - 1));
+			if (num_bytes_first_block > (pi.dram_addr & 7)) {
+				std::memcpy(rdram_ptr, cart_ptr, std::min(dma_len, num_bytes_first_block - (pi.dram_addr & 7)));
+			}
+			if (dma_len > num_bytes_first_block) {
+				std::memcpy(rdram_ptr + num_bytes_first_block, cart_ptr + num_bytes_first_block, dma_len - num_bytes_first_block);
+			}
 			if constexpr (log_dma) {
 				Logging::LogDMA(std::format("From cart ROM ${:X} to RDRAM ${:X}: ${:X} bytes",
 					pi.cart_addr, pi.dram_addr, dma_len));
 			}
 		}
 		else { /* RDRAM to cart */
-			dma_len = std::min(dma_len, size_t(pi.rd_len + 1));
-			std::memcpy(cart_ptr, rdram_ptr, dma_len);
-			Logging::LogDMA(std::format("From RDRAM ${:X} to cart ROM ${:X}: ${:X} bytes",
-				pi.dram_addr, pi.cart_addr, dma_len));
+			/* TODO: when I wrote this code, I forgot we can't write to ROM. But it seems we can write to SRAM/FLASH.
+				I do not yet know the behavior */
+			//dma_len = std::min(dma_len, size_t(pi.rd_len + 1));
+			//std::memcpy(cart_ptr, rdram_ptr, dma_len);
+			//if constexpr (log_dma) {
+			//	Logging::LogDMA(std::format("From RDRAM ${:X} to cart ROM ${:X}: ${:X} bytes",
+			//		pi.dram_addr, pi.cart_addr, dma_len));
+			//}
+			Logging::LogMisc("Attempted DMA from RDRAM to Cart, but this is unimplemented.");
+			OnDmaFinish();
+			return;
 		}
 
 		static constexpr auto cycles_per_byte_dma = 18;
 		auto cycles_until_finish = dma_len * cycles_per_byte_dma;
-		Scheduler::AddEvent(Scheduler::EventType::PiDmaFinish, cycles_until_finish, [] {
-			SetStatusFlag(StatusFlag::DmaCompleted);
-			ClearStatusFlag(StatusFlag::DmaBusy);
-			MI::SetInterruptFlag(MI::InterruptType::PI);
-		});
+		Scheduler::AddEvent(Scheduler::EventType::PiDmaFinish, cycles_until_finish, OnDmaFinish);
 	}
 
 
@@ -58,9 +69,19 @@ namespace PI
 	}
 
 
+	void OnDmaFinish()
+	{
+		SetStatusFlag(StatusFlag::DmaCompleted);
+		ClearStatusFlag(StatusFlag::DmaBusy);
+		MI::SetInterruptFlag(MI::InterruptType::PI);
+		pi.dram_addr = (pi.dram_addr + dma_len) & 0xFF'FFFF;
+		pi.cart_addr = (pi.cart_addr + dma_len) & 0xFF'FFFF;
+	}
+
+
 	s32 ReadReg(u32 addr)
 	{
-		u32 offset = (addr >> 2) & 0xF;
+		u32 offset = addr >> 2 & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&pi) + offset, 4);
 		return ret;
@@ -108,8 +129,8 @@ namespace PI
 			if (data & reset_dma_mask) {
 				/* Reset the DMA controller and stop any transfer being done */
 				pi.status = 0;
-				MI::ClearInterruptFlag(MI::InterruptType::PI);
-
+				MI::ClearInterruptFlag(MI::InterruptType::PI); /* TODO: correct? */
+				Scheduler::RemoveEvent(Scheduler::EventType::PiDmaFinish);
 			}
 			if (data & clear_interrupt_mask) {
 				/* Clear Interrupt */
