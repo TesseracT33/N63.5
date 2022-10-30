@@ -16,6 +16,7 @@ namespace RDRAM
 		size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr);
 		u8* GetPointerToMemory(u32 addr = 0);
 		size_t GetSize();
+		void Initialize();
 
 		/* 0 - $7F'FFFF */
 		template<std::signed_integral Int>
@@ -33,6 +34,11 @@ namespace RDRAM
 		/* $03F0'0000 - $03FF'FFFF */
 		void WriteReg(u32 addr, s32 data);
 	}
+
+	struct {
+		u32 device_type, device_id, delay, mode, ref_interval, ref_row,
+			ras_interval, min_interval, addr_select, device_manuf;
+	} reg;
 
 	constexpr size_t rdram_standard_size = 0x40'0000;
 	constexpr size_t rdram_expanded_size = 0x80'0000;

@@ -24,6 +24,16 @@ namespace RDRAM
 	}
 
 
+	void Initialize()
+	{
+		std::memset(&reg, 0, sizeof(reg));
+		/* values taken from Peter Lemon RDRAMTest */
+		reg.device_type = 0xB4190010;
+		reg.delay = 0x2B3B1A0B;
+		reg.ras_interval = 0x101C0A04;
+	}
+
+
 	/* 0 - $7F'FFFF */
 	template<std::signed_integral Int>
 	Int Read(u32 addr)
@@ -38,8 +48,15 @@ namespace RDRAM
 	/* $03F0'0000 - $03FF'FFFF */
 	s32 ReadReg(u32 addr)
 	{
-		/* TODO */
-		return 0;
+		if (addr <= 0x3F0'0024) {
+			auto reg_index = addr >> 2 & 0xF;
+			s32 ret;
+			std::memcpy(&ret, (s32*)(&reg) + reg_index, 4);
+			return ret;
+		}
+		else {
+			return 0;
+		}
 	}
 
 

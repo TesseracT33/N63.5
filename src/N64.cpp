@@ -8,6 +8,7 @@ import MI;
 import PI;
 import PIF;
 import RDP;
+import RDRAM;
 import RI;
 import RSP;
 import Scheduler;
@@ -36,6 +37,7 @@ namespace N64
 		RI::Initialize();
 		SI::Initialize();
 		VI::Initialize();
+		RDRAM::Initialize();
 		Memory::Initialize();
 		/* Power CPU after RSP, since CPU reads to RSP memory if hle_ipl and RSP clears it. */
 		RSP::PowerOn();
