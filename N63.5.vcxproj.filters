@@ -29,8 +29,6 @@
     <ClCompile Include="src\interface\SI.ixx" />
     <ClCompile Include="src\interface\VI.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />
-    <ClCompile Include="src\memory\DMA.ixx" />
-    <ClCompile Include="src\memory\DMA.cpp" />
     <ClCompile Include="src\memory\RDRAM.cpp" />
     <ClCompile Include="src\interface\MI.cpp" />
     <ClCompile Include="src\interface\PI.cpp" />

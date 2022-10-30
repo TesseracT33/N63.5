@@ -1,8 +1,11 @@
 module SI;
 
-import DMA;
-import Memory;
+import DebugOptions;
+import Logging;
 import MI;
+import PIF;
+import RDRAM;
+import Scheduler;
 
 namespace SI
 {
@@ -12,15 +15,58 @@ namespace SI
 	}
 
 
+	template<DmaType type>
+	void InitDma()
+	{
+		SetStatusFlag(StatusFlag::DmaBusy);
+		MI::ClearInterruptFlag(MI::InterruptType::SI);
+		/* pif address is aligned to four bytes */
+		u32 pif_addr;
+		size_t bytes_until_pif_end;
+		if constexpr (type == DmaType::PifToRdram) {
+			pif_addr = si.pif_addr_rd64b;
+			bytes_until_pif_end = PIF::GetNumberOfBytesUntilMemoryEnd(pif_addr);
+		}
+		else { /* RDRAM to PIF */
+			pif_addr = si.pif_addr_wr64b;
+			bytes_until_pif_end = PIF::GetNumberOfBytesUntilRamStart(pif_addr);
+		}
+		u8* rdram_ptr = RDRAM::GetPointerToMemory(si.dram_addr);
+		u8* pif_ptr = PIF::GetPointerToMemory(pif_addr);
+		size_t bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(si.dram_addr);
+		size_t dma_len = std::min(size_t(64), std::min(bytes_until_rdram_end, bytes_until_pif_end));
+		if constexpr (type == DmaType::PifToRdram) {
+			std::memcpy(rdram_ptr, pif_ptr, dma_len);
+			if constexpr (log_dma) {
+				Logging::LogDMA(std::format("From PIF ${:X} to RDRAM ${:X}: ${:X} bytes",
+					pif_addr, si.dram_addr, dma_len));
+			}
+		}
+		else { /* RDRAM to PIF */
+			std::memcpy(pif_ptr, rdram_ptr, dma_len);
+			Logging::LogDMA(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
+				si.dram_addr, pif_addr, dma_len));
+		}
+
+		static constexpr auto cycles_per_byte_dma = 18;
+		auto cycles_until_finish = dma_len * cycles_per_byte_dma;
+		Scheduler::AddEvent(Scheduler::EventType::SiDmaFinish, cycles_until_finish, [] {
+			SetStatusFlag(StatusFlag::Interrupt);
+			ClearStatusFlag(StatusFlag::DmaBusy);
+			MI::SetInterruptFlag(MI::InterruptType::SI);
+		});
+	}
+
+
 	void Initialize()
 	{
-
+		std::memset(&si, 0, sizeof(si));
 	}
 
 
 	s32 ReadReg(u32 addr)
 	{
-		u32 offset = (addr >> 2) & 7;
+		u32 offset = addr >> 2 & 7;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&si) + offset, 4);
 		return ret;
@@ -42,36 +88,35 @@ namespace SI
 			AddrWr64B = 4, AddrRd4B = 5, Status = 6
 		};
 
-		switch (offset)
-		{
+		switch (offset) {
 		case RegOffset::DramAddr:
-			si.dram_addr = data;
+			si.dram_addr = data & 0xFF'FFFF;
 			break;
 
 		case RegOffset::AddrRd4B:
 			si.pif_addr_rd4b = data;
-			DMA::Init<DMA::Type::SI, DMA::Location::PIF, DMA::Location::RDRAM>(4, si.pif_addr_rd4b, si.dram_addr);
+			/* TODO */
 			break;
 
 		case RegOffset::AddrRd64B:
-			si.pif_addr_rd64b = data;
-			DMA::Init<DMA::Type::SI, DMA::Location::PIF, DMA::Location::RDRAM>(64, si.pif_addr_rd64b, si.dram_addr);
+			si.pif_addr_rd64b = data & 0x7FC;
+			InitDma<DmaType::PifToRdram>();
 			break;
 
 		case RegOffset::AddrWr4B:
 			si.pif_addr_wr4b = data;
-			DMA::Init<DMA::Type::SI, DMA::Location::RDRAM, DMA::Location::PIF>(4, si.dram_addr, si.pif_addr_wr4b);
+			/* TODO */
 			break;
 
 		case RegOffset::AddrWr64B:
-			si.pif_addr_wr64b = data;
-			DMA::Init<DMA::Type::SI, DMA::Location::RDRAM, DMA::Location::PIF>(64, si.dram_addr, si.pif_addr_wr64b);
+			si.pif_addr_wr64b = data & 0x7FC;
+			InitDma<DmaType::RdramToPif>();
 			break;
 
 		case RegOffset::Status:
 			/* Writing any value to si.STATUS clears bit 12 (SI Interrupt flag), not only here,
 			   but also in the RCP Interrupt Cause register and in MI. */
-			si.status &= ~0x1000;
+			ClearStatusFlag(StatusFlag::Interrupt);
 			MI::ClearInterruptFlag(MI::InterruptType::SI);
 			// TODO: RCP flag
 			break;

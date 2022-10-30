@@ -262,8 +262,6 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\memory\Cartridge.cpp" />
     <ClCompile Include="src\memory\Cartridge.ixx" />
-    <ClCompile Include="src\memory\DMA.cpp" />
-    <ClCompile Include="src\memory\DMA.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />

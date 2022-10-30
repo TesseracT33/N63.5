@@ -14,8 +14,8 @@ namespace PIF
 {
 	export
 	{
-		size_t GetNumberOfBytesUntilRAMEnd(u32 offset);
-		u8* GetPointerToRAM(u32 address);
+		size_t GetNumberOfBytesUntilMemoryEnd(u32 offset);
+		size_t GetNumberOfBytesUntilRamStart(u32 offset);
 		u8* GetPointerToMemory(u32 address);
 		bool LoadIPL12(const std::string& path);
 
@@ -35,6 +35,7 @@ namespace PIF
 	constexpr size_t ram_size = 0x40;
 	constexpr size_t rom_size = 0x7C0;
 	constexpr size_t ram_start = rom_size;
+	constexpr size_t memory_size = ram_size + rom_size;
 
 	struct JoypadStatus /* TODO: correct endianness? */
 	{
@@ -58,5 +59,5 @@ namespace PIF
 		u32 y_axis : 8;
 	} joypad_status;
 
-	std::array<u8, rom_size + ram_size> memory{}; /* $0-$7BF: rom; $7C0-$7FF: ram */
+	std::array<u8, memory_size> memory; /* $0-$7BF: rom; $7C0-$7FF: ram */
 }

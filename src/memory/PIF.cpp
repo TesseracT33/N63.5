@@ -25,21 +25,22 @@ namespace PIF
 	}
 
 
-	size_t GetNumberOfBytesUntilRAMEnd(u32 offset)
+	size_t GetNumberOfBytesUntilMemoryEnd(u32 offset)
 	{
-		return ram_size - (offset & (ram_size - 1)); /* Size is 0x40 bytes */
+		return memory_size - (offset & (memory_size - 1)); /* Size is 0x800 bytes */
 	}
 
 
-	u8* GetPointerToRAM(u32 address)
+	size_t GetNumberOfBytesUntilRamStart(u32 offset)
 	{
-		return memory.data() + rom_size + (address & (ram_size - 1)); /* Size is 0x40 bytes */
+		offset &= memory_size - 1;
+		return offset < ram_start ? ram_start - offset : 0;
 	}
 
 
 	u8* GetPointerToMemory(u32 address)
 	{
-		return memory.data() + (address & 0x7FF);
+		return memory.data() + (address & (memory_size - 1));
 	}
 
 

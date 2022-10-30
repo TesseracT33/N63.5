@@ -3,7 +3,6 @@ module RSP:Operation;
 import :Interface;
 
 import DebugOptions;
-import DMA;
 import Logging;
 import MI;
 

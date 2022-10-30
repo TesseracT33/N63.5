@@ -9,8 +9,7 @@ namespace SI
 {
 	export
 	{
-		enum class StatusFlag : s32
-		{
+		enum class StatusFlag : s32 {
 			DmaBusy = 1 << 0, /* Set when a read or write DMA, or an IO write, is in progress. */
 			IoBusy = 1 << 1, /* Set when either an IO read or write is in progress. */
 			ReadPending = 1 << 2, /* Set when an IO read occurs, while an IO or DMA write is in progress. */
@@ -25,9 +24,16 @@ namespace SI
 		void WriteReg(u32 addr, s32 data);
 	}
 
+	enum class DmaType {
+		PifToRdram, RdramToPif
+	};
+
+	template<DmaType>
+	void InitDma();
+
 	struct
 	{
 		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy_reg_at_0x0C,
-			pif_addr_wr64b, pif_addr_rd4b, status, dummy_reg_at_0x1C;
-	} si{};
+			pif_addr_wr64b, pif_addr_rd4b, status, s32dummy_reg_at_0x1C;
+	} si;
 }

@@ -4,14 +4,14 @@ import Util;
 
 import <algorithm>;
 import <cstring>;
+import <format>;
 import <utility>;
 
 namespace PI
 {
 	export
 	{
-		enum class StatusFlag : s32
-		{
+		enum class StatusFlag : s32 {
 			DmaBusy      = 1 << 0,
 			IoBusy       = 1 << 1,
 			DmaError     = 1 << 2,
@@ -25,11 +25,18 @@ namespace PI
 		void WriteReg(u32 addr, s32 data);
 	}
 
+	enum class DmaType {
+		CartToRdram, RdramToCart
+	};
+
+	template<DmaType>
+	void InitDma(DmaType type);
+
 	struct
 	{
 		s32 dram_addr, cart_addr, rd_len, wr_len, status;
 		s32 bsd_dom1_lat, bsd_dom1_pwd, bsd_dom1_pgs, bsd_dom1_rls;
 		s32 bsd_dom2_lat, bsd_dom2_pwd, bsd_dom2_pgs, bsd_dom2_rls;
 		s32 dummy_reg_at_0x34, dummy_reg_at_0x38, dummy_reg_at_0x3C;
-	} pi{};
+	} pi;
 }
