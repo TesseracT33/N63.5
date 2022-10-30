@@ -38,13 +38,14 @@ namespace VI
 		/* NTSC "defaults" (?) */
 		num_fields = 1;
 		num_halflines = 262;
+		/* TODO: idk enough about analogue video to know what this should be. */
 		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
 	}
 
 
 	void OnNewHalflineEvent()
 	{
-		if (++vi.v_current == num_halflines) {
+		if (++vi.v_current == vi.v_sync) {
 			vi.v_current = 0;
 			RDP::implementation->UpdateScreen();
 		}
