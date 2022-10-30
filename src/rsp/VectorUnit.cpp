@@ -11,6 +11,9 @@ import DebugOptions;
 #define vcc control_reg[1]
 #define vce control_reg[2]
 
+/* For invoking a parameter-free lambda template */
+#define INVOKE(LAMBDA, ...) LAMBDA.template operator() <__VA_ARGS__> ()
+
 namespace RSP
 {
 	void AddToAcc(__m128i low)
@@ -225,18 +228,10 @@ namespace RSP
 			}
 		};
 
-		if constexpr (instr == LBV) {
-			LoadUpToDoubleword.template operator() < s8 > ();
-		}
-		else if constexpr (instr == LSV) {
-			LoadUpToDoubleword.template operator() < s16 > ();
-		}
-		else if constexpr (instr == LLV) {
-			LoadUpToDoubleword.template operator() < s32 > ();
-		}
-		else if constexpr (instr == LDV) {
-			LoadUpToDoubleword.template operator() < s64 > ();
-		}
+		if constexpr (instr == LBV)      INVOKE(LoadUpToDoubleword, s8);
+		else if constexpr (instr == LSV) INVOKE(LoadUpToDoubleword, s16);
+		else if constexpr (instr == LLV) INVOKE(LoadUpToDoubleword, s32);
+		else if constexpr (instr == LDV) INVOKE(LoadUpToDoubleword, s64);
 		else if constexpr (instr == LQV || instr == LRV) {
 			/* LRQ; Load (up to) 16 bytes into vector, left-aligned. The bytes accessed are those
 			starting at GPR[base] + (offset * 16), up to and excluding the next 128-bit aligned byte.
@@ -347,18 +342,10 @@ namespace RSP
 		else if constexpr (instr == LPV || instr == LUV || instr == SPV || instr == SUV) {
 			PackedLoadStore();
 		}
-		else if constexpr (instr == SBV) {
-			StoreUpToDoubleword.template operator() < s8 > ();
-		}
-		else if constexpr (instr == SSV) {
-			StoreUpToDoubleword.template operator() < s16 > ();
-		}
-		else if constexpr (instr == SLV) {
-			StoreUpToDoubleword.template operator() < s32 > ();
-		}
-		else if constexpr (instr == SDV) {
-			StoreUpToDoubleword.template operator() < s64 > ();
-		}
+		else if constexpr (instr == SBV) INVOKE(StoreUpToDoubleword, s8);
+		else if constexpr (instr == SSV) INVOKE(StoreUpToDoubleword, s16);
+		else if constexpr (instr == SLV) INVOKE(StoreUpToDoubleword, s32);
+		else if constexpr (instr == SDV) INVOKE(StoreUpToDoubleword, s64);
 		else if constexpr (instr == SQV || instr == SRV) {
 			const u8* vpr_src = (u8*)(vpr.data() + vt);
 			u32 addr = gpr[base] + offset * 16;

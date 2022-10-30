@@ -9,6 +9,9 @@ import :Operation;
 import DebugOptions;
 import Util;
 
+/* For invoking a parameter-free lambda template */
+#define INVOKE(LAMBDA, ...) LAMBDA.template operator() <__VA_ARGS__> ()
+
 namespace VR4300
 {
 	void FCR31::Set(u32 data)
@@ -119,25 +122,6 @@ namespace VR4300
 			}
 		}
 	}
-
-
-	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.
-	   The below maps formats to identifiers. */
-	enum FmtTypeID
-	{
-		Float32 = 16,
-		Float64 = 17,
-		Int32   = 20,
-		Int64   = 21
-	};
-
-
-	constexpr std::array compare_cond_strings = {
-		"F", "UN", "EQ", "UEQ", "OLT", "ULT", "OLE", "ULE", "SF", "NGLE", "SEQ", "NGL", "LT", "NGE", "LE", "NGT"
-	};
-
-
-	bool unimplemented_operation = false;
 
 
 	constexpr std::string_view FmtToString(FmtTypeID fmt)
@@ -405,7 +389,6 @@ namespace VR4300
 			/* CVT.S/CVT.D: Convert To Single/Double Floating-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a single/double-precision floating-point format. Stores the rounded result to floating-point register fd.
-
 			   CVT.W/CVT.L: Convert To Single/Long Fixed-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a 32/64-bit fixed-point format. Stores the rounded result to floating-point register fd. */
@@ -416,9 +399,7 @@ namespace VR4300
 					std::feclearexcept(FE_ALL_EXCEPT);
 					To conv = To(source); 
 					fpr.Set<To>(fd, conv);
-
 					unimplemented_operation = TestForUnimplementedException.template operator () < From, To > (source);
-
 					/* Note: if the input and output formats are the same, the result is undefined,
 					   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995. */
 					/* TODO: the below is assuming that conv. between W and L takes 2 cycles.
@@ -432,30 +413,17 @@ namespace VR4300
 					}();
 					AdvancePipeline(cycles);
 				};
-
-				if constexpr (instr == CVT_S) Convert.template operator() < InputType, f32 > ();
-				if constexpr (instr == CVT_D) Convert.template operator() < InputType, f64 > ();
-				if constexpr (instr == CVT_W) Convert.template operator() < InputType, s32 > ();
-				if constexpr (instr == CVT_L) Convert.template operator() < InputType, s64 > ();
+				if constexpr (instr == CVT_S) INVOKE(Convert, InputType, f32);
+				if constexpr (instr == CVT_D) INVOKE(Convert, InputType, f64);
+				if constexpr (instr == CVT_W) INVOKE(Convert, InputType, s32);
+				if constexpr (instr == CVT_L) INVOKE(Convert, InputType, s64);
 			};
 
 			switch (fmt) {
-			case FmtTypeID::Float32:
-				Convert.template operator() <f32> ();
-				break;
-
-			case FmtTypeID::Float64:
-				Convert.template operator() <f64> ();
-				break;
-
-			case FmtTypeID::Int32:
-				Convert.template operator() <s32> ();
-				break;
-
-			case FmtTypeID::Int64:
-				Convert.template operator() <s64> ();
-				break;
-
+			case FmtTypeID::Float32: INVOKE(Convert, f32); break;
+			case FmtTypeID::Float64: INVOKE(Convert, f64); break;
+			case FmtTypeID::Int32:   INVOKE(Convert, s32); break;
+			case FmtTypeID::Int64:   INVOKE(Convert, s64); break;
 			default:
 				unimplemented_operation = true;
 				std::feclearexcept(FE_ALL_EXCEPT);
@@ -498,22 +466,14 @@ namespace VR4300
 
 			switch (fmt) {
 			case FmtTypeID::Float32:
-				if constexpr (round_to_s32) {
-					Round.template operator() < f32 /* input format */, s32 /* output format */ > ();
-				}
-				else {
-					Round.template operator() < f32, s64 > ();
-				}
+				if constexpr (round_to_s32) INVOKE(Round, f32, s32);
+				else                        INVOKE(Round, f32, s64);
 				AdvancePipeline(5);
 				break;
 
 			case FmtTypeID::Float64:
-				if constexpr (round_to_s32) {
-					Round.template operator() < f64, s32 > ();
-				}
-				else {
-					Round.template operator() < f64, s64 > ();
-				}
+				if constexpr (round_to_s32) INVOKE(Round, f64, s32);
+				else                        INVOKE(Round, f64, s64);
 				AdvancePipeline(5);
 				break;
 
@@ -580,19 +540,12 @@ namespace VR4300
 					fpr.Set<Float>(fd, op1 / op2);
 					AdvancePipeline(58);
 				}
+				unimplemented_operation = false;
 			};
 
 			switch (fmt) {
-			case FmtTypeID::Float32:
-				Compute.template operator() <f32> ();
-				unimplemented_operation = false;
-				break;
-
-			case FmtTypeID::Float64:
-				Compute.template operator() <f64> ();
-				unimplemented_operation = false;
-				break;
-
+			case FmtTypeID::Float32: INVOKE(Compute, f32); break;
+			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
 			default:
 				AdvancePipeline(2);
 				unimplemented_operation = true;
@@ -647,26 +600,18 @@ namespace VR4300
 						AdvancePipeline(58);
 					}
 				}
+				unimplemented_operation = false;
 			};
 
 			switch (fmt) {
-			case FmtTypeID::Float32:
-				Compute.template operator() < f32 > ();
-				unimplemented_operation = false;
-				break;
-
-			case FmtTypeID::Float64:
-				Compute.template operator() < f64 > ();
-				unimplemented_operation = false;
-				break;
-
+			case FmtTypeID::Float32: INVOKE(Compute, f32); break;
+			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
 			default:
 				AdvancePipeline(2);
 				unimplemented_operation = true;
 				std::feclearexcept(FE_ALL_EXCEPT);
 				break;
 			}
-
 			/* MOV can cause only the unimplemented operation exception. */
 			if constexpr (instr == MOV) {
 				TestUnimplementedOperationException();
@@ -749,36 +694,24 @@ namespace VR4300
 		auto Compare = [&] <std::floating_point Float> {
 			Float op1 = fpr.Get<Float>(fs);
 			Float op2 = fpr.Get<Float>(ft);
-
-			bool comp_result = [&] { /* See VR4300 User's Manual by NEC, p. 566 */
-				if (std::isnan(op1) || std::isnan(op2)) {
-					SetInvalidException(cond & 8);
-					return bool(cond & 1);
-				}
-				else {
-					SetInvalidException(false);
-					return (cond & 4) && op1 < op2 || (cond & 2) && op1 == op2;
-				}
-			}();
-
-			fcr31.c = comp_result; /* TODO: also set 'COC1' to result? Or is COC1 the same as fcr31.C? */
+			/* See VR4300 User's Manual by NEC, p. 566 */
+			if (std::isnan(op1) || std::isnan(op2)) {
+				SetInvalidException(cond & 8);
+				fcr31.c = cond & 1;
+			}
+			else {
+				SetInvalidException(false);
+				fcr31.c = (cond & 4) && op1 < op2 || (cond & 2) && op1 == op2;
+			}
+			AdvancePipeline(1);
+			unimplemented_operation = false;
 		};
 
 		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */
 
 		switch (fmt) {
-		case FmtTypeID::Float32:
-			Compare.template operator() < f32 > ();
-			unimplemented_operation = false;
-			AdvancePipeline(1);
-			break;
-
-		case FmtTypeID::Float64:
-			Compare.template operator() < f64 > ();
-			unimplemented_operation = false;
-			AdvancePipeline(1);
-			break;
-
+		case FmtTypeID::Float32: INVOKE(Compare, f32); break;
+		case FmtTypeID::Float64: INVOKE(Compare, f64); break;
 		default:
 			unimplemented_operation = true;
 			AdvancePipeline(2);

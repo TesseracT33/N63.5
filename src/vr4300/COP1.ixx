@@ -34,6 +34,16 @@ namespace VR4300
 		C
 	};
 
+	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.
+   The below maps formats to identifiers. */
+	enum FmtTypeID
+	{
+		Float32 = 16,
+		Float64 = 17,
+		Int32 = 20,
+		Int64 = 21
+	};
+
 	/* COP1/FPU instructions */
 	template<COP1Instruction> void FPULoad(u32 instr_code);
 	template<COP1Instruction> void FPUStore(u32 instr_code);
@@ -111,5 +121,11 @@ namespace VR4300
 		}
 	} random_generator{};
 
-	bool fpu_is_enabled = false; /* Equal to bit 29 of the status register. If clear, all fpu instructions throw exceptions. */
+
+	constexpr std::array compare_cond_strings = {
+		"F", "UN", "EQ", "UEQ", "OLT", "ULT", "OLE", "ULE", "SF", "NGLE", "SEQ", "NGL", "LT", "NGE", "LE", "NGT"
+	};
+
+	bool fpu_is_enabled; /* Equal to bit 29 of the status register. If clear, all fpu instructions throw exceptions. */
+	bool unimplemented_operation;
 }
