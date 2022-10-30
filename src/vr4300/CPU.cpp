@@ -140,7 +140,7 @@ namespace VR4300
 				   Loads the contents of the word specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
 				s32 ret = ReadVirtual<s32>(addr);
-				cop0_reg.ll_addr.p_addr = last_physical_address_on_load;
+				cop0_reg.ll_addr.p_addr = last_physical_address_on_load >> 4;
 				ll_bit = 1;
 				return ret;
 			}
@@ -149,7 +149,7 @@ namespace VR4300
 				   Loads the contents of the doubleword specified by the address to register rt and sets the LL bit to 1.
 				   Additionally, the specified physical address of the memory is stored to the LLAddr register. */
 				s64 ret = ReadVirtual<s64>(addr);
-				cop0_reg.ll_addr.p_addr = last_physical_address_on_load;
+				cop0_reg.ll_addr.p_addr = last_physical_address_on_load >> 4;
 				ll_bit = 1;
 				return ret;
 			}
