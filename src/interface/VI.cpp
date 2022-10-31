@@ -1,9 +1,7 @@
 module VI;
 
-import Memory;
 import MI;
 import N64;
-import RDRAM;
 import RDP;
 import Scheduler;
 

@@ -3,8 +3,6 @@ module RSP:VectorUnit;
 import :Operation;
 import :ScalarUnit;
 
-import Util;
-
 import DebugOptions;
 
 #define vco control_reg[0]

@@ -1,20 +1,18 @@
 module RDRAM;
 
-import Memory;
-
 namespace RDRAM
 {
-	size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr)
+	size_t GetNumberOfBytesUntilMemoryEnd(u32 addr)
 	{
-		start_addr &= sizeof(rdram) - 1;
-		return std::max(size_t(0), sizeof(rdram) - start_addr);
+		/* TODO handle mirroring (for DMA) */
+		return sizeof(rdram) - (addr & (sizeof(rdram) - 1));
 	}
 
 
 	u8* GetPointerToMemory(u32 addr)
 	{
-		addr &= sizeof(rdram) - 1;
-		return rdram + addr;
+		auto offset = addr & (sizeof(rdram) - 1);
+		return rdram + (addr & (sizeof(rdram) - 1));
 	}
 
 
@@ -26,11 +24,12 @@ namespace RDRAM
 
 	void Initialize()
 	{
+		std::memset(rdram, 0, sizeof(rdram));
 		std::memset(&reg, 0, sizeof(reg));
 		/* values taken from Peter Lemon RDRAMTest */
-		reg.device_type = 0xB4190010;
-		reg.delay = 0x2B3B1A0B;
-		reg.ras_interval = 0x101C0A04;
+		reg.device_type = 0xB419'0010;
+		reg.delay = 0x2B3B'1A0B;
+		reg.ras_interval = 0x101C'0A04;
 	}
 
 
@@ -38,7 +37,6 @@ namespace RDRAM
 	template<std::signed_integral Int>
 	Int Read(u32 addr)
 	{ /* CPU precondition: addr is always aligned */
-		static_assert(sizeof(rdram) >= 0x80'0000);
 		Int ret;
 		std::memcpy(&ret, rdram + addr, sizeof(Int));
 		return std::byteswap(ret);

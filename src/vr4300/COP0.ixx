@@ -9,8 +9,7 @@ import <cstring>;
 
 namespace VR4300
 {
-	enum class COP0Instruction
-	{
+	enum class COP0Instruction {
 		/* Move instructions */
 		MTC0, MFC0, DMTC0, DMFC0,
 

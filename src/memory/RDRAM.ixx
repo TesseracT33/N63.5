@@ -2,10 +2,7 @@ export module RDRAM;
 
 import Util;
 
-import <algorithm>;
-import <array>;
 import <bit>;
-import <cassert>;
 import <concepts>;
 import <cstring>;
 
@@ -13,25 +10,14 @@ namespace RDRAM
 {
 	export
 	{
-		size_t GetNumberOfBytesUntilMemoryEnd(u32 start_addr);
+		size_t GetNumberOfBytesUntilMemoryEnd(u32 addr);
 		u8* GetPointerToMemory(u32 addr = 0);
 		size_t GetSize();
 		void Initialize();
-
-		/* 0 - $7F'FFFF */
-		template<std::signed_integral Int>
-		Int Read(u32 addr);
-
-		/* $03F0'0000 - $03FF'FFFF */
+		template<std::signed_integral Int> Int Read(u32 addr);
 		s32 ReadReg(u32 addr);
-
 		u64 RspReadCommandByteswapped(u32 addr);
-
-		/* 0 - $7F'FFFF */
-		template<size_t num_bytes>
-		void Write(u32 addr, std::signed_integral auto data);
-
-		/* $03F0'0000 - $03FF'FFFF */
+		template<size_t num_bytes> void Write(u32 addr, std::signed_integral auto data);
 		void WriteReg(u32 addr, s32 data);
 	}
 

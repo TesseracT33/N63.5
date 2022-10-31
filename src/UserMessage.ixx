@@ -3,7 +3,6 @@ export module UserMessage;
 import <SDL.h>;
 
 import <cassert>;
-import <format>;
 import <iostream>;
 import <string>;
 

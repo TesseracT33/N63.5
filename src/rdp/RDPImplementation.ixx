@@ -4,8 +4,6 @@ import Util;
 
 import <SDL.h>;
 
-import <array>;
-
 export class RDPImplementation
 {
 public:

@@ -7,7 +7,6 @@ import :Operation;
 
 import DebugOptions;
 import Logging;
-import Util;
 
 namespace VR4300
 {

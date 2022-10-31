@@ -17,8 +17,7 @@ import <intrin.h>;
 
 namespace VR4300
 {
-	enum class CPUInstruction
-	{
+	enum class CPUInstruction {
 		/* Load instructions */
 		LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD,
 
@@ -87,15 +86,11 @@ namespace VR4300
 		std::array<s64, 32> gpr{};
 	} gpr;
 
-	u64 pc;
-
-	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
-
 	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */
-
 	bool jump_is_pending = false;
 	bool last_instr_was_load = false;
 	uint instructions_until_jump = 0;
 	u64 addr_to_jump_to;
-	u8 last_load_target_reg;
+	u64 pc;
+	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
 }

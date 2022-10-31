@@ -24,9 +24,6 @@ namespace N64
 		const std::optional<std::string>& ipl_path,
 		RDP::Implementation rdp_implementation)
 	{
-		if (!Cartridge::LoadRom(rom_path)) {
-			return false;
-		}
 		bool hle_ipl = true;
 		if (ipl_path.has_value()) {
 			hle_ipl = !PIF::LoadIPL12(ipl_path.value());
@@ -39,6 +36,11 @@ namespace N64
 		VI::Initialize();
 		RDRAM::Initialize();
 		Memory::Initialize();
+
+		if (!Cartridge::LoadRom(rom_path)) {
+			return false;
+		}
+
 		/* Power CPU after RSP, since CPU reads to RSP memory if hle_ipl and RSP clears it. */
 		RSP::PowerOn();
 		VR4300::PowerOn(hle_ipl);

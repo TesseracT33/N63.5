@@ -2,7 +2,6 @@ export module MI; /* MIPS Interface */
 
 import Util;
 
-import <bit>;
 import <cstring>;
 import <utility>;
 

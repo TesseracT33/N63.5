@@ -1,9 +1,6 @@
 module PIF;
 
-import Memory;
 import UserMessage;
-
-import Util;
 
 namespace PIF
 {
@@ -46,14 +43,12 @@ namespace PIF
 
 	bool LoadIPL12(const std::string& path)
 	{
-		std::optional<std::array<u8, ram_size + rom_size>> optional_rom =
-			ReadFileIntoArray<ram_size + rom_size>(path);
+		std::optional<std::array<u8, memory_size>> optional_rom = ReadFileIntoArray<memory_size>(path);
 		if (!optional_rom.has_value()) {
 			UserMessage::Show("Failed to open boot rom (IPL) file.", UserMessage::Type::Warning);
 			return false;
 		}
-		const auto& rom = optional_rom.value();
-		std::memcpy(memory.data(), rom.data(), ram_size + rom_size);
+		memory = optional_rom.value();
 		return true;
 	}
 
@@ -61,6 +56,8 @@ namespace PIF
 	template<std::signed_integral Int>
 	Int ReadMemory(u32 addr)
 	{ /* CPU precondition: addr is aligned */
+		// TODO: Reading from the PIF_ROM area will simply return 0 after boot is finished, because the PIF locks PIF_ROM accesses for security reasons.
+		// Also for SI DMA
 		Int ret;
 		std::memcpy(&ret, memory.data() + (addr & 0x7FF), sizeof(Int));
 		return std::byteswap(ret);
@@ -106,13 +103,13 @@ namespace PIF
 			data = std::byteswap(data);
 			std::memcpy(memory.data() + addr, &data, num_bytes);
 			if (addr + num_bytes > 0x7FF) {
-				if (memory[command_byte_index] & 0x01) {
+				if (memory[command_byte_index] & 1) {
 					RunJoybusProtocol();
-					memory[command_byte_index] &= ~0x01;
+					memory[command_byte_index] &= ~1;
 				}
-				if (memory[command_byte_index] & 0x02) {
+				if (memory[command_byte_index] & 2) {
 					ChallengeProtection();
-					memory[command_byte_index] &= ~0x02;
+					memory[command_byte_index] &= ~2;
 				}
 				if (memory[command_byte_index] & 0x20) {
 					ChecksumVerification();

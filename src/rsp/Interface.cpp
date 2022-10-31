@@ -7,7 +7,6 @@ import Logging;
 import MI;
 import RDRAM;
 import Scheduler;
-import VR4300;
 
 namespace RSP
 {

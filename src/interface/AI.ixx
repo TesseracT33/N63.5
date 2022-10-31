@@ -4,8 +4,6 @@ import Util;
 
 import <SDL.h>;
 
-import <algorithm>;
-import <array>;
 import <cstring>;
 import <format>;
 

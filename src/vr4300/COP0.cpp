@@ -9,7 +9,6 @@ import :MMU;
 import DebugOptions;
 import Memory;
 import Scheduler;
-import Util;
 
 namespace VR4300
 {

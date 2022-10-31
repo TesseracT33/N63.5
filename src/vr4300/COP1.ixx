@@ -16,8 +16,7 @@ namespace VR4300
 		std::is_same_v<f32, T> || std::is_same_v<f64, T> ||
 		std::is_same_v<s32, T> || std::is_same_v<s64, T>;
 
-	enum class COP1Instruction
-	{
+	enum class COP1Instruction {
 		/* Load/store/transfer instructions */
 		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1,
 
@@ -35,9 +34,8 @@ namespace VR4300
 	};
 
 	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.
-   The below maps formats to identifiers. */
-	enum FmtTypeID
-	{
+		The below maps formats to identifiers. */
+	enum FmtTypeID {
 		Float32 = 16,
 		Float64 = 17,
 		Int32 = 20,

@@ -7,7 +7,6 @@ import :Operation;
 
 import DebugOptions;
 import Memory;
-import Util;
 
 namespace VR4300
 {
@@ -189,14 +188,8 @@ namespace VR4300
 		*/
 		/* For load right instructions, this represents the 'X's above, that is to be ANDed with GPR when combining it with the read value. */
 		static constexpr std::array<u64, 8> right_load_mask = {
-			0xFFFF'FFFF'FFFF'FF00,
-			0xFFFF'FFFF'FFFF'0000,
-			0xFFFF'FFFF'FF00'0000,
-			0xFFFF'FFFF'0000'0000,
-			0xFFFF'FF00'0000'0000,
-			0xFFFF'0000'0000'0000,
-			0xFF00'0000'0000'0000,
-			0
+			0xFFFF'FFFF'FFFF'FF00, 0xFFFF'FFFF'FFFF'0000, 0xFFFF'FFFF'FF00'0000, 0xFFFF'FFFF'0000'0000,
+			0xFFFF'FF00'0000'0000, 0xFFFF'0000'0000'0000, 0xFF00'0000'0000'0000, 0
 		};
 		if constexpr (instr == LWL) {
 			u32 bits_from_last_boundary = (addr & 3) << 3;
@@ -213,16 +206,14 @@ namespace VR4300
 			gpr.Set(rt, result | untouched_gpr);
 			AdvancePipeline(bits_from_last_boundary > 0 ? 2 : 1);
 		}
-		else if constexpr (instr == LWR)
-		{
+		else if constexpr (instr == LWR) {
 			u32 bytes_from_last_boundary = addr & 3;
 			result >>= 8 * (3 - bytes_from_last_boundary);
 			s32 untouched_gpr = s32(gpr.Get(rt) & right_load_mask[bytes_from_last_boundary]);
 			gpr.Set(rt, result | untouched_gpr);
 			AdvancePipeline(bytes_from_last_boundary > 0 ? 2 : 1);
 		}
-		else if constexpr (instr == LDR)
-		{
+		else if constexpr (instr == LDR) {
 			u32 bytes_from_last_boundary = addr & 7;
 			result >>= 8 * (7 - bytes_from_last_boundary);
 			u64 untouched_gpr = gpr.Get(rt) & right_load_mask[bytes_from_last_boundary];
@@ -276,8 +267,7 @@ namespace VR4300
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
 			WriteVirtual(addr, s32(gpr[rt]));
 		}
-		else if constexpr (instr == SWL)
-		{
+		else if constexpr (instr == SWL) {
 			/* Store Word Left;
 			   Shifts the contents of register rt to the right so that the leftmost byte of the
 			   word is at the position of the byte specified by the address. Stores the result
@@ -450,7 +440,7 @@ namespace VR4300
 				gpr.Set(rt, sum);
 			}
 		}
-		else if constexpr (instr == DADDIU){
+		else if constexpr (instr == DADDIU) {
 			/* Doubleword Add Immediate Unsigned;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Does not generate an exception even if an
@@ -818,7 +808,7 @@ namespace VR4300
 			hi_reg = product >> 64;
 #else
 			/* TODO */
-			assert(false);
+			static_assert(AlwaysFalse<instr>);
 #endif
 		}
 		else if constexpr (instr == DMULTU) {
@@ -836,7 +826,7 @@ namespace VR4300
 			hi_reg = product >> 64;
 #else
 			/* TODO */
-			assert(false);
+			static_assert(AlwaysFalse<instr>);
 #endif
 		}
 		else if constexpr (instr == DDIV) {

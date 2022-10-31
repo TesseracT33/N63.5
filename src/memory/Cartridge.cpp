@@ -3,8 +3,6 @@ module Cartridge;
 import Memory;
 import UserMessage;
 
-import Util;
-
 namespace Cartridge
 {
 	void AllocateSram()
