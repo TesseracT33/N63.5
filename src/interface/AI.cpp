@@ -42,7 +42,8 @@ namespace AI
 		ai.status |= (dma_count > 0) << 30;
 		ai.status |= (dma_count > 1) << 31;
 
-		auto offset = (addr & 0xF) >> 2;
+		static_assert(sizeof(ai) >> 2 == 8);
+		u32 offset = addr >> 2 & 7;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&ai) + offset, 4);
 		return ret;
@@ -70,7 +71,7 @@ namespace AI
 
 	void WriteReg(u32 addr, s32 data)
 	{
-		/* TODO: for now, only allow word-aligned writes. Force 'data' to be a 32-bit integer. */
+		static_assert(sizeof(ai) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
 
 		enum RegOffset {

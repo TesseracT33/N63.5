@@ -99,9 +99,10 @@ namespace RDP
 		Luckily, this is the correct behavior for 8-bit and 16-bit accesses (as explained above), so the VR4300 will
 		be able to extract the correct portion. 64-bit reads instead will completely freeze the VR4300
 		(and thus the whole console), because it will stall waiting for the second word to appear on the bus that the RCP will never put. */
-		auto reg_index = addr >> 2 & 7;
+		static_assert(sizeof(dp) >> 2 == 8);
+		u32 offset = addr >> 2 & 7;
 		s32 ret;
-		std::memcpy(&ret, (s32*)(&dp) + reg_index, 4);
+		std::memcpy(&ret, (s32*)(&dp) + offset, 4);
 		return ret;
 	}
 
@@ -114,13 +115,14 @@ namespace RDP
 				: LoadExecuteCommands<CommandLocation::DMEM>();
 		};
 
-		auto reg_index = addr >> 2 & 7;
+		static_assert(sizeof(dp) >> 2 == 8);
+		u32 offset = addr >> 2 & 7;
 
 		enum Register {
 			StartReg, EndReg, CurrentReg, StatusReg, ClockReg, BufBusyReg, PipeBusyReg, TmemReg
 		};
 
-		switch (reg_index) {
+		switch (offset) {
 		case Register::StartReg:
 			if (!dp.status.start_valid) {
 				dp.start = data & 0xFF'FFF8;

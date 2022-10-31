@@ -31,7 +31,8 @@ namespace MI
 
 	s32 ReadReg(u32 addr)
 	{
-		u32 offset = (addr & 0xF) >> 2;
+		static_assert(sizeof(mi) >> 2 == 4);
+		u32 offset = addr >> 2 & 3;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&mi) + offset, 4);
 		return ret;
@@ -47,7 +48,8 @@ namespace MI
 
 	void WriteReg(u32 addr, s32 data)
 	{
-		u32 offset = (addr & 0xF) >> 2;
+		static_assert(sizeof(mi) >> 2 == 4);
+		u32 offset = addr >> 2 & 3;
 
 		static constexpr u32 offset_mode = 0;
 		static constexpr u32 offset_version = 1;

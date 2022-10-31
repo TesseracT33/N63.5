@@ -137,9 +137,10 @@ namespace RSP
 			return pc;
 		}
 		else {
-			u32 reg_offset = (addr & 0x1F) >> 2;
+			static_assert(sizeof(sp) >> 2 == 8);
+			u32 offset = addr >> 2 & 7;
 
-			switch (reg_offset & 7) {
+			switch (offset & 7) {
 			case DmaSpaddr:
 				return sp.dma_spaddr;
 
@@ -198,9 +199,10 @@ namespace RSP
 			pc = data & 0xFFC;
 		}
 		else {
-			u32 reg_offset = (addr & 0x1F) >> 2;
+			static_assert(sizeof(sp) >> 2 == 8);
+			u32 offset = addr >> 2 & 7;
 
-			switch (reg_offset & 7) {
+			switch (offset) {
 			case DmaSpaddr:
 				sp.dma_spaddr = data & 0x03FF'FFF8;
 				break;

@@ -20,7 +20,7 @@ namespace AI
 
 	struct
 	{
-		u32 dram_addr, len, control, status, dacrate, bitrate;
+		u32 dram_addr, len, control, status, dacrate, bitrate, dummy0, dummy1;
 	} ai{};
 
 	struct

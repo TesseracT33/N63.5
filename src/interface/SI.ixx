@@ -34,8 +34,8 @@ namespace SI
 
 	struct
 	{
-		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy_reg_at_0x0C,
-			pif_addr_wr64b, pif_addr_rd4b, status, s32dummy_reg_at_0x1C;
+		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy0,
+			pif_addr_wr64b, pif_addr_rd4b, status, dummy1;
 	} si;
 
 	size_t dma_len;

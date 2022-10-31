@@ -87,6 +87,7 @@ namespace SI
 
 	s32 ReadReg(u32 addr)
 	{
+		static_assert(sizeof(si) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&si) + offset, 4);
@@ -102,6 +103,7 @@ namespace SI
 
 	void WriteReg(u32 addr, s32 data)
 	{
+		static_assert(sizeof(si) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
 
 		enum RegOffset {

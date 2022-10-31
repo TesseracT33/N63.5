@@ -60,7 +60,8 @@ namespace VI
 
 	s32 ReadReg(u32 addr)
 	{
-		u32 offset = (addr >> 2) & 0xF;
+		static_assert(sizeof(vi) >> 2 == 0x10);
+		u32 offset = addr >> 2 & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
 		return ret;
@@ -69,7 +70,8 @@ namespace VI
 
 	void WriteReg(u32 addr, s32 data)
 	{
-		u32 offset = (addr >> 2) & 0xF;
+		static_assert(sizeof(vi) >> 2 == 0x10);
+		u32 offset = addr >> 2 & 0xF;
 
 		switch (offset) {
 		case Register::Ctrl:

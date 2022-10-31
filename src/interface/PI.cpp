@@ -81,6 +81,7 @@ namespace PI
 
 	s32 ReadReg(u32 addr)
 	{
+		static_assert(sizeof(pi) >> 2 == 0x10);
 		u32 offset = addr >> 2 & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&pi) + offset, 4);
@@ -96,6 +97,7 @@ namespace PI
 
 	void WriteReg(u32 addr, s32 data)
 	{
+		static_assert(sizeof(pi) >> 2 == 0x10);
 		u32 offset = addr >> 2 & 0xF;
 
 		enum RegOffset {

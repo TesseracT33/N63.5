@@ -18,8 +18,8 @@ namespace VI
 
 		struct Registers
 		{
-			s32 ctrl, origin, width, v_intr, v_current, burst, v_sync, h_sync, h_sync_leap;
-			s32 h_video, v_video, v_burst, x_scale, y_scale, test_addr, stated_data;
+			s32 ctrl, origin, width, v_intr, v_current, burst, v_sync, h_sync, h_sync_leap,
+				h_video, v_video, v_burst, x_scale, y_scale, test_addr, stated_data;
 		};
 
 		void AddInitialEvents();
