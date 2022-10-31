@@ -56,7 +56,6 @@ namespace VR4300
 	u8* rdram_ptr;
 
 	/* Debugging */
-	u64 current_instr_pc;
 	std::string_view current_instr_name;
 	std::string current_instr_log_output;
 }

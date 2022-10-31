@@ -42,7 +42,7 @@ namespace SI
 		if constexpr (type == DmaType::PifToRdram) {
 			std::memcpy(rdram_ptr, pif_ptr, dma_len);
 			if constexpr (log_dma) {
-				Logging::LogDMA(std::format("From PIF ${:X} to RDRAM ${:X}: ${:X} bytes",
+				LogDma(std::format("From PIF ${:X} to RDRAM ${:X}: ${:X} bytes",
 					pif_addr, si.dram_addr, dma_len));
 			}
 		}
@@ -51,12 +51,12 @@ namespace SI
 			if (num_bytes_in_rom_area < dma_len) {
 				std::memcpy(pif_ptr, rdram_ptr, dma_len - num_bytes_in_rom_area);
 				if constexpr (log_dma) {
-					Logging::LogDMA(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
+					LogDma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
 						si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
 				}
 			}
 			else if constexpr (log_dma) {
-				Logging::LogDMA(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
+				LogDma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
 					si.dram_addr, pif_addr));
 				OnDmaFinish();
 				return;
@@ -122,7 +122,7 @@ namespace SI
 		case RegOffset::AddrWr4B:
 			si.pif_addr_wr4b = data;
 			/* TODO */
-			Logging::LogMisc("Tried to start SI WR4B DMA, which is currently unimplemented.");
+			Log("Tried to start SI WR4B DMA, which is currently unimplemented.");
 			break;
 
 		case RegOffset::AddrWr64B:
@@ -133,7 +133,7 @@ namespace SI
 		case RegOffset::AddrRd4B:
 			si.pif_addr_rd4b = data;
 			/* TODO */
-			Logging::LogMisc("Tried to start SI RD4B DMA, which is currently unimplemented.");
+			Log("Tried to start SI RD4B DMA, which is currently unimplemented.");
 			break;
 
 		case RegOffset::Status:

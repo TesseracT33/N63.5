@@ -25,7 +25,7 @@ if constexpr (sizeof(INT) == 4) {                                          \
 	return INTERFACE::ReadReg(ADDR);                                       \
 }                                                                          \
 else {                                                                     \
-	Logging::LogMisc(std::format(                                          \
+	Log(std::format(                                                       \
 		"Attempted to read IO region at address ${:08X} for sized int {}", \
 		ADDR, sizeof(INT)));                                               \
 	return INT{};                                                          \
@@ -41,7 +41,7 @@ if constexpr (NUM_BYTES == 4) {                                             \
 	INTERFACE::WriteReg(ADDR, DATA);                                        \
 }                                                                           \
 else {                                                                      \
-	Logging::LogMisc(std::format(                                           \
+	Log(std::format(                                                        \
 		"Attempted to write IO region at address ${:08X} for sized int {}", \
 		ADDR, NUM_BYTES));                                                  \
 }
@@ -76,7 +76,7 @@ else {                                                                      \
 					return READ_INTERFACE(RDP, Int, addr);
 
 				case 3: /* $0420'0000 - $042F'FFFF */
-					Logging::LogMisc(std::format("Unexpected cpu read to address ${:08X}", addr));
+					Log(std::format("Unexpected cpu read to address ${:08X}", addr));
 					return Int{};
 
 				case 4: /* $0430'0000 - $043F'FFFF */
@@ -98,12 +98,12 @@ else {                                                                      \
 					return READ_INTERFACE(SI, Int, addr);
 
 				default: /* $0490'0000 - $04EF'FFFF */
-					Logging::LogMisc(std::format("Unexpected cpu read to address ${:08X}", addr));
+					Log(std::format("Unexpected cpu read to address ${:08X}", addr));
 					return Int{};
 				}
 			}
 			else {
-				Logging::LogMisc(std::format("Unexpected cpu read to address ${:08X}", addr));
+				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
 				return Int{};
 			}
 		}(); 
@@ -115,10 +115,10 @@ else {                                                                      \
 		else {
 			if constexpr (log_cpu_memory) {
 				if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
-					Logging::LogIORead(addr, value, io_location);
+					LogIoRead(addr, value, io_location);
 				}
 				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-					Logging::LogMemoryRead(addr, value);
+					LogCpuRead(addr, value);
 				}
 			}
 		}
@@ -180,7 +180,7 @@ else {                                                                      \
 				WRITE_INTERFACE(RDP, num_bytes, addr, data); break;
 
 			case 3: /* $0420'0000 - $042F'FFFF */
-				Logging::LogMisc(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
+				Log(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
 
 			case 4: /* $0430'0000 - $043F'FFFF */
 				WRITE_INTERFACE(MI, num_bytes, addr, data); break;
@@ -201,21 +201,21 @@ else {                                                                      \
 				WRITE_INTERFACE(SI, num_bytes, addr, data); break;
 
 			default: /* $0490'0000 - $04EF'FFFF */
-				Logging::LogMisc(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
+				Log(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
 			}
 		}
 		else if ((addr & 0xFFFF'F800) == 0x1FC0'0000) { /* $1FC0'0000 - $1FC0'07FF */
 			PIF::WriteMemory<num_bytes>(addr, data);
 		}
 		else {
-			Logging::LogMisc(std::format("Unexpected cpu write to address ${:08X}", addr));
+			Log(std::format("Unexpected cpu write to address ${:08X}", addr));
 		}
 		if constexpr (log_cpu_memory) {
 			if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
-				Logging::LogIOWrite(addr, data, io_location);
+				LogIoWrite(addr, data, io_location);
 			}
 			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-				Logging::LogMemoryWrite(addr, data);
+				LogCpuWrite(addr, data);
 			}
 		}
 	}

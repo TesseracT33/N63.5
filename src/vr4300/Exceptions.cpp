@@ -131,7 +131,7 @@ namespace VR4300
 	void HandleException()
 	{
 		if constexpr (log_cpu_exceptions) {
-			Logging::LogException(ExceptionToString(occurred_exception));
+			LogException(ExceptionToString(occurred_exception));
 		}
 
 		exception_has_occurred = false;

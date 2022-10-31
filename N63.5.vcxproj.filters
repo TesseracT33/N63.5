@@ -36,7 +36,6 @@
     <ClCompile Include="src\interface\VI.cpp" />
     <ClCompile Include="src\rsp\RSP.ixx" />
     <ClCompile Include="src\debug\Logging.ixx" />
-    <ClCompile Include="src\debug\Logging.cpp" />
     <ClCompile Include="src\Input.ixx" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\memory\PIF.cpp" />

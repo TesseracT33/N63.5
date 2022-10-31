@@ -276,7 +276,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_rsp_instructions) {
-			Logging::LogRSPInstruction(current_instr_pc, current_instr_log_output);
+			LogRspInstruction(current_instr_pc, current_instr_log_output);
 		}
 	}
 
@@ -308,7 +308,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_rsp_instructions) {
-			Logging::LogRSPInstruction(current_instr_pc, current_instr_log_output);
+			LogRspInstruction(current_instr_pc, current_instr_log_output);
 		}
 	}
 }

@@ -49,9 +49,6 @@ namespace VR4300
 
 	void FetchDecodeExecuteInstruction()
 	{
-		if constexpr (log_cpu_instructions) {
-			current_instr_pc = pc;
-		}
 		u32 instr_code = FetchInstruction(pc);
 		pc += 4;
 		DecodeExecuteInstruction(instr_code);

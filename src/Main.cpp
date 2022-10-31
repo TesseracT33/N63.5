@@ -1,14 +1,14 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 
-#include <iostream>
-#include <optional>
-#include <string>
-
 import DebugOptions;
 import Logging;
 import N64;
 import RDP;
+
+import <iostream>;
+import <optional>;
+import <string>;
 
 int main(int argc, char* argv[])
 {
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	if constexpr (logging_is_enabled) {
-		Logging::SetPath("F:\\n64.log");
+		SetLogPath("F:\\n64.log");
 	}
 
 	N64::Run();

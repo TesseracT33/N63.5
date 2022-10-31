@@ -403,7 +403,7 @@ namespace VR4300
 		}
 
 		if constexpr (log_cpu_instructions) {
-			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
+			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
 		}
 	}
 
@@ -421,7 +421,7 @@ namespace VR4300
 		else if constexpr (instr == COP0Instruction::ERET)  ERET();
 		else static_assert(AlwaysFalse<instr>);
 		if constexpr (log_cpu_instructions) {
-			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
+			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
 		}
 	}
 
@@ -455,7 +455,7 @@ namespace VR4300
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_cpu_instructions) {
-			Logging::LogVR4300Instruction(current_instr_pc, current_instr_log_output, last_instr_fetch_phys_addr);
+			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
 		}
 	}
 }

@@ -227,7 +227,6 @@
     <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi_timing.cpp" />
     <ClCompile Include="src\debug\DebugOptions.ixx" />
-    <ClCompile Include="src\debug\Logging.cpp" />
     <ClCompile Include="src\debug\Logging.ixx" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\Input.ixx" />

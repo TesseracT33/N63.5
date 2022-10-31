@@ -89,7 +89,7 @@ namespace RSP
 						rsp_mem_bank, sp.dma_spaddr & 0xFFF, sp.dma_ramaddr & 0xFF'FFFF, requested_total_bytes);
 				}
 			}();
-			Logging::LogDMA(output);
+			LogDma(output);
 		}
 	}
 

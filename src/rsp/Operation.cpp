@@ -81,7 +81,7 @@ namespace RSP
 			return ReadReg(addr);
 		}
 		else {
-			Logging::LogMisc(std::format(
+			Log(std::format(
 				"Attempted to read RSP memory region at address ${:08X} for sized int {}",
 				addr, sizeof(Int)));
 			return {};
@@ -146,7 +146,7 @@ namespace RSP
 			WriteReg(addr, data);
 		}
 		else {
-			Logging::LogMisc(std::format(
+			Log(std::format(
 				"Attempted to write to RSP memory region at address ${:08X} for sized int {}",
 				addr, num_bytes));
 		}

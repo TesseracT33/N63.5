@@ -39,7 +39,7 @@ namespace PI
 				std::memcpy(rdram_ptr + num_bytes_first_block, cart_ptr + num_bytes_first_block, dma_len - num_bytes_first_block);
 			}
 			if constexpr (log_dma) {
-				Logging::LogDMA(std::format("From cart ROM ${:X} to RDRAM ${:X}: ${:X} bytes",
+				LogDma(std::format("From cart ROM ${:X} to RDRAM ${:X}: ${:X} bytes",
 					pi.cart_addr, pi.dram_addr, dma_len));
 			}
 		}
@@ -49,10 +49,10 @@ namespace PI
 			//dma_len = std::min(dma_len, size_t(pi.rd_len + 1));
 			//std::memcpy(cart_ptr, rdram_ptr, dma_len);
 			//if constexpr (log_dma) {
-			//	Logging::LogDMA(std::format("From RDRAM ${:X} to cart ROM ${:X}: ${:X} bytes",
+			//	LogDMA(std::format("From RDRAM ${:X} to cart ROM ${:X}: ${:X} bytes",
 			//		pi.dram_addr, pi.cart_addr, dma_len));
 			//}
-			Logging::LogMisc("Attempted DMA from RDRAM to Cart, but this is unimplemented.");
+			Log("Attempted DMA from RDRAM to Cart, but this is unimplemented.");
 			OnDmaFinish();
 			return;
 		}

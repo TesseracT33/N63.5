@@ -67,7 +67,7 @@ namespace VR4300
 				cop0_reg.tag_lo.ptag = cache_line.ptag >> 12;
 				cop0_reg.tag_lo.pstate = cache_line.valid << 1;
 				if constexpr (is_d_cache) {
-					cop0_reg.tag_lo.pstate |= cache_line.dirty;
+					cop0_reg.tag_lo.pstate |= u32(cache_line.dirty);
 				}
 				break;
 
@@ -151,7 +151,7 @@ namespace VR4300
 		https://discord.com/channels/465585922579103744/600463718924681232/1034605516900544582 */
 		auto rdram_offset = phys_addr & ~(sizeof(cache_line.data) - 1);
 		if (rdram_offset >= RDRAM::GetSize()) {
-			Logging::LogMisc(std::format("Attempted to fill cache line from p_addr {} (beyond RDRAM)", rdram_offset));
+			Log(std::format("Attempted to fill cache line from p_addr {} (beyond RDRAM)", rdram_offset));
 		}
 		std::memcpy(cache_line.data, rdram_ptr + rdram_offset, sizeof(cache_line.data));
 		cache_line.ptag = phys_addr & ~0xFFF;

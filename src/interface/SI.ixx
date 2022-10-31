@@ -3,6 +3,7 @@ export module SI; /* Serial Interface */
 import Util;
 
 import <cstring>;
+import <format>;
 import <utility>;
 
 namespace SI
