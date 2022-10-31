@@ -16,7 +16,7 @@ namespace VI
 	void CheckVideoInterrupt()
 	{
 		bool prev_interrupt = interrupt;
-		interrupt = (vi.v_current & 0x3FE) == vi.v_intr;
+		interrupt = vi.v_current == vi.v_intr;
 		if (interrupt && !prev_interrupt) {
 			MI::SetInterruptFlag(MI::InterruptType::VI);
 		}
@@ -30,21 +30,25 @@ namespace VI
 		vi.width = 320;
 		vi.v_intr = 0x3FF;
 		vi.burst = 1;
-		vi.v_sync = 0x20D;
+		vi.v_sync = default_vsync_ntsc; /* todo: pal */
 		vi.h_sync = 0x15'07FF;
+		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / (vi.v_sync >> 1);
+		Scheduler::ChangeEventTime(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline);
+	}
 
-		/* NTSC "defaults" (?) */
-		num_fields = 1;
-		num_halflines = 262;
-		/* TODO: idk enough about analogue video to know what this should be. */
-		cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
+
+	bool Interlaced()
+	{
+		return vi.ctrl & 0x40;
 	}
 
 
 	void OnNewHalflineEvent()
 	{
-		if (++vi.v_current == vi.v_sync) {
-			vi.v_current = 0;
+		vi.v_current += 2;
+		if (vi.v_current >= vi.v_sync) {
+			u32 field = vi.v_current & 1;
+			vi.v_current = (field ^ 1) & u32(Interlaced());
 			RDP::implementation->UpdateScreen();
 		}
 		CheckVideoInterrupt();
@@ -76,12 +80,10 @@ namespace VI
 		switch (offset) {
 		case Register::Ctrl:
 			vi.ctrl = data;
-			/* Interlaced vs. progressive. Interlaced if bit 6 is set, otherwise progressive. */
-			num_fields = 1 + bool(vi.ctrl & 0x40);
 			break;
 
 		case Register::Origin:
-			vi.origin = data & 0x7F'FFFF;
+			vi.origin = data & 0xFF'FFFF;
 			break;
 
 		case Register::Width:
@@ -98,13 +100,12 @@ namespace VI
 			break;
 
 		case Register::Burst:
-			vi.burst = data & ~(3 << 30);
+			vi.burst = data & 0x3FFF'FFFF;
 			break;
 
 		case Register::VSync:
-			vi.v_sync = data & 0x3FF;
-			num_halflines = vi.v_sync >> 1;
-			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / num_halflines;
+			vi.v_sync = data & 0x3FF ? data & 0x3FF : default_vsync_ntsc; /* todo: pal */
+			cpu_cycles_per_halfline = N64::cpu_cycles_per_frame / (vi.v_sync >> 1);
 			Scheduler::ChangeEventTime(Scheduler::EventType::VINewHalfline, cpu_cycles_per_halfline);
 			break;
 
@@ -129,15 +130,23 @@ namespace VI
 			break;
 
 		case Register::XScale:
-			vi.x_scale = 0xFFF'0FFF;
+			vi.x_scale = data & 0xFFF'0FFF;
 			break;
 
 		case Register::YScale:
-			vi.y_scale = 0xFFF'0FFF;
+			vi.y_scale = data & 0xFFF'0FFF;
+			break;
+
+		case Register::TestAddr:
+			vi.test_addr = data & 0x7F;
+			break;
+
+		case Register::StagedData:
+			vi.staged_data = data;
 			break;
 
 		default:
-			assert(false);
+			std::unreachable();
 		}
 	}
 }

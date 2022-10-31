@@ -3,8 +3,8 @@ export module VI; /* Video Interface */
 import Util;
 
 import <bit>;
-import <cassert>;
 import <cstring>;
+import <utility>;
 
 namespace VI
 {
@@ -13,13 +13,12 @@ namespace VI
 		enum Register {
 			Ctrl, Origin, Width, VIntr, VCurrent, Burst,
 			VSync, HSync, HSyncLeap, HVideo, VVideo,
-			VBurst, XScale, YScale
+			VBurst, XScale, YScale, TestAddr, StagedData
 		};
 
-		struct Registers
-		{
-			s32 ctrl, origin, width, v_intr, v_current, burst, v_sync, h_sync, h_sync_leap,
-				h_video, v_video, v_burst, x_scale, y_scale, test_addr, stated_data;
+		struct Registers {
+			u32 ctrl, origin, width, v_intr, v_current, burst, v_sync, h_sync, h_sync_leap,
+				h_video, v_video, v_burst, x_scale, y_scale, test_addr, staged_data;
 		};
 
 		void AddInitialEvents();
@@ -30,12 +29,13 @@ namespace VI
 	}
 
 	void CheckVideoInterrupt();
+	bool Interlaced();
 	void OnNewHalflineEvent();
+
+	constexpr u32 default_vsync_ntsc = 0x20D;
 
 	Registers vi;
 
 	bool interrupt;
-	uint cpu_cycles_per_halfline;
-	uint num_fields;
-	uint num_halflines;
+	u32 cpu_cycles_per_halfline;
 }
