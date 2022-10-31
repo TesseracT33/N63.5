@@ -1,9 +1,9 @@
-module Cartridge;
+module Cart;
 
 import Memory;
 import UserMessage;
 
-namespace Cartridge
+namespace Cart
 {
 	void AllocateSram()
 	{

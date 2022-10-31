@@ -1,7 +1,7 @@
 module Memory;
 
 import AI;
-import Cartridge;
+import Cart;
 import DebugOptions;
 import Logging;
 import MI;
@@ -132,8 +132,8 @@ else {                                                                      \
 		for (u8*& ptr : read_page_table) {
 			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
 			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
-			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cartridge::GetPointerToSram(page << 16);
-			else if (page >= 0x1000 && page <= 0x1FBF) ptr = Cartridge::GetPointerToRom(page << 16);
+			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cart::GetPointerToSram(page << 16);
+			else if (page >= 0x1000 && page <= 0x1FBF) ptr = Cart::GetPointerToRom(page << 16);
 			else if (page == 0x1FC0)                   ptr = PIF::GetPointerToMemory(page << 16);
 			else                                       ptr = nullptr;
 			++page;
@@ -142,7 +142,7 @@ else {                                                                      \
 		for (u8*& ptr : write_page_table) {
 			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
 			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
-			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cartridge::GetPointerToSram(page << 16);
+			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cart::GetPointerToSram(page << 16);
 			else                                       ptr = nullptr;
 			++page;
 		}

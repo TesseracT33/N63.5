@@ -1,6 +1,6 @@
 module PI;
 
-import Cartridge;
+import Cart;
 import DebugOptions;
 import Logging;
 import MI;
@@ -23,9 +23,9 @@ namespace PI
 		MI::ClearInterruptFlag(MI::InterruptType::PI); /* TODO: should we clear? */
 
 		u8* rdram_ptr = RDRAM::GetPointerToMemory(pi.dram_addr);
-		u8* cart_ptr = Cartridge::GetPointerToRom(pi.cart_addr);
+		u8* cart_ptr = Cart::GetPointerToRom(pi.cart_addr);
 		size_t bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(pi.dram_addr);
-		size_t bytes_until_cart_end = Cartridge::GetNumberOfBytesUntilRomEnd(pi.cart_addr);
+		size_t bytes_until_cart_end = Cart::GetNumberOfBytesUntilRomEnd(pi.cart_addr);
 		dma_len = std::min(bytes_until_rdram_end, bytes_until_cart_end);
 		if constexpr (type == DmaType::CartToRdram) {
 			dma_len = std::min(dma_len, size_t(pi.wr_len + 1));

@@ -1,4 +1,4 @@
-export module Cartridge;
+export module Cart;
 
 import Util;
 
@@ -12,7 +12,7 @@ import <optional>;
 import <string>;
 import <vector>;
 
-namespace Cartridge
+namespace Cart
 {
 	export
 	{

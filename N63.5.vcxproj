@@ -259,8 +259,8 @@
     <ClCompile Include="src\interface\VI.cpp" />
     <ClCompile Include="src\interface\VI.ixx" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\memory\Cartridge.cpp" />
-    <ClCompile Include="src\memory\Cartridge.ixx" />
+    <ClCompile Include="src\memory\Cart.cpp" />
+    <ClCompile Include="src\memory\Cart.ixx" />
     <ClCompile Include="src\memory\Memory.cpp" />
     <ClCompile Include="src\memory\Memory.ixx" />
     <ClCompile Include="src\memory\PIF.ixx" />

@@ -1,7 +1,7 @@
 module N64;
 
 import AI;
-import Cartridge;
+import Cart;
 import Input;
 import Memory;
 import MI;
@@ -37,7 +37,7 @@ namespace N64
 		RDRAM::Initialize();
 		Memory::Initialize();
 
-		if (!Cartridge::LoadRom(rom_path)) {
+		if (!Cart::LoadRom(rom_path)) {
 			return false;
 		}
 
