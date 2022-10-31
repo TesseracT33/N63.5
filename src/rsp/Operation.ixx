@@ -45,10 +45,10 @@ namespace RSP
 	uint instructions_until_jump = 0;
 	uint addr_to_jump_to;
 
-	std::array<u8, 0x1000> dmem; /* data memory */
-	std::array<u8, 0x1000> imem; /* instruction memory */
+	constinit std::array<u8, 0x2000> mem; /* 0 - $FFF: data memory; $1000 - $1FFF: instruction memory */
 
-	constexpr std::array memory_ptrs = { dmem.data(), imem.data() };
+	constinit inline u8* const dmem = mem.data();
+	constinit inline u8* const imem = mem.data() + 0x1000;
 
 	/* Debugging */
 	u32 current_instr_pc;

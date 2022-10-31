@@ -20,7 +20,7 @@ namespace RSP
 			current_instr_pc = pc;
 		}
 		u32 instr_code;
-		std::memcpy(&instr_code, imem.data() + pc, 4); /* TODO: can pc be misaligned? */
+		std::memcpy(&instr_code, &imem[pc], 4); /* TODO: can pc be misaligned? */
 		instr_code = std::byteswap(instr_code);
 		pc = (pc + 4) & 0xFFF;
 		DecodeExecuteInstruction(instr_code);
@@ -29,7 +29,7 @@ namespace RSP
 
 	u8* GetPointerToMemory(u32 addr)
 	{
-		return memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF);
+		return mem.data() + (addr & 0x1FFF);
 	}
 
 
@@ -43,8 +43,7 @@ namespace RSP
 	{
 		jump_is_pending = false;
 		pc = 0;
-		dmem.fill(0);
-		imem.fill(0);
+		mem.fill(0);
 		std::memset(&sp, 0, sizeof(sp));
 		sp.status.halted = true;
 	}
@@ -75,7 +74,7 @@ namespace RSP
 	{ /* CPU precondition; the address is always aligned */
 		if (addr < 0x0404'0000) {
 			Int ret;
-			std::memcpy(&ret, memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), sizeof(Int));
+			std::memcpy(&ret, mem.data() + (addr & 0x1FFF), sizeof(Int));
 			return std::byteswap(ret);
 		}
 		else if constexpr (sizeof(Int) == 4) {
@@ -141,7 +140,7 @@ namespace RSP
 	{ /* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
 		if (addr < 0x0404'0000) {
 			data = std::byteswap(data);
-			std::memcpy(memory_ptrs[bool(addr & 0x1000)] + (addr & 0xFFF), &data, num_bytes);
+			std::memcpy(mem.data() + (addr & 0x1FFF), &data, num_bytes);
 		}
 		else if constexpr (num_bytes == 4) {
 			WriteReg(addr, data);
