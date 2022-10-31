@@ -22,8 +22,9 @@ export namespace Memory
 	template<size_t num_bytes>
 	void WritePhysical(u32 addr, std::signed_integral auto data);
 
-	std::array<u8*, 0x10000> read_page_table{};
-	std::array<u8*, 0x10000> write_page_table{};
+	std::array<u8*, 0x10000> read_page_table;
+	std::array<u8*, 0x10000> write_page_table;
+	std::array<u16, 0x10000> page_table_addr_mask;
 
 	//// debugging
 	std::string_view io_location;

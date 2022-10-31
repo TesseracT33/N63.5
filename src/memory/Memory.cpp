@@ -60,7 +60,8 @@ else {                                                                      \
 		Int value = [&] {
 			if (ptr) {
 				Int ret;
-				std::memcpy(&ret, ptr + (addr & 0xFFFF), sizeof(Int));
+				u16 addr_mask = page_table_addr_mask[page];
+				std::memcpy(&ret, ptr + (addr & addr_mask), sizeof(Int));
 				return std::byteswap(ret);
 			}
 			else if (page >= 0x3F0 && page <= 0x4FF) {
@@ -127,26 +128,31 @@ else {                                                                      \
 
 	void ReloadPageTables()
 	{
-		uint page = 0;
+		u32 page = 0;
 		for (u8*& ptr : read_page_table) {
-			ptr = [&] {
-				if (page <= 0x003F)                        return RDRAM::GetPointerToMemory(page << 16);
-				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
-				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSram(page << 16);
-				else if (page >= 0x1000 && page <= 0x1FBF) return Cartridge::GetPointerToRom(page << 16);
-				else if (page == 0x1FC0)                   return PIF::GetPointerToMemory(page << 16);
-				else                                       return (u8*)nullptr;
-			}();
+			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
+			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
+			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cartridge::GetPointerToSram(page << 16);
+			else if (page >= 0x1000 && page <= 0x1FBF) ptr = Cartridge::GetPointerToRom(page << 16);
+			else if (page == 0x1FC0)                   ptr = PIF::GetPointerToMemory(page << 16);
+			else                                       ptr = nullptr;
 			++page;
 		}
 		page = 0;
 		for (u8*& ptr : write_page_table) {
-			ptr = [&] {
-				if (page <= 0x003F)                        return RDRAM::GetPointerToMemory(page << 16);
-				else if (page >= 0x0400 && page <= 0x0403) return RSP::GetPointerToMemory(page << 16);
-				else if (page >= 0x0800 && page <= 0x0FFF) return Cartridge::GetPointerToSram(page << 16);
-				else                                       return (u8*)nullptr;
-			}();
+			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
+			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
+			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cartridge::GetPointerToSram(page << 16);
+			else                                       ptr = nullptr;
+			++page;
+		}
+		page = 0;
+		for (u16& mask : page_table_addr_mask) {
+			if (page <= 0x007F)                        mask = 0xFFFF;
+			else if (page >= 0x0400 && page <= 0x0403) mask = 0x1FFF;
+			else if (page >= 0x0800 && page <= 0x0FFF) mask = 0xFFFF; /* TODO: should be dependent on sram size */
+			else if (page >= 0x1000 && page <= 0x1FBF) mask = 0xFFFF; /* TODO: should be dependent on rom size */
+			else if (page == 0x1FC0)                   mask = 0x07FF;
 			++page;
 		}
 	}
@@ -159,7 +165,8 @@ else {                                                                      \
 		u8* ptr = write_page_table[page];
 		if (ptr) {
 			data = std::byteswap(data);
-			std::memcpy(ptr + (addr & 0xFFFF), &data, num_bytes);
+			u16 addr_mask = page_table_addr_mask[page];
+			std::memcpy(ptr + (addr & addr_mask), &data, num_bytes);
 		}
 		else if (page >= 0x3F0 && page <= 0x4FF) {
 			switch (((addr >> 20) - 0x3F) & 0xF) {
