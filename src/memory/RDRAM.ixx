@@ -23,7 +23,8 @@ namespace RDRAM
 
 	struct {
 		u32 device_type, device_id, delay, mode, ref_interval, ref_row,
-			ras_interval, min_interval, addr_select, device_manuf;
+			ras_interval, min_interval, addr_select, device_manuf,
+			dummy0, dummy1, dummy2, dummy3, dummy4, dummy5;
 	} reg;
 
 	constexpr size_t rdram_standard_size = 0x40'0000;

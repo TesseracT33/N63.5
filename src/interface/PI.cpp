@@ -150,7 +150,8 @@ namespace PI
 		case RegOffset::BsdDom2Pgs: pi.bsd_dom2_pgs = data; break;
 		case RegOffset::BsdDom2Rls: pi.bsd_dom2_rls = data; break;
 
-		default: std::unreachable();
+		default:
+			Log(std::format("Unexpected write made to PI register at address ${:08X}", addr));
 		}
 	}
 }

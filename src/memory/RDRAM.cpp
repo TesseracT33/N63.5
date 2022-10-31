@@ -46,15 +46,11 @@ namespace RDRAM
 	/* $03F0'0000 - $03FF'FFFF */
 	s32 ReadReg(u32 addr)
 	{
-		if (addr <= 0x3F0'0024) {
-			auto reg_index = addr >> 2 & 0xF;
-			s32 ret;
-			std::memcpy(&ret, (s32*)(&reg) + reg_index, 4);
-			return ret;
-		}
-		else {
-			return 0;
-		}
+		static_assert(sizeof(reg) >> 2 == 0x10);
+		u32 offset = addr >> 2 & 0xF;
+		s32 ret;
+		std::memcpy(&ret, (s32*)(&reg) + offset, 4);
+		return ret;
 	}
 
 

@@ -37,7 +37,7 @@ namespace PI
 		s32 dram_addr, cart_addr, rd_len, wr_len, status;
 		s32 bsd_dom1_lat, bsd_dom1_pwd, bsd_dom1_pgs, bsd_dom1_rls;
 		s32 bsd_dom2_lat, bsd_dom2_pwd, bsd_dom2_pgs, bsd_dom2_rls;
-		s32 dummy_reg_at_0x34, dummy_reg_at_0x38, dummy_reg_at_0x3C;
+		s32 dummy0, dummy1, dummy2;
 	} pi;
 
 	size_t dma_len;

@@ -146,8 +146,8 @@ namespace SI
 			// TODO: RCP flag
 			break;
 
-		default: 
-			break;
+		default:
+			Log(std::format("Unexpected write made to SI register at address ${:08X}", addr));
 		}
 	}
 }

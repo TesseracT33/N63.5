@@ -1,5 +1,6 @@
 module AI;
 
+import Logging;
 import MI;
 import Memory;
 import N64;
@@ -123,7 +124,7 @@ namespace AI
 			break;
 
 		default:
-			break;
+			Log(std::format("Unexpected write made to AI register at address ${:08X}", addr));
 		}
 	}
 }
