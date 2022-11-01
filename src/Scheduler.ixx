@@ -26,8 +26,7 @@ namespace Scheduler
 		void Run();
 	}
 
-	struct Event
-	{
+	struct Event {
 		EventType event_type;
 		s64 cpu_cycles_until_fire; /* signed so that we can subtract a duration and check if the result is negative */
 		EventCallback callback;

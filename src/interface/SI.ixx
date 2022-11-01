@@ -32,8 +32,7 @@ namespace SI
 	template<DmaType> void InitDma();
 	void OnDmaFinish();
 
-	struct
-	{
+	struct {
 		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy0,
 			pif_addr_wr64b, pif_addr_rd4b, status, dummy1;
 	} si;

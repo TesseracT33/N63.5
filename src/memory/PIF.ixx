@@ -37,8 +37,7 @@ namespace PIF
 	constexpr size_t ram_start = rom_size;
 	constexpr size_t memory_size = ram_size + rom_size;
 
-	struct JoypadStatus /* TODO: correct endianness? */
-	{
+	struct JoypadStatus { /* TODO: correct endianness? */
 		u32 a : 1;
 		u32 b : 1;
 		u32 z : 1;

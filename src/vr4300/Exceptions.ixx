@@ -78,8 +78,7 @@ namespace VR4300
 	void WatchException();
 
 	/* Details when a TLB Miss etc. or Address Error exception happens */
-	struct AddressFailure
-	{
+	struct AddressFailure {
 		u64 bad_virt_addr;
 		u64 bad_vpn2;
 		u64 bad_asid;

@@ -18,13 +18,11 @@ namespace AI
 
 	void Sample();
 
-	struct
-	{
+	struct {
 		u32 dram_addr, len, control, status, dacrate, bitrate, dummy0, dummy1;
 	} ai{};
 
-	struct
-	{
+	struct {
 		u32 frequency, period, precision;
 	} dac{};
 

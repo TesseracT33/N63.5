@@ -28,11 +28,9 @@ namespace RSP
 	template<DmaType dma_type> void InitDMA();
 	void OnDmaFinish();
 
-	struct
-	{
+	struct {
 		u32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen;
-		struct
-		{
+		struct {
 			u32 halted : 1;
 			u32 broke : 1;
 			u32 dma_busy : 1;

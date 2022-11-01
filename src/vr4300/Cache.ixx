@@ -12,16 +12,14 @@ import <format>;
 
 namespace VR4300
 {
-	struct DCacheLine
-	{
+	struct DCacheLine {
 		u8 data[16];
 		u32 ptag;
 		bool valid;
 		bool dirty;
 	};
 
-	struct ICacheLine
-	{
+	struct ICacheLine {
 		u8 data[32];
 		u32 ptag;
 		bool valid;

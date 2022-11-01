@@ -75,15 +75,15 @@ namespace VR4300
 	void Syscall();
 	void Break();
 
-	struct GPR
+	class GPR
 	{
+		std::array<s64, 32> gpr{};
+	public:
 		s64 Get(size_t index) const;
 		s64 Get(Reg reg) const;
 		void Set(size_t index, s64 data);
 		void Set(Reg reg, s64 data);
 		s64 operator[](size_t index);
-	private:
-		std::array<s64, 32> gpr{};
 	} gpr;
 
 	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */

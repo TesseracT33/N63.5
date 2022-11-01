@@ -32,8 +32,7 @@ namespace PI
 	template<DmaType> void InitDma(DmaType type);
 	void OnDmaFinish();
 
-	struct
-	{
+	struct {
 		s32 dram_addr, cart_addr, rd_len, wr_len, status;
 		s32 bsd_dom1_lat, bsd_dom1_pwd, bsd_dom1_pgs, bsd_dom1_rls;
 		s32 bsd_dom2_lat, bsd_dom2_pwd, bsd_dom2_pgs, bsd_dom2_rls;

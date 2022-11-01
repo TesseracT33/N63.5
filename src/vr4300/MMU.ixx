@@ -22,34 +22,30 @@ namespace VR4300
 		_32bit, _64bit
 	} addressing_mode;
 
-	struct TlbEntry
-	{
-		struct
-		{
+	struct TlbEntry {
+		struct {
 			u32     :  1;
 			u32 v   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
 			u32 d   :  1; /* Dirty. If this bit is set, the page is marked as writeable. */
 			u32 c   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
 			u32 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
 			u32     :  6;
-		} entry_lo[2]{};
+		} entry_lo[2];
 
-		struct
-		{
+		struct {
 			u64 asid :  8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
 			u64      :  4;
 			u64 g    :  1; /* Global. If this bit is set, the processor ignores the ASID during TLB lookup. */
 			u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
 			u64      : 22;
 			u64 r    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
-		} entry_hi{};
+		} entry_hi;
 
-		struct
-		{
+		struct {
 			u32       : 13;
 			u32 value : 12; /* Determines the virtual page size of the corresponding entry. */
 			u32       :  7;
-		} page_mask{};
+		} page_mask;
 
 		u64 vpn2_shifted;
 		u64 address_vpn2_mask;

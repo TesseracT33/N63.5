@@ -8,8 +8,7 @@ import <format>;
 
 namespace RSP
 {
-	enum class ScalarInstruction
-	{
+	enum class ScalarInstruction {
 		/* Load instructions */
 		LB, LBU, LH, LHU, LW, LWU, LL,
 
@@ -49,8 +48,10 @@ namespace RSP
 	template<ScalarInstruction> void Move(u32 instr_code);
 	void Break();
 
-	struct GPR /* scalar general-purpose registers */
+	class GPR /* scalar general-purpose registers */
 	{
+		std::array<s32, 32> gpr{};
+	public:
 		s32 Get(size_t index) const
 		{
 			return gpr[index];
@@ -65,8 +66,6 @@ namespace RSP
 		{
 			return gpr[index];
 		}
-	private:
-		std::array<s32, 32> gpr{};
 	} gpr{};
 
 	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */

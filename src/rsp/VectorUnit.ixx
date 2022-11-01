@@ -31,8 +31,7 @@ namespace RSP
 	using s64x2 = __m128i;
 	using u64x2 = __m128i;
 
-	enum class VectorInstruction
-	{
+	enum class VectorInstruction {
 		/* Load instructions */
 		LBV, LSV, LLV, LDV, LQV, LRV, LTV, LPV, LUV, LHV, LFV, LWV,
 
@@ -67,15 +66,13 @@ namespace RSP
 	template<VectorInstruction> __m128i ClampUnsigned(__m128i low, __m128i high);
 	__m128i GetVTBroadcast(uint vt, uint element);
 
-	struct Accumulator
-	{
+	struct Accumulator {
 		__m128i low;
 		__m128i mid;
 		__m128i high;
 	} acc;
 
-	struct ControlRegister
-	{
+	struct ControlRegister {
 		__m128i low;
 		__m128i high;
 	};

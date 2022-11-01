@@ -56,79 +56,70 @@ namespace VR4300
 	constexpr uint cop0_index_tag_hi = 29;
 	constexpr uint cop0_index_error_epc = 30;
 
-	struct COP0Registers
-	{
-		struct /* (0) */
-		{
+	/* TODO: for registers that contain only one field, make them simple u32/u64, not structs */
+	struct COP0Registers {
+		struct { /* (0) */
 			u32 value : 6; /* Index to the TLB entry affected by the TLB Read (TLBR) and TLB Write (TLBW) instructions. */
 			u32 : 25;
 			u32 p : 1; /* Shows the success (0) or failure (1) of the last TLB Probe (TLBP) instruction executed. */
-		} index{};
+		} index;
 
-		struct /* (1) */
-		{
+		struct { /* (1) */
 			u32 value : 5; /* Decrements every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
 			u32 : 1; /* R/W, but has no function. */
 			u32 : 26;
-		} random{};
+		} random;
 
-		struct /* (2), (3); Used to rewrite the TLB or to check coincidence of a TLB entry when addresses are converted. */
-		{
+		struct { /* (2), (3); Used to rewrite the TLB or to check coincidence of a TLB entry when addresses are converted. */
 			u32 g : 1; /* Global. If this bit is set in both EntryLo0 and EntryLo1, then the processor ignores the ASID during TLB lookup. */
 			u32 v : 1; /* Valid. If this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
 			u32 d : 1; /* Dirty. If this bit is set, the page is marked as dirty, and therefore writable. */
 			u32 c : 3; /* Specifies the TLB page attribute. */
 			u32 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
 			u32 : 6;
-		} entry_lo_0{}, entry_lo_1{};
+		} entry_lo_0, entry_lo_1;
 
-		struct /* (4) */
-		{
+		struct { /* (4) */
 			u64 : 4;
 			u64 bad_vpn2 : 19;
 			u64 pte_base : 41;
-		} context{};
+		} context;
 
-		struct /* (5) */
-		{
+		struct { /* (5) */
 			u32 : 13;
 			u32 value : 12; /* Sets the page size for each TLB entry. 0 => 4 KB; 3 => 16 KB; 15 => 64 KB; 63 => 256 KB; 255 => 1 MB; 1023 => 4 MB; 4095 => 16 MB. Else, the operation of the TLB is undefined. */
 			u32 : 7;
-		} page_mask{};
+		} page_mask;
 
-		struct /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
-		{
+		struct { /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
 			u32 value : 6;
 			u32 : 26;
-		} wired{};
+		} wired;
 
-		struct /* (8) */
-		{
+		struct { /* (8) */
 			u64 value;
-		} bad_v_addr{};
+		} bad_v_addr;
 
-		struct /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
-		{ /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
+		struct { /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
+			 /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
 			 When we read from it, we shift it right one bit and then return it. When we write to it, we set it to the data shifted left one bit. */
 			u64 value;
-		} count{};
+		} count;
 
-		struct /* (10) */
-		{
+		struct { /* (10) */
 			u64 asid : 8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
 			u64 padding_of_zeroes : 5; /* named because it needs to be set to zero in the TLBR instruction, as data is copied to here from a TLB entry that is not zero. */
 			u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
 			u64 : 22;
 			u64 r : 2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
-		} entry_hi{};
+		} entry_hi;
 
-		struct /* (11); When equal to the Count register, interrupt bit IP(7) in the Cause register is set. Writes to this register clear said interrupt. */
-		{ /* On real HW, this register is 32 bits. Here, we make it 64 bits. See the description of the 'Count' register. */
+		struct { /* (11); When equal to the Count register, interrupt bit IP(7) in the Cause register is set. Writes to this register clear said interrupt. */
+			/* On real HW, this register is 32 bits. Here, we make it 64 bits. See the description of the 'Count' register. */
 			u64 value;
-		} compare{};
+		} compare;
 
-		struct /* (12) */
-		{
+		struct { /* (12) */
 			u32 ie : 1; /* Specifies and indicates global interrupt enable (0: disable interrupts; 1: enable interrupts) */
 			u32 exl : 1; /* Specifies and indiciates exception level (0: normal; 1: exception) */
 			u32 erl : 1; /* Specifies and indiciates error level (0: normal; 1: error) */
@@ -153,10 +144,9 @@ namespace VR4300
 			u32 cu1 : 1; /* If cleared, all COP1 instructions throw exceptions. */
 			u32 cu2 : 1; /* Ignored by the N64; there is no COP2. */
 			u32 cu3 : 1; /* Ignored by the N64; there is no COP3. */
-		} status{};
+		} status;
 
-		struct /* (13) */
-		{
+		struct { /* (13) */
 			u32 : 2;
 			u32 exc_code : 5; /* Exception code field; written to when an exception is signaled. */
 			u32 : 1;
@@ -165,22 +155,19 @@ namespace VR4300
 			u32 ce : 2; /* Coprocessor unit number referenced when a Coprocessor Unusable exception has occurred. */
 			u32 : 1;
 			u32 bd : 1; /* Indicates whether the last exception occurred has been executed in a branch delay slot (0: normal; 1: delay slot). */
-		} cause{};
+		} cause;
 
-		struct /* (14) */
-		{
+		struct { /* (14) */
 			u64 value; /* Contains the address at which processing resumes after an exception has been serviced. */
-		} epc{};
+		} epc;
 
-		struct /* (15) */
-		{
+		struct { /* (15) */
 			u32 rev : 8 = 0x22; /* Processor revision number */
 			u32 imp : 8 = 0x0B; /* Processor ID number */
 			u32 : 16;
-		} const pr_id{};
+		} const pr_id;
 
-		struct /* (16) */
-		{
+		struct { /* (16) */
 			u32 k0 : 3; /* Sets coherency algorithm of kseg0 (010 => cache is not used; else => cache is used). */
 			u32 cu : 1; /* RFU. However, can be read or written by software. */
 		private:
@@ -193,63 +180,54 @@ namespace VR4300
 			u32 ep : 4; /* Sets transfer data pattern (single/block write request) (0 => D (default on cold reset); 6 => DxxDxx (2 doublewords/six cycles). */
 			u32 ec : 3; /* Operating frequency ratio (read-only). */
 			u32 : 1; /* Returns 0 when read. */
-		} config{};
+		} config;
 
-		struct /* (17); Contains the physical address read by the most recent Load Linked instruction. */
-		{
+		struct { /* (17); Contains the physical address read by the most recent Load Linked instruction. */
 			u32 p_addr;
-		} ll_addr{};
+		} ll_addr;
 
-		struct /* (18) */
-		{
+		struct { /* (18) */
 			u32 w : 1;
 			u32 r : 1;
 			u32 : 1;
 			u32 p_addr_0 : 29;
-		} watch_lo{};
+		} watch_lo;
 
-		struct /* (19) */
-		{
+		struct { /* (19) */
 			u32 p_addr_1 : 4;
 			u32 : 28;
-		} watch_hi{};
+		} watch_hi;
 
-		struct /* (20) */
-		{
+		struct { /* (20) */
 			u64 : 4;
 			u64 bad_vpn2 : 27;
 			u64 r : 2;
 			u64 pte_base : 31;
-		} x_context{};
+		} x_context;
 
-		struct /* (26) */
-		{
+		struct { /* (26) */
 			u32 diagnostic : 8;
 			u32 : 24;
-		} parity_error{};
+		} parity_error;
 
-		struct /* (27); Always returns 0 when read. */
-		{
+		struct { /* (27); Always returns 0 when read. */
 			u32 value = 0;
 		} const cache_error;
 
-		struct /* (28) */
-		{
+		struct { /* (28) */
 			u32 : 6;
 			u32 pstate : 2; /* Specified the primary cache state (Data cache: 11 => valid; 00 => invalid) (Instruction cache: 10 => valid; 00 => invalid). All others: undefined. */
 			u32 ptag : 20; /* Physical address bits 31..12. */
 			u32 : 4;
-		} tag_lo{}; /* Holds the primary cache tag for cache initialization, cache diagnostics, or cache error processing. The Tag registers are written by the CACHE and MTC0 instructions. */
+		} tag_lo; /* Holds the primary cache tag for cache initialization, cache diagnostics, or cache error processing. The Tag registers are written by the CACHE and MTC0 instructions. */
 
-		struct /* (29); Always returns 0 when read. */
-		{
+		struct { /* (29); Always returns 0 when read. */
 			u32 value = 0;
 		} const tag_hi;
 
-		struct /* (30) */
-		{
+		struct { /* (30) */
 			u64 value;
-		} error_epc{};
+		} error_epc;
 
 		u64 Get(size_t reg_index) const;
 		template<bool raw = false> void Set(size_t reg_index, auto value);
