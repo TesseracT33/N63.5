@@ -17,8 +17,7 @@ bool ParallelRDPWrapper::Initialize()
 		std::cout << "Failed to init SDL video\n";
 		return false;
 	}
-	if (!Vulkan::Context::init_loader(nullptr))
-	{
+	if (!Vulkan::Context::init_loader(nullptr)) {
 		std::cout << "Failed to initialize Vulkan loader.\n";
 		return false;
 	}
@@ -117,9 +116,7 @@ void ParallelRDPWrapper::UpdateScreen()
 
 	// This request is cached.
 	auto* program = wsi_device->request_program(vertex_spirv, sizeof(vertex_spirv),
-		fragment_spirv, sizeof(fragment_spirv),
-		&vertex_layout,
-		&fragment_layout);
+		fragment_spirv, sizeof(fragment_spirv), &vertex_layout, &fragment_layout);
 
 	// Blit image on screen.
 	auto cmd = wsi_device->request_command_buffer();
@@ -138,8 +135,7 @@ void ParallelRDPWrapper::UpdateScreen()
 		cmd->set_cull_mode(VK_CULL_MODE_NONE);
 
 		// If we don't have an image, we just get a cleared screen in the render pass.
-		if (image)
-		{
+		if (image) {
 			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
 			cmd->set_viewport(vp);
 			// The vertices are constants in the shader.

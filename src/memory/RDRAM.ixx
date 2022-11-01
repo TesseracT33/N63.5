@@ -16,7 +16,7 @@ namespace RDRAM
 		void Initialize();
 		template<std::signed_integral Int> Int Read(u32 addr);
 		s32 ReadReg(u32 addr);
-		u64 RspReadCommandByteswapped(u32 addr);
+		u64 RdpReadCommandByteswapped(u32 addr);
 		template<size_t num_bytes> void Write(u32 addr, std::signed_integral auto data);
 		void WriteReg(u32 addr, s32 data);
 	}

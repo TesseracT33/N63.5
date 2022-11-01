@@ -88,7 +88,7 @@ namespace RSP
 	}
 
 
-	u64 RspReadCommandByteswapped(u32 addr)
+	u64 RdpReadCommandByteswapped(u32 addr)
 	{
 		/* The address may be unaligned */
 		u64 command;

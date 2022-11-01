@@ -29,11 +29,11 @@ namespace RDP
 	template<CommandLocation cmd_loc>
 	u64 LoadCommandDword(u32 addr)
 	{
-		if constexpr (cmd_loc == CommandLocation::DMEM) {
-			return RSP::RspReadCommandByteswapped(addr);
+		if constexpr (cmd_loc == CommandLocation::DMEM) { /* todo: byteswap? */
+			return RSP::RdpReadCommandByteswapped(addr);
 		}
 		else {
-			return RDRAM::RspReadCommandByteswapped(addr);
+			return RDRAM::RdpReadCommandByteswapped(addr);
 		}
 	}
 
@@ -41,54 +41,56 @@ namespace RDP
 	template<CommandLocation cmd_loc>
 	void LoadExecuteCommands()
 	{
-		dp.status.pipe_busy = dp.status.start_gclk = dp.status.freeze = true;
-
-		u32 current = dp.current;
-		u32 end = dp.end;
-		if (end <= current) {
+		if (dp.status.freeze) {
 			return;
 		}
-		u32 num_dwords = (end - current) / 8;
-		if (num_queued_dwords + num_dwords >= cmd_buffer.size() / 2) {
+		u32 current = dp.current;
+		if (dp.end <= current) {
+			return;
+		}
+		dp.status.pipe_busy = dp.status.start_gclk;
+		dp.status.ready = false;
+		u32 num_dwords = (dp.end - current) / 8;
+		if (num_queued_words + 2 * num_dwords >= cmd_buffer_word_capacity) {
 			return;
 		}
 
 		do {
-			u64 dword = LoadCommandDword<cmd_loc>(current);
+			u64 dword = LoadCommandDword<cmd_loc>(current); /* TODO: swap words? */
+			std::memcpy(&cmd_buffer[num_queued_words], &dword, 8);
+			num_queued_words += 2;
 			current += 8;
-			std::memcpy(cmd_buffer.data() + num_queued_dwords * 2, &dword, 8);
-			++num_queued_dwords;
 		} while (--num_dwords > 0);
 
-		while (cmd_buffer_dword_idx < num_queued_dwords) {
-			u32 cmd = cmd_buffer[cmd_buffer_dword_idx * 2];
-			u32 opcode = cmd >> 24 & 0x3F;
-			static constexpr std::array cmd_lens = {
-				1, 1, 1, 1, 1, 1, 1, 1, 4, 6,12,14,12,14,20,22,
-				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-				1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		while (queue_word_offset < num_queued_words) {
+			u32 cmd_first_word = cmd_buffer[queue_word_offset];
+			u32 opcode = cmd_first_word & 0x3F;
+			static constexpr std::array cmd_word_lengths = {
+				2, 2, 2, 2, 2, 2, 2, 2, 8,12,24,28,24,28,40,44,
+				2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+				2, 2, 2, 2, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+				2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
 			};
-			u32 cmd_len = cmd_lens[opcode];
-			if (cmd_buffer_dword_idx + cmd_len > num_queued_dwords) {
+			u32 cmd_word_len = cmd_word_lengths[opcode];
+			if (queue_word_offset + cmd_word_len > num_queued_words) {
 				/* partial command; keep data around for next processing call */
 				dp.start = dp.current = dp.end;
 				return;
 			}
 			if (opcode >= 8) {
-				implementation->EnqueueCommand(cmd_len * 2, cmd_buffer.data() + cmd_buffer_dword_idx * 2);
+				implementation->EnqueueCommand(cmd_word_len, &cmd_buffer[queue_word_offset]);
 			}
 			if (opcode == 0x29) { /* full sync command */
 				implementation->OnFullSync();
 				dp.status.pipe_busy = dp.status.start_gclk = false;
 				MI::SetInterruptFlag(MI::InterruptType::DP);
-				
+
 			}
-			cmd_buffer_dword_idx += cmd_len;
+			queue_word_offset += cmd_word_len;
 		}
 
-		cmd_buffer_dword_idx = num_queued_dwords = 0;
-		dp.status.pipe_busy = dp.status.start_gclk = dp.status.freeze = 0;
+		queue_word_offset = num_queued_words = 0;
+		dp.status.ready = true;
 		dp.current = dp.end;
 	}
 
@@ -110,9 +112,9 @@ namespace RDP
 	void WriteReg(u32 addr, s32 data)
 	{
 		auto ProcessCommands = [&] {
-			dp.status.dmem_dma
-				? LoadExecuteCommands<CommandLocation::RDRAM>()
-				: LoadExecuteCommands<CommandLocation::DMEM>();
+			dp.status.cmd_source
+				? LoadExecuteCommands<CommandLocation::DMEM>()
+				: LoadExecuteCommands<CommandLocation::RDRAM>();
 		};
 
 		static_assert(sizeof(dp) >> 2 == 8);
@@ -144,10 +146,10 @@ namespace RDP
 		case Register::StatusReg: {
 			bool unfrozen = false;
 			if (data & 1) {
-				dp.status.dmem_dma = 0;
+				dp.status.cmd_source = 0;
 			}
 			else if (data & 2) {
-				dp.status.dmem_dma = 1;
+				dp.status.cmd_source = 1;
 			}
 			if (data & 4) {
 				dp.status.freeze = 0;

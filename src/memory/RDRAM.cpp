@@ -11,7 +11,6 @@ namespace RDRAM
 
 	u8* GetPointerToMemory(u32 addr)
 	{
-		auto offset = addr & (sizeof(rdram) - 1);
 		return rdram + (addr & (sizeof(rdram) - 1));
 	}
 
@@ -54,7 +53,7 @@ namespace RDRAM
 	}
 
 
-	u64 RspReadCommandByteswapped(u32 addr)
+	u64 RdpReadCommandByteswapped(u32 addr)
 	{
 		/* addr may be misaligned */
 		u64 command;

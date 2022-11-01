@@ -17,7 +17,7 @@ namespace RSP
 	{
 		u8* GetPointerToMemory(u32 addr);
 		void PowerOn();
-		u64 RspReadCommandByteswapped(u32 addr);
+		u64 RdpReadCommandByteswapped(u32 addr);
 		u64 Run(u64 rsp_cycles_to_run);
 
 		template<std::signed_integral Int>

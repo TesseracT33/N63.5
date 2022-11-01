@@ -43,7 +43,6 @@ private:
 		u32                      get_surface_height() override;
 		u32                      get_surface_width() override;
 		void                     poll_input() override;
-		void                     set_window(SDL_Window* sdl_window);
 		ParallelRDPWrapper& parallel_rdp_wrapper;
 	};
 
