@@ -1,5 +1,6 @@
 module RDP;
 
+import FakeRDP;
 import MI;
 import ParallelRDPWrapper;
 import RDRAM;
@@ -13,7 +14,8 @@ namespace RDP
 
 		switch (rdp_implementation) {
 		case Implementation::None:
-			return false; // TODO
+			implementation = std::make_unique<FakeRDP>();
+			return implementation->Initialize();
 
 		case Implementation::ParallelRDP:
 			implementation = std::make_unique<ParallelRDPWrapper>();

@@ -15,6 +15,10 @@ public:
 	virtual void TearDown() = 0;
 	virtual void UpdateScreen() = 0;
 
+	virtual void SetOrigin(u32) {};
+	virtual void SetWidth(u32) {};
+	virtual void SetControl(u32) {};
+
 	SDL_Window* GetWindow() const { return sdl_window; }
 
 protected:

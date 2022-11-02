@@ -235,6 +235,7 @@
     <ClCompile Include="src\interface\RI.cpp" />
     <ClCompile Include="src\interface\RI.ixx" />
     <ClCompile Include="src\memory\PIF.cpp" />
+    <ClCompile Include="src\rdp\FakeRDP.ixx" />
     <ClCompile Include="src\rdp\parallel-rdp-wrapper\ParallelRDPWrapper.cpp" />
     <ClCompile Include="src\rdp\parallel-rdp-wrapper\ParallelRDPWrapper.ixx" />
     <ClCompile Include="src\rdp\RDP.cpp" />
