@@ -764,7 +764,7 @@ namespace VR4300
 			s32 op1 = s32(gpr[rs]);
 			s32 op2 = s32(gpr[rt]);
 			if (op2 == 0) { /* Peter Lemon N64 CPUTest>CPU>DIV */
-				lo_reg = op1 > 0 ? -1 : 1;
+				lo_reg = op1 >= 0 ? -1 : 1;
 				hi_reg = op1;
 			}
 			else if (op1 == std::numeric_limits<s32>::min() && op2 == -1) {
@@ -786,7 +786,7 @@ namespace VR4300
 			u32 op2 = u32(gpr[rt]);
 			if (op2 == 0) {
 				lo_reg = -1;
-				hi_reg = op1;
+				hi_reg = s32(op1);
 			}
 			else {
 				lo_reg = s32(op1 / op2);
@@ -837,7 +837,7 @@ namespace VR4300
 			s64 op1 = gpr[rs];
 			s64 op2 = gpr[rt];
 			if (op2 == 0) { /* Peter Lemon N64 CPUTest>CPU>DDIV */
-				lo_reg = op1 > 0 ? -1 : 1;
+				lo_reg = op1 >= 0 ? -1 : 1;
 				hi_reg = op1;
 			}
 			else if (op1 == std::numeric_limits<s64>::min() && op2 == -1) {
