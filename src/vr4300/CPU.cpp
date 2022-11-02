@@ -958,10 +958,6 @@ namespace VR4300
 		   For "likely" instructions: if the branch condition is not satisfied, the instruction in the branch delay slot is discarded.
 		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
 
-		if constexpr (OneOf(instr, BLTZAL, BGEZAL, BLTZALL, BGEZALL)) {
-			gpr.Set(31, pc + 4);
-		}
-
 		bool branch_cond = [&] {
 			if constexpr (OneOf(instr, BEQ, BEQL)) /* Branch On Equal (Likely) */
 				return gpr[rs] == gpr[rt];
@@ -983,8 +979,11 @@ namespace VR4300
 				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch instruction was found.");
 		}();
 
+		if constexpr (OneOf(instr, BLTZAL, BGEZAL, BLTZALL, BGEZALL)) {
+			gpr.Set(31, pc + 4);
+		}
 		if (branch_cond) {
-			s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
+			s64 offset = s64(s16(instr_code)) << 2;
 			PrepareJump(pc + offset);
 		}
 		else if constexpr (OneOf(instr, BEQL, BNEL, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {

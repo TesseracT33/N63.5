@@ -130,7 +130,7 @@ namespace RSP
 		auto rs = instr_code >> 21 & 0x1F;
 
 		auto immediate = [&] {
-			if constexpr (instr == ANDI || instr == LUI || instr == ORI || instr == XORI)
+			if constexpr (OneOf(instr, ANDI, LUI, ORI, XORI))
 				return u16(instr_code & 0xFFFF);
 			else
 				return s16(instr_code & 0xFFFF);
@@ -282,7 +282,7 @@ namespace RSP
 			current_instr_log_output = [&] {
 				if (instr_code == 0)
 					return std::string("NOP");
-				if constexpr (instr == SLLV || instr == SRLV || instr == SRAV)
+				if constexpr (OneOf(instr, SLLV, SRLV, SRAV))
 					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, rs);
 				else
 					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
@@ -371,7 +371,7 @@ namespace RSP
 				if constexpr (log_rsp_instructions) {
 					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
 				}
-				return gpr[rs] & 0xFFF;
+				return gpr[rs] & 0xFFC;
 			}
 			else {
 				static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump ScalarInstruction was found.");
@@ -413,10 +413,6 @@ namespace RSP
 		/* For all ScalarInstructions: branch to the branch address if the condition is met, with a delay of one ScalarInstruction.
 		   For "link" ScalarInstructions: stores the address of the ScalarInstruction following the delay slot to register r31 (link register). */
 
-		if constexpr (instr == BLTZAL || instr == BGEZAL) {
-			gpr.Set(31, (pc + 4) & 0xFFF);
-		}
-
 		bool branch_cond = [&] {
 			if constexpr (instr == BEQ) /* Branch On Equal */
 				return gpr[rs] == gpr[rt];
@@ -438,8 +434,11 @@ namespace RSP
 				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch ScalarInstruction was found.");
 		}();
 
+		if constexpr (instr == BLTZAL || instr == BGEZAL) {
+			gpr.Set(31, (pc + 4) & 0xFFF);
+		}
 		if (branch_cond) {
-			s32 offset = s32(s16(instr_code & 0xFFFF)) << 2;
+			s32 offset = s32(s16(instr_code)) << 2;
 			PrepareJump(pc + offset);
 		}
 
