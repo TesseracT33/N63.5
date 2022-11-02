@@ -899,37 +899,39 @@ namespace VR4300
 		   JALR: Jump And Link Register;
 		   Jumps to the address of register rs, delayed by one instruction.
 		   Stores the address of the instruction following the delay slot to register rd. */
-		u64 target = [&] {
-			if constexpr (OneOf(instr, J, JAL)) {
-				u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
-				if constexpr (log_cpu_instructions) {
-					current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
-				}
-				return pc & 0xFFFF'FFFF'F000'0000 | target;
-			}
-			else if constexpr (OneOf(instr, JR, JALR)) {
-				auto rs = instr_code >> 21 & 0x1F;
-				if constexpr (log_cpu_instructions) {
-					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
-				}
-				if (gpr[rs] & 3) {
-					SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
-				}
-				return gpr[rs];
-			}
-			else {
-				static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump instruction was found.");
-			}
-		}();
 
-		PrepareJump(target);
+		if (!in_branch_delay_slot) {
+			u64 target = [&] {
+				if constexpr (OneOf(instr, J, JAL)) {
+					u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
+					if constexpr (log_cpu_instructions) {
+						current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
+					}
+					return pc & 0xFFFF'FFFF'F000'0000 | target;
+				}
+				else if constexpr (OneOf(instr, JR, JALR)) {
+					auto rs = instr_code >> 21 & 0x1F;
+					if constexpr (log_cpu_instructions) {
+						current_instr_log_output = std::format("{} {}", current_instr_name, rs);
+					}
+					if (gpr[rs] & 3) {
+						SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
+					}
+					return gpr[rs];
+				}
+				else {
+					static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump instruction was found.");
+				}
+			}();
+			PrepareJump(target);
+		}
 
 		if constexpr (instr == JAL) {
-			gpr.Set(31, pc + 4);
+			gpr.Set(31, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
 		}
 		else if constexpr (instr == JALR) {
 			auto rd = instr_code >> 11 & 0x1F;
-			gpr.Set(rd, pc + 4);
+			gpr.Set(rd, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
 		}
 
 		AdvancePipeline(1);

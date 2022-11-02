@@ -358,34 +358,35 @@ namespace RSP
 		   JALR: Jump And Link Register;
 		   Jumps to the address of register rs, delayed by one ScalarInstruction.
 		   Stores the address of the ScalarInstruction following the delay slot to register rd. */
-		u32 target = [&] {
-			if constexpr (instr == J || instr == JAL) {
-				u32 target = (instr_code & 0x3FF) << 2;
-				if constexpr (log_rsp_instructions) {
-					current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
+		if (!in_branch_delay_slot) {
+			u32 target = [&] {
+				if constexpr (instr == J || instr == JAL) {
+					u32 target = (instr_code & 0x3FF) << 2;
+					if constexpr (log_rsp_instructions) {
+						current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
+					}
+					return target;
 				}
-				return target;
-			}
-			else if constexpr (instr == JR || instr == JALR) {
-				auto rs = instr_code >> 21 & 0x1F;
-				if constexpr (log_rsp_instructions) {
-					current_instr_log_output = std::format("{} {}", current_instr_name, rs);
+				else if constexpr (instr == JR || instr == JALR) {
+					auto rs = instr_code >> 21 & 0x1F;
+					if constexpr (log_rsp_instructions) {
+						current_instr_log_output = std::format("{} {}", current_instr_name, rs);
+					}
+					return gpr[rs] & 0xFFC;
 				}
-				return gpr[rs] & 0xFFC;
-			}
-			else {
-				static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump ScalarInstruction was found.");
-			}
-		}();
-
-		PrepareJump(target);
+				else {
+					static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump ScalarInstruction was found.");
+				}
+			}();
+			PrepareJump(target);
+		}
 
 		if constexpr (instr == JAL) {
-			gpr.Set(31, pc + 4);
+			gpr.Set(31, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc)); /* TODO: mask with $FFF? */
 		}
 		else if constexpr (instr == JALR) {
 			auto rd = instr_code >> 11 & 0x1F;
-			gpr.Set(rd, pc + 4);
+			gpr.Set(rd, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc)); /* TODO: mask with $FFF? */
 		}
 
 		AdvancePipeline(1);
