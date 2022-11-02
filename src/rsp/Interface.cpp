@@ -197,6 +197,7 @@ namespace RSP
 	{
 		if (addr == sp_pc_addr) {
 			pc = data & 0xFFC;
+			jump_is_pending = in_branch_delay_slot = false;
 		}
 		else {
 			static_assert(sizeof(sp) >> 2 == 8);
