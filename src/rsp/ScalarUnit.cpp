@@ -414,31 +414,22 @@ namespace RSP
 		   For "link" ScalarInstructions: stores the address of the ScalarInstruction following the delay slot to register r31 (link register). */
 
 		bool branch_cond = [&] {
-			if constexpr (instr == BEQ) /* Branch On Equal */
-				return gpr[rs] == gpr[rt];
-			else if constexpr (instr == BNE) /* Branch On Not Equal */
-				return gpr[rs] != gpr[rt];
-			else if constexpr (instr == BLEZ) /* Branch On Less Than Or Equal To Zero */
-				return gpr[rs] <= 0;
-			else if constexpr (instr == BGTZ) /* Branch On Greater Than Zero */
-				return gpr[rs] > 0;
-			else if constexpr (instr == BLTZ) /* Branch On Less Than Zero */
-				return gpr[rs] < 0;
-			else if constexpr (instr == BGEZ) /* Branch On Greater Than or Equal To Zero */
-				return gpr[rs] >= 0;
-			else if constexpr (instr == BLTZAL) /* Branch On Less Than Zero and Link */
-				return gpr[rs] < 0;
-			else if constexpr (instr == BGEZAL) /* Branch On Greater Than Or Equal To Zero And Link */
-				return gpr[rs] >= 0;
-			else
-				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch ScalarInstruction was found.");
+			if constexpr (instr == BEQ)         return gpr[rs] == gpr[rt];
+			else if constexpr (instr == BNE)    return gpr[rs] != gpr[rt];
+			else if constexpr (instr == BLEZ)   return gpr[rs] <= 0;
+			else if constexpr (instr == BGTZ)   return gpr[rs] > 0;
+			else if constexpr (instr == BLTZ)   return gpr[rs] < 0;
+			else if constexpr (instr == BGEZ)   return gpr[rs] >= 0;
+			else if constexpr (instr == BLTZAL) return gpr[rs] < 0;
+			else if constexpr (instr == BGEZAL) return gpr[rs] >= 0;
+			else static_assert(AlwaysFalse<instr>);
 		}();
 
 		if constexpr (instr == BLTZAL || instr == BGEZAL) {
-			gpr.Set(31, (pc + 4) & 0xFFF);
+			gpr.Set(31, 0xFFF & (4 + (in_branch_delay_slot ? addr_to_jump_to : pc)));
 		}
 		if (branch_cond) {
-			s32 offset = s32(s16(instr_code)) << 2;
+			auto offset = s16(instr_code) << 2;
 			PrepareJump(pc + offset);
 		}
 

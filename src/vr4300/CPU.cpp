@@ -959,31 +959,22 @@ namespace VR4300
 		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
 
 		bool branch_cond = [&] {
-			if constexpr (OneOf(instr, BEQ, BEQL)) /* Branch On Equal (Likely) */
-				return gpr[rs] == gpr[rt];
-			else if constexpr (OneOf(instr, BNE, BNEL)) /* Branch On Not Equal (Likely) */
-				return gpr[rs] != gpr[rt];
-			else if constexpr (OneOf(instr, BLEZ, BLEZL)) /* Branch On Less Than Or Equal To Zero (Likely) */
-				return gpr[rs] <= 0;
-			else if constexpr (OneOf(instr, BGTZ, BGTZL)) /* Branch On Greater Than Zero (Likely) */
-				return gpr[rs] > 0;
-			else if constexpr (OneOf(instr, BLTZ, BLTZL)) /* Branch On Less Than Zero (Likely) */
-				return gpr[rs] < 0;
-			else if constexpr (OneOf(instr, BGEZ, BGEZL)) /* Branch On Greater Than or Equal To Zero (Likely) */
-				return gpr[rs] >= 0;
-			else if constexpr (OneOf(instr, BLTZAL, BLTZALL)) /* Branch On Less Than Zero and Link (Likely) */
-				return gpr[rs] < 0;
-			else if constexpr (OneOf(instr, BGEZAL, BGEZALL)) /* Branch On Greater Than Or Equal To Zero And Link (Likely) */
-				return gpr[rs] >= 0;
-			else
-				static_assert(AlwaysFalse<instr>, "\"Branch\" template function called, but no matching branch instruction was found.");
+			if constexpr (OneOf(instr, BEQ, BEQL))            return gpr[rs] == gpr[rt];
+			else if constexpr (OneOf(instr, BNE, BNEL))       return gpr[rs] != gpr[rt];
+			else if constexpr (OneOf(instr, BLEZ, BLEZL))     return gpr[rs] <= 0;
+			else if constexpr (OneOf(instr, BGTZ, BGTZL))     return gpr[rs] > 0;
+			else if constexpr (OneOf(instr, BLTZ, BLTZL))     return gpr[rs] < 0;
+			else if constexpr (OneOf(instr, BGEZ, BGEZL))     return gpr[rs] >= 0;
+			else if constexpr (OneOf(instr, BLTZAL, BLTZALL)) return gpr[rs] < 0;
+			else if constexpr (OneOf(instr, BGEZAL, BGEZALL)) return gpr[rs] >= 0;
+			else static_assert(AlwaysFalse<instr>);
 		}();
 
 		if constexpr (OneOf(instr, BLTZAL, BGEZAL, BLTZALL, BGEZALL)) {
-			gpr.Set(31, pc + 4);
+			gpr.Set(31, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
 		}
 		if (branch_cond) {
-			s64 offset = s64(s16(instr_code)) << 2;
+			auto offset = s16(instr_code) << 2;
 			PrepareJump(pc + offset);
 		}
 		else if constexpr (OneOf(instr, BEQL, BNEL, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {

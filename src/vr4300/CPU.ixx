@@ -85,12 +85,4 @@ namespace VR4300
 		void Set(Reg reg, s64 data);
 		s64 operator[](size_t index);
 	} gpr;
-
-	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */
-	bool jump_is_pending = false;
-	bool last_instr_was_load = false;
-	uint instructions_until_jump = 0;
-	u64 addr_to_jump_to;
-	u64 pc;
-	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
 }

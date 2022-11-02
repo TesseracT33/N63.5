@@ -39,10 +39,11 @@ namespace RSP
 	template<std::signed_integral Int>
 	void WriteDMEM(u32 addr, Int data);
 
-	bool jump_is_pending = false;
+	bool in_branch_delay_slot;
+	bool jump_is_pending;
 	uint pc;
 	uint p_cycle_counter;
-	uint instructions_until_jump = 0;
+	uint instructions_until_jump;
 	uint addr_to_jump_to;
 
 	constinit std::array<u8, 0x2000> mem; /* 0 - $FFF: data memory; $1000 - $1FFF: instruction memory */

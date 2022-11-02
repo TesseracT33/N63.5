@@ -110,6 +110,10 @@ namespace RSP
 				if (instructions_until_jump-- == 0) {
 					pc = addr_to_jump_to;
 					jump_is_pending = false;
+					in_branch_delay_slot = false;
+				}
+				else {
+					in_branch_delay_slot = true;
 				}
 			}
 			FetchDecodeExecuteInstruction();

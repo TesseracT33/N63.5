@@ -49,6 +49,13 @@ namespace VR4300
 	void PrepareJump(u64 target_address);
 
 	bool in_branch_delay_slot;
+	bool ll_bit; /* Read from / written to by load linked and store conditional instructions. */
+	bool jump_is_pending = false;
+	bool last_instr_was_load = false;
+	uint instructions_until_jump = 0;
+	u64 addr_to_jump_to;
+	u64 pc;
+	u64 hi_reg, lo_reg; /* Contain the result of a double-word multiplication or division. */
 	u64 p_cycle_counter;
 	u8* rdram_ptr;
 
