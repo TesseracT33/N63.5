@@ -55,13 +55,13 @@ namespace VR4300
 	template<FPUNumericType T>
 	T FGR::Get(size_t index) const
 	{
-		if constexpr (std::is_same_v<T, s32>) {
+		if constexpr (std::same_as<T, s32>) {
 			return s32(fpr[index]);
 		}
-		if constexpr (std::is_same_v<T, f32>) {
+		if constexpr (std::same_as<T, f32>) {
 			return std::bit_cast<f32>(s32(fpr[index]));
 		}
-		if constexpr (std::is_same_v<T, s64>) {
+		if constexpr (std::same_as<T, s64>) {
 			if (cop0_reg.status.fr) {
 				return fpr[index];
 			}
@@ -72,7 +72,7 @@ namespace VR4300
 				return fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32;
 			}
 		}
-		if constexpr (std::is_same_v<T, f64>) {
+		if constexpr (std::same_as<T, f64>) {
 			if (cop0_reg.status.fr) {
 				return std::bit_cast<f64>(fpr[index]);
 			}
@@ -89,13 +89,13 @@ namespace VR4300
 	template<FPUNumericType T>
 	void FGR::Set(size_t index, T data)
 	{
-		if constexpr (std::is_same_v<T, s32>) {
+		if constexpr (std::same_as<T, s32>) {
 			fpr[index] = data;
 		}
-		if constexpr (std::is_same_v<T, f32>) {
+		if constexpr (std::same_as<T, f32>) {
 			fpr[index] = std::bit_cast<s32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
 		}
-		if constexpr (std::is_same_v<T, s64>) {
+		if constexpr (std::same_as<T, s64>) {
 			if (cop0_reg.status.fr) {
 				fpr[index] = data;
 			}
@@ -107,7 +107,7 @@ namespace VR4300
 				fpr[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
 			}
 		}
-		if constexpr (std::is_same_v<T, f64>) {
+		if constexpr (std::same_as<T, f64>) {
 			if (cop0_reg.status.fr) {
 				fpr[index] = std::bit_cast<s64, f64>(data);
 			}
@@ -362,7 +362,7 @@ namespace VR4300
 			 * If the source operand is infinity or NaN, or
 			 * If overflow occurs during conversion to integer format. */
 		auto TestForUnimplementedException = [&] <typename From, typename To> (From source) -> bool {
-			if constexpr (std::is_integral_v<From> && std::is_same_v<To, f64>) {
+			if constexpr (std::is_integral_v<From> && std::same_as<To, f64>) {
 				return false; /* zero-cost shortcut; integers cannot be infinity or NaN, and the operation is then always exact when converting to a double */
 			}
 			if constexpr (std::is_floating_point_v<From>) {
@@ -404,9 +404,9 @@ namespace VR4300
 					/* TODO: the below is assuming that conv. between W and L takes 2 cycles.
 					   See footnote 2 in table 7-14, VR4300 manual */
 					static constexpr int cycles = [&] {
-						     if constexpr (std::is_same_v<From, To>)                             return 1;
-						else if constexpr (std::is_same_v<From, f32> && std::is_same_v<To, f64>) return 1;
-						else if constexpr (std::is_same_v<From, f64> && std::is_same_v<To, f32>) return 2;
+						     if constexpr (std::same_as<From, To>)                             return 1;
+						else if constexpr (std::same_as<From, f32> && std::same_as<To, f64>) return 1;
+						else if constexpr (std::same_as<From, f64> && std::same_as<To, f32>) return 2;
 						else if constexpr (std::is_integral_v<From> && std::is_integral_v<To>)   return 2;
 						else                                                                     return 5;
 					}();
@@ -592,7 +592,7 @@ namespace VR4300
 				}
 				if constexpr (instr == SQRT) {
 					fpr.Set<Float>(fd, std::sqrt(op));
-					if constexpr (std::is_same_v<Float, f32>) {
+					if constexpr (std::same_as<Float, f32>) {
 						AdvancePipeline(29);
 					}
 					else { /* f64 */

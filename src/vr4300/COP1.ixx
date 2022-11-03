@@ -13,8 +13,8 @@ import <type_traits>;
 namespace VR4300
 {
 	template<typename T> concept FPUNumericType =
-		std::is_same_v<f32, T> || std::is_same_v<f64, T> ||
-		std::is_same_v<s32, T> || std::is_same_v<s64, T>;
+		std::same_as<f32, T> || std::same_as<f64, T> ||
+		std::same_as<s32, T> || std::same_as<s64, T>;
 
 	enum class COP1Instruction {
 		/* Load/store/transfer instructions */
