@@ -139,26 +139,16 @@ namespace RSP
 		auto base = instr_code >> 21 & 0x1F;
 
 		/* LBV, LSV, LLV, LDV */
-		auto LoadUpToDoubleword = [&] <std::integral Int> {
-			/* 8/16/32/64-bit vector loads
-			Psuedo-code:
-				addr = GPR[base] + offset * access_size
-				VPR[vt][element..element+access_size] = DMEM[addr..addr+access_size]
-			When element+access_size > 15, fewer bytes are loaded (16 - element).
-			When addr+access_size > 0xFFF, the address wraps around (TODO: verify)
-			Each lane is effectively byteswapped upon load. This is achieved by repeatedly flipping
-			  the 0th bit of the index of the byte currently being loaded (if element + i is even,
-			  we load into element + i + 1, otherwise, we load into element + i - 1).
-			*/
-			u8* vpr_dst = (u8*)(vpr.data() + vt);
+		auto LoadUpToDoubleword = [&] <std::signed_integral Int> {
+			u8* vpr_dst = (u8*)(&vpr[vt]);
 			auto addr = gpr[base] + offset * sizeof(Int);
 			if constexpr (sizeof(Int) == 1) {
 				*(vpr_dst + (element ^ 1)) = dmem[addr & 0xFFF];
 			}
 			else {
-				u32 num_bytes_to_copy = std::min((u32)sizeof(Int), 16 - element);
-				for (u32 i = 0; i < num_bytes_to_copy; ++i) {
-					*(vpr_dst + ((element + i) ^ 1)) = dmem[(addr + i) & 0xFFF];
+				u32 num_bytes = std::min((u32)sizeof(Int), 16 - element);
+				for (u32 i = 0; i < num_bytes; ++i) {
+					*(vpr_dst + (element + i ^ 1)) = dmem[addr + i & 0xFFF];
 				}
 			}
 
@@ -169,18 +159,11 @@ namespace RSP
 		};
 
 		/* SBV, SSV, SLV, SDV */
-		auto StoreUpToDoubleword = [&] <std::integral Int> {
-			const u8* vpr_src = (u8*)(vpr.data() + vt);
+		auto StoreUpToDoubleword = [&] <std::signed_integral Int> {
+			const u8* vpr_src = (u8*)(&vpr[vt]);
 			auto addr = gpr[base] + offset * sizeof(Int);
-			if constexpr (sizeof(Int) == 1) {
-				dmem[addr & 0xFFF] = *(vpr_src + (element ^ 1));
-			}
-			else {
-				auto current_elem = element;
-				for (size_t i = 0; i < sizeof(Int); ++i) {
-					dmem[(addr + i) & 0xFFF] = *(vpr_src + (current_elem ^ 1));
-					current_elem = (current_elem + 1) & 0xF;
-				}
+			for (size_t i = 0; i < sizeof(Int); ++i) {
+				dmem[addr + i & 0xFFF] = *(vpr_src + ((element + i ^ 1) & 0xF));
 			}
 
 			if constexpr (log_rsp_instructions) {
@@ -199,7 +182,7 @@ namespace RSP
 				endfor
 			*/
 			/* 'element' selects the first lane, not byte, being accessed */
-			s16* vpr_src = (s16*)(vpr.data() + vt);
+			s16* vpr_src = (s16*)(&vpr[vt]);
 			auto addr = (gpr[base] + offset * 8) & 0xFFF;
 			auto addr_dword_offset = addr;
 			addr &= 0xFF8;
@@ -231,46 +214,27 @@ namespace RSP
 		else if constexpr (instr == LLV) INVOKE(LoadUpToDoubleword, s32);
 		else if constexpr (instr == LDV) INVOKE(LoadUpToDoubleword, s64);
 		else if constexpr (instr == LQV || instr == LRV) {
-			/* LRQ; Load (up to) 16 bytes into vector, left-aligned. The bytes accessed are those
-			starting at GPR[base] + (offset * 16), up to and excluding the next 128-bit aligned byte.
-			Psuedo-code:
-				addr = GPR[base] + offset * 16
-				num_bytes = min(16 - (address & 0xF), 16 - element)
-				VPR[vt][element..element+num_bytes] = DMEM[addr..addr+num_bytes]
-
-			LRV; Load (up to) 16 bytes into vector, right-aligned. The bytes accessed are those
-			starting at the previous 128-bit aligned byte up to and excluding GPR[base] + (offset * 16).
-			Psuedo-code:
-				addr = GPR[base] + offset * 16
-				num_bytes = min(address & 0xF, 16 - element)
-				VPR[vt][element..element+num_bytes] = DMEM[(addr&~0xF)..(addr&~0xF)+num_bytes]
-
-			When element+access_size > 15, fewer bytes are loaded (16 - element).
-			*/
-
-			u8* vpr_dst = (u8*)(vpr.data() + vt);
+			u8* vpr_dst = (u8*)(&vpr[vt]);
 			u32 addr = gpr[base] + offset * 16;
-			u32 num_bytes = [&] {
-				if constexpr (instr == LQV)
-					return 16 - std::max(addr & 0xF, element); // == std::min(16 - (address & 0xF), 16 - element)
-				else
-					return std::min(addr & 0xF, 16 - element);
-			}();
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
 					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 
+			u32 num_bytes;
 			if constexpr (instr == LQV) {
+				num_bytes = 16 - std::max(addr & 0xF, element); // == std::min(16 - (addr & 0xF), 16 - element)
 				addr &= 0xFFF;
 			}
 			else {
+				element += 16 - (addr & 0xF);
+				if (element >= 16) return;
+				num_bytes = 16 - element;
 				addr &= 0xFF0;
 			}
-
 			for (u32 i = 0; i < num_bytes; ++i) {
-				*(vpr_dst + ((element + i) ^ 1)) = dmem[addr + i];
+				*(vpr_dst + (element++ ^ 1)) = dmem[addr++];
 			}
 		}
 		else if constexpr (instr == LTV) {
@@ -283,7 +247,7 @@ namespace RSP
 			bool on_odd_byte = 1;
 
 			auto CopyNextByte = [&] {
-				u8* vpr_dst = (u8*)(vpr.data() + current_reg);
+				u8* vpr_dst = (u8*)(&vpr[current_reg]);
 				*(vpr_dst + (current_elem & 0xE) + on_odd_byte) = dmem[current_addr & 0xFFF];
 				on_odd_byte ^= 1;
 				current_addr++;
@@ -315,7 +279,7 @@ namespace RSP
 			bool on_odd_byte = 1;
 
 			auto CopyNextByte = [&] {
-				u8* vpr_src = (u8*)(vpr.data() + current_reg);
+				u8* vpr_src = (u8*)(&vpr[current_reg]);
 				dmem[current_addr & 0xFFF] = *(vpr_src + (current_elem & 0xE) + on_odd_byte);
 				on_odd_byte ^= 1;
 				current_addr++;
@@ -345,35 +309,31 @@ namespace RSP
 		else if constexpr (instr == SLV) INVOKE(StoreUpToDoubleword, s32);
 		else if constexpr (instr == SDV) INVOKE(StoreUpToDoubleword, s64);
 		else if constexpr (instr == SQV || instr == SRV) {
-			const u8* vpr_src = (u8*)(vpr.data() + vt);
-			u32 addr = gpr[base] + offset * 16;
-			u32 num_bytes_to_copy = [&] {
-				if constexpr (instr == SQV)
-					return 16 - (addr & 0xF);
-				else
-					return addr & 0xF;
-			}();
+			const u8* vpr_src = (u8*)(&vpr[vt]);
+			auto addr = gpr[base] + offset * 16;
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("{} {} e{}, ${:X}",
 					current_instr_name, vt, element, MakeUnsigned(addr));
 			}
 
+			u32 num_bytes, base_element;
 			if constexpr (instr == SQV) {
+				num_bytes = 16 - (addr & 0xF);
+				base_element = 0;
 				addr &= 0xFFF;
 			}
 			else {
+				num_bytes = addr & 0xF;
+				base_element = 16 - (addr & 0xF);
 				addr &= 0xFF0;
 			}
-
-			auto current_elem = element;
-			for (uint i = 0; i < num_bytes_to_copy; ++i) {
-				dmem[addr + i] = *(vpr_src + (current_elem ^ 1));
-				current_elem = (current_elem + 1) & 0xF;
+			for (u32 i = 0; i < num_bytes; ++i) {
+				dmem[addr++] = *(vpr_src + ((base_element + element++ & 0xF) ^ 1));
 			}
 		}
 		else if constexpr (instr == LWV) {
-			u8* vpr_dst = (u8*)(vpr.data() + vt);
+			u8* vpr_dst = (u8*)(&vpr[vt]);
 			auto addr = gpr[base] + offset * 16;
 
 			if constexpr (log_rsp_instructions) {
@@ -387,7 +347,7 @@ namespace RSP
 			}
 		}
 		else if constexpr (instr == SWV) {
-			u8* vpr_src = (u8*)(vpr.data() + vt);
+			u8* vpr_src = (u8*)(&vpr[vt]);
 			auto addr = gpr[base] + offset * 16;
 
 			if constexpr (log_rsp_instructions) {
@@ -452,7 +412,7 @@ namespace RSP
 				s64(0xFFFF'FFFF'0000'0000), s64(0xFFFF'FFFF'0000'FFFF), s64(0xFFFF'FFFF'FFFF'0000), s64(0xFFFF'FFFF'FFFF'FFFF)
 			};
 			s32 r = gpr[rt];
-			ctrl_reg[vs].low  = _mm_set_epi64x(lanes[r >>  4 & 0xF], lanes[r >> 0 & 0xF]);
+			ctrl_reg[vs].low = _mm_set_epi64x(lanes[r >> 4 & 0xF], lanes[r >> 0 & 0xF]);
 			ctrl_reg[vs].high = _mm_set_epi64x(lanes[r >> 12 & 0xF], lanes[r >> 8 & 0xF]);
 		}
 		else if constexpr (instr == CFC2) {
@@ -601,7 +561,7 @@ namespace RSP
 			assert(false); /* TODO */
 		}
 		else if constexpr (instr == VNOP || instr == VNULL) {
-			
+
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);
@@ -639,9 +599,9 @@ namespace RSP
 					VCO(i + 8) = 0
 				endfor
 			*/
-			__m128i vc0_operand = _mm_and_si128(vco.low, m128i_one);
-			acc.low = _mm_add_epi16(vpr[vs], _mm_add_epi16(vt_operand, vc0_operand));
-			vpr[vd] = _mm_adds_epi16(vpr[vs], _mm_adds_epi16(vt_operand, vc0_operand));
+			__m128i vco_op = _mm_and_si128(vco.low, m128i_one);
+			acc.low = _mm_add_epi16(vpr[vs], _mm_add_epi16(vt_operand, vco_op));
+			vpr[vd] = _mm_adds_epi16(vpr[vs], _mm_adds_epi16(vt_operand, vco_op));
 			std::memset(&vco, 0, sizeof(vco));
 		}
 		else if constexpr (instr == VSUB) {
@@ -654,9 +614,9 @@ namespace RSP
 					VCO(i + 8) = 0
 				endfor
 			*/
-			__m128i vc0_operand = _mm_and_si128(vco.low, m128i_one);
-			acc.low = _mm_sub_epi16(vpr[vs], _mm_add_epi16(vt_operand, vc0_operand));
-			vpr[vd] = _mm_subs_epi16(vpr[vs], _mm_adds_epi16(vt_operand, vc0_operand));
+			__m128i vco_op = _mm_and_si128(vco.low, m128i_one);
+			acc.low = _mm_sub_epi16(vpr[vs], _mm_add_epi16(vt_operand, vco_op));
+			vpr[vd] = _mm_subs_epi16(vpr[vs], _mm_adds_epi16(vt_operand, vco_op));
 			std::memset(&vco, 0, sizeof(vco));
 		}
 		else if constexpr (instr == VADDC) {
@@ -756,7 +716,7 @@ namespace RSP
 			   before the subtraction. Thus, at least one bit of high must be set. */
 			__m128i neg_addend = _mm_and_si128(addend,
 				_mm_and_si128(_mm_cmpge_epi16(high, m128i_zero), /* prod >= 0 */
-				_mm_or_si128(_mm_cmpgt_epu16(low, mask), _mm_cmpgt_epi16(high, m128i_zero)))); /* low > 32 or high > 0 */
+					_mm_or_si128(_mm_cmpgt_epu16(low, mask), _mm_cmpgt_epi16(high, m128i_zero)))); /* low > 32 or high > 0 */
 			low = _mm_sub_epi16(low, neg_addend);
 			__m128i low_borrow = _mm_srli_epi16(_mm_cmpeq_epi16(
 				_mm_and_si128(low, _mm_set1_epi16(0xFFE0)), _mm_set1_epi16(0xFFE0)), 15);
@@ -865,7 +825,7 @@ namespace RSP
 				AddToAccFromMid(low, high);
 			}
 			vpr[vd] = ClampSigned(acc.mid, acc.high);
-			
+
 		}
 		else if constexpr (instr == VABS) {
 			/* If a lane is 0x8000, store 0x7FFF to vpr[vd], and 0x8000 to the accumulator. */
