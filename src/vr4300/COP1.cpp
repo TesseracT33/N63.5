@@ -31,7 +31,6 @@ namespace VR4300
 
 	u32 FPUControl::Get(size_t index) const
 	{
-		static constexpr u32 fcr0 = 0; /* TODO */
 		if (index == 31) {
 			return std::bit_cast<u32>(fcr31);
 		}

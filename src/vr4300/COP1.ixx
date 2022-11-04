@@ -100,6 +100,7 @@ namespace VR4300
 		std::array<s64, 32> fpr{};
 	} fpr;
 
+	constexpr u32 fcr0 = 0xA00;
 
 	constexpr std::array compare_cond_strings = {
 		"F", "UN", "EQ", "UEQ", "OLT", "ULT", "OLE", "ULE", "SF", "NGLE", "SEQ", "NGL", "LT", "NGE", "LE", "NGT"
