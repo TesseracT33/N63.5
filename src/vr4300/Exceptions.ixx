@@ -56,6 +56,8 @@ namespace VR4300
 
 	constexpr std::string_view ExceptionToString(Exception exception);
 
+	void SignalCoprocessorUnusableException(int co);
+
 	/* Exception handlers */
 	template<Memory::Operation> void AddressErrorException();
 	template<Memory::Operation> void BusErrorException();

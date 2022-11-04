@@ -219,6 +219,12 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FPULoad(u32 instr_code)
 	{
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
+			return;
+		}
+
 		using enum COP1Instruction;
 
 		s16 offset = instr_code & 0xFFFF;
@@ -264,6 +270,12 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FPUStore(u32 instr_code)
 	{
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
+			return;
+		}
+
 		using enum COP1Instruction;
 
 		s16 offset = instr_code & 0xFFFF;
@@ -301,6 +313,12 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FPUMove(u32 instr_code)
 	{
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
+			return;
+		}
+
 		using enum COP1Instruction;
 
 		auto fs = instr_code >> 11 & 0x1F;

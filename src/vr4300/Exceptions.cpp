@@ -152,6 +152,13 @@ namespace VR4300
 	}
 
 
+	void SignalCoprocessorUnusableException(int co)
+	{
+		SignalException<Exception::CoprocessorUnusable>();
+		coprocessor_unusable_source = co;
+	}
+
+
 	template<Exception exception, Memory::Operation operation>
 	void SignalException()
 	{
@@ -193,6 +200,7 @@ namespace VR4300
 		}();
 		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0_reg.x_context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.cause.ce = 0;
 	}
 

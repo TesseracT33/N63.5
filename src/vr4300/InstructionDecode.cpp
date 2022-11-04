@@ -172,14 +172,6 @@ namespace VR4300
 
 	void DecodeAndExecuteCOP1Instruction()
 	{
-		/*
-		if (!fpu_is_enabled)
-		{
-			SignalException<Exception::CoprocessorUnusable>();
-			return;
-		}
-		*/
-
 		auto opcode = instr_code >> 21 & 0x1F;
 
 		switch (opcode) {
@@ -199,11 +191,13 @@ namespace VR4300
 		}
 
 		case 0b00010: EXEC_COP1_INSTR(CFC1); break;
+		case 0b00011: SignalException<Exception::FloatingPoint>(); break; /* DCFC1 */
 		case 0b00110: EXEC_COP1_INSTR(CTC1); break;
 		case 0b00001: EXEC_COP1_INSTR(DMFC1); break;
 		case 0b00101: EXEC_COP1_INSTR(DMTC1); break;
 		case 0b00000: EXEC_COP1_INSTR(MFC1); break;
 		case 0b00100: EXEC_COP1_INSTR(MTC1); break;
+		case 0b00111: SignalException<Exception::FloatingPoint>(); break; /* DCTC1 */
 
 		default: {
 			if ((instr_code & 0x30) == 0x30) {
@@ -312,35 +306,6 @@ namespace VR4300
 		case 0b111101: EXEC_COP1_INSTR(SDC1); break;
 		case 0b111001: EXEC_COP1_INSTR(SWC1); break;
 
-		/*
-		case 0b110101:
-			if (!fpu_is_enabled)
-				SignalException<Exception::CoprocessorUnusable>();
-			else
-				EXEC_COP1_INSTR(LDC1);
-			break;
-
-		case 0b110001:
-			if (!fpu_is_enabled)
-				SignalException<Exception::CoprocessorUnusable>();
-			else
-				EXEC_COP1_INSTR(LWC1);
-			break;
-
-		 case 0b111101:
-			if (!fpu_is_enabled)
-				SignalException<Exception::CoprocessorUnusable>();
-			else
-				EXEC_COP1_INSTR(SDC1);
-			break;
-
-		case 0b111001:
-			if (!fpu_is_enabled)
-				SignalException<Exception::CoprocessorUnusable>();
-			else
-				EXEC_COP1_INSTR(SWC1);
-			break;
-		*/
 		default:
 			NotifyIllegalInstrCode(instr_code);
 			SignalException<Exception::ReservedInstruction>();
