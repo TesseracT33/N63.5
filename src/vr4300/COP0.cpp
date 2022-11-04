@@ -63,7 +63,7 @@ namespace VR4300
 			}
 		};
 
-		switch (reg_index) {
+		switch (reg_index & 31) {
 		case cop0_index_index: return StructToInt(index);
 		case cop0_index_random: return random_generator.Generate(); /* Generate a random number in the interval [wired, 31] */
 		case cop0_index_entry_lo_0: return StructToInt(entry_lo_0);
@@ -88,6 +88,13 @@ namespace VR4300
 		case cop0_index_tag_lo: return StructToInt(tag_lo);
 		case cop0_index_tag_hi: return StructToInt(tag_hi);
 		case cop0_index_error_epc: return StructToInt(error_epc);
+		case  7: return cop0_unused_7;
+		case 21: return cop0_unused_21;
+		case 22: return cop0_unused_22;
+		case 23: return cop0_unused_23;
+		case 24: return cop0_unused_24;
+		case 25: return cop0_unused_25;
+		case 31: return cop0_unused_31;
 		default: return 0;
 		}
 	}
@@ -230,6 +237,14 @@ namespace VR4300
 		case cop0_index_error_epc:
 			IntToStruct(error_epc, value);
 			break;
+
+		case  7: cop0_unused_7 =  u32(value); break;
+		case 21: cop0_unused_21 = u32(value); break;
+		case 22: cop0_unused_22 = u32(value); break;
+		case 23: cop0_unused_23 = u32(value); break;
+		case 24: cop0_unused_24 = u32(value); break;
+		case 25: cop0_unused_25 = u32(value); break;
+		case 31: cop0_unused_31 = u32(value); break;
 		}
 	}
 

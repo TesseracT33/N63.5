@@ -97,6 +97,8 @@ namespace VR4300
 			u32 : 26;
 		} wired;
 
+		u32 cop0_unused_7; /* (7) */
+
 		struct { /* (8) */
 			u64 value;
 		} bad_v_addr;
@@ -206,6 +208,12 @@ namespace VR4300
 			u64 pte_base : 31;
 		} x_context;
 
+		u32 cop0_unused_21; /* (21) */
+		u32 cop0_unused_22; /* (22) */
+		u32 cop0_unused_23; /* (23) */
+		u32 cop0_unused_24; /* (24) */
+		u32 cop0_unused_25; /* (25) */
+
 		struct { /* (26) */
 			u32 diagnostic : 8;
 			u32 : 24;
@@ -229,6 +237,8 @@ namespace VR4300
 		struct { /* (30) */
 			u64 value;
 		} error_epc;
+
+		u32 cop0_unused_31; /* (31) */
 
 		u64 Get(size_t reg_index) const;
 		template<bool raw = false> void Set(size_t reg_index, auto value);
