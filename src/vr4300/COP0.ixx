@@ -6,6 +6,7 @@ import <array>;
 import <bit>;
 import <cassert>;
 import <cstring>;
+import <random>;
 
 namespace VR4300
 {
@@ -238,6 +239,23 @@ namespace VR4300
 		void OnWriteToStatus();
 		void OnWriteToWired();
 	} cop0_reg{};
+
+	/* Used to generate random numbers in the interval [wired, 31], when the 'random' register is read. */
+	class RandomGenerator
+	{
+		std::random_device rd;  // Will be used to obtain a seed for the random number engine
+		std::mt19937 gen{ rd() }; // Standard mersenne_twister_engine seeded with rd()
+		std::uniform_int_distribution<u32> distrib{ 0, 31 };
+	public:
+		u32 Generate()
+		{
+			return distrib(gen);
+		}
+		void SetLowerBound(auto min)
+		{
+			distrib = { min & 31, 31 };
+		}
+	} random_generator{};
 
 	constexpr std::array cop0_reg_str_repr = {
 		"INDEX", "RANDOM", "ENTRY_LO_0", "ENTRY_LO_1", "CONTEXT", "PAGE_MASK", "WIRED", "COP0_7", "BAD_V_ADDR",

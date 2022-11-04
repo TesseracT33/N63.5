@@ -6,7 +6,6 @@ import <array>;
 import <cfenv>;
 import <cmath>;
 import <concepts>;
-import <random>;
 import <string_view>;
 import <type_traits>;
 
@@ -100,24 +99,6 @@ namespace VR4300
 	private:
 		std::array<s64, 32> fpr{};
 	} fpr;
-
-
-	/* Used to generate random numbers in the interval [wired, 31], when the 'random' register is read. */
-	class RandomGenerator
-	{
-		std::random_device rd;  // Will be used to obtain a seed for the random number engine
-		std::mt19937 gen{ rd() }; // Standard mersenne_twister_engine seeded with rd()
-		std::uniform_int_distribution<u32> distrib{ 0, 0x1F };
-	public:
-		u32 Generate()
-		{
-			return distrib(gen);
-		}
-		void SetLowerBound(auto min)
-		{
-			distrib = { min, 0x1F };
-		}
-	} random_generator{};
 
 
 	constexpr std::array compare_cond_strings = {
