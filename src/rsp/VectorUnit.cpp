@@ -183,24 +183,21 @@ namespace RSP
 			*/
 			/* 'element' selects the first lane, not byte, being accessed */
 			s16* vpr_src = (s16*)(&vpr[vt]);
-			auto addr = (gpr[base] + offset * 8) & 0xFFF;
-			auto addr_dword_offset = addr;
+			auto addr = gpr[base] + offset * 8 & 0xFFF;
+			auto dword_offset = addr;
 			addr &= 0xFF8;
-			auto current_lane = element;
-			static constexpr auto shift_amount = [&] {
-				if constexpr (instr == LPV || instr == SPV) return 8;
+			auto lane = element;
+			static constexpr auto shift = [&] {
+				if constexpr (OneOf(instr, LPV, SPV)) return 8;
 				else return 7;
 			}();
 			for (int i = 0; i < 8; ++i) {
-				if constexpr (instr == LPV || instr == LUV) {
-					*(vpr_src + (current_lane & 7)) = dmem[addr | addr_dword_offset & 7] << shift_amount;
+				if constexpr (OneOf(instr, LPV, LUV)) {
+					*(vpr_src + (lane++ & 7)) = dmem[addr | dword_offset++ & 7] << shift;
 				}
 				else {
-					dmem[addr | addr_dword_offset & 7] =
-						*(vpr_src + (current_lane & 7)) >> shift_amount & 0xFF;
+					dmem[addr | dword_offset++ & 7] = *(vpr_src + (lane++ & 7)) >> shift & 0xFF;
 				}
-				++current_lane;
-				++addr_dword_offset;
 			}
 
 			if constexpr (log_rsp_instructions) {
@@ -1022,6 +1019,7 @@ namespace RSP
 				endfor
 			*/
 			vpr[vd] = acc.low = _mm_blendv_epi8(vt_operand, vpr[vs], vcc.low);
+			std::memset(&vco, 0, sizeof(vco));
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);
