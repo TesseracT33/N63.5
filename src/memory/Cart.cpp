@@ -81,6 +81,9 @@ namespace Cart
 	template<std::signed_integral Int>
 	Int ReadRom(u32 addr)
 	{
+		if constexpr (sizeof(Int) < 4) {
+			addr += addr & 2; /* PI external bus glitch */
+		}
 		Int ret;
 		std::memcpy(&ret, GetPointerToRom(addr), sizeof(Int));
 		return std::byteswap(ret);
@@ -90,6 +93,9 @@ namespace Cart
 	template<std::signed_integral Int>
 	Int ReadSram(u32 addr)
 	{ /* CPU precondition: addr is always aligned */
+		if constexpr (sizeof(Int) < 4) {
+			addr += addr & 2; /* PI external bus glitch */
+		}
 		Int ret;
 		std::memcpy(&ret, GetPointerToSram(addr), sizeof(Int));
 		return std::byteswap(ret);
@@ -111,6 +117,9 @@ namespace Cart
 	template<size_t num_bytes>
 	void WriteSram(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
+		if constexpr (sizeof(data) < 4) {
+			addr += addr & 2; /* PI external bus glitch */     /* TODO: not sure how it works for writes */
+		}
 		data = std::byteswap(data);
 		std::memcpy(GetPointerToSram(addr), &data, num_bytes);
 	}

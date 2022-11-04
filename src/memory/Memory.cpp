@@ -102,6 +102,12 @@ else {                                                                      \
 					return Int{};
 				}
 			}
+			else if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
+				return Cart::ReadSram<Int>(addr);
+			}
+			else if (addr >= 0x1000'0000 && addr <= 0x1FBF'FFFF) {
+				return Cart::ReadRom<Int>(addr);
+			}
 			else {
 				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
 				return Int{};
@@ -112,14 +118,12 @@ else {                                                                      \
 				VR4300::last_instr_fetch_phys_addr = addr;
 			}
 		}
-		else {
-			if constexpr (log_cpu_memory) {
-				if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
-					LogIoRead(addr, value, io_location);
-				}
-				else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-					LogCpuRead(addr, value);
-				}
+		else if constexpr (log_cpu_memory) {
+			if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
+				LogIoRead(addr, value, io_location);
+			}
+			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
+				LogCpuRead(addr, value);
 			}
 		}
 		return value;
@@ -132,8 +136,6 @@ else {                                                                      \
 		for (u8*& ptr : read_page_table) {
 			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
 			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
-			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cart::GetPointerToSram(page << 16);
-			else if (page >= 0x1000 && page <= 0x1FBF) ptr = Cart::GetPointerToRom(page << 16);
 			else if (page == 0x1FC0)                   ptr = PIF::GetPointerToMemory(page << 16);
 			else                                       ptr = nullptr;
 			++page;
@@ -142,7 +144,6 @@ else {                                                                      \
 		for (u8*& ptr : write_page_table) {
 			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
 			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
-			else if (page >= 0x0800 && page <= 0x0FFF) ptr = Cart::GetPointerToSram(page << 16);
 			else                                       ptr = nullptr;
 			++page;
 		}
@@ -203,6 +204,9 @@ else {                                                                      \
 			default: /* $0490'0000 - $04EF'FFFF */
 				Log(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
 			}
+		}
+		else if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
+			Cart::WriteSram<num_bytes>(addr, data);
 		}
 		else if ((addr & 0xFFFF'F800) == 0x1FC0'0000) { /* $1FC0'0000 - $1FC0'07FF */
 			PIF::WriteMemory<num_bytes>(addr, data);
