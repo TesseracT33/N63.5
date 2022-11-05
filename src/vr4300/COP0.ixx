@@ -261,9 +261,10 @@ namespace VR4300
 		{
 			return distrib(gen);
 		}
-		void SetLowerBound(auto min)
-		{
-			distrib = { min & 31, 31 };
+		void SetRange(auto wired)
+		{ /* If WIRED > 31, RANDOM can be [0, 63] */
+			if (wired <= 31) distrib = { wired, 31 };
+			else             distrib = { 0, 63 };
 		}
 	} random_generator{};
 

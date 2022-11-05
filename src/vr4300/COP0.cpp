@@ -41,7 +41,7 @@ namespace VR4300
 
 	void COP0Registers::OnWriteToWired()
 	{
-		random_generator.SetLowerBound(wired.value);
+		random_generator.SetRange(wired.value);
 	}
 
 
