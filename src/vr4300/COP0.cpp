@@ -203,7 +203,7 @@ namespace VR4300
 
 		case cop0_index_config:
 			if constexpr (raw) IntToStruct(config, value);
-			else               IntToStructMasked(config, value, 0x7F00'800F);
+			else               IntToStructMasked(config, value, 0xF00'800F);
 			break;
 
 		case cop0_index_ll_addr:
@@ -276,10 +276,24 @@ namespace VR4300
 	template<COP0Instruction instr>
 	void COP0Move(const u32 instr_code)
 	{
+		AdvancePipeline(1);
 		using enum COP0Instruction;
 
-		 auto rd = instr_code >> 11 & 0x1F;
-		 auto rt = instr_code >> 16 & 0x1F;
+		if (operating_mode != OperatingMode::Kernel) {
+			if (!cop0_reg.status.cu0) {
+				SignalCoprocessorUnusableException(0);
+				return;
+			}
+			if constexpr (OneOf(instr, DMFC0, DMTC0)) {
+				if (addressing_mode == AddressingMode::_32bit) {
+					SignalException<Exception::ReservedInstruction>();
+					return;
+				}
+			}
+		}
+
+		auto rd = instr_code >> 11 & 0x1F;
+		auto rt = instr_code >> 16 & 0x1F;
 
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, cop0_reg_str_repr[rd]);
@@ -310,10 +324,8 @@ namespace VR4300
 			gpr.Set(rt, cop0_reg.Get(rd));
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"CP0_Move\" template function called, but no matching move instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
-
-		AdvancePipeline(1);
 	}
 
 
@@ -327,8 +339,14 @@ namespace VR4300
 			current_instr_log_output = current_instr_name;
 		}
 
-		auto tlb_index = std::find_if(tlb_entries.begin(), tlb_entries.end(),
-			[](const auto& entry) {
+		AdvancePipeline(1);
+
+		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+			SignalCoprocessorUnusableException(0);
+			return;
+		}
+
+		auto tlb_index = std::ranges::find_if(tlb_entries, [](const TlbEntry& entry) {
 				return entry.entry_hi.asid == cop0_reg.entry_hi.asid &&
 					entry.entry_hi.vpn2 == cop0_reg.entry_hi.vpn2 &&
 					entry.entry_hi.r == cop0_reg.entry_hi.r;
@@ -340,8 +358,6 @@ namespace VR4300
 			cop0_reg.index.p = 0;
 			cop0_reg.index.value = std::distance(tlb_entries.begin(), tlb_index);
 		}
-
-		AdvancePipeline(1);
 	}
 
 
@@ -355,6 +371,13 @@ namespace VR4300
 			current_instr_log_output = current_instr_name;
 		}
 
+		AdvancePipeline(1);
+
+		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+			SignalCoprocessorUnusableException(0);
+			return;
+		}
+
 		auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
 		std::memcpy(&cop0_reg.entry_lo_0, &tlb_entries[tlb_index].entry_lo[0], 4);
 		std::memcpy(&cop0_reg.entry_lo_1, &tlb_entries[tlb_index].entry_lo[1], 4);
@@ -362,7 +385,6 @@ namespace VR4300
 		std::memcpy(&cop0_reg.page_mask , &tlb_entries[tlb_index].page_mask  , 4);
 		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
 		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = tlb_entries[tlb_index].entry_hi.g;
-		AdvancePipeline(1);
 	}
 
 
@@ -376,20 +398,25 @@ namespace VR4300
 			current_instr_log_output = current_instr_name;
 		}
 
+		AdvancePipeline(1);
+
+		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+			SignalCoprocessorUnusableException(0);
+			return;
+		}
+
 		auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
 		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_hi   , &cop0_reg.entry_hi  , 8);
 		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 4);
-		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
+		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g & cop0_reg.entry_lo_1.g;
 		/* Compute things that will make the virtual-to-physical-address process faster. */
 		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
 		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << addr_offset_bit_length & 0xFF'FFFF'FFFF;
 		tlb_entries[tlb_index].address_offset_mask = (1 << addr_offset_bit_length) - 1;
 		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
 		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
-
-		AdvancePipeline(1);
 	}
 
 
@@ -404,24 +431,29 @@ namespace VR4300
 			current_instr_log_output = current_instr_name;
 		}
 
+		AdvancePipeline(1);
+
+		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+			SignalCoprocessorUnusableException(0);
+			return;
+		}
+
 		auto tlb_index = cop0_reg.random.value & 0x1F; /* bit 5 is not used */
 		auto tlb_wired_index = cop0_reg.wired.value & 0x1F;
-		if (tlb_index < tlb_wired_index) { /* TODO: <= ? */
+		if (tlb_index <= tlb_wired_index) {
 			return;
 		}
 		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
 		std::memcpy(&tlb_entries[tlb_index].entry_hi   , &cop0_reg.entry_hi  , 8);
 		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 4);
-		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g && cop0_reg.entry_lo_1.g;
+		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g & cop0_reg.entry_lo_1.g;
 
 		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
 		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << addr_offset_bit_length & 0xFF'FFFF'FFFF;
 		tlb_entries[tlb_index].address_offset_mask = (1 << addr_offset_bit_length) - 1;
 		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
 		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
-
-		AdvancePipeline(1);
 	}
 
 
@@ -431,6 +463,13 @@ namespace VR4300
 		   Returns from an exception, interrupt, or error trap. */
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = current_instr_name;
+		}
+
+		AdvancePipeline(1);
+
+		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+			SignalCoprocessorUnusableException(0);
+			return;
 		}
 
 		if (cop0_reg.status.erl == 0) {
@@ -449,8 +488,6 @@ namespace VR4300
 		if (pc & 3) {
 			SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
 		}
-
-		AdvancePipeline(1);
 	}
 
 

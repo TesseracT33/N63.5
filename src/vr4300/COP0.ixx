@@ -143,10 +143,10 @@ namespace VR4300
 			u32 fr : 1; /* Enables additional floating-point registers (0: 16 registers; 1: 32 registers) */
 			u32 rp : 1; /* Enables low-power operation by reducing the internal clock frequency and the system interface clock frequency to one-quarter speed (0: normal; 1: low power mode) */
 			/* The four flags below control the usability of each of the four coprocessor unit numbers (0: unusable; 1: usable)  */
-			u32 cu0 : 1; /* Ignored by the N64; COP0 is always enabled. */
-			u32 cu1 : 1; /* If cleared, all COP1 instructions throw exceptions. */
-			u32 cu2 : 1; /* Ignored by the N64; there is no COP2. */
-			u32 cu3 : 1; /* Ignored by the N64; there is no COP3. */
+			u32 cu0 : 1; /* COP0 is enabled. If cleared, COP0 instructions throw exceptions */
+			u32 cu1 : 1; /* COP1 is enabled. If cleared, COP1 instructions throw exceptions */
+			u32 cu2 : 1; /* COP2 is enabled. If cleared, COP2 instructions throw exceptions */
+			u32 cu3 : 1; /* COP3 is enabled. If cleared, COP3 instructions throw exceptions */
 		} status;
 
 		struct { /* (13) */
