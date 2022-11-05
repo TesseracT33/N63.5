@@ -401,22 +401,24 @@ namespace RSP
 				CTRL(15..0) = GPR(15..0)
 			*/
 			/* Control registers (16-bit) are encoded in two __m128i. Each lane represents one bit. */
-			assert(vs < 3);
 			static constexpr std::array lanes = {
 				s64(0x0000'0000'0000'0000), s64(0x0000'0000'0000'FFFF), s64(0x0000'0000'FFFF'0000), s64(0x0000'0000'FFFF'FFFF),
 				s64(0x0000'FFFF'0000'0000), s64(0x0000'FFFF'0000'FFFF), s64(0x0000'FFFF'FFFF'0000), s64(0x0000'FFFF'FFFF'FFFF),
 				s64(0xFFFF'0000'0000'0000), s64(0xFFFF'0000'0000'FFFF), s64(0xFFFF'0000'FFFF'0000), s64(0xFFFF'0000'FFFF'FFFF),
 				s64(0xFFFF'FFFF'0000'0000), s64(0xFFFF'FFFF'0000'FFFF), s64(0xFFFF'FFFF'FFFF'0000), s64(0xFFFF'FFFF'FFFF'FFFF)
 			};
+			vs = std::min(vs & 3, 2u);
 			s32 r = gpr[rt];
 			ctrl_reg[vs].low = _mm_set_epi64x(lanes[r >> 4 & 0xF], lanes[r >> 0 & 0xF]);
-			ctrl_reg[vs].high = _mm_set_epi64x(lanes[r >> 12 & 0xF], lanes[r >> 8 & 0xF]);
+			if (vs < 2) {
+				ctrl_reg[vs].high = _mm_set_epi64x(lanes[r >> 12 & 0xF], lanes[r >> 8 & 0xF]);
+			}
 		}
 		else if constexpr (instr == CFC2) {
 			/* Pseudo-code:
 				GPR(31..0) = sign_extend(CTRL(15..0))
 			*/
-			assert(vs < 3);
+			vs = std::min(vs & 3, 2u);
 			int lo = _mm_movemask_epi8(_mm_packs_epi16(ctrl_reg[vs].low, m128i_zero));
 			int hi = _mm_movemask_epi8(_mm_packs_epi16(ctrl_reg[vs].high, m128i_zero));
 			gpr.Set(rt, s16(hi << 8 | lo));
@@ -628,7 +630,7 @@ namespace RSP
 			*/
 			vpr[vd] = acc.low = _mm_add_epi16(vpr[vs], vt_operand);
 			vco.low = _mm_cmplt_epu16(vpr[vd], vt_operand); /* check carry */
-			std::memset(&vco.high, 0, sizeof(vco.high));
+			vco.high = m128i_zero;
 		}
 		else if constexpr (instr == VSUBC) {
 			/* Pseudo-code:
@@ -963,7 +965,7 @@ namespace RSP
 			__m128i mask = _mm_blendv_epi8(vcc.high, vcc.low, sign);
 			acc.low = _mm_blendv_epi8(vpr[vs], nvt, mask);
 			vpr[vd] = acc.low;
-			vco.low = vco.high = vce.low = vce.high = m128i_zero;
+			vco.low = vco.high = vce.low = m128i_zero;
 		}
 		else if constexpr (instr == VCH) {
 			__m128i neg_vt = _mm_neg_epi16(vt_operand);

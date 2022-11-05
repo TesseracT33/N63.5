@@ -90,7 +90,7 @@ namespace RSP
 	s16 div_out, div_in, div_dp;
 
 	std::array<__m128i, 32> vpr; /* SIMD registers; eight 16-bit lanes */
-	std::array<ControlRegister, 3> ctrl_reg;
+	std::array<ControlRegister, 3> ctrl_reg; /* vco, vcc, vce. vce is actually only 8-bits */
 
 	constexpr std::array<s16, 512> rcp_rom = {
 		0xFFFF, 0xFF00, 0xFE01, 0xFD04, 0xFC07, 0xFB0C, 0xFA11, 0xF918, 0xF81F, 0xF727, 0xF631, 0xF53B, 0xF446, 0xF352, 0xF25F, 0xF16D,
