@@ -15,7 +15,7 @@ namespace VR4300
 {
 	void FCR31::Set(u32 data)
 	{
-		*this = std::bit_cast<FCR31>(data);
+		*this = std::bit_cast<FCR31>(data & 0x183'FFFF);
 		auto new_rounding_mode = [&] {
 			switch (rm) {
 			case 0: return FE_TONEAREST;  /* RN */
@@ -342,7 +342,6 @@ namespace VR4300
 			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
 			if (fs == 31) { // Only #31 is writeable
 				fpu_control.Set(fs, u32(gpr[rt]));
-				TestAllExceptions();
 			}
 		}
 		else if constexpr (instr == CFC1) {
