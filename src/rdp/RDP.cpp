@@ -13,6 +13,7 @@ namespace RDP
 	bool Initialize(Implementation rdp_implementation)
 	{
 		std::memset(&dp, 0, sizeof(dp));
+		dp.status.ready = 1;
 
 		switch (rdp_implementation) {
 		case Implementation::None:
