@@ -134,61 +134,85 @@ namespace RSP
 		if (addr == sp_pc_addr) {
 			// TODO: return random number if !halted, else pc
 			//return halted ? pc : Int(Random<s32>(0, 0xFFF));
+			if constexpr (log_io_rsp) {
+				LogIoRead("RSP", "SP_PC", pc);
+			}
 			return pc;
 		}
 		else {
 			static_assert(sizeof(sp) >> 2 == 8);
 			u32 offset = addr >> 2 & 7;
+			s32 ret = [&] {
+				switch (offset & 7) {
+				case DmaSpaddr:
+					return sp.dma_spaddr;
 
-			switch (offset & 7) {
-			case DmaSpaddr:
-				return sp.dma_spaddr;
+				case DmaRamaddr:
+					return sp.dma_ramaddr;
 
-			case DmaRamaddr:
-				return sp.dma_ramaddr;
+				case DmaRdlen:
+					/* SP_DMA_WRLEN and SP_DMA_RDLEN both always returns the same data on read, relative to
+					the current transfer, irrespective on the direction of the transfer. */
+					return ~7 & [&] {
+						if (dma_in_progress) {
+							return in_progress_dma_type == DmaType::RdToSp
+								? sp.dma_rdlen : sp.dma_wrlen;
+						}
+						else {
+							return sp.dma_rdlen;
+						}
+					}();
 
-			case DmaRdlen:
-				/* SP_DMA_WRLEN and SP_DMA_RDLEN both always returns the same data on read, relative to
-				the current transfer, irrespective on the direction of the transfer. */
-				return ~7 & [&] {
-					if (dma_in_progress) {
-						return in_progress_dma_type == DmaType::RdToSp
-							? sp.dma_rdlen : sp.dma_wrlen;
-					}
-					else {
-						return sp.dma_rdlen;
-					}
-				}();
+				case DmaWrlen:
+					return ~7 & [&] {
+						if (dma_in_progress) {
+							return in_progress_dma_type == DmaType::RdToSp
+								? sp.dma_rdlen : sp.dma_wrlen;
+						}
+						else {
+							return sp.dma_wrlen;
+						}
+					}();
 
-			case DmaWrlen:
-				return ~7 & [&] {
-					if (dma_in_progress) {
-						return in_progress_dma_type == DmaType::RdToSp
-							? sp.dma_rdlen : sp.dma_wrlen;
-					}
-					else {
-						return sp.dma_wrlen;
-					}
-				}();
+				case Status:
+					return std::bit_cast<u32>(sp.status);
 
-			case Status:
-				return std::bit_cast<u32>(sp.status);
+				case DmaFull:
+					return sp.dma_full;
 
-			case DmaFull:
-				return sp.dma_full;
+				case DmaBusy:
+					return sp.dma_busy;
 
-			case DmaBusy:
-				return sp.dma_busy;
+				case Semaphore: {
+					auto ret = sp.semaphore;
+					sp.semaphore = 1;
+					return ret;
+				}
 
-			case Semaphore: {
-				auto ret = sp.semaphore;
-				sp.semaphore = 1;
-				return ret;
+				default:
+					std::unreachable();
+				}
+			}();
+			if constexpr (log_io_rsp) {
+				LogIoRead("RSP", RegOffsetToStr(offset), ret);
 			}
+			return ret;
+		}
+	}
 
-			default:
-				std::unreachable();
-			}
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset)
+	{
+		switch (reg_offset) {
+		case DmaSpaddr: return "SP_DMA_SP_ADDR";
+		case DmaRamaddr: return "SP_DMA_RAM_ADDR";
+		case DmaRdlen: return "SP_DMA_RDLEN";
+		case DmaWrlen: return "SP_DMA_WRLEN";
+		case Status: return "SP_STATUS";
+		case DmaFull: return "SP_DMA_FULL";
+		case DmaBusy: return "SP_DMA_BUSY";
+		case Semaphore: return "SP_SEMAPHORE";
+		default: std::unreachable();
 		}
 	}
 
@@ -198,10 +222,16 @@ namespace RSP
 		if (addr == sp_pc_addr) {
 			pc = data & 0xFFC;
 			jump_is_pending = in_branch_delay_slot = false;
+			if constexpr (log_io_rsp) {
+				LogIoWrite("RSP", "SP_PC", data);
+			}
 		}
 		else {
 			static_assert(sizeof(sp) >> 2 == 8);
 			u32 offset = addr >> 2 & 7;
+			if constexpr (log_io_rsp) {
+				LogIoWrite("RSP", RegOffsetToStr(offset), data);
+			}
 
 			switch (offset) {
 			case DmaSpaddr:

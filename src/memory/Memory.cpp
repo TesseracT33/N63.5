@@ -19,9 +19,6 @@ namespace Memory
 {
 #define READ_INTERFACE(INTERFACE, INT, ADDR) [&] {                         \
 if constexpr (sizeof(INT) == 4) {                                          \
-	if constexpr (log_cpu_memory) {                                        \
-		io_location = #INTERFACE;                                          \
-	}                                                                      \
 	return INTERFACE::ReadReg(ADDR);                                       \
 }                                                                          \
 else {                                                                     \
@@ -35,9 +32,6 @@ else {                                                                     \
 
 #define WRITE_INTERFACE(INTERFACE, NUM_BYTES, ADDR, DATA)                   \
 if constexpr (NUM_BYTES == 4) {                                             \
-	if constexpr (log_cpu_memory) {                                         \
-		io_location = #INTERFACE;                                           \
-	}                                                                       \
 	INTERFACE::WriteReg(ADDR, DATA);                                        \
 }                                                                           \
 else {                                                                      \
@@ -55,78 +49,67 @@ else {                                                                      \
 	template<std::signed_integral Int, Memory::Operation operation>
 	Int ReadPhysical(u32 addr)
 	{ /* Precondition: 'addr' is aligned according to the size of 'Int' */
-		u32 page = addr >> 16;
-		u8* ptr = read_page_table[page];
-		Int value = [&] {
-			if (ptr) {
-				Int ret;
-				u16 addr_mask = page_table_addr_mask[page];
-				std::memcpy(&ret, ptr + (addr & addr_mask), sizeof(Int));
-				return std::byteswap(ret);
-			}
-			else if (page >= 0x3F0 && page <= 0x4FF) {
-				switch (((addr >> 20) - 0x3F) & 0xF) {
-				case 0: /* $03F0'0000 - $03FF'FFFF */
-					return READ_INTERFACE(RDRAM, Int, addr);
-
-				case 1: /* $0400'0000 - $040F'FFFF */
-					return RSP::ReadMemoryCpu<Int>(addr);
-
-				case 2: /* $0410'0000 - $041F'FFFF */
-					return READ_INTERFACE(RDP, Int, addr);
-
-				case 3: /* $0420'0000 - $042F'FFFF */
-					Log(std::format("Unexpected cpu read to address ${:08X}", addr));
-					return Int{};
-
-				case 4: /* $0430'0000 - $043F'FFFF */
-					return READ_INTERFACE(MI, Int, addr);
-
-				case 5: /* $0440'0000 - $044F'FFFF */
-					return READ_INTERFACE(VI, Int, addr);
-
-				case 6: /* $0450'0000 - $045F'FFFF */
-					return READ_INTERFACE(AI, Int, addr);
-
-				case 7: /* $0460'0000 - $046F'FFFF */
-					return READ_INTERFACE(PI, Int, addr);
-
-				case 8: /* $0470'0000 - $047F'FFFF */
-					return READ_INTERFACE(RI, Int, addr);
-
-				case 9: /* $0480'0000 - $048F'FFFF */
-					return READ_INTERFACE(SI, Int, addr);
-
-				default: /* $0490'0000 - $04EF'FFFF */
-					Log(std::format("Unexpected cpu read to address ${:08X}", addr));
-					return Int{};
-				}
-			}
-			else if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
-				return Cart::ReadSram<Int>(addr);
-			}
-			else if (addr >= 0x1000'0000 && addr <= 0x1FBF'FFFF) {
-				return Cart::ReadRom<Int>(addr);
-			}
-			else {
-				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
-				return Int{};
-			}
-		}(); 
 		if constexpr (operation == Memory::Operation::InstrFetch) {
 			if constexpr (log_cpu_instructions) {
 				VR4300::last_instr_fetch_phys_addr = addr;
 			}
 		}
-		else if constexpr (log_cpu_memory) {
-			if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
-				LogIoRead(addr, value, io_location);
-			}
-			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-				LogCpuRead(addr, value);
+		u32 page = addr >> 16;
+		u8* ptr = read_page_table[page];
+		if (ptr) {
+			Int ret;
+			u16 addr_mask = page_table_addr_mask[page];
+			std::memcpy(&ret, ptr + (addr & addr_mask), sizeof(Int));
+			return std::byteswap(ret);
+		}
+		else if (page >= 0x3F0 && page <= 0x4FF) {
+			switch (((addr >> 20) - 0x3F) & 0xF) {
+			case 0: /* $03F0'0000 - $03FF'FFFF */
+				return READ_INTERFACE(RDRAM, Int, addr);
+
+			case 1: /* $0400'0000 - $040F'FFFF */
+				return RSP::ReadMemoryCpu<Int>(addr);
+
+			case 2: /* $0410'0000 - $041F'FFFF */
+				return READ_INTERFACE(RDP, Int, addr);
+
+			case 3: /* $0420'0000 - $042F'FFFF */
+				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
+				return Int{};
+
+			case 4: /* $0430'0000 - $043F'FFFF */
+				return READ_INTERFACE(MI, Int, addr);
+
+			case 5: /* $0440'0000 - $044F'FFFF */
+				return READ_INTERFACE(VI, Int, addr);
+
+			case 6: /* $0450'0000 - $045F'FFFF */
+				return READ_INTERFACE(AI, Int, addr);
+
+			case 7: /* $0460'0000 - $046F'FFFF */
+				return READ_INTERFACE(PI, Int, addr);
+
+			case 8: /* $0470'0000 - $047F'FFFF */
+				return READ_INTERFACE(RI, Int, addr);
+
+			case 9: /* $0480'0000 - $048F'FFFF */
+				return READ_INTERFACE(SI, Int, addr);
+
+			default: /* $0490'0000 - $04EF'FFFF */
+				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
+				return Int{};
 			}
 		}
-		return value;
+		else if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
+			return Cart::ReadSram<Int>(addr);
+		}
+		else if (addr >= 0x1000'0000 && addr <= 0x1FBF'FFFF) {
+			return Cart::ReadRom<Int>(addr);
+		}
+		else {
+			Log(std::format("Unexpected cpu read to address ${:08X}", addr));
+			return Int{};
+		}
 	}
 
 
@@ -213,14 +196,6 @@ else {                                                                      \
 		}
 		else {
 			Log(std::format("Unexpected cpu write to address ${:08X}", addr));
-		}
-		if constexpr (log_cpu_memory) {
-			if (addr >= 0x0430'0000 && addr < 0x0490'0000) {
-				LogIoWrite(addr, data, io_location);
-			}
-			else if constexpr (cpu_memory_logging_mode == MemoryLoggingMode::All) {
-				LogCpuWrite(addr, data);
-			}
 		}
 	}
 

@@ -55,9 +55,11 @@ namespace SI
 						si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
 				}
 			}
-			else if constexpr (log_dma) {
-				LogDma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
-					si.dram_addr, pif_addr));
+			else {
+				if constexpr (log_dma) {
+					LogDma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
+						si.dram_addr, pif_addr));
+				}
 				OnDmaFinish();
 				return;
 			}
@@ -91,7 +93,24 @@ namespace SI
 		u32 offset = addr >> 2 & 7;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&si) + offset, 4);
+		if constexpr (log_io_si) {
+			LogIoRead("SI", RegOffsetToStr(offset), ret);
+		}
 		return ret;
+	}
+
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset)
+	{
+		switch (reg_offset) {
+		case DramAddr: return "SI_DRAM_ADDR";
+		case AddrRd64B: return "SI_ADDR_RD64B";
+		case AddrWr4B: return "SI_ADDR_WR4B";
+		case AddrWr64B: return "SI_ADDR_WR64B";
+		case AddrRd4B: return "SI_ADDR_RD4B";
+		case Status: return "SI_STATUS";
+		default: return "UNKNOWN";
+		}
 	}
 
 
@@ -105,40 +124,38 @@ namespace SI
 	{
 		static_assert(sizeof(si) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
-
-		enum RegOffset {
-			DramAddr = 0, AddrRd64B = 1, AddrWr4B = 2,
-			AddrWr64B = 4, AddrRd4B = 5, Status = 6
-		};
+		if constexpr (log_io_ai) {
+			LogIoWrite("SI", RegOffsetToStr(offset), data);
+		}
 
 		switch (offset) {
-		case RegOffset::DramAddr:
+		case Register::DramAddr:
 			si.dram_addr = data & 0xFF'FFFF;
 			break;
 
-		case RegOffset::AddrRd64B:
+		case Register::AddrRd64B:
 			si.pif_addr_rd64b = data & 0x7FC;
 			InitDma<DmaType::PifToRdram>();
 			break;
 
-		case RegOffset::AddrWr4B:
+		case Register::AddrWr4B:
 			si.pif_addr_wr4b = data;
 			/* TODO */
 			Log("Tried to start SI WR4B DMA, which is currently unimplemented.");
 			break;
 
-		case RegOffset::AddrWr64B:
+		case Register::AddrWr64B:
 			si.pif_addr_wr64b = data & 0x7FC;
 			InitDma<DmaType::RdramToPif>();
 			break;
 
-		case RegOffset::AddrRd4B:
+		case Register::AddrRd4B:
 			si.pif_addr_rd4b = data;
 			/* TODO */
 			Log("Tried to start SI RD4B DMA, which is currently unimplemented.");
 			break;
 
-		case RegOffset::Status:
+		case Register::Status:
 			/* Writing any value to si.STATUS clears bit 12 (SI Interrupt flag), not only here,
 			   but also in the RCP Interrupt Cause register and in MI. */
 			ClearStatusFlag(StatusFlag::Interrupt);

@@ -5,6 +5,7 @@ import Util;
 import <algorithm>;
 import <cstring>;
 import <format>;
+import <string_view>;
 import <utility>;
 
 namespace PI
@@ -29,8 +30,16 @@ namespace PI
 		CartToRdram, RdramToCart
 	};
 
+	enum Register {
+		DramAddr, CartAddr, RdLen, WrLen, Status,
+		BsdDom1Lat, BsdDom1Pwd, BsdDom1Pgs, BsdDom1Rls,
+		BsdDom2Lat, BsdDom2Pwd, BsdDom2Pgs, BsdDom2Rls
+	};
+
 	template<DmaType> void InitDma(DmaType type);
 	void OnDmaFinish();
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
 	struct {
 		s32 dram_addr, cart_addr, rd_len, wr_len, status;

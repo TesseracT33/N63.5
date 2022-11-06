@@ -8,6 +8,7 @@ import <cstring>;
 import <format>;
 import <string>;
 import <string_view>;
+import <utility>;
 
 namespace RSP
 {
@@ -21,12 +22,14 @@ namespace RSP
 		RdToSp, SpToRd
 	};
 
-	enum RegOffset {
+	enum Register {
 		DmaSpaddr, DmaRamaddr, DmaRdlen, DmaWrlen, Status, DmaFull, DmaBusy, Semaphore
 	};
 
 	template<DmaType dma_type> void InitDMA();
 	void OnDmaFinish();
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
 	struct {
 		u32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen;

@@ -3,6 +3,7 @@ export module MI; /* MIPS Interface */
 import Util;
 
 import <cstring>;
+import <string_view>;
 import <utility>;
 
 namespace MI
@@ -25,9 +26,14 @@ namespace MI
 		void WriteReg(u32 addr, s32 data);
 	}
 
+	enum Register {
+		Mode, Version, Interrupt, Mask
+	};
+
 	void CheckInterrupts();
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
 	struct {
 		s32 mode, version, interrupt, mask;
-	} mi{};
+	} mi;
 }

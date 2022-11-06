@@ -4,6 +4,7 @@ import Util;
 
 import <bit>;
 import <cstring>;
+import <string_view>;
 import <utility>;
 
 namespace VI
@@ -31,6 +32,7 @@ namespace VI
 	void CheckVideoInterrupt();
 	bool Interlaced();
 	void OnNewHalflineEvent();
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
 	constexpr u32 default_vsync_ntsc = 0x20D;
 

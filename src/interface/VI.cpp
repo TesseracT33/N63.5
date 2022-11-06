@@ -1,5 +1,7 @@
 module VI;
 
+import DebugOptions;
+import Logging;
 import MI;
 import N64;
 import RDP;
@@ -68,7 +70,34 @@ namespace VI
 		u32 offset = addr >> 2 & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
+		if constexpr (log_io_ai) {
+			LogIoRead("VI", RegOffsetToStr(offset), ret);
+		}
 		return ret;
+	}
+
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset)
+	{
+		switch (reg_offset) {
+		case Ctrl: return "VI_CTRL";
+		case Origin: return "VI_ORIGIN";
+		case Width: return "VI_WIDTH";
+		case VIntr: return "VI_V_INTR";
+		case VCurrent: return "VI_V_CURRENT";
+		case Burst: return "VI_BURST";
+		case VSync: return "VI_V_SYNC";
+		case HSync: return "VI_H_SYNC";
+		case HSyncLeap: return "VI_HYNC_LEAP";
+		case HVideo: return "VI_H_VIDEO";
+		case VVideo: return "VI_V_VIDEO";
+		case VBurst: return "VI_V_BURST";
+		case XScale: return "VI_X_SCALE";
+		case YScale: return "VI_Y_SCALE";
+		case TestAddr: return "VI_TEST_ADDR";
+		case StagedData: return "VI_STAGED_DATA";
+		default: std::unreachable();
+		}
 	}
 
 
@@ -76,6 +105,9 @@ namespace VI
 	{
 		static_assert(sizeof(vi) >> 2 == 0x10);
 		u32 offset = addr >> 2 & 0xF;
+		if constexpr (log_io_ai) {
+			LogIoWrite("VI", RegOffsetToStr(offset), data);
+		}
 
 		switch (offset) {
 		case Register::Ctrl:

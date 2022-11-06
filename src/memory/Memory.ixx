@@ -5,7 +5,6 @@ import Util;
 import <array>;
 import <concepts>;
 import <format>;
-import <string_view>;
 
 export namespace Memory
 {
@@ -25,7 +24,4 @@ export namespace Memory
 	std::array<u8*, 0x10000> read_page_table;
 	std::array<u8*, 0x10000> write_page_table;
 	std::array<u16, 0x10000> page_table_addr_mask;
-
-	//// debugging
-	std::string_view io_location;
 }

@@ -9,6 +9,7 @@ import <array>;
 import <cassert>;
 import <cstring>;
 import <memory>;
+import <string_view>;
 
 namespace RDP
 {
@@ -27,6 +28,10 @@ namespace RDP
 
 	enum class CommandLocation {
 		DMEM, RDRAM
+	};
+
+	enum Register {
+		StartReg, EndReg, CurrentReg, StatusReg, ClockReg, BufBusyReg, PipeBusyReg, TmemReg
 	};
 
 	struct {
@@ -50,6 +55,7 @@ namespace RDP
 
 	template<CommandLocation> u64 LoadCommandDword(u32 addr);
 	template<CommandLocation> void LoadExecuteCommands();
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
 	u32 queue_word_offset;
 	u32 num_queued_words;

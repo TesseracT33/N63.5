@@ -1,5 +1,7 @@
 module MI;
 
+import DebugOptions;
+import Logging;
 import VR4300;
 
 namespace MI
@@ -35,7 +37,22 @@ namespace MI
 		u32 offset = addr >> 2 & 3;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&mi) + offset, 4);
+		if constexpr (log_io_mi) {
+			LogIoRead("MI", RegOffsetToStr(offset), ret);
+		}
 		return ret;
+	}
+
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset)
+	{
+		switch (reg_offset) {
+		case Mode: return "MI_MODE";
+		case Version: return "MI_VERSION";
+		case Interrupt: return "MI_INTERRUPT";
+		case Mask: return "MI_MASK";
+		default: std::unreachable();
+		}
 	}
 
 
@@ -50,19 +67,17 @@ namespace MI
 	{
 		static_assert(sizeof(mi) >> 2 == 4);
 		u32 offset = addr >> 2 & 3;
+		if constexpr (log_io_ai) {
+			LogIoWrite("MI", RegOffsetToStr(offset), data);
+		}
 
-		static constexpr u32 offset_mode = 0;
-		static constexpr u32 offset_version = 1;
-		static constexpr u32 offset_interrupt = 2;
-		static constexpr u32 offset_mask = 3;
-
-		if (offset == offset_mode) {
+		if (offset == Register::Mode) {
 			mi.mode = data;
 			if (mi.mode & 0x800) {
-				mi.interrupt &= ~std::to_underlying(InterruptType::DP);
+				ClearInterruptFlag(InterruptType::DP);
 			}
 		}
-		else if (offset == offset_mask) {
+		else if (offset == Register::Mask) {
 			static constexpr s32 clear_sp_mask = 1 << 0;
 			static constexpr s32   set_sp_mask = 1 << 1;
 			static constexpr s32 clear_si_mask = 1 << 2;

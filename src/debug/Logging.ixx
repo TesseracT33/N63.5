@@ -6,6 +6,7 @@ import <concepts>;
 import <format>;
 import <fstream>;
 import <string>;
+import <string_view>;
 
 
 bool log_enabled;
@@ -64,43 +65,38 @@ export void LogException(const auto& exception)
 }
 
 
-export void LogIoRead(u32 phys_addr, std::integral auto value, const auto& io_loc)
+export void LogIoRead(std::string_view loc, std::string_view reg, std::integral auto value)
 {
 	if (!log_enabled) return;
-	std::string output = std::format("{} READ; ${:X} from ${:08X}\n", io_loc, MakeUnsigned(value), phys_addr);
-	log_ << output;
+	log_ << std::format("{} IO: {} => ${:08X}\n", loc, reg, MakeUnsigned(value));
 }
 
 
-export void LogIoWrite(u32 phys_addr, std::integral auto value, const auto& io_loc)
+export void LogIoWrite(std::string_view loc, std::string_view reg, std::integral auto value)
 {
 	if (!log_enabled) return;
-	std::string output = std::format("{} WRITE; ${:X} to ${:08X}\n", io_loc, MakeUnsigned(value), phys_addr);
-	log_ << output;
+	log_ << std::format("{} IO: {} <= ${:08X}\n", loc, reg, MakeUnsigned(value));
 }
 
 
 export void LogRspRead(u32 dmem_addr, std::integral auto value)
 {
 	if (!log_enabled) return;
-	std::string output = std::format("RSP READ; ${:0X} from DMEM ${:03X}\n", MakeUnsigned(value), dmem_addr);
-	log_ << output;
+	log_ <<  std::format("RSP READ; ${:0X} from DMEM ${:03X}\n", MakeUnsigned(value), dmem_addr);
 }
 
 
 export void LogRspInstruction(u32 pc, const std::string& instr_output)
 {
 	if (!log_enabled) return;
-	std::string output = std::format("RSP; ${:03X}  {}\n", pc, instr_output);
-	log_ << output;
+	log_ << std::format("RSP; ${:03X}  {}\n", pc, instr_output);
 }
 
 
 export void LogRspWrite(u32 dmem_addr, std::integral auto value)
 {
 	if (!log_enabled) return;
-	std::string output = std::format("RSP WRITE; ${:0X} to DMEM ${:03X}\n", MakeUnsigned(value), dmem_addr);
-	log_ << output;
+	log_ << std::format("RSP WRITE; ${:0X} to DMEM ${:03X}\n", MakeUnsigned(value), dmem_addr);
 }
 
 

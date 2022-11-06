@@ -1,6 +1,8 @@
 module RDP;
 
+import DebugOptions;
 import FakeRDP;
+import Logging;
 import MI;
 import ParallelRDPWrapper;
 import RDRAM;
@@ -107,7 +109,26 @@ namespace RDP
 		u32 offset = addr >> 2 & 7;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&dp) + offset, 4);
+		if constexpr (log_io_rdp) {
+			LogIoRead("RDP", RegOffsetToStr(offset), ret);
+		}
 		return ret;
+	}
+
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset)
+	{
+		switch (reg_offset) {
+		case StartReg: return "DPC_START";
+		case EndReg: return "DPC_END";
+		case CurrentReg: return "DPC_CURRENT";
+		case StatusReg: return "DPC_STATUS";
+		case ClockReg: return "DPC_CLOCK";
+		case BufBusyReg: return "DPC_BUF_BUSY";
+		case PipeBusyReg: return "DPC_PIPE_BUSY";
+		case TmemReg: return "DPC_TMEM";
+		default: std::unreachable();
+		}
 	}
 
 
@@ -121,10 +142,9 @@ namespace RDP
 
 		static_assert(sizeof(dp) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
-
-		enum Register {
-			StartReg, EndReg, CurrentReg, StatusReg, ClockReg, BufBusyReg, PipeBusyReg, TmemReg
-		};
+		if constexpr (log_io_rdp) {
+			LogIoWrite("RDP", RegOffsetToStr(offset), data);
+		}
 
 		switch (offset) {
 		case Register::StartReg:

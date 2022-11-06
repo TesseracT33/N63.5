@@ -4,6 +4,7 @@ import Util;
 
 import <cstring>;
 import <format>;
+import <string_view>;
 import <utility>;
 
 namespace SI
@@ -29,8 +30,14 @@ namespace SI
 		PifToRdram, RdramToPif
 	};
 
+	enum Register {
+		DramAddr = 0, AddrRd64B = 1, AddrWr4B = 2,
+		AddrWr64B = 4, AddrRd4B = 5, Status = 6
+	};
+
 	template<DmaType> void InitDma();
 	void OnDmaFinish();
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
 	struct {
 		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy0,

@@ -85,7 +85,31 @@ namespace PI
 		u32 offset = addr >> 2 & 0xF;
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&pi) + offset, 4);
+		if constexpr (log_io_ai) {
+			LogIoRead("PI", RegOffsetToStr(offset), ret);
+		}
 		return ret;
+	}
+
+
+	constexpr std::string_view RegOffsetToStr(u32 reg_offset)
+	{
+		switch (reg_offset) {
+		case DramAddr: return "PI_DRAM_ADDR";
+		case CartAddr: return "PI_CART_ADDR";
+		case RdLen: return "PI_RDLEN";
+		case WrLen: return "PI_WRLEN";
+		case Status: return "PI_STATUS";
+		case BsdDom1Lat: return "PI_BSDDOM1LAT";
+		case BsdDom1Pwd: return "PI_BSDDOM1PWD";
+		case BsdDom1Pgs: return "PI_BSDDOM1PGS";
+		case BsdDom1Rls: return "PI_BSDDOM1RLS";
+		case BsdDom2Lat: return "PI_BSDDOM2LAT";
+		case BsdDom2Pwd: return "PI_BSDDOM2PWD";
+		case BsdDom2Pgs: return "PI_BSDDOM2PGS";
+		case BsdDom2Rls: return "PI_BSDDOM2RLS";
+		default: std::unreachable();
+		}
 	}
 
 
@@ -99,33 +123,30 @@ namespace PI
 	{
 		static_assert(sizeof(pi) >> 2 == 0x10);
 		u32 offset = addr >> 2 & 0xF;
-
-		enum RegOffset {
-			DramAddr, CartAddr, RdLen, WrLen, Status,
-			BsdDom1Lat, BsdDom1Pwd, BsdDom1Pgs, BsdDom1Rls,
-			BsdDom2Lat, BsdDom2Pwd, BsdDom2Pgs, BsdDom2Rls
-		};
+		if constexpr (log_io_ai) {
+			LogIoWrite("PI", RegOffsetToStr(offset), data);
+		}
 
 		switch (offset) {
-		case RegOffset::DramAddr:
+		case Register::DramAddr:
 			pi.dram_addr = data & 0xFF'FFFF;
 			break;
 
-		case RegOffset::CartAddr:
+		case Register::CartAddr:
 			pi.cart_addr = data & 0xFF'FFFF;
 			break;
 
-		case RegOffset::RdLen:
+		case Register::RdLen:
 			pi.rd_len = data;
 			InitDma<DmaType::RdramToCart>();
 			break;
 
-		case RegOffset::WrLen:
+		case Register::WrLen:
 			pi.wr_len = data;
 			InitDma<DmaType::CartToRdram>();
 			break;
 
-		case RegOffset::Status: {
+		case Register::Status: {
 			constexpr static s32 reset_dma_mask = 0x01;
 			constexpr static s32 clear_interrupt_mask = 0x02;
 			if (data & reset_dma_mask) {
@@ -141,14 +162,14 @@ namespace PI
 			}
 		} break;
 
-		case RegOffset::BsdDom1Lat: pi.bsd_dom1_lat = data; break;
-		case RegOffset::BsdDom1Pwd: pi.bsd_dom1_pwd = data; break;
-		case RegOffset::BsdDom1Pgs: pi.bsd_dom1_pgs = data; break;
-		case RegOffset::BsdDom1Rls: pi.bsd_dom1_rls = data; break;
-		case RegOffset::BsdDom2Lat: pi.bsd_dom2_lat = data; break;
-		case RegOffset::BsdDom2Pwd: pi.bsd_dom2_pwd = data; break;
-		case RegOffset::BsdDom2Pgs: pi.bsd_dom2_pgs = data; break;
-		case RegOffset::BsdDom2Rls: pi.bsd_dom2_rls = data; break;
+		case Register::BsdDom1Lat: pi.bsd_dom1_lat = data; break;
+		case Register::BsdDom1Pwd: pi.bsd_dom1_pwd = data; break;
+		case Register::BsdDom1Pgs: pi.bsd_dom1_pgs = data; break;
+		case Register::BsdDom1Rls: pi.bsd_dom1_rls = data; break;
+		case Register::BsdDom2Lat: pi.bsd_dom2_lat = data; break;
+		case Register::BsdDom2Pwd: pi.bsd_dom2_pwd = data; break;
+		case Register::BsdDom2Pgs: pi.bsd_dom2_pgs = data; break;
+		case Register::BsdDom2Rls: pi.bsd_dom2_rls = data; break;
 
 		default:
 			Log(std::format("Unexpected write made to PI register at address ${:08X}", addr));
