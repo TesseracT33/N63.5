@@ -19,9 +19,6 @@ namespace SI
 	void InitDma()
 	{
 		SetStatusFlag(StatusFlag::DmaBusy);
-		ClearStatusFlag(StatusFlag::Interrupt); /* TODO: should we clear? (also MI flag) */
-		MI::ClearInterruptFlag(MI::InterruptType::SI); 
-		/* pif address is aligned to four bytes */
 		u32 pif_addr;
 		size_t bytes_until_pif_end;
 		if constexpr (type == DmaType::PifToRdram) {
@@ -32,14 +29,13 @@ namespace SI
 			pif_addr = si.pif_addr_wr64b;
 			pif_addr_reg_last_dma = &si.pif_addr_wr64b;
 		}
-		// TODO: if we let 'bytes_until_pif_end' == 0 for RDRAM => PIF RAM DMAs, then NM64 intro videos will show for some reason (otherwise, they don't).
 		bytes_until_pif_end = PIF::GetNumberOfBytesUntilMemoryEnd(pif_addr);
 		u8* rdram_ptr = RDRAM::GetPointerToMemory(si.dram_addr);
-		u8* pif_ptr = PIF::GetPointerToMemory(pif_addr);
 		size_t bytes_until_rdram_end = RDRAM::GetNumberOfBytesUntilMemoryEnd(si.dram_addr);
 		static constexpr size_t max_dma_len = 64;
 		dma_len = std::min(max_dma_len, std::min(bytes_until_rdram_end, bytes_until_pif_end));
 		if constexpr (type == DmaType::PifToRdram) {
+			u8* pif_ptr = PIF::GetPointerToMemory(pif_addr);
 			std::memcpy(rdram_ptr, pif_ptr, dma_len);
 			if constexpr (log_dma) {
 				LogDma(std::format("From PIF ${:X} to RDRAM ${:X}: ${:X} bytes",
@@ -48,20 +44,19 @@ namespace SI
 		}
 		else { /* RDRAM to PIF */
 			size_t num_bytes_in_rom_area = PIF::GetNumberOfBytesUntilRamStart(pif_addr);
-			if (num_bytes_in_rom_area < dma_len) {
-				std::memcpy(pif_ptr, rdram_ptr, dma_len - num_bytes_in_rom_area);
-				if constexpr (log_dma) {
-					LogDma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
-						si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
-				}
+			pif_addr += num_bytes_in_rom_area;
+			rdram_ptr += num_bytes_in_rom_area;
+			dma_len -= num_bytes_in_rom_area;
+			for (size_t i = 0; i < dma_len; i += 4) {
+				s32 val;
+				std::memcpy(&val, rdram_ptr, 4);
+				PIF::WriteMemory<4>(pif_addr, val);
+				pif_addr += 4;
+				rdram_ptr += 4;
 			}
-			else {
-				if constexpr (log_dma) {
-					LogDma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
-						si.dram_addr, pif_addr));
-				}
-				OnDmaFinish();
-				return;
+			if constexpr (log_dma) {
+				LogDma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
+					si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
 			}
 		}
 
@@ -130,11 +125,11 @@ namespace SI
 
 		switch (offset) {
 		case Register::DramAddr:
-			si.dram_addr = data & 0xFF'FFFF;
+			si.dram_addr = data & 0xFF'FFF8;
 			break;
 
 		case Register::AddrRd64B:
-			si.pif_addr_rd64b = data & 0x7FC;
+			si.pif_addr_rd64b = data & ~1;
 			InitDma<DmaType::PifToRdram>();
 			break;
 
@@ -145,7 +140,7 @@ namespace SI
 			break;
 
 		case Register::AddrWr64B:
-			si.pif_addr_wr64b = data & 0x7FC;
+			si.pif_addr_wr64b = data & ~1;
 			InitDma<DmaType::RdramToPif>();
 			break;
 
