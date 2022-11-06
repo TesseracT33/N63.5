@@ -84,6 +84,7 @@ namespace VR4300
 		u64 bad_virt_addr;
 		u64 bad_vpn2;
 		u64 bad_asid;
+		u64 bad_space_id;
 	} address_failure;
 
 	Exception occurred_exception;

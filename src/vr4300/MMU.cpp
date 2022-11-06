@@ -202,7 +202,11 @@ namespace VR4300
 	template<Memory::Operation operation>
 	u32 VirtualToPhysicalAddressKernelMode32(u64 virt_addr, bool& cacheable_area)
 	{
-		if ((virt_addr & 0xE000'0000) == 0x8000'0000) {
+		if (virt_addr < 0xFFFF'FFFF'0000'0000) { /* TODO: same for user and supervisor modes? */
+			SignalAddressErrorException<operation>(virt_addr);
+			return 0;
+		}
+		else if ((virt_addr & 0xE000'0000) == 0x8000'0000) {
 			/* $8000'0000-$9FFF'FFFF; TLB unmapped; cacheable */
 			cacheable_area = true;
 			return virt_addr & 0x1FFF'FFFF;

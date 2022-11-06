@@ -58,7 +58,7 @@ namespace VR4300
 		   virtual address creation. */
 		if constexpr (OneOf(instr, LD, LDL, LDR, LLD)) {
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
-				addr = s32(addr & 0xFFFF'FFFF);
+				addr = s32(addr);
 			}
 		}
 		if constexpr (log_cpu_instructions) {
@@ -153,7 +153,7 @@ namespace VR4300
 				return ret;
 			}
 			else {
-				static_assert(AlwaysFalse<instr>, "\"Load\" template function called, but no matching load instruction was found.");
+				static_assert(AlwaysFalse<instr>);
 			}
 		}();
 
@@ -333,7 +333,7 @@ namespace VR4300
 			}
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"Store\" template function called, but no matching store instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline(1);
@@ -349,10 +349,8 @@ namespace VR4300
 		auto rs = instr_code >> 21 & 0x1F;
 
 		auto immediate = [&] {
-			if constexpr (OneOf(instr, ANDI, LUI, ORI, XORI))
-				return u16(instr_code & 0xFFFF);
-			else
-				return s16(instr_code & 0xFFFF);
+			if constexpr (OneOf(instr, ANDI, LUI, ORI, XORI)) return u16(instr_code);
+			else                                              return s16(instr_code);
 		}();
 
 		if constexpr (log_cpu_instructions) {
@@ -371,8 +369,7 @@ namespace VR4300
 			   Generates an exception if a 2's complement integer overflow occurs.
 			   In that case, the contents of destination register rt are not modified */
 			s32 sum = s32(gpr[rs] + immediate);
-			bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000;
-			if (overflow) {
+			if ((gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -384,8 +381,7 @@ namespace VR4300
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the 32-bit
 			   result to register rt (sign-extends the result in the 64-bit mode). Does not
 			   generate an exception even if an integer overflow occurs. */
-			s32 sum = s32(gpr[rs] + immediate);
-			gpr.Set(rt, sum);
+			gpr.Set(rt, s32(gpr[rs] + immediate));
 		}
 		else if constexpr (instr == SLTI) {
 			/* Set On Less Than Immediate;
@@ -424,16 +420,14 @@ namespace VR4300
 			   Shifts the 16-bit immediate 16 bits to the left, and clears the low-order 16 bits
 			   of the word to 0.
 			   Stores the result to register rt (by sign-extending the result in the 64-bit mode). */
-			s32 result = immediate << 16;
-			gpr.Set(rt, result);
+			gpr.Set(rt, s32(immediate << 16));
 		}
 		else if constexpr (instr == DADDI) {
 			/* Doubleword Add Immediate;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Generates an exception if an integer overflow occurs. */
 			s64 sum = gpr[rs] + immediate;
-			bool overflow = (gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000;
-			if (overflow) {
+			if ((gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -449,7 +443,7 @@ namespace VR4300
 			gpr.Set(rt, sum);
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"ALU_Immediate\" template function called, but no matching ALU immediate instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline(1);
@@ -475,8 +469,7 @@ namespace VR4300
 			   In that case, the contents of the destination register rd are not modified.
 			   In 64-bit mode, the operands must be sign-extended, 32-bit values. */
 			s32 sum = s32(gpr[rs] + gpr[rt]);
-			bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
-			if (overflow) {
+			if ((gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -487,16 +480,14 @@ namespace VR4300
 			/* Add Unsigned;
 			   Adds the contents of register rs and rt, and stores (sign-extends in the 64-bit mode)
 			   the 32-bit result to register rd. Does not generate an exception even if an integer overflow occurs. */
-			s32 sum = s32(gpr[rs] + gpr[rt]);
-			gpr.Set(rd, sum);
+			gpr.Set(rd, s32(gpr[rs] + gpr[rt]));
 		}
 		else if constexpr (instr == SUB) {
 			/* Subtract;
 			   Subtracts the contents of register rs from register rt, and stores (sign-extends
 			   in the 64-bit mode) the result to register rd. Generates an exception if an integer overflow occurs. */
 			s32 sum = s32(gpr[rs] - gpr[rt]);
-			bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000;
-			if (overflow) {
+			if ((gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -508,8 +499,7 @@ namespace VR4300
 			   Subtracts the contents of register rt from register rs, and stores (sign-extends
 			   in the 64-bit mode) the 32-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs.*/
-			s32 sum = s32(gpr[rs] - gpr[rt]);
-			gpr.Set(rd, sum);
+			gpr.Set(rd, s32(gpr[rs] - gpr[rt]));
 		}
 		else if constexpr (instr == SLT) {
 			/* Set On Less Than;
@@ -550,8 +540,7 @@ namespace VR4300
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Generates an exception if an integer overflow occurs. */
 			s64 sum = gpr[rs] + gpr[rt];
-			bool overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
-			if (overflow) {
+			if ((gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -562,16 +551,14 @@ namespace VR4300
 			/* Doubleword Add Unsigned;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
-			s64 sum = gpr[rs] + gpr[rt];
-			gpr.Set(rd, sum);
+			gpr.Set(rd, gpr[rs] + gpr[rt]);
 		}
 		else if constexpr (instr == DSUB) {
 			/* Doubleword Subtract;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit
 			   result to register rd. Generates an exception if an integer overflow occurs. */
 			s64 sum = gpr[rs] - gpr[rt];
-			bool overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
-			if (overflow) {
+			if ((gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -582,11 +569,10 @@ namespace VR4300
 			/* Doubleword Subtract Unsigned;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit result to register rd.
 			   Does not generate an exception even if an integer overflow occurs. */
-			s64 sum = gpr[rs] - gpr[rt];
-			gpr.Set(rd, sum);
+			gpr.Set(rd, gpr[rs] - gpr[rt]);
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"ALU_ThreeOperand\" template function called, but no matching ALU three-operand instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 
 		AdvancePipeline(1);
@@ -716,7 +702,7 @@ namespace VR4300
 				return gpr[rt] >> (sa + 32);
 			}
 			else {
-				static_assert(AlwaysFalse<instr>, "\"ALU_Shift\" template function called, but no matching ALU shift instruction was found.");
+				static_assert(AlwaysFalse<instr>);
 			}
 		}());
 
@@ -866,14 +852,14 @@ namespace VR4300
 			}
 		}
 		else {
-			static_assert(AlwaysFalse<instr>, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+			static_assert(AlwaysFalse<instr>);
 		}
 		static constexpr int cycles = [&] {
 			     if constexpr (OneOf(instr, MULT, MULTU))   return 5;
 			else if constexpr (OneOf(instr, DMULT, DMULTU)) return 8;
 			else if constexpr (OneOf(instr, DIV, DIVU))     return 37;
 			else if constexpr (OneOf(instr, DDIV, DDIVU))   return 69;
-			else static_assert(AlwaysFalse<instr>, "\"ALU_MulDiv\" template function called, but no matching ALU mul/div instruction was found.");
+			else static_assert(AlwaysFalse<instr>);
 		}();
 		AdvancePipeline(cycles);
 	}
@@ -903,7 +889,7 @@ namespace VR4300
 		if (!in_branch_delay_slot) {
 			u64 target = [&] {
 				if constexpr (OneOf(instr, J, JAL)) {
-					u64 target = u64((instr_code & 0x03FF'FFFF) << 2);
+					u64 target = u64((instr_code & 0x3FF'FFFF) << 2);
 					if constexpr (log_cpu_instructions) {
 						current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
 					}
@@ -915,12 +901,12 @@ namespace VR4300
 						current_instr_log_output = std::format("{} {}", current_instr_name, rs);
 					}
 					if (gpr[rs] & 3) {
-						SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
+						SignalAddressErrorException<Memory::Operation::InstrFetch>(gpr[rs]);
 					}
 					return gpr[rs];
 				}
 				else {
-					static_assert(AlwaysFalse<instr>, "\"Jump\" template function called, but no matching jump instruction was found.");
+					static_assert(AlwaysFalse<instr>);
 				}
 			}();
 			PrepareJump(target);
@@ -948,7 +934,7 @@ namespace VR4300
 
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = [&] {
-				s16 offset = instr_code & 0xFFFF;
+				s16 offset = s16(instr_code);
 				if constexpr (OneOf(instr, BEQ, BNE, BEQL, BNEL))
 					return std::format("{} {}, {}, ${:X}", current_instr_name, rs, rt, offset);
 				else
@@ -999,47 +985,18 @@ namespace VR4300
 			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
 		}
 
-		bool trap_cond = [&] {
-			if constexpr (instr == TGE) {
-				/* Trap If Greater Than Or Equal;
-				   Compares registers rs and rt as signed integers.
-				   If register rs is greater than rt, generates an exception. */
-				return gpr[rs] > gpr[rt];
-			}
-			else if constexpr (instr == TGEU) {
-				/* Trap If Greater Than Or Equal Unsigned;
-				   Compares registers rs and rt as unsigned integers.
-				   If register rs is greater than rt, generates an exception. */
-				return u64(gpr[rs]) > u64(gpr[rt]);
-			}
-			else if constexpr (instr == TLT) {
-				/* Trap If Less Than;
-				   Compares registers rs and rt as signed integers.
-				   If register rs is less than rt, generates an exception. */
-				return gpr[rs] < gpr[rt];
-			}
-			else if constexpr (instr == TLTU) {
-				/* Trap If Less Than Unsigned;
-				   Compares registers rs and rt as unsigned integers.
-				   If register rs is less than rt, generates an exception. */
-				return u64(gpr[rs]) < u64(gpr[rt]);
-			}
-			else if constexpr (instr == TEQ) {
-				/* Trap If Equal;
-				   Generates an exception if registers rs and rt are equal. */
-				return gpr[rs] == gpr[rt];
-			}
-			else if constexpr (instr == TNE) {
-				/* Trap If Not Equal;
-				   Generates an exception if registers rs and rt are not equal. */
-				return gpr[rs] != gpr[rt];
-			}
-			else {
-				static_assert(AlwaysFalse<instr>, "\"Trap_ThreeOperand\" template function called, but no matching trap instruction was found.");
-			}
+		/* Generates a trap exception if the given condition is true. */
+		bool cond = [&] {
+			     if constexpr (instr == TGE)  return gpr[rs] > gpr[rt];
+			else if constexpr (instr == TGEU) return u64(gpr[rs]) > u64(gpr[rt]);
+			else if constexpr (instr == TLT)  return gpr[rs] < gpr[rt];
+			else if constexpr (instr == TLTU) return u64(gpr[rs]) < u64(gpr[rt]);
+			else if constexpr (instr == TEQ)  return gpr[rs] == gpr[rt];
+			else if constexpr (instr == TNE)  return gpr[rs] != gpr[rt];
+			else static_assert(AlwaysFalse<instr>);
 		}();
 
-		if (trap_cond) {
+		if (cond) {
 			SignalException<Exception::Trap>();
 		}
 
@@ -1054,54 +1011,22 @@ namespace VR4300
 
 		auto rs = instr_code >> 21 & 0x1F;
 		auto immediate = [&] {
-			if constexpr (OneOf(instr, TGEI, TLTI))
-				return s16(instr_code & 0xFFFF);
-			else
-				return u16(instr_code & 0xFFFF);
+			if constexpr (OneOf(instr, TGEI, TLTI)) return s16(instr_code);
+			else                                    return u16(instr_code);
 		}();
 
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
 		}
-
+		/* Generates a trap exception if the given condition is true. */
 		bool trap_cond = [&] {
-			if constexpr (instr == TGEI) {
-				/* Trap If Greater Than Or Equal Immediate;
-				   Compares the contents of register rs with 16-bit sign-extended immediate as a
-				   signed integer. If rs contents are greater than the immediate, generates an exception. */
-				return gpr[rs] > immediate;
-			}
-			else if constexpr (instr == TGEIU) {
-				/* Trap If Greater Than Or Equal Immediate Unsigned;
-				   Compares the contents of register rs with 16-bit zero-extended immediate as an
-				   unsigned integer. If rs contents are greater than the immediate, generates an exception. */
-				return u64(gpr[rs]) > immediate;
-			}
-			else if constexpr (instr == TLTI) {
-				/* Trap If Less Than Immediate;
-				   Compares the contents of register rs with 16-bit sign-extended immediate as a
-				   signed integer. If rs contents are less than the immediate, generates an exception. */
-				return gpr[rs] < immediate;
-			}
-			else if constexpr (instr == TLTIU) {
-				/* Trap If Less Than Immediate Unsigned;
-				   Compares the contents of register rs with 16-bit zero-extended immediate as an
-				   unsigned integer. If rs contents are less than the immediate, generates an exception. */
-				return u64(gpr[rs]) < immediate;
-			}
-			else if constexpr (instr == TEQI) {
-				/* Trap If Equal Immediate;
-				   Generates an exception if the contents of register rs are equal to immediate. */
-				return s64(gpr[rs]) == immediate; /* TODO: should we really cast to s64? */
-			}
-			else if constexpr (instr == TNEI) {
-				/* Trap If Not Equal Immediate;
-				   Generates an exception if the contents of register rs are not equal to immediate. */
-				return s64(gpr[rs]) != immediate;
-			}
-			else {
-				static_assert(AlwaysFalse<instr>, "\"Trap_Immediate\" template function called, but no matching trap instruction was found.");
-			}
+			     if constexpr (instr == TGEI)  return gpr[rs] > immediate;
+			else if constexpr (instr == TGEIU) return u64(gpr[rs]) > immediate;
+			else if constexpr (instr == TLTI)  return gpr[rs] < immediate;
+			else if constexpr (instr == TLTIU) return u64(gpr[rs]) < immediate;
+			else if constexpr (instr == TEQI)  return s64(gpr[rs]) == immediate; /* TODO: should we really cast to s64? */
+			else if constexpr (instr == TNEI)  return s64(gpr[rs]) != immediate;
+			else static_assert(AlwaysFalse<instr>);
 		}();
 
 		if (trap_cond) {
@@ -1122,10 +1047,8 @@ namespace VR4300
 			   Transfers the contents of special register LO/HI to register rd. */
 			auto rd = instr_code >> 11 & 0x1F;
 			gpr.Set(rd, [] {
-				if constexpr (instr == MFLO)
-					return lo_reg;
-				else
-					return hi_reg;
+				if constexpr (instr == MFLO) return lo_reg;
+				else                         return hi_reg;
 			}());
 			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{} {}", current_instr_name, rd);
