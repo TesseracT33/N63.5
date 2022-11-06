@@ -140,7 +140,7 @@ namespace VR4300
 			/* Store to the EPC register the address of the instruction causing the exception.
 			   If the instruction was executing in a branch delay slot, the CPU loads the EPC register
 			   to the address of the branch instruction immediately preceding the branch delay slot. */
-			cop0_reg.epc.value = pc - (in_branch_delay_slot ? 8 : 4);
+			cop0_reg.epc = pc - (in_branch_delay_slot ? 8 : 4);
 			cop0_reg.status.exl = 1;
 			SetActiveVirtualToPhysicalFunctions();
 		}
@@ -205,7 +205,7 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 5;
 			else                                                 return 4;
 		}();
-		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.x_context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.x_context.r = address_failure.bad_space_id;
@@ -272,7 +272,7 @@ namespace VR4300
 
 	void NmiException()
 	{
-		pc = cop0_reg.error_epc.value;
+		pc = cop0_reg.error_epc;
 		cop0_reg.status.ts = 0;
 		cop0_reg.status.erl = cop0_reg.status.sr = cop0_reg.status.bev = 1;
 		cop0_reg.cause.ce = 0;
@@ -289,7 +289,7 @@ namespace VR4300
 	void SoftResetException()
 	{
 		if (cop0_reg.status.erl == 0) {
-			pc = cop0_reg.error_epc.value;
+			pc = cop0_reg.error_epc;
 		}
 		cop0_reg.status.rp = cop0_reg.status.ts = 0;
 		cop0_reg.status.bev = cop0_reg.status.erl = cop0_reg.status.sr = 1;
@@ -310,7 +310,7 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
 		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
 		cop0_reg.entry_hi.asid = address_failure.bad_asid;
@@ -326,7 +326,7 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
 		cop0_reg.entry_hi.asid = address_failure.bad_asid;
@@ -337,7 +337,7 @@ namespace VR4300
 	void TlbModException()
 	{
 		cop0_reg.cause.exc_code = 1;
-		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
 		cop0_reg.entry_hi.asid = address_failure.bad_asid;
@@ -366,7 +366,7 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0_reg.bad_v_addr.value = address_failure.bad_virt_addr;
+		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
 		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.x_context.bad_vpn2 = address_failure.bad_vpn2;
 		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2;

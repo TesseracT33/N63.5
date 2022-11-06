@@ -53,6 +53,7 @@ namespace VR4300
 	constexpr uint cop0_index_watch_hi = 19;
 	constexpr uint cop0_index_x_context = 20;
 	constexpr uint cop0_index_parity_error = 26;
+	constexpr uint cop0_index_cache_error = 27;
 	constexpr uint cop0_index_tag_lo = 28;
 	constexpr uint cop0_index_tag_hi = 29;
 	constexpr uint cop0_index_error_epc = 30;
@@ -99,15 +100,11 @@ namespace VR4300
 
 		u32 cop0_unused_7; /* (7) */
 
-		struct { /* (8) */
-			u64 value;
-		} bad_v_addr;
+		u64 bad_v_addr; /* (8) */
 
-		struct { /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
+		u64 count; /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
 			 /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
 			 When we read from it, we shift it right one bit and then return it. When we write to it, we set it to the data shifted left one bit. */
-			u64 value;
-		} count;
 
 		struct { /* (10) */
 			u64 asid : 8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
@@ -117,10 +114,8 @@ namespace VR4300
 			u64 r : 2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
 		} entry_hi;
 
-		struct { /* (11); When equal to the Count register, interrupt bit IP(7) in the Cause register is set. Writes to this register clear said interrupt. */
+		u64 compare; /* (11); When equal to the Count register, interrupt bit IP(7) in the Cause register is set. Writes to this register clear said interrupt. */
 			/* On real HW, this register is 32 bits. Here, we make it 64 bits. See the description of the 'Count' register. */
-			u64 value;
-		} compare;
 
 		struct { /* (12) */
 			u32 ie : 1; /* Specifies and indicates global interrupt enable (0: disable interrupts; 1: enable interrupts) */
@@ -160,9 +155,7 @@ namespace VR4300
 			u32 bd : 1; /* Indicates whether the last exception occurred has been executed in a branch delay slot (0: normal; 1: delay slot). */
 		} cause;
 
-		struct { /* (14) */
-			u64 value; /* Contains the address at which processing resumes after an exception has been serviced. */
-		} epc;
+		u64 epc; /* (14) Contains the address at which processing resumes after an exception has been serviced. */
 
 		struct { /* (15) */
 			u32 rev : 8 = 0x22; /* Processor revision number */
@@ -185,9 +178,7 @@ namespace VR4300
 			u32 : 1; /* Returns 0 when read. */
 		} config;
 
-		struct { /* (17); Contains the physical address read by the most recent Load Linked instruction. */
-			u32 p_addr;
-		} ll_addr;
+		u32 ll_addr; /* (17); Contains the physical address read by the most recent Load Linked instruction. */
 
 		struct { /* (18) */
 			u32 w : 1;
@@ -219,9 +210,7 @@ namespace VR4300
 			u32 : 24;
 		} parity_error;
 
-		struct { /* (27); Always returns 0 when read. */
-			u32 value = 0;
-		} const cache_error;
+		const u32 cache_error = 0; /* (27); Always returns 0 when read. */
 
 		struct { /* (28) */
 			u32 : 6;
@@ -230,13 +219,9 @@ namespace VR4300
 			u32 : 4;
 		} tag_lo; /* Holds the primary cache tag for cache initialization, cache diagnostics, or cache error processing. The Tag registers are written by the CACHE and MTC0 instructions. */
 
-		struct { /* (29); Always returns 0 when read. */
-			u32 value = 0;
-		} const tag_hi;
+		const u32 tag_hi = 0; /* (29); Always returns 0 when read. */
 
-		struct { /* (30) */
-			u64 value;
-		} error_epc;
+		u64 error_epc; /* (30) */
 
 		u32 cop0_unused_31; /* (31) */
 
@@ -248,7 +233,7 @@ namespace VR4300
 		void OnWriteToCount();
 		void OnWriteToStatus();
 		void OnWriteToWired();
-	} cop0_reg{};
+	} cop0_reg;
 
 	/* Used to generate random numbers in the interval [wired, 31], when the 'random' register is read. */
 	class RandomGenerator
@@ -266,7 +251,7 @@ namespace VR4300
 			if (wired <= 31) distrib = { wired, 31 };
 			else             distrib = { 0, 63 };
 		}
-	} random_generator{};
+	} random_generator;
 
 	constexpr std::array cop0_reg_str_repr = {
 		"INDEX", "RANDOM", "ENTRY_LO_0", "ENTRY_LO_1", "CONTEXT", "PAGE_MASK", "WIRED", "COP0_7", "BAD_V_ADDR",

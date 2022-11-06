@@ -49,17 +49,13 @@ namespace VR4300
 	{
 		auto StructToInt = [](auto struct_) {
 			if constexpr (sizeof(struct_) == 4) {
-				u32 ret;
-				std::memcpy(&ret, &struct_, 4);
-				return ret;
+				return std::bit_cast<u32>(struct_);
 			}
 			else if constexpr (sizeof(struct_) == 8) {
-				u64 ret;
-				std::memcpy(&ret, &struct_, 8);
-				return ret;
+				return std::bit_cast<u64>(struct_);
 			}
 			else {
-				static_assert(AlwaysFalse<sizeof(struct_)>, "Incorrectly sized struct given.");
+				static_assert(AlwaysFalse<sizeof(struct_)>, "Struct must be either 4 or 8 bytes.");
 			}
 		};
 
@@ -71,23 +67,24 @@ namespace VR4300
 		case cop0_index_context: return StructToInt(context);
 		case cop0_index_page_mask: return StructToInt(page_mask);
 		case cop0_index_wired: return StructToInt(wired);
-		case cop0_index_bad_v_addr: return StructToInt(bad_v_addr);
-		case cop0_index_count: return u32(count.value >> 1); /* See the declaration of 'count' */
+		case cop0_index_bad_v_addr: return bad_v_addr;
+		case cop0_index_count: return u32(count >> 1); /* See the declaration of 'count' */
 		case cop0_index_entry_hi: return StructToInt(entry_hi);
-		case cop0_index_compare: return u32(compare.value >> 1); /* See the declaration of 'compare' */
+		case cop0_index_compare: return u32(compare >> 1); /* See the declaration of 'compare' */
 		case cop0_index_status: return StructToInt(status);
 		case cop0_index_cause: return StructToInt(cause);
-		case cop0_index_epc: return StructToInt(epc);
+		case cop0_index_epc: return epc;
 		case cop0_index_pr_id: return StructToInt(pr_id);
 		case cop0_index_config: return StructToInt(config);
-		case cop0_index_ll_addr: return StructToInt(ll_addr);
+		case cop0_index_ll_addr: return ll_addr;
 		case cop0_index_watch_lo: return StructToInt(watch_lo);
 		case cop0_index_watch_hi: return StructToInt(watch_hi);
 		case cop0_index_x_context: return StructToInt(x_context);
 		case cop0_index_parity_error: return StructToInt(parity_error);
+		case cop0_index_cache_error: return cache_error;
 		case cop0_index_tag_lo: return StructToInt(tag_lo);
-		case cop0_index_tag_hi: return StructToInt(tag_hi);
-		case cop0_index_error_epc: return StructToInt(error_epc);
+		case cop0_index_tag_hi: return tag_hi;
+		case cop0_index_error_epc: return error_epc;
 		case  7: return cop0_unused_7;
 		case 21: return cop0_unused_21;
 		case 22: return cop0_unused_22;
@@ -167,11 +164,11 @@ namespace VR4300
 			break;
 
 		case cop0_index_bad_v_addr:
-			IntToStruct(bad_v_addr, value);
+			bad_v_addr = value;
 			break;
 
 		case cop0_index_count:
-			IntToStruct(count, value << 1); /* See the declaration of 'count' */
+			count = value << 1; /* See the declaration of 'count' */
 			OnWriteToCount();
 			break;
 
@@ -181,7 +178,7 @@ namespace VR4300
 			break;
 
 		case cop0_index_compare:
-			IntToStruct(compare, value << 1); /* See the declaration of 'compare' */
+			compare = value << 1; /* See the declaration of 'compare' */
 			OnWriteToCompare();
 			break;
 
@@ -198,7 +195,7 @@ namespace VR4300
 			break;
 
 		case cop0_index_epc:
-			IntToStruct(epc, value);
+			epc = value;
 			break;
 
 		case cop0_index_config:
@@ -207,7 +204,7 @@ namespace VR4300
 			break;
 
 		case cop0_index_ll_addr:
-			IntToStruct(ll_addr, value);
+			ll_addr = value;
 			break;
 
 		case cop0_index_watch_lo:
@@ -235,7 +232,7 @@ namespace VR4300
 			break;
 
 		case cop0_index_error_epc:
-			IntToStruct(error_epc, value);
+			error_epc = value;
 			break;
 
 		case  7: cop0_unused_7 =  u32(value); break;
@@ -260,8 +257,8 @@ namespace VR4300
 	template<bool initial_add>
 	void ReloadCountCompareEvent()
 	{
-		u64 cycles_until_count_compare_match = cop0_reg.compare.value - cop0_reg.count.value;
-		if (cop0_reg.count.value >= cop0_reg.compare.value) {
+		u64 cycles_until_count_compare_match = cop0_reg.compare - cop0_reg.count;
+		if (cop0_reg.count >= cop0_reg.compare) {
 			cycles_until_count_compare_match += 0x2'0000'0000;
 		}
 		if constexpr (initial_add) {
@@ -473,11 +470,11 @@ namespace VR4300
 		}
 
 		if (cop0_reg.status.erl == 0) {
-			pc = cop0_reg.epc.value;
+			pc = cop0_reg.epc;
 			cop0_reg.status.exl = 0;
 		}
 		else {
-			pc = cop0_reg.error_epc.value;
+			pc = cop0_reg.error_epc;
 			cop0_reg.status.erl = 0;
 		}
 		ll_bit = 0;

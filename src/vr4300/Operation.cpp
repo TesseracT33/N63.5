@@ -21,7 +21,7 @@ namespace VR4300
 	void AdvancePipeline(u64 cycles)
 	{
 		p_cycle_counter += cycles;
-		cop0_reg.count.value += cycles;
+		cop0_reg.count += cycles;
 	}
 
 
@@ -84,10 +84,12 @@ namespace VR4300
 		std::memset(&fpr, 0, sizeof(fpr));
 		gpr.Set(Reg::sp, 0xFFFF'FFFF'A400'1FF0);
 		cop0_reg.SetRaw(cop0_index_index, 0x3F);
+		cop0_reg.SetRaw(cop0_index_config, 0x7006'E463);
 		cop0_reg.SetRaw(cop0_index_context, 0x007F'FFF0);
 		cop0_reg.SetRaw(cop0_index_bad_v_addr, 0xFFFF'FFFF'FFFF'FFFF);
 		cop0_reg.SetRaw(cop0_index_cause, 0xB000'007C);
 		cop0_reg.SetRaw(cop0_index_epc, 0xFFFF'FFFF'FFFF'FFFF);
+		cop0_reg.SetRaw(cop0_index_status, 0x3400'0000);
 		cop0_reg.SetRaw(cop0_index_ll_addr, 0xFFFF'FFFF);
 		cop0_reg.SetRaw(cop0_index_watch_lo, 0xFFFF'FFFB);
 		cop0_reg.SetRaw(cop0_index_watch_hi, 0xF);
