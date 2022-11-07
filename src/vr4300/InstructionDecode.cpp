@@ -6,6 +6,7 @@ import :COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
+import :Operation;
 
 import DebugOptions;
 import Logging;
@@ -239,7 +240,21 @@ namespace VR4300
 	}
 
 
-	void DecodeExecuteInstruction(const u32 instr_code)
+	void DecodeAndExecuteCOP2Instruction()
+	{
+		SignalCoprocessorUnusableException(2);
+		AdvancePipeline(1);
+	}
+
+
+	void DecodeAndExecuteCOP3Instruction()
+	{
+		SignalCoprocessorUnusableException(3);
+		AdvancePipeline(1);
+	}
+
+
+	void DecodeExecuteInstruction(u32 instr_code)
 	{
 		VR4300::instr_code = instr_code;
 
@@ -250,6 +265,8 @@ namespace VR4300
 		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
 		case 0b010000: DecodeAndExecuteCOP0Instruction(); break;
 		case 0b010001: DecodeAndExecuteCOP1Instruction(); break;
+		case 0b010010: DecodeAndExecuteCOP2Instruction(); break;
+		case 0b010011: DecodeAndExecuteCOP3Instruction(); break;
 
 		case 0b100000: EXEC_CPU_INSTR(LB); break;
 		case 0b100100: EXEC_CPU_INSTR(LBU); break;
