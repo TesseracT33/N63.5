@@ -216,6 +216,7 @@ namespace VR4300
 	void BreakPointException()
 	{
 		cop0_reg.cause.exc_code = 9;
+		cop0_reg.cause.ce = 0;
 	}
 
 
