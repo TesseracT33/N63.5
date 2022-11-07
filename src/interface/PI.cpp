@@ -20,7 +20,6 @@ namespace PI
 	{
 		SetStatusFlag(StatusFlag::DmaBusy);
 		ClearStatusFlag(StatusFlag::DmaCompleted);
-		MI::ClearInterruptFlag(MI::InterruptType::PI); /* TODO: should we clear? */
 
 		u8* rdram_ptr = RDRAM::GetPointerToMemory(pi.dram_addr);
 		u8* cart_ptr = Cart::GetPointerToRom(pi.cart_addr);
