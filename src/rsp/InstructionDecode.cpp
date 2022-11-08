@@ -294,7 +294,7 @@ namespace RSP
 		else if constexpr (OneOf(instr, MTC2, MFC2, CTC2, CFC2)) {
 			Move<instr>(instr_code);
 		}
-		else if constexpr (OneOf(instr, VMOV, VRCP, VRSQ, VRCPH, VRSQH, VRCPL, VRSQL, VRNDN, VRNDP, VNOP, VNULL)) {
+		else if constexpr (OneOf(instr, VMOV, VRCP, VRSQ, VRCPH, VRSQH, VRCPL, VRSQL, VRNDN, VRNDP, VNOP)) {
 			SingleLaneInstr<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, VMULF, VMULU, VMULQ, VMUDL, VMUDM, VMUDN, VMUDH, VMACF, VMACU, VMADL, VMADM,

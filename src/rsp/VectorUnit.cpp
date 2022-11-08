@@ -497,7 +497,7 @@ namespace RSP
 
 		if constexpr (log_rsp_instructions) {
 			current_instr_log_output = [&] {
-				if constexpr (instr == VNOP || instr == VNULL) {
+				if constexpr (instr == VNOP) {
 					return current_instr_name;
 				}
 				else {
@@ -605,7 +605,7 @@ namespace RSP
 			}
 			vpr[vd] = ClampSigned(acc.mid, acc.high);
 		}
-		else if constexpr (instr == VNOP || instr == VNULL) {
+		else if constexpr (instr == VNOP) {
 
 		}
 		else {
@@ -1123,7 +1123,6 @@ namespace RSP
 	template void SingleLaneInstr<VectorInstruction::VRNDN>(u32);
 	template void SingleLaneInstr<VectorInstruction::VRNDP>(u32);
 	template void SingleLaneInstr<VectorInstruction::VNOP>(u32);
-	template void SingleLaneInstr<VectorInstruction::VNULL>(u32);
 
 	template void ComputeInstr<VectorInstruction::VMULF>(u32);
 	template void ComputeInstr<VectorInstruction::VMULU>(u32);
