@@ -85,6 +85,7 @@ namespace RSP
 					result<i> = value(15..0)
 				endif
 			endfor
+			The above is also the behavior for SSE's 'SaturateS16'
 		*/
 		__m128i words1 = _mm_unpacklo_epi16(low, high);
 		__m128i words2 = _mm_unpackhi_epi16(low, high);
@@ -100,17 +101,16 @@ namespace RSP
 				value = high<i> << 16 | low<i>
 				if value < 0
 					result<i> = 0
-				elif value > 32767
+				elif value > 32767        OR       elif value >= 65535
 					result<i> = 65535
 				else
 					result<i> = value(15..0)
 				endif
 			endfor
+			The behavior of SSE's 'SaturateU16' is to set result<i> = 65535 only if value >= 65535
 		*/
 		__m128i words1 = _mm_unpacklo_epi16(low, high);
 		__m128i words2 = _mm_unpackhi_epi16(low, high);
-		/* Unsigned saturation in SSE can differ from that in the RSP in that
-		the result is set to 65535 only if value >= 65535. It depends on the RSP instruction. */
 		using enum VectorInstruction;
 		__m128i clamp_sse = _mm_packus_epi32(words1, words2);
 		if constexpr (instr == VMULU || instr == VMACU) {
@@ -235,67 +235,62 @@ namespace RSP
 			}
 		}
 		else if constexpr (instr == LTV) {
-			const auto start_addr = gpr[base] + offset * 16;
-			const auto wrap_addr = start_addr & 0xFF8;
-			const auto num_bytes_until_addr_wrap = 16 - (start_addr & 7);
-			auto current_addr = start_addr;
-			auto current_reg = vt & 0x18;
-			auto current_elem = (0x10 - element) & 0xE;
-			bool on_odd_byte = 1;
+			auto addr = gpr[base] + offset * 16;
+			const auto wrap_addr = addr & 0xFF8;
+			const auto num_bytes_until_addr_wrap = 16 - (addr & 7);
+			addr += element + (addr & 8) & 0xF;
+			element &= 0xE;
+			const auto reg_base = vt & 0x18;
+			auto reg_off = element >> 1;
 
-			auto CopyNextByte = [&] {
-				u8* vpr_dst = (u8*)(&vpr[current_reg]);
-				*(vpr_dst + (current_elem & 0xE) + on_odd_byte) = dmem[current_addr & 0xFFF];
-				on_odd_byte ^= 1;
-				current_addr++;
-				current_elem++; /* increment by two every other byte copy (achieved by ANDing with 0xE above) */
-				current_reg += on_odd_byte; /* increment every other byte copy */
+			if constexpr (log_rsp_instructions) {
+				//current_instr_log_output = std::format("LTV {} e{}, ${:X}",
+				//	reg_base, MakeUnsigned(addr));
+			}
+
+			auto CopyNextByte = [&, even_byte = true]() mutable {
+				*((u8*)(&vpr[reg_base + reg_off]) + (element++ & 0xE) + even_byte) = dmem[addr++ & 0xFFF];
+				even_byte ^= 1;
+				reg_off += even_byte;
+				reg_off &= 7;
 			};
 
 			for (int i = 0; i < num_bytes_until_addr_wrap; ++i) {
 				CopyNextByte();
 			}
-			current_addr = wrap_addr;
+			addr = wrap_addr;
 			for (int i = 0; i < 16 - num_bytes_until_addr_wrap; ++i) {
 				CopyNextByte();
 			}
 
-			if constexpr (log_rsp_instructions) {
-				current_instr_log_output = std::format("LTV {} e{}, ${:X}",
-					vt & 0x18, element & 0xE, MakeUnsigned(start_addr));
-			}
+
 		}
 		else if constexpr (instr == STV) {
-			const auto start_addr = gpr[base] + offset * 16;
-			const auto wrap_addr = start_addr & 0xFF8;
-			const auto num_bytes_until_addr_wrap = 16 - (start_addr & 7);
+			auto addr = gpr[base] + offset * 16;
+			const auto wrap_addr = addr & 0xFF8;
+			const auto num_bytes_until_addr_wrap = 16 - (addr & 7);
 			const auto base_reg = vt & 0x18;
-			auto current_addr = start_addr;
-			auto current_reg = base_reg | element >> 1;
-			auto current_elem = 0;
-			bool on_odd_byte = 1;
+			auto reg = base_reg | element >> 1;
+			auto element = 0;
 
-			auto CopyNextByte = [&] {
-				u8* vpr_src = (u8*)(&vpr[current_reg]);
-				dmem[current_addr & 0xFFF] = *(vpr_src + (current_elem & 0xE) + on_odd_byte);
-				on_odd_byte ^= 1;
-				current_addr++;
-				current_elem++; /* increment by two every other byte copy (achieved by ANDing with 0xE above) */
-				current_reg += on_odd_byte; /* increment every other byte copy */
-				current_reg &= base_reg | current_reg & 7;
+			auto CopyNextByte = [&, even_byte = true]() mutable {
+				dmem[addr++ & 0xFFF] = *((u8*)(&vpr[reg]) + (element++ & 0xE) + even_byte);
+				even_byte ^= 1;
+				reg += even_byte;
+				reg &= base_reg | reg & 7;
 			};
 
 			for (int i = 0; i < num_bytes_until_addr_wrap; ++i) {
 				CopyNextByte();
 			}
-			current_addr = wrap_addr;
+			addr = wrap_addr;
 			for (int i = 0; i < 16 - num_bytes_until_addr_wrap; ++i) {
 				CopyNextByte();
 			}
 
 			if constexpr (log_rsp_instructions) {
 				current_instr_log_output = std::format("STV {} e{}, ${:X}",
-					base_reg, element & 0xE, MakeUnsigned(start_addr));
+					base_reg, element, MakeUnsigned(addr));
 			}
 		}
 		else if constexpr (instr == LPV || instr == LUV || instr == SPV || instr == SUV) {
@@ -375,25 +370,32 @@ namespace RSP
 	{
 		using enum VectorInstruction;
 
-		auto vs_elem = instr_code >> 8 & 0x7;
+		auto element = instr_code >> 7 & 0xF;
 		auto vs = instr_code >> 11 & 0x1F;
 		auto rt = instr_code >> 16 & 0x1F;
 
 		if constexpr (log_rsp_instructions) {
 			current_instr_log_output = std::format("{} GPR[{}] VPR[{}] e{}",
-				current_instr_name, rt, vs, vs_elem);
+				current_instr_name, rt, vs, element);
 		}
 
 		if constexpr (instr == MTC2) {
 			/* Pseudo-code:
 				VS<elem>(15..0) = GPR[rt](15..0)
 			*/
+			//*((u8*)(&vpr[vs]) + (element ^ 1)) = u8(gpr[rt]);
+			//if (element < 15) {
+			//	*((u8*)(&vpr[vs]) + (element + 1 ^ 1)) = u8(gpr[rt] >> 8);
+			//}
 			_mm_setlane_epi16(&vpr[vs], vs_elem, s16(gpr[rt]));
 		}
 		else if constexpr (instr == MFC2) {
 			/* Pseudo-code:
 				GPR[rt](31..0) = sign_extend(VS<elem>(15..0))
 			*/
+			//u8 lo = *((u8*)(&vpr[vs]) + (element ^ 1));
+			//u8 hi = *((u8*)(&vpr[vs]) + (element + 1 & 15 ^ 1));
+			//gpr.Set(rt, s16(lo | hi << 8));
 			gpr.Set(rt, _mm_getlane_epi16(&vpr[vs], vs_elem));
 		}
 		else if constexpr (instr == CTC2) {
@@ -705,8 +707,7 @@ namespace RSP
 			const __m128i mask = _mm_set1_epi16(32);
 			const __m128i addend = _mm_and_si128(_mm_not_si128(low), mask); /* 0 or 32 */
 			/* Possibly add 32. No carry in low, since bit 5 is clear. */
-			__m128i pos_addend = _mm_and_si128(addend,
-				_mm_cmplt_epi16(high, m128i_zero)); /* prod < 0 */
+			__m128i pos_addend = _mm_and_si128(addend, _mm_cmplt_epi16(high, m128i_zero)); /* prod < 0 */
 			low = _mm_add_epi16(low, pos_addend);
 			/* Possibly subtract 32. Explanation: If bit 5 is clear, then product >= 64.
 			   First, subtract 32 from low. This subtracts one from the upper 11 bits of low.
@@ -753,20 +754,26 @@ namespace RSP
 				for i in 0..7
 					prod(31..0) = VS<i>(15..0) * VT<i>(15..0)   // unsigned by signed
 					ACC<i>(47..0) (+)= sign_extend(prod(31..0))
-					VD<i>(15..0) = ACC<i>(15..0)
+					VD<i>(15..0) = clamp_unsigned(ACC<i>(31..0))
 				endfor */
 			__m128i low = _mm_mullo_epi16(vpr[vs], vt_operand);
 			__m128i high = _mm_mulhi_epu16_epi16(vpr[vs], vt_operand);
 			__m128i sign_ext = _mm_srai_epi16(high, 15);
+			/* In this case, the unsigned clamp will return ACC_LO if ACC_HI is the sign extension of ACC_MD -
+			otherwise, it will return 0 for negative ACC_HI, and 65535 for positive ACC_HI */
+			__m128i is_sign_ext;
 			if constexpr (instr == VMUDN) {
 				acc.low = low;
 				acc.mid = high;
 				acc.high = sign_ext;
+				is_sign_ext = m128i_all_ones;
 			}
 			else {
 				AddToAcc(low, high, sign_ext);
+				is_sign_ext = _mm_cmpeq_epi16(acc.high, _mm_srai_epi16(acc.mid, 15));
 			}
-			vpr[vd] = acc.low;
+			__m128i acc_high_neg = _mm_cmpeq_epi16(m128i_all_ones, _mm_srai_epi16(acc.high, 15));
+			vpr[vd] = _mm_blendv_epi8(_mm_blendv_epi8(m128i_all_ones, m128i_zero, acc_high_neg), acc.low, is_sign_ext);
 		}
 		else if constexpr (instr == VMUDL || instr == VMADL) {
 			/* Pseudo-code:
@@ -777,13 +784,13 @@ namespace RSP
 				endfor
 			*/
 			__m128i high = _mm_mulhi_epu16(vpr[vs], vt_operand);
-			if constexpr (instr == VMUDL) {
-				acc.low = high;
-			}
-			else {
-				AddToAcc(high);
-			}
-			vpr[vd] = ClampUnsigned<instr>(acc.low, acc.mid);
+			if constexpr (instr == VMUDL) acc.low = high;
+			else                          AddToAcc(high);
+			/* In this case, the unsigned clamp will return ACC_LO if ACC_HI is the sign extension of ACC_MD -
+			otherwise, it will return 0 for negative ACC_HI, and 65535 for positive ACC_HI */
+			__m128i is_sign_ext = _mm_cmpeq_epi16(acc.high, _mm_srai_epi16(acc.mid, 15));
+			__m128i acc_high_neg = _mm_cmpeq_epi16(m128i_all_ones, _mm_srai_epi16(acc.high, 15));
+			vpr[vd] = _mm_blendv_epi8(_mm_blendv_epi8(m128i_all_ones, m128i_zero, acc_high_neg), acc.low, is_sign_ext);
 		}
 		else if constexpr (instr == VMUDM || instr == VMADM) {
 			/* Pseudo-code:
