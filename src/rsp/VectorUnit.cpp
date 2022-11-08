@@ -29,6 +29,7 @@ namespace RSP
 		acc.high = _mm_add_epi16(acc.high, mid_carry);
 	}
 
+
 	void AddToAcc(__m128i low, __m128i mid)
 	{
 		/* pseudo-code:
@@ -39,8 +40,7 @@ namespace RSP
 		AddToAcc(low);
 		__m128i prev_acc_mid = acc.mid;
 		acc.mid = _mm_add_epi16(acc.mid, mid);
-		__m128i mid_carry = _mm_cmplt_epu16(acc.mid, prev_acc_mid);
-		mid_carry = _mm_srli_epi16(mid_carry, 15);
+		__m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.mid, prev_acc_mid), 15);
 		acc.high = _mm_add_epi16(acc.high, mid_carry);
 	}
 
@@ -54,6 +54,35 @@ namespace RSP
 		*/
 		AddToAcc(low, mid);
 		acc.high = _mm_add_epi16(acc.high, high);
+	}
+
+
+	void AddToAccCond(__m128i low, __m128i cond)
+	{
+		/* Like AddToAcc(__m128i), but only perform the operation if the corresponding lane in 'cond' is 0xFFFF */
+		__m128i prev_acc_low = acc.low;
+		acc.low = _mm_blendv_epi8(acc.low, _mm_add_epi16(acc.low, low), cond);
+		__m128i low_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.low, prev_acc_low), 15);
+		acc.mid = _mm_blendv_epi8(acc.mid, _mm_add_epi16(acc.mid, low_carry), cond);
+		__m128i mid_carry = _mm_and_si128(low_carry, _mm_cmpeq_epi16(acc.mid, m128i_zero));
+		acc.high = _mm_blendv_epi8(acc.high, _mm_add_epi16(acc.high, mid_carry), cond);
+	}
+
+
+	void AddToAccCond(__m128i low, __m128i mid, __m128i cond)
+	{
+		AddToAccCond(low, cond);
+		__m128i prev_acc_mid = acc.mid;
+		acc.mid = _mm_blendv_epi8(acc.mid, _mm_add_epi16(acc.mid, mid), cond);
+		__m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.mid, prev_acc_mid), 15);
+		acc.high = _mm_blendv_epi8(acc.high, _mm_add_epi16(acc.high, mid_carry), cond);
+	}
+
+
+	void AddToAccCond(__m128i low, __m128i mid, __m128i high, __m128i cond)
+	{
+		AddToAccCond(low, mid, cond);
+		acc.high = _mm_blendv_epi8(acc.high, _mm_add_epi16(acc.high, high), cond);
 	}
 
 
@@ -85,7 +114,7 @@ namespace RSP
 					result<i> = value(15..0)
 				endif
 			endfor
-			The above is also the behavior for SSE's 'SaturateS16'
+			The above is also the behavior for SSE's 'Saturate16'
 		*/
 		__m128i words1 = _mm_unpacklo_epi16(low, high);
 		__m128i words2 = _mm_unpackhi_epi16(low, high);
@@ -383,20 +412,20 @@ namespace RSP
 			/* Pseudo-code:
 				VS<elem>(15..0) = GPR[rt](15..0)
 			*/
-			//*((u8*)(&vpr[vs]) + (element ^ 1)) = u8(gpr[rt]);
-			//if (element < 15) {
-			//	*((u8*)(&vpr[vs]) + (element + 1 ^ 1)) = u8(gpr[rt] >> 8);
-			//}
-			_mm_setlane_epi16(&vpr[vs], vs_elem, s16(gpr[rt]));
+			*((u8*)(&vpr[vs]) + (element ^ 1)) = u8(gpr[rt]);
+			if (element < 15) {
+				*((u8*)(&vpr[vs]) + (element + 1 ^ 1)) = u8(gpr[rt] >> 8);
+			}
+			//_mm_setlane_epi16(&vpr[vs], vs_elem, s16(gpr[rt]));
 		}
 		else if constexpr (instr == MFC2) {
 			/* Pseudo-code:
 				GPR[rt](31..0) = sign_extend(VS<elem>(15..0))
 			*/
-			//u8 lo = *((u8*)(&vpr[vs]) + (element ^ 1));
-			//u8 hi = *((u8*)(&vpr[vs]) + (element + 1 & 15 ^ 1));
-			//gpr.Set(rt, s16(lo | hi << 8));
-			gpr.Set(rt, _mm_getlane_epi16(&vpr[vs], vs_elem));
+			u8 lo = *((u8*)(&vpr[vs]) + (element ^ 1));
+			u8 hi = *((u8*)(&vpr[vs]) + (element + 1 & 15 ^ 1));
+			gpr.Set(rt, s16(lo | hi << 8));
+			//gpr.Set(rt, _mm_getlane_epi16(&vpr[vs], vs_elem));
 		}
 		else if constexpr (instr == CTC2) {
 			/* Pseudo-code:
@@ -555,11 +584,26 @@ namespace RSP
 			div_dp = 0;
 			acc.low = vpr[vt];
 		}
-		else if constexpr (instr == VRNDN) {
-			assert(false); /* TODO */
-		}
-		else if constexpr (instr == VRNDP) {
-			assert(false); /* TODO */
+		else if constexpr (instr == VRNDN || instr == VRNDP) {
+			__m128i low, mid, high;
+			if (vd_elem & 1) { /* sign_extend(VT << 16) */
+				low = m128i_zero;
+				mid = vpr[vt];
+				high = _mm_srai_epi16(mid, 15);
+			}
+			else { /* sign_extend(VT) */
+				low = vpr[vt];
+				mid = high = _mm_srai_epi16(low, 15);
+			}
+			if constexpr (instr == VRNDN) {
+				__m128i acc_neg = _mm_cmpeq_epi16(m128i_all_ones, _mm_srai_epi16(acc.high, 15));
+				AddToAccCond(low, mid, high, acc_neg);
+			}
+			else {
+				__m128i acc_non_neg = _mm_cmpeq_epi16(m128i_zero, _mm_srai_epi16(acc.high, 15));
+				AddToAccCond(low, mid, high, acc_non_neg);
+			}
+			vpr[vd] = ClampSigned(acc.mid, acc.high);
 		}
 		else if constexpr (instr == VNOP || instr == VNULL) {
 

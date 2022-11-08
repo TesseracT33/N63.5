@@ -52,6 +52,9 @@ namespace RSP
 	void AddToAcc(__m128i low);
 	void AddToAcc(__m128i low, __m128i mid);
 	void AddToAcc(__m128i low, __m128i mid, __m128i high);
+	void AddToAccCond(__m128i low, __m128i cond);
+	void AddToAccCond(__m128i low, __m128i mid, __m128i cond);
+	void AddToAccCond(__m128i low, __m128i mid, __m128i high, __m128i cond);
 	void AddToAccFromMid(__m128i mid, __m128i high);
 	__m128i ClampSigned(__m128i low, __m128i high);
 	template<VectorInstruction> __m128i ClampUnsigned(__m128i low, __m128i high);
