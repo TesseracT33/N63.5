@@ -46,6 +46,8 @@ namespace RSP
 		s32 requested_total_bytes = rows * bytes_per_row;
 		s32 bytes_to_copy = std::min(requested_total_bytes,
 			std::min(num_bytes_until_rdram_end, num_bytes_until_spram_end));
+		dma_spaddr_last_addr = sp.dma_spaddr + bytes_to_copy;
+		dma_ramaddr_last_addr = sp.dma_ramaddr + bytes_to_copy;
 
 		/* The speed of transfer is about 3.7 bytes per VR4300 (PClock) cycle (plus some small fixed overhead). */
 		static constexpr uint cpu_cycles_per_byte = 4;
@@ -95,6 +97,8 @@ namespace RSP
 
 	void OnDmaFinish()
 	{
+		sp.dma_spaddr = dma_spaddr_last_addr;
+		sp.dma_ramaddr = dma_ramaddr_last_addr;
 		if (dma_is_pending) {
 			dma_is_pending = false;
 			sp.dma_full &= ~1;
@@ -113,9 +117,10 @@ namespace RSP
 			dma_in_progress = false;
 			sp.dma_busy &= ~1;
 			sp.status.dma_busy = 0; /* Mirrors dma_busy.0 */
+			/* After the transfer is finished, the fields RDLEN and WRLEN contains the value 0xFF8,
+			COUNT is reset to 0, and SKIP is unchanged. SPADDR and RAMADDR contain the
+			addresses after the last ones that were read/written during the last DMA. */
 			if (in_progress_dma_type == DmaType::RdToSp) {
-				/* After the transfer is finished, the fields RDLEN and WRLEN contains the value 0xFF8,
-				COUNT is reset to 0, and SKIP is unchanged. */
 				sp.dma_rdlen = 0xFF8 | sp.dma_rdlen & 0xFF80'0000;
 				sp.dma_wrlen = 0xFF8 | sp.dma_rdlen & 0xFF80'0000;
 			}

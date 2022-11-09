@@ -55,6 +55,8 @@ namespace RSP
 	/* What was written last to either SP_DMA_RDLEN/ SP_DMA_WRLEN during an ongoing DMA */
 	s32 buffered_dma_rdlen;
 	s32 buffered_dma_wrlen;
+	s32 dma_spaddr_last_addr;
+	s32 dma_ramaddr_last_addr;
 
 	DmaType in_progress_dma_type;
 
