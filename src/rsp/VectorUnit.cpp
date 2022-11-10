@@ -749,27 +749,21 @@ namespace RSP
 				ClampSigned(_mm_srai_epi16(acc.mid, 1), _mm_srai_epi16(acc.high, 1)));
 		}
 		else if constexpr (instr == VMACQ) {
-			__m128i low = _mm_mullo_epi16(acc.mid, acc.high);
-			__m128i high = _mm_mulhi_epi16(acc.mid, acc.high);
-			/* if bit 5 of product is clear, add 32 if product < 0, else if product >= 32, subtract 32. */
-			const __m128i mask = _mm_set1_epi16(32);
-			const __m128i addend = _mm_and_si128(_mm_not_si128(low), mask); /* 0 or 32 */
-			/* Possibly add 32. No carry in low, since bit 5 is clear. */
-			__m128i pos_addend = _mm_and_si128(addend, _mm_cmplt_epi16(high, m128i_zero)); /* prod < 0 */
-			low = _mm_add_epi16(low, pos_addend);
-			/* Possibly subtract 32. Explanation: If bit 5 is clear, then product >= 64.
-			   First, subtract 32 from low. This subtracts one from the upper 11 bits of low.
-			   If the result underflows (low & 0xFFE0 == 0xFFE0), subtract one from high. This cannot
-			   lead to underflow in high, since product >= 64, and if low underflowed, then 0 <= low <= 31
-			   before the subtraction. Thus, at least one bit of high must be set. */
-			__m128i neg_addend = _mm_and_si128(addend,
-				_mm_and_si128(_mm_cmpge_epi16(high, m128i_zero), /* prod >= 0 */
-					_mm_or_si128(_mm_cmpgt_epu16(low, mask), _mm_cmpgt_epi16(high, m128i_zero)))); /* low > 32 or high > 0 */
-			low = _mm_sub_epi16(low, neg_addend);
-			__m128i low_borrow = _mm_srli_epi16(_mm_cmpeq_epi16(
-				_mm_and_si128(low, _mm_set1_epi16(0xFFE0)), _mm_set1_epi16(0xFFE0)), 15);
-			high = _mm_sub_epi16(high, low_borrow);
-			AddToAccFromMid(low, high);
+			/* Given result = acc.mid | acc.high << 16: if !result.5, add 32 if result < 0, else if result >= 32, subtract 32. */
+			__m128i mask = _mm_set1_epi16(32);
+			__m128i addend = _mm_and_si128(_mm_not_si128(acc.mid), mask); /* 0 or 32 */
+			__m128i acc_high_pos = _mm_cmpgt_epi16(acc.high, m128i_zero);
+			__m128i acc_high_neg = _mm_cmplt_epi16(acc.high, m128i_zero);
+			/* Possibly subtract 32. */
+			__m128i neg_addend = _mm_and_si128(addend, _mm_or_si128(
+				acc_high_pos, _mm_cmpge_epu16(acc.mid, mask))); /* unsigned(acc.mid) >= 32 */
+			__m128i prev_acc_mid = acc.mid;
+			acc.mid = _mm_sub_epi16(acc.mid, neg_addend);
+			__m128i borrow = _mm_cmpgt_epu16(acc.mid, prev_acc_mid);
+			acc.high = _mm_add_epi16(acc.high, borrow); /* same as subtracting 0 or 1 */
+			/* Possibly add 32. No carry in acc.mid, since bit 5 is clear if addend != 0. */
+			__m128i pos_addend = _mm_and_si128(addend, acc_high_neg);
+			acc.mid = _mm_add_epi16(acc.mid, pos_addend);
 			__m128i clamp_input_low = _mm_or_si128(_mm_srli_epi16(acc.mid, 1), _mm_slli_epi16(acc.high, 15));
 			__m128i clamp_input_high = _mm_srai_epi16(acc.high, 1);
 			vpr[vd] = _mm_and_si128(_mm_set1_epi16(~0xF), ClampSigned(clamp_input_low, clamp_input_high));
