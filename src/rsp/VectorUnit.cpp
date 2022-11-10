@@ -23,10 +23,10 @@ namespace RSP
 		*/
 		__m128i prev_acc_low = acc.low;
 		acc.low = _mm_add_epi16(acc.low, low);
-		__m128i low_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.low, prev_acc_low), 15);
-		acc.mid = _mm_add_epi16(acc.mid, low_carry);
+		__m128i low_carry = _mm_cmplt_epu16(acc.low, prev_acc_low);
+		acc.mid = _mm_sub_epi16(acc.mid, low_carry);
 		__m128i mid_carry = _mm_and_si128(low_carry, _mm_cmpeq_epi16(acc.mid, m128i_zero));
-		acc.high = _mm_add_epi16(acc.high, mid_carry);
+		acc.high = _mm_sub_epi16(acc.high, mid_carry);
 	}
 
 
@@ -40,8 +40,8 @@ namespace RSP
 		AddToAcc(low);
 		__m128i prev_acc_mid = acc.mid;
 		acc.mid = _mm_add_epi16(acc.mid, mid);
-		__m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.mid, prev_acc_mid), 15);
-		acc.high = _mm_add_epi16(acc.high, mid_carry);
+		__m128i mid_carry = _mm_cmplt_epu16(acc.mid, prev_acc_mid);
+		acc.high = _mm_sub_epi16(acc.high, mid_carry);
 	}
 
 
@@ -62,10 +62,10 @@ namespace RSP
 		/* Like AddToAcc(__m128i), but only perform the operation if the corresponding lane in 'cond' is 0xFFFF */
 		__m128i prev_acc_low = acc.low;
 		acc.low = _mm_blendv_epi8(acc.low, _mm_add_epi16(acc.low, low), cond);
-		__m128i low_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.low, prev_acc_low), 15);
-		acc.mid = _mm_blendv_epi8(acc.mid, _mm_add_epi16(acc.mid, low_carry), cond);
+		__m128i low_carry = _mm_cmplt_epu16(acc.low, prev_acc_low);
+		acc.mid = _mm_blendv_epi8(acc.mid, _mm_sub_epi16(acc.mid, low_carry), cond);
 		__m128i mid_carry = _mm_and_si128(low_carry, _mm_cmpeq_epi16(acc.mid, m128i_zero));
-		acc.high = _mm_blendv_epi8(acc.high, _mm_add_epi16(acc.high, mid_carry), cond);
+		acc.high = _mm_blendv_epi8(acc.high, _mm_sub_epi16(acc.high, mid_carry), cond);
 	}
 
 
@@ -74,8 +74,8 @@ namespace RSP
 		AddToAccCond(low, cond);
 		__m128i prev_acc_mid = acc.mid;
 		acc.mid = _mm_blendv_epi8(acc.mid, _mm_add_epi16(acc.mid, mid), cond);
-		__m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.mid, prev_acc_mid), 15);
-		acc.high = _mm_blendv_epi8(acc.high, _mm_add_epi16(acc.high, mid_carry), cond);
+		__m128i mid_carry = _mm_cmplt_epu16(acc.mid, prev_acc_mid);
+		acc.high = _mm_blendv_epi8(acc.high, _mm_sub_epi16(acc.high, mid_carry), cond);
 	}
 
 
@@ -95,9 +95,9 @@ namespace RSP
 		*/
 		__m128i prev_acc_mid = acc.mid;
 		acc.mid = _mm_add_epi16(acc.mid, mid);
-		__m128i mid_carry = _mm_srli_epi16(_mm_cmplt_epu16(acc.mid, prev_acc_mid), 15);
+		__m128i mid_carry = _mm_cmplt_epu16(acc.mid, prev_acc_mid);
 		acc.high = _mm_add_epi16(acc.high, high);
-		acc.high = _mm_add_epi16(acc.high, mid_carry);
+		acc.high = _mm_sub_epi16(acc.high, mid_carry);
 	}
 
 
@@ -718,9 +718,9 @@ namespace RSP
 			high = _mm_add_epi16(high, low_carry_mul);
 			/* add $8000 */
 			low = _mm_add_epi16(low, m128i_epi16_sign_mask);
-			__m128i low_carry_add = _mm_srli_epi16(_mm_cmpgt_epi16(low, m128i_zero), 15); /* carry if low >= 0 */
-			high = _mm_add_epi16(high, low_carry_add);
-			__m128i high_carry_add = _mm_and_si128(_mm_cmpeq_epi16(high, m128i_zero), _mm_cmpeq_epi16(low_carry_add, m128i_one));
+			__m128i low_carry_add = _mm_cmpgt_epi16(low, m128i_zero); /* carry if low >= 0 */
+			high = _mm_sub_epi16(high, low_carry_add);
+			__m128i high_carry_add = _mm_and_si128(_mm_cmpeq_epi16(high, m128i_zero), low_carry_add);
 			acc.low = low;
 			acc.mid = high;
 			/* The XOR achieves the correct 33-bit overflow behaviour and subsequent sign-extension to 48 bits.
