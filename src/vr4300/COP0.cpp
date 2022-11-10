@@ -149,7 +149,7 @@ namespace VR4300
 
 		case cop0_index_context:
 			if constexpr (raw) IntToStruct(context, value);
-			else               IntToStructMasked(context, value, 0xFFFF'FFFF'FFFF'FFF0);
+			else               IntToStructMasked(context, value, ~0xFull);
 			break;
 
 		case cop0_index_page_mask:
@@ -164,7 +164,7 @@ namespace VR4300
 			break;
 
 		case cop0_index_bad_v_addr:
-			bad_v_addr = value;
+			if constexpr (raw) bad_v_addr = value;
 			break;
 
 		case cop0_index_count:
@@ -218,7 +218,7 @@ namespace VR4300
 
 		case cop0_index_x_context:
 			if constexpr (raw) IntToStruct(x_context, value);
-			else               IntToStructMasked(x_context, value, 0xFFFF'FFFF'FFFF'FFF0);
+			else               IntToStructMasked(x_context, value, ~0xFull);
 			break;
 
 		case cop0_index_parity_error:
@@ -257,8 +257,8 @@ namespace VR4300
 	template<bool initial_add>
 	void ReloadCountCompareEvent()
 	{
-		u64 cycles_until_count_compare_match = cop0_reg.compare - cop0_reg.count;
-		if (cop0_reg.count >= cop0_reg.compare) {
+		u64 cycles_until_count_compare_match = (cop0_reg.compare - cop0_reg.count) & 0x1'FFFF'FFFF;
+		if ((cop0_reg.count & 0x1'FFFF'FFFF) >= (cop0_reg.compare & 0x1'FFFF'FFFF)) {
 			cycles_until_count_compare_match += 0x2'0000'0000;
 		}
 		if constexpr (initial_add) {
@@ -271,7 +271,7 @@ namespace VR4300
 
 
 	template<COP0Instruction instr>
-	void COP0Move(const u32 instr_code)
+	void COP0Move(u32 instr_code)
 	{
 		AdvancePipeline(1);
 		using enum COP0Instruction;
