@@ -48,15 +48,9 @@ namespace VR4300
 	u64 COP0Registers::Get(size_t reg_index) const
 	{
 		auto StructToInt = [](auto struct_) {
-			if constexpr (sizeof(struct_) == 4) {
-				return std::bit_cast<u32>(struct_);
-			}
-			else if constexpr (sizeof(struct_) == 8) {
-				return std::bit_cast<u64>(struct_);
-			}
-			else {
-				static_assert(AlwaysFalse<sizeof(struct_)>, "Struct must be either 4 or 8 bytes.");
-			}
+			     if constexpr (sizeof(struct_) == 4) return std::bit_cast<u32>(struct_);
+			else if constexpr (sizeof(struct_) == 8) return std::bit_cast<u64>(struct_);
+			else static_assert(AlwaysFalse<sizeof(struct_)>, "Struct must be either 4 or 8 bytes.");
 		};
 
 		switch (reg_index & 31) {
@@ -139,12 +133,12 @@ namespace VR4300
 
 		case cop0_index_entry_lo_0:
 			if constexpr (raw) IntToStruct(entry_lo_0, value);
-			else               IntToStructMasked(entry_lo_0, value, 0x03FF'FFFF);
+			else               IntToStructMasked(entry_lo_0, value, 0x3FFF'FFFF);
 			break;
 
 		case cop0_index_entry_lo_1:
 			if constexpr (raw) IntToStruct(entry_lo_1, value);
-			else               IntToStructMasked(entry_lo_1, value, 0x03FF'FFFF);
+			else               IntToStructMasked(entry_lo_1, value, 0x3FFF'FFFF);
 			break;
 
 		case cop0_index_context:
