@@ -987,10 +987,10 @@ namespace VR4300
 
 		/* Generates a trap exception if the given condition is true. */
 		bool cond = [&] {
-			     if constexpr (instr == TGE)  return gpr[rs] > gpr[rt];
-			else if constexpr (instr == TGEU) return u64(gpr[rs]) > u64(gpr[rt]);
-			else if constexpr (instr == TLT)  return gpr[rs] < gpr[rt];
-			else if constexpr (instr == TLTU) return u64(gpr[rs]) < u64(gpr[rt]);
+			     if constexpr (instr == TGE)  return s64(gpr[rs]) >= s64(gpr[rt]);
+			else if constexpr (instr == TGEU) return u64(gpr[rs]) >= u64(gpr[rt]);
+			else if constexpr (instr == TLT)  return s64(gpr[rs]) <  s64(gpr[rt]);
+			else if constexpr (instr == TLTU) return u64(gpr[rs]) <  u64(gpr[rt]);
 			else if constexpr (instr == TEQ)  return gpr[rs] == gpr[rt];
 			else if constexpr (instr == TNE)  return gpr[rs] != gpr[rt];
 			else static_assert(AlwaysFalse<instr>);
@@ -1010,21 +1010,18 @@ namespace VR4300
 		using enum CPUInstruction;
 
 		auto rs = instr_code >> 21 & 0x1F;
-		auto immediate = [&] {
-			if constexpr (OneOf(instr, TGEI, TLTI)) return s16(instr_code);
-			else                                    return u16(instr_code);
-		}();
+		s16 immediate = instr_code & 0xFFFF;
 
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
 		}
 		/* Generates a trap exception if the given condition is true. */
 		bool trap_cond = [&] {
-			     if constexpr (instr == TGEI)  return gpr[rs] > immediate;
-			else if constexpr (instr == TGEIU) return u64(gpr[rs]) > immediate;
-			else if constexpr (instr == TLTI)  return gpr[rs] < immediate;
-			else if constexpr (instr == TLTIU) return u64(gpr[rs]) < immediate;
-			else if constexpr (instr == TEQI)  return s64(gpr[rs]) == immediate; /* TODO: should we really cast to s64? */
+			     if constexpr (instr == TGEI)  return s64(gpr[rs]) >= immediate;
+			else if constexpr (instr == TGEIU) return u64(gpr[rs]) >= immediate;
+			else if constexpr (instr == TLTI)  return s64(gpr[rs]) <  immediate;
+			else if constexpr (instr == TLTIU) return u64(gpr[rs]) <  immediate;
+			else if constexpr (instr == TEQI)  return s64(gpr[rs]) == immediate;
 			else if constexpr (instr == TNEI)  return s64(gpr[rs]) != immediate;
 			else static_assert(AlwaysFalse<instr>);
 		}();
