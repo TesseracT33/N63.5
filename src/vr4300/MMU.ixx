@@ -23,6 +23,9 @@ namespace VR4300
 	} addressing_mode;
 
 	struct TlbEntry {
+		void Read() const;
+		void Write();
+
 		struct {
 			u32     :  1;
 			u32 v   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
@@ -41,16 +44,11 @@ namespace VR4300
 			u64 r    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
 		} entry_hi;
 
-		struct {
-			u32       : 13;
-			u32 value : 12; /* Determines the virtual page size of the corresponding entry. */
-			u32       :  7;
-		} page_mask;
+		u32 page_mask; /* Determines the virtual page size of the corresponding entry. */
 
-		u64 vpn2_shifted;
-		u64 address_vpn2_mask;
-		u64 address_offset_mask;
-		u64 address_vpn_even_odd_mask;
+		u64 vpn2_shifted; /* entry_hi.vpn2 shifted to the right according to page_mask. E.g. page size 4 KB => vpn2_shifted == entry_hi.vpn2 << 13 */
+		u64 vpn2_addr_mask; /* Used to extract the VPN2 from a virtual address, given page_mask.  */
+		u64 offset_addr_mask;  /* Used to extract the offset from a virtual address, given page_mask, i.e., the bits lower than those part of the VPN. */
 	};
 
 	template<Memory::Operation> u32 VirtualToPhysicalAddressUserMode32(u64, bool&);
@@ -73,15 +71,15 @@ namespace VR4300
 
 	/* Given a TLB entry page size, how many bits is the virtual/physical address offset? */
 	constexpr std::array page_size_to_addr_offset_bit_length = [] {
-		std::array<u8, 4096> table{};
-		for (int i = 0; i < table.size(); i++) {
+		std::array<u8, 0x1000> table{};
+		for (size_t i = 0; i < table.size(); i++) {
 			table[i] = [&] {
 				if (i == 0) return 12;
-				if (i <= 3) return 14;
-				if (i <= 15) return 16;
-				if (i <= 63) return 18;
-				if (i <= 255) return 20;
-				if (i <= 1023) return 22;
+				if (i <= 0x3) return 14;
+				if (i <= 0xF) return 16;
+				if (i <= 0x3F) return 18;
+				if (i <= 0xFF) return 20;
+				if (i <= 0x3FF) return 22;
 				return 24;
 			}();
 		}
@@ -90,7 +88,7 @@ namespace VR4300
 
 	u32 last_physical_address_on_load;
 
-	std::array<TlbEntry, 32> tlb_entries{};
+	std::array<TlbEntry, 32> tlb_entries;
 
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_read;
 	VirtualToPhysicalAddressFun active_virtual_to_physical_fun_write;

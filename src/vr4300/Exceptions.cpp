@@ -186,11 +186,12 @@ namespace VR4300
 	{
 		SignalException<Exception::AddressError, operation>();
 		address_failure.bad_virt_addr = bad_virt_addr;
-		address_failure.bad_vpn2 = bad_virt_addr >> (page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value] + 1) & 0xFF'FFFF'FFFF;
+		address_failure.bad_vpn2 = bad_virt_addr >> page_size_to_addr_offset_bit_length[cop0_reg.page_mask >> 13] & 0xFF'FFFF'FFFF;
 		address_failure.bad_asid = cop0_reg.entry_hi.asid;
 		/* TODO: should this not depend on virt addr? */
 		address_failure.bad_space_id = [&] {
-			if (operating_mode == OperatingMode::Kernel && bad_virt_addr >= 0xFFFF'FFFF'0000'0000) return 3;
+			if (operating_mode == OperatingMode::Kernel &&
+				(bad_virt_addr >= 0xFFFF'FFFF'0000'0000 || addressing_mode == AddressingMode::_64bit)) return 3;
 			if (addressing_mode == AddressingMode::_32bit) return 0;
 			if (operating_mode == OperatingMode::User) return 0;
 			if (operating_mode == OperatingMode::Supervisor) return 1;

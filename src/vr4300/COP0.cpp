@@ -59,7 +59,7 @@ namespace VR4300
 		case cop0_index_entry_lo_0: return StructToInt(entry_lo_0);
 		case cop0_index_entry_lo_1: return StructToInt(entry_lo_1);
 		case cop0_index_context: return StructToInt(context);
-		case cop0_index_page_mask: return StructToInt(page_mask);
+		case cop0_index_page_mask: return page_mask;
 		case cop0_index_wired: return StructToInt(wired);
 		case cop0_index_bad_v_addr: return bad_v_addr;
 		case cop0_index_count: return u32(count >> 1); /* See the declaration of 'count' */
@@ -147,8 +147,8 @@ namespace VR4300
 			break;
 
 		case cop0_index_page_mask:
-			if constexpr (raw) IntToStruct(page_mask, value);
-			else               IntToStructMasked(page_mask, value, 0x01FF'E000);
+			if constexpr (raw) page_mask = value;
+			else               page_mask = value & 0x01FF'E000;
 			break;
 
 		case cop0_index_wired:
@@ -337,17 +337,17 @@ namespace VR4300
 			return;
 		}
 
-		auto tlb_index = std::ranges::find_if(tlb_entries, [](const TlbEntry& entry) {
+		auto index = std::ranges::find_if(tlb_entries, [](const TlbEntry& entry) {
 				return entry.entry_hi.asid == cop0_reg.entry_hi.asid &&
 					entry.entry_hi.vpn2 == cop0_reg.entry_hi.vpn2 &&
 					entry.entry_hi.r == cop0_reg.entry_hi.r;
-			});
-		if (tlb_index == tlb_entries.end()) {
+		});
+		if (index == tlb_entries.end()) {
 			cop0_reg.index.p = 1;
 		}
 		else {
 			cop0_reg.index.p = 0;
-			cop0_reg.index.value = std::distance(tlb_entries.begin(), tlb_index);
+			cop0_reg.index.value = std::distance(tlb_entries.begin(), index);
 		}
 	}
 
@@ -369,13 +369,7 @@ namespace VR4300
 			return;
 		}
 
-		auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
-		std::memcpy(&cop0_reg.entry_lo_0, &tlb_entries[tlb_index].entry_lo[0], 4);
-		std::memcpy(&cop0_reg.entry_lo_1, &tlb_entries[tlb_index].entry_lo[1], 4);
-		std::memcpy(&cop0_reg.entry_hi  , &tlb_entries[tlb_index].entry_hi   , 8);
-		std::memcpy(&cop0_reg.page_mask , &tlb_entries[tlb_index].page_mask  , 4);
-		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
-		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = tlb_entries[tlb_index].entry_hi.g;
+		tlb_entries[cop0_reg.index.value & 0x1F].Read();
 	}
 
 
@@ -396,18 +390,7 @@ namespace VR4300
 			return;
 		}
 
-		auto tlb_index = cop0_reg.index.value & 0x1F; /* bit 5 is not used */
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
-		std::memcpy(&tlb_entries[tlb_index].entry_hi   , &cop0_reg.entry_hi  , 8);
-		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 4);
-		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g & cop0_reg.entry_lo_1.g;
-		/* Compute things that will make the virtual-to-physical-address process faster. */
-		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
-		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << addr_offset_bit_length & 0xFF'FFFF'FFFF;
-		tlb_entries[tlb_index].address_offset_mask = (1 << addr_offset_bit_length) - 1;
-		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
-		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
+		tlb_entries[cop0_reg.index.value & 0x1F].Write();
 	}
 
 
@@ -429,22 +412,12 @@ namespace VR4300
 			return;
 		}
 
-		auto tlb_index = cop0_reg.random.value & 0x1F; /* bit 5 is not used */
-		auto tlb_wired_index = cop0_reg.wired.value & 0x1F;
-		if (tlb_index <= tlb_wired_index) {
+		auto index = cop0_reg.random.value & 0x1F;
+		auto wired = cop0_reg.wired.value & 0x1F;
+		if (index <= wired) {
 			return;
 		}
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[0], &cop0_reg.entry_lo_0, 4);
-		std::memcpy(&tlb_entries[tlb_index].entry_lo[1], &cop0_reg.entry_lo_1, 4);
-		std::memcpy(&tlb_entries[tlb_index].entry_hi   , &cop0_reg.entry_hi  , 8);
-		std::memcpy(&tlb_entries[tlb_index].page_mask  , &cop0_reg.page_mask , 4);
-		tlb_entries[tlb_index].entry_hi.g = cop0_reg.entry_lo_0.g & cop0_reg.entry_lo_1.g;
-
-		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask.value];
-		tlb_entries[tlb_index].address_vpn2_mask = 0xFF'FFFF'FFFF << addr_offset_bit_length & 0xFF'FFFF'FFFF;
-		tlb_entries[tlb_index].address_offset_mask = (1 << addr_offset_bit_length) - 1;
-		tlb_entries[tlb_index].address_vpn_even_odd_mask = tlb_entries[tlb_index].address_offset_mask + 1;
-		tlb_entries[tlb_index].vpn2_shifted = tlb_entries[tlb_index].entry_hi.vpn2 << addr_offset_bit_length;
+		tlb_entries[index].Write();
 	}
 
 
@@ -479,6 +452,7 @@ namespace VR4300
 		if (pc & 3) {
 			SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
 		}
+		SetActiveVirtualToPhysicalFunctions();
 	}
 
 

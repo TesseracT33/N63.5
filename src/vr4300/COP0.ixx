@@ -77,21 +77,20 @@ namespace VR4300
 			u32 v : 1; /* Valid. If this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
 			u32 d : 1; /* Dirty. If this bit is set, the page is marked as dirty, and therefore writable. */
 			u32 c : 3; /* Specifies the TLB page attribute. */
-			u32 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
+			u32 pfn : 20; /* Page frame number -- the high-order bits of the physical address. */
 			u32 : 6;
 		} entry_lo_0, entry_lo_1;
 
 		struct { /* (4) */
 			u64 : 4;
-			u64 bad_vpn2 : 19;
-			u64 pte_base : 41;
+			u64 bad_vpn2 : 19; /* The virtual page number divided by two, given during e.g. a TLB miss.  */
+			u64 pte_base : 41; /* The base address of the page table entry, given during e.g. a TLB miss.  */
 		} context;
 
-		struct { /* (5) */
-			u32 : 13;
-			u32 value : 12; /* Sets the page size for each TLB entry. 0 => 4 KB; 3 => 16 KB; 15 => 64 KB; 63 => 256 KB; 255 => 1 MB; 1023 => 4 MB; 4095 => 16 MB. Else, the operation of the TLB is undefined. */
-			u32 : 7;
-		} page_mask;
+		u32 page_mask; /* (5) Sets the page size for each TLB entry. Bits 0-12, 25-31 are zero. The rest:
+			0 => 4 KB; 3 => 16 KB; 15 => 64 KB; 63 => 256 KB; 255 => 1 MB; 1023 => 4 MB; 4095 => 16 MB.
+			Else, the operation of the TLB is undefined. As 0 represent 4 KB i.e. 12 bits, and bit 12 is 0,
+			this register is actually used to mask a virtual addr to get its VPN2. */
 
 		struct { /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
 			u32 value : 6;
@@ -100,7 +99,7 @@ namespace VR4300
 
 		u32 cop0_unused_7; /* (7) */
 
-		u64 bad_v_addr; /* (8) */
+		u64 bad_v_addr; /* (8) Virtual address at which an address error occurred last or which failed in address translation. */
 
 		u64 count; /* (9); Increments every other PClock. When equal to the Compare register, interrupt bit IP(7) in the Cause register is set. */
 			 /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
@@ -192,7 +191,7 @@ namespace VR4300
 			u32 : 28;
 		} watch_hi;
 
-		struct { /* (20) */
+		struct { /* (20) Similar to the 'context' register, but used in 64-bit mode. */
 			u64 : 4;
 			u64 bad_vpn2 : 27;
 			u64 r : 2;
