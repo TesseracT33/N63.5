@@ -2,3 +2,4 @@
 Debug/**
 x64/**
 N63.5.vcxproj.user
+*.dll
