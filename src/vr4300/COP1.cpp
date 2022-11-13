@@ -574,6 +574,7 @@ namespace VR4300
 			SignalCoprocessorUnusableException(1);
 			return;
 		}
+		ClearAllExceptions();
 
 		using enum COP1Instruction;
 
@@ -581,8 +582,6 @@ namespace VR4300
 		auto fs = instr_code >> 11 & 0x1F;
 		auto ft = instr_code >> 16 & 0x1F;
 		auto fmt = instr_code >> 21 & 0x1F;
-
-		ClearAllExceptions();
 
 		auto IsValidInput = [](std::floating_point auto f) {
 			switch (std::fpclassify(f)) {
@@ -672,7 +671,8 @@ namespace VR4300
 			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
 			default:
 				AdvancePipeline(2);
-				fcr31.cause_unimplemented = true;
+				SignalUnimplementedOp();
+				SignalException<Exception::FloatingPoint>();
 				break;
 			}
 		}
@@ -717,7 +717,8 @@ namespace VR4300
 			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
 			default:
 				AdvancePipeline(2);
-				fcr31.cause_unimplemented = true;
+				SignalUnimplementedOp();
+				SignalException<Exception::FloatingPoint>();
 				break;
 			}
 		}
@@ -778,6 +779,11 @@ namespace VR4300
 		   in the specified format (fmt). The result is identified by comparison and the
 		   specified condition (cond). After a delay of one instruction, the comparison
 		   result can be used by the FPU branch instruction of the CPU. */
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			return;
+		}
+		ClearAllExceptions();
 
 		auto cond = instr_code & 0xF;
 		auto fs = instr_code >> 11 & 0x1F;
@@ -789,33 +795,45 @@ namespace VR4300
 		}
 
 		auto Compare = [&] <std::floating_point Float> {
+			/* See VR4300 User's Manual by NEC, p. 566
+			Ordered instructions are: LE, LT, NGE, NGL, NGLE, NGT, SEQ, SF (cond.3 set)
+			Unordered: EQ, F, OLE, OLT, UEQ, ULE, ULT, UN (cond.3 clear) */
+			auto IsValidInput = [&](std::floating_point auto f) {
+				if (std::isnan(f) && ((cond & 8) || IsQuietNan(f))) {
+					bool signal_fpu_exc = SignalInvalidOp();
+					if (signal_fpu_exc) SignalException<Exception::FloatingPoint>();
+					return !signal_fpu_exc;
+				}
+				else return true;
+			};
 			Float op1 = fpr.Get<Float>(fs);
 			Float op2 = fpr.Get<Float>(ft);
-			/* See VR4300 User's Manual by NEC, p. 566 */
 			if (std::isnan(op1) || std::isnan(op2)) {
+				if (!IsValidInput(op1)) {
+					AdvancePipeline(2);
+					return;
+				}
+				if (!IsValidInput(op2)) {
+					AdvancePipeline(2);
+					return;
+				}
 				fcr31.c = cond & 1;
-				if (cond & 8) SignalInvalidOp();
 			}
 			else {
-				fcr31.c = (cond & 4) && op1 < op2 || (cond & 2) && op1 == op2;
+				fcr31.c = (cond >> 2 & 1) & op1 < op2 | (cond >> 1 & 1) & op1 == op2;
 			}
 			AdvancePipeline(1);
-			fcr31.cause_unimplemented = false;
 		};
-
-		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */
 
 		switch (fmt) {
 		case FmtTypeID::Float32: INVOKE(Compare, f32); break;
 		case FmtTypeID::Float64: INVOKE(Compare, f64); break;
 		default:
-			fcr31.cause_unimplemented = true;
 			AdvancePipeline(2);
+			SignalUnimplementedOp();
+			SignalException<Exception::FloatingPoint>();
 			break;
 		}
-
-		//TestUnimplementedOperationException();
-		//TestInvalidException();
 	}
 
 
