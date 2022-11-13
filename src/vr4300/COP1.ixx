@@ -3,21 +3,24 @@ export module VR4300:COP1;
 import Util;
 
 import <array>;
+import <bit>;
 import <cfenv>;
 import <cmath>;
 import <concepts>;
+import <limits>;
 import <string_view>;
 import <type_traits>;
+import <utility>;
 
 namespace VR4300
 {
-	template<typename T> concept FPUNumericType =
+	template<typename T> concept FpuNumericType =
 		std::same_as<f32, T> || std::same_as<f64, T> ||
 		std::same_as<s32, T> || std::same_as<s64, T>;
 
 	enum class COP1Instruction {
 		/* Load/store/transfer instructions */
-		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1,
+		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1, DCFC1, DCTC1,
 
 		/* Conversion instructions */
 		CVT_S, CVT_D, CVT_L, CVT_W, ROUND_L, ROUND_W, TRUNC_L, TRUNC_W, CEIL_L, CEIL_W, FLOOR_L, FLOOR_W,
@@ -35,69 +38,78 @@ namespace VR4300
 	/* Table 17.4 in VR4300 user manual by NEC; the 'fmt' instruction operand specifies in which format registers should be interpreted in.
 		The below maps formats to identifiers. */
 	enum FmtTypeID {
-		Float32 = 16,
-		Float64 = 17,
-		Int32 = 20,
-		Int64 = 21
+		Float32 = 16, Float64 = 17, Int32 = 20, Int64 = 21
+	};
+
+	enum class FpuException {
+		InexactOp, Underflow, Overflow, DivByZero, InvalidOp, UnimplementedOp
 	};
 
 	/* COP1/FPU instructions */
-	template<COP1Instruction> void FPULoad(u32 instr_code);
-	template<COP1Instruction> void FPUStore(u32 instr_code);
-	template<COP1Instruction> void FPUMove(u32 instr_code);
-	template<COP1Instruction> void FPUConvert(u32 instr_code);
-	template<COP1Instruction> void FPUCompute(u32 instr_code);
-	template<COP1Instruction> void FPUBranch(u32 instr_code);
-	void FPUCompare(u32 instr_code);
+	template<COP1Instruction> void FpuLoad(u32 instr_code);
+	template<COP1Instruction> void FpuStore(u32 instr_code);
+	template<COP1Instruction> void FpuMove(u32 instr_code);
+	template<COP1Instruction> void FpuConvert(u32 instr_code);
+	template<COP1Instruction> void FpuCompute(u32 instr_code);
+	template<COP1Instruction> void FpuBranch(u32 instr_code);
+	void FpuCompare(u32 instr_code);
 
-	void InitializeFPU();
+	void ClearAllExceptions();
+	template<std::floating_point Float> Float Flush(Float f);
+	void InitializeFpu();
+	bool IsQuietNan(std::floating_point auto f);
+	bool SignalDivZero();
+	bool SignalInexactOp();
+	bool SignalInvalidOp();
+	bool SignalOverflow();
+	bool SignalUnderflow();
+	bool SignalUnimplementedOp();
+	bool TestAllExceptions();
 
 	/* Floating point control register #31 */
-	struct FCR31
-	{
+	struct FCR31 {
+		void Set(u32 data);
+
 		u32 rm : 2; /* Rounding mode */
 
-		u32 flag_I : 1; /* Inexact Operation */
-		u32 flag_U : 1; /* Underflow */
-		u32 flag_O : 1; /* Overflow */
-		u32 flag_Z : 1; /* Division by Zero */
-		u32 flag_V : 1; /* Invalid Operation */
+		u32 flag_inexact : 1;
+		u32 flag_underflow : 1;
+		u32 flag_overflow : 1;
+		u32 flag_div_zero : 1;
+		u32 flag_invalid : 1;
 
-		u32 enable_I : 1;
-		u32 enable_U : 1;
-		u32 enable_O : 1;
-		u32 enable_Z : 1;
-		u32 enable_V : 1;
+		u32 enable_inexact : 1;
+		u32 enable_underflow : 1;
+		u32 enable_overflow : 1;
+		u32 enable_div_zero : 1;
+		u32 enable_invalid : 1;
 
-		u32 cause_I : 1;
-		u32 cause_U : 1;
-		u32 cause_O : 1;
-		u32 cause_Z : 1;
-		u32 cause_V : 1;
-		u32 cause_E : 1; /* Unimplemented Operation */
+		u32 cause_inexact : 1;
+		u32 cause_underflow : 1;
+		u32 cause_overflow : 1;
+		u32 cause_div_zero : 1;
+		u32 cause_invalid : 1;
+		u32 cause_unimplemented : 1;
 
 		u32 : 5;
 		u32 c : 1; /* Condition bit; set/cleared by the Compare instruction (or CTC1). */
-		u32 fs : 1; /* TODO */
+		u32 fs : 1; /* Flush subnormals: if set, and underflow and invalid exceptions are disabled,
+				an fp operation resulting in a denormalized number does not cause the unimplemented operation to trigger. */
 		u32 : 7;
-
-		void Set(u32 data);
-	} fcr31{};
+	} fcr31;
 
 	/* Floating point control registers. Only #0 and #31 are "valid", and #0 is read-only. */
-	struct FPUControl
-	{
+	struct FPUControl {
 		u32 Get(size_t index) const;
 		void Set(size_t index, u32 data);
 	} fpu_control;
 
 	/* General-purpose floating point registers. */
-	struct FGR
-	{
-		template<FPUNumericType T> T Get(size_t index) const;
-		template<FPUNumericType T> void Set(size_t index, T data);
+	struct FGR {
+		template<FpuNumericType T> T Get(size_t index) const;
+		template<FpuNumericType T> void Set(size_t index, T data);
 	private:
-		std::array<s64, 32> fpr{};
+		std::array<s64, 32> fpr;
 	} fpr;
 
 	constexpr u32 fcr0 = 0xA00;
@@ -105,7 +117,4 @@ namespace VR4300
 	constexpr std::array compare_cond_strings = {
 		"F", "UN", "EQ", "UEQ", "OLT", "ULT", "OLE", "ULE", "SF", "NGLE", "SEQ", "NGL", "LT", "NGE", "LE", "NGT"
 	};
-
-	bool fpu_is_enabled; /* Equal to bit 29 of the status register. If clear, all fpu instructions throw exceptions. */
-	bool unimplemented_operation;
 }

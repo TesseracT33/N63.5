@@ -33,7 +33,6 @@ namespace VR4300
 
 	void COP0Registers::OnWriteToStatus()
 	{
-		fpu_is_enabled = status.cu1;
 		SetActiveVirtualToPhysicalFunctions();
 		CheckInterrupts();
 	}
@@ -41,7 +40,7 @@ namespace VR4300
 
 	void COP0Registers::OnWriteToWired()
 	{
-		random_generator.SetRange(wired.value);
+		random_generator.SetRange(wired);
 	}
 
 
@@ -60,7 +59,7 @@ namespace VR4300
 		case cop0_index_entry_lo_1: return StructToInt(entry_lo_1);
 		case cop0_index_context: return StructToInt(context);
 		case cop0_index_page_mask: return page_mask;
-		case cop0_index_wired: return StructToInt(wired);
+		case cop0_index_wired: return wired;
 		case cop0_index_bad_v_addr: return bad_v_addr;
 		case cop0_index_count: return u32(count >> 1); /* See the declaration of 'count' */
 		case cop0_index_entry_hi: return StructToInt(entry_hi);
@@ -127,8 +126,8 @@ namespace VR4300
 			break;
 
 		case cop0_index_random:
-			if constexpr (raw) IntToStruct(random, value);
-			else               IntToStructMasked(random, value, 0x0000'0040);
+			if constexpr (raw) random = value;
+			else               random = value & 0x20;
 			break;
 
 		case cop0_index_entry_lo_0:
@@ -152,8 +151,8 @@ namespace VR4300
 			break;
 
 		case cop0_index_wired:
-			if constexpr (raw) IntToStruct(wired, value);
-			else               IntToStructMasked(wired, value, 0x3F);
+			if constexpr (raw) wired = value;
+			else               wired = value & 0x3F;
 			OnWriteToWired();
 			break;
 
@@ -412,8 +411,8 @@ namespace VR4300
 			return;
 		}
 
-		auto index = cop0_reg.random.value & 0x1F;
-		auto wired = cop0_reg.wired.value & 0x1F;
+		auto index = cop0_reg.random & 0x1F;
+		auto wired = cop0_reg.wired & 0x1F;
 		if (index <= wired) {
 			return;
 		}

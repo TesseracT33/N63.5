@@ -192,13 +192,13 @@ namespace VR4300
 		}
 
 		case 0b00010: EXEC_COP1_INSTR(CFC1); break;
-		case 0b00011: SignalException<Exception::FloatingPoint>(); break; /* DCFC1 */
+		case 0b00011: EXEC_COP1_INSTR(DCFC1); break;
 		case 0b00110: EXEC_COP1_INSTR(CTC1); break;
 		case 0b00001: EXEC_COP1_INSTR(DMFC1); break;
 		case 0b00101: EXEC_COP1_INSTR(DMTC1); break;
 		case 0b00000: EXEC_COP1_INSTR(MFC1); break;
 		case 0b00100: EXEC_COP1_INSTR(MTC1); break;
-		case 0b00111: SignalException<Exception::FloatingPoint>(); break; /* DCTC1 */
+		case 0b00111: EXEC_COP1_INSTR(DCTC1); break;
 
 		default: {
 			if ((instr_code & 0x30) == 0x30) {
@@ -413,25 +413,25 @@ namespace VR4300
 	{
 		using enum COP1Instruction;
 		if constexpr (OneOf(instr, LWC1, LDC1)) {
-			FPULoad<instr>(instr_code);
+			FpuLoad<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, SWC1, SDC1)) {
-			FPUStore<instr>(instr_code);
+			FpuStore<instr>(instr_code);
 		}
-		else if constexpr (OneOf(instr, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1)) {
-			FPUMove<instr>(instr_code);
+		else if constexpr (OneOf(instr, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1, DCFC1, DCTC1)) {
+			FpuMove<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, CVT_S, CVT_D, CVT_L, CVT_W, ROUND_L, ROUND_W, TRUNC_L, TRUNC_W, CEIL_L, CEIL_W, FLOOR_L, FLOOR_W)) {
-			FPUConvert<instr>(instr_code);
+			FpuConvert<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, ADD, SUB, MUL, DIV, ABS, MOV, NEG, SQRT)) {
-			FPUCompute<instr>(instr_code);
+			FpuCompute<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, BC1T, BC1F, BC1TL, BC1FL)) {
-			FPUBranch<instr>(instr_code);
+			FpuBranch<instr>(instr_code);
 		}
 		else if constexpr (instr == C) {
-			FPUCompare(instr_code);
+			FpuCompare(instr_code);
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);

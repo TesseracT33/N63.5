@@ -31,27 +31,19 @@ namespace VR4300
 
 	u32 FPUControl::Get(size_t index) const
 	{
-		if (index == 31) {
-			return std::bit_cast<u32>(fcr31);
-		}
-		else if (index == 0) {
-			return fcr0;
-		}
-		else {
-			return 0; /* Only #0 and #31 are "valid". */
-		}
+		if (index == 31) return std::bit_cast<u32>(fcr31);
+		else if (index == 0) return fcr0;
+		else return 0; /* Only #0 and #31 are "valid". */
 	}
 
 
 	void FPUControl::Set(size_t index, u32 data)
 	{
-		if (index == 31) {
-			fcr31.Set(data);
-		}
+		if (index == 31) fcr31.Set(data);
 	}
 
 
-	template<FPUNumericType T>
+	template<FpuNumericType T>
 	T FGR::Get(size_t index) const
 	{
 		if constexpr (std::same_as<T, s32>) {
@@ -85,7 +77,7 @@ namespace VR4300
 	}
 
 
-	template<FPUNumericType T>
+	template<FpuNumericType T>
 	void FGR::Set(size_t index, T data)
 	{
 		if constexpr (std::same_as<T, s32>) {
@@ -140,13 +132,67 @@ namespace VR4300
 	}
 
 
-	void InitializeFPU()
+	void ClearAllExceptions()
+	{
+		fcr31 = std::bit_cast<FCR31>(std::bit_cast<u32>(fcr31) & 0xFFFC'0FFF);
+		std::feclearexcept(FE_ALL_EXCEPT);
+	}
+
+
+	void InitializeFpu()
 	{
 		std::fesetround(FE_TONEAREST); /* corresponds to fcr31.rm == 0b00 */
 	}
 
 
-	void TestAllExceptions()
+	bool SignalDivZero()
+	{ /* return true if floatingpoint exception should be raised */
+		fcr31.cause_div_zero = true;
+		fcr31.flag_div_zero |= !fcr31.enable_div_zero;
+		return fcr31.enable_div_zero;
+	}
+
+
+	bool SignalInexactOp()
+	{
+		fcr31.cause_inexact = true;
+		fcr31.flag_inexact |= !fcr31.enable_inexact;
+		return fcr31.enable_inexact;
+	}
+
+
+	bool SignalInvalidOp()
+	{
+		fcr31.cause_invalid = true;
+		fcr31.flag_invalid |= !fcr31.enable_invalid;
+		return fcr31.enable_invalid;
+	}
+
+
+	bool SignalOverflow()
+	{
+		fcr31.cause_overflow = true;
+		fcr31.flag_overflow |= !fcr31.enable_overflow;
+		return fcr31.enable_overflow;
+	}
+
+
+	bool SignalUnderflow()
+	{
+		fcr31.cause_underflow = true;
+		fcr31.flag_underflow |= !fcr31.enable_underflow;
+		return fcr31.enable_underflow;
+	}
+
+
+	bool SignalUnimplementedOp()
+	{
+		fcr31.cause_unimplemented = true;
+		return true;
+	}
+
+
+	bool TestAllExceptions()
 	{
 		/* * The Cause bits are updated by the floating-point operations (except load, store,
 		   and transfer instructions).
@@ -161,62 +207,63 @@ namespace VR4300
 		   reset. Flag bits are set to 1 if an IEEE754 exception is raised but the occurrence
 		   of the exception is prohibited. Otherwise, they remain unchanged.
 		*/
-		fcr31.cause_I = std::fetestexcept(FE_INEXACT);
-		fcr31.cause_U = std::fetestexcept(FE_UNDERFLOW);
-		fcr31.cause_O = std::fetestexcept(FE_OVERFLOW);
-		fcr31.cause_Z = std::fetestexcept(FE_DIVBYZERO);
-		fcr31.cause_V = std::fetestexcept(FE_INVALID);
-		fcr31.cause_E = unimplemented_operation;
+		fcr31.cause_inexact |= std::fetestexcept(FE_INEXACT);
+		fcr31.cause_underflow |= std::fetestexcept(FE_UNDERFLOW);
+		fcr31.cause_overflow |= std::fetestexcept(FE_OVERFLOW);
+		fcr31.cause_div_zero |= std::fetestexcept(FE_DIVBYZERO);
+		fcr31.cause_invalid |= std::fetestexcept(FE_INVALID);
 
-		if (fcr31.cause_E == 1) {
+		if (fcr31.cause_underflow && (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact)) {
+			fcr31.cause_unimplemented = true;
+		}
+
+		u32 fcr31_u32 = std::bit_cast<u32>(fcr31);
+		u32 enables = fcr31_u32 >> 7 & 0x1F;
+		u32 causes = fcr31_u32 >> 12 & 0x1F;
+		u32 flags = causes & ~enables;
+		fcr31_u32 |= flags << 2;
+		fcr31 = std::bit_cast<FCR31>(fcr31_u32);
+		if ((enables & causes) || fcr31.cause_unimplemented) {
 			SignalException<Exception::FloatingPoint>();
+			return true;
 		}
 		else {
-			u32 fcr31_int = std::bit_cast<u32>(fcr31);
-			u32 enables = fcr31_int >> 7;
-			u32 causes = fcr31_int >> 12;
-			if (causes & enables & 0x1F) {
-				SignalException<Exception::FloatingPoint>();
-			}
-			fcr31_int |= (causes & ~enables & 0x1F) << 2;
-			fcr31.Set(fcr31_int);
+			return false;
 		}
 	}
 
 
-	void TestUnimplementedOperationException()
+	template<std::floating_point Float>
+	Float Flush(Float f)
 	{
-		fcr31.cause_E = unimplemented_operation;
-		if (unimplemented_operation) {
-			SignalException<Exception::FloatingPoint>();
+		switch (fcr31.rm) {
+		case 0: /* FE_TONEAREST */
+		case 1: /* FE_TOWARDZERO */
+			return std::copysign(Float(), f);
+		case 2: /* FE_UPWARD */
+			return std::signbit(f) ? -Float() : std::numeric_limits<Float>::min();
+		case 3: /* FE_DOWNWARD */
+			return std::signbit(f) ? -std::numeric_limits<Float>::min() : Float();
+		default:
+			std::unreachable();
 		}
 	}
 
 
-	void TestInvalidException()
-	{
-		if (fcr31.cause_V) {
-			SignalException<Exception::FloatingPoint>();
-		}
+	bool IsQuietNan(f32 f)
+	{ /* Precondition: std::isnan(f) == true */
+		return std::bit_cast<u32>(f) >> 22 & 1;
 	}
 
 
-	void SetInvalidException(bool state)
-	{
-		fcr31.cause_V = state;
-	}
-
-
-	void ClearAllExceptions()
-	{
-		u32 fcr31_int = std::bit_cast<u32>(fcr31);
-		fcr31_int &= ~0x3F000;
-		fcr31.Set(fcr31_int);
+	bool IsQuietNan(f64 f)
+	{ /* Precondition: std::isnan(f) == true */
+		return std::bit_cast<u64>(f) >> 51 & 1;
 	}
 
 
 	template<COP1Instruction instr>
-	void FPULoad(u32 instr_code)
+	void FpuLoad(u32 instr_code)
 	{
 		if (!cop0_reg.status.cu1) {
 			SignalCoprocessorUnusableException(1);
@@ -229,10 +276,10 @@ namespace VR4300
 		s16 offset = instr_code & 0xFFFF;
 		auto ft = instr_code >> 16 & 0x1F;
 		auto base = instr_code >> 21 & 0x1F;
-		auto address = gpr[base] + offset;
+		auto addr = gpr[base] + offset;
 
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
 		}
 
 		auto result = [&] {
@@ -241,7 +288,7 @@ namespace VR4300
 				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 				   an address. Loads the contents of the word specified by the address to the
 				   FPU general purpose register ft. */
-				return ReadVirtual<s32>(address);
+				return ReadVirtual<s32>(addr);
 			}
 			else if constexpr (instr == LDC1) {
 				/* Load Doubleword To FPU;
@@ -249,7 +296,7 @@ namespace VR4300
 				   an address. Loads the contents of the doubleword specified by the address to
 				   the FPU general purpose registers ft and ft+1 when FR = 0, or to the FPU
 				   general purpose register ft when FR = 1. */
-				return ReadVirtual<s64>(address);
+				return ReadVirtual<s64>(addr);
 			}
 			else {
 				static_assert(AlwaysFalse<instr>);
@@ -267,7 +314,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUStore(u32 instr_code)
+	void FpuStore(u32 instr_code)
 	{
 		if (!cop0_reg.status.cu1) {
 			SignalCoprocessorUnusableException(1);
@@ -280,10 +327,10 @@ namespace VR4300
 		s16 offset = instr_code & 0xFFFF;
 		auto ft = instr_code >> 16 & 0x1F;
 		auto base = instr_code >> 21 & 0x1F;
-		auto address = gpr[base] + offset;
+		auto addr = gpr[base] + offset;
 
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(address)>::type>(address));
+			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
 		}
 
 		if constexpr (instr == SWC1) {
@@ -291,7 +338,7 @@ namespace VR4300
 			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
 			   an address. Stores the contents of the FPU general purpose register ft to the
 			   memory position specified by the address. */
-			WriteVirtual(address, fpr.Get<s32>(ft));
+			WriteVirtual(addr, fpr.Get<s32>(ft));
 		}
 		else if constexpr (instr == SDC1) {
 			/* Store Doubleword From FPU;
@@ -299,7 +346,7 @@ namespace VR4300
 			   an address. Stores the contents of the FPU general purpose registers ft and
 			   ft+1 to the memory position specified by the address when FR = 0, and the
 			   contents of the FPU general purpose register ft when FR = 1. */
-			WriteVirtual(address, fpr.Get<s64>(ft));
+			WriteVirtual(addr, fpr.Get<s64>(ft));
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);
@@ -310,7 +357,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUMove(u32 instr_code)
+	void FpuMove(u32 instr_code)
 	{
 		if (!cop0_reg.status.cu1) {
 			SignalCoprocessorUnusableException(1);
@@ -359,6 +406,10 @@ namespace VR4300
 			   Transfers the contents of FPU general purpose register fs to CPU general purpose register rt. */
 			gpr.Set(rt, fpr.Get<s64>(fs));
 		}
+		else if constexpr (instr == DCFC1 || instr == DCTC1) {
+			fcr31.cause_unimplemented = 1;
+			SignalException<Exception::FloatingPoint>();
+		}
 		else {
 			static_assert(AlwaysFalse<instr>);
 		}
@@ -368,7 +419,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUConvert(u32 instr_code)
+	void FpuConvert(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -407,14 +458,14 @@ namespace VR4300
 			   CVT.W/CVT.L: Convert To Single/Long Fixed-point Format;
 			   Converts the contents of floating-point register fs from the specified format (fmt)
 			   to a 32/64-bit fixed-point format. Stores the rounded result to floating-point register fd. */
-			auto Convert = [&] <FPUNumericType InputType> {
+			auto Convert = [&] <FpuNumericType InputType> {
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
-				auto Convert = [&] <FPUNumericType From, FPUNumericType To> {
+				auto Convert = [&] <FpuNumericType From, FpuNumericType To> {
 					From source = fpr.Get<From>(fs);
 					std::feclearexcept(FE_ALL_EXCEPT);
 					To conv = To(source); 
 					fpr.Set<To>(fd, conv);
-					unimplemented_operation = TestForUnimplementedException.template operator () < From, To > (source);
+					fcr31.cause_unimplemented = TestForUnimplementedException.template operator () < From, To > (source);
 					/* Note: if the input and output formats are the same, the result is undefined,
 					   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995. */
 					/* TODO: the below is assuming that conv. between W and L takes 2 cycles.
@@ -440,7 +491,7 @@ namespace VR4300
 			case FmtTypeID::Int32:   INVOKE(Convert, s32); break;
 			case FmtTypeID::Int64:   INVOKE(Convert, s64); break;
 			default:
-				unimplemented_operation = true;
+				fcr31.cause_unimplemented = true;
 				std::feclearexcept(FE_ALL_EXCEPT);
 				AdvancePipeline(2);
 				break;
@@ -466,10 +517,10 @@ namespace VR4300
 					if constexpr (OneOf(instr, FLOOR_W, FLOOR_L)) return OutputInt(std::floor(source));
 				}();
 
-				unimplemented_operation = TestForUnimplementedException.template operator () < InputFloat, OutputInt > (source);
+				fcr31.cause_unimplemented = TestForUnimplementedException.template operator () < InputFloat, OutputInt > (source);
 
 				/* If the invalid operation exception occurs, but the exception is not enabled, return INT_MAX */
-				if (std::fetestexcept(FE_INVALID) && !fcr31.enable_I) {
+				if (std::fetestexcept(FE_INVALID) && !fcr31.enable_inexact) {
 					fpr.Set<OutputInt>(fd, std::numeric_limits<OutputInt>::max());
 				}
 				else {
@@ -502,7 +553,7 @@ namespace VR4300
 				break;
 
 			default:
-				unimplemented_operation = true;
+				fcr31.cause_unimplemented = true;
 				std::feclearexcept(FE_ALL_EXCEPT);
 				AdvancePipeline(2);
 				break;
@@ -517,8 +568,13 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUCompute(u32 instr_code)
+	void FpuCompute(u32 instr_code)
 	{
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			return;
+		}
+
 		using enum COP1Instruction;
 
 		auto fd = instr_code >> 6 & 0x1F;
@@ -526,36 +582,89 @@ namespace VR4300
 		auto ft = instr_code >> 16 & 0x1F;
 		auto fmt = instr_code >> 21 & 0x1F;
 
-		if constexpr (OneOf(instr, ADD, SUB, MUL, DIV)) {
-			/* Floating-point Add/Subtract/Multiply/Divide;
-			   Arithmetically adds/subtracts/multiplies/divides the contents of floating-point registers
-			   fs and ft in the specified format (fmt). Stores the rounded result to floating-point register fd. */
+		ClearAllExceptions();
 
+		auto IsValidInput = [](std::floating_point auto f) {
+			switch (std::fpclassify(f)) {
+			case FP_NAN: {
+				bool signal_fpu_exc = IsQuietNan(f) ? SignalInvalidOp() : SignalUnimplementedOp();
+				if (signal_fpu_exc) {
+					SignalException<Exception::FloatingPoint>();
+					return false;
+				}
+				else {
+					return true;
+				}
+			}
+
+			case FP_SUBNORMAL:
+				SignalUnimplementedOp();
+				return false;
+			}
+			return true;
+		};
+
+		auto IsValidOutput = [](std::floating_point auto& f, bool exc_raised) {
+			switch (std::fpclassify(f)) {
+			case FP_NAN:
+				if constexpr (sizeof(f) == 4) f = std::bit_cast<f32>(0x7FBF'FFFF);
+				else                          f = std::bit_cast<f64>(0x7FF7'FFFF'FFFF'FFFF);
+				return true;
+
+			case FP_SUBNORMAL:
+				if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact) {
+					SignalUnimplementedOp();
+					if (!exc_raised) SignalException<Exception::FloatingPoint>();
+					return false;
+				}
+				else {
+					SignalUnderflow();
+					SignalInexactOp();
+					f = Flush(f);
+					return true;
+				}
+			}
+			return true;
+		};
+
+		if constexpr (OneOf(instr, ADD, SUB, MUL, DIV)) {
 			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToString(fmt), fd, fs, ft);
 			}
 
 			auto Compute = [&] <std::floating_point Float> {
 				Float op1 = fpr.Get<Float>(fs);
+				if (!IsValidInput(op1)) {
+					AdvancePipeline(2);
+					return;
+				}
 				Float op2 = fpr.Get<Float>(ft);
-				std::feclearexcept(FE_ALL_EXCEPT);
-				if constexpr (instr == ADD) {
-					fpr.Set<Float>(fd, op1 + op2);
-					AdvancePipeline(3);
+				if (!IsValidInput(op2)) {
+					AdvancePipeline(2);
+					return;
 				}
-				if constexpr (instr == SUB) {
-					fpr.Set<Float>(fd, op1 - op2);
-					AdvancePipeline(3);
+				Float result = [&] {
+					if constexpr (instr == ADD) {
+						AdvancePipeline(3);
+						return op1 + op2;
+					}
+					if constexpr (instr == SUB) {
+						AdvancePipeline(3);
+						return op1 - op2;
+					}
+					if constexpr (instr == MUL) {
+						AdvancePipeline(29);
+						return op1 * op2;
+					}
+					if constexpr (instr == DIV) {
+						AdvancePipeline(58);
+						return op1 / op2;
+					}
+				}();
+				bool exc_raised = TestAllExceptions();
+				if (IsValidOutput(result, exc_raised)) {
+					fpr.Set<Float>(fd, result);
 				}
-				if constexpr (instr == MUL) {
-					fpr.Set<Float>(fd, op1 * op2);
-					AdvancePipeline(29);
-				}
-				if constexpr (instr == DIV) {
-					fpr.Set<Float>(fd, op1 / op2);
-					AdvancePipeline(58);
-				}
-				unimplemented_operation = false;
 			};
 
 			switch (fmt) {
@@ -563,59 +672,44 @@ namespace VR4300
 			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
 			default:
 				AdvancePipeline(2);
-				unimplemented_operation = true;
-				std::feclearexcept(FE_ALL_EXCEPT);
+				fcr31.cause_unimplemented = true;
 				break;
 			}
-
-			TestAllExceptions();
 		}
 		else if constexpr (OneOf(instr, ABS, MOV, NEG, SQRT)) {
-			/* Floating-point Absolute Value;
-			   Calculates the arithmetic absolute value of the contents of floating-point
-			   register fs in the specified format (fmt). Stores the result to floating-point register fd.
-
-			   Floating-point Move;
-			   Copies the contents of floating-point register fs to floating-point register fd
-			   in the specified format (fmt).
-
-			   Floating-point Negate;
-			   Arithmetically negates the contents of floating-point register fs in the
-			   specified format (fmt). Stores the result to floating-point register fd.
-
-			   Floating-point Square Root;
-			   Calculates arithmetic positive square root of the contents of floating-point
-			   register fs in the specified format. Stores the rounded result to floating-point register fd. */
-
 			if constexpr (log_cpu_instructions) {
 				current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
 			}
 
 			auto Compute = [&] <std::floating_point Float> {
 				Float op = fpr.Get<Float>(fs);
-				std::feclearexcept(FE_ALL_EXCEPT);
-				if constexpr (instr == ABS) {
-					fpr.Set<Float>(fd, std::abs(op)); // TODO: could this result in host exception flags changing?
-					AdvancePipeline(1);
+				if (!IsValidInput(op)) {
+					AdvancePipeline(2);
+					return;
 				}
-				if constexpr (instr == MOV) {
-					fpr.Set<Float>(fd, op);
-					AdvancePipeline(1);
-				}
-				if constexpr (instr == NEG) {
-					fpr.Set<Float>(fd, -op);
-					AdvancePipeline(1);
-				}
-				if constexpr (instr == SQRT) {
-					fpr.Set<Float>(fd, std::sqrt(op));
-					if constexpr (std::same_as<Float, f32>) {
-						AdvancePipeline(29);
+				Float result = [&] {
+					if constexpr (instr == ABS) {
+						AdvancePipeline(1);
+						return std::abs(op);
 					}
-					else { /* f64 */
-						AdvancePipeline(58);
+					if constexpr (instr == MOV) {
+						AdvancePipeline(1);
+						return op;
 					}
+					if constexpr (instr == NEG) {
+						AdvancePipeline(1);
+						return -op;
+					}
+					if constexpr (instr == SQRT) {
+						if constexpr (sizeof(op) == 4) AdvancePipeline(29);
+						else                           AdvancePipeline(58);
+						return std::sqrt(op);
+					}
+				}();
+				bool exc_raised = TestAllExceptions();
+				if (IsValidOutput(result, exc_raised)) {
+					fpr.Set<Float>(fd, result);
 				}
-				unimplemented_operation = false;
 			};
 
 			switch (fmt) {
@@ -623,16 +717,8 @@ namespace VR4300
 			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
 			default:
 				AdvancePipeline(2);
-				unimplemented_operation = true;
-				std::feclearexcept(FE_ALL_EXCEPT);
+				fcr31.cause_unimplemented = true;
 				break;
-			}
-			/* MOV can cause only the unimplemented operation exception. */
-			if constexpr (instr == MOV) {
-				TestUnimplementedOperationException();
-			}
-			else {
-				TestAllExceptions();
 			}
 		}
 		else {
@@ -642,7 +728,7 @@ namespace VR4300
 
 
 	template<COP1Instruction instr>
-	void FPUBranch(u32 instr_code)
+	void FpuBranch(u32 instr_code)
 	{
 		using enum COP1Instruction;
 
@@ -670,12 +756,8 @@ namespace VR4300
 		s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
 
 		bool branch_cond = [&] {
-			if constexpr (OneOf(instr, BC1T, BC1TL)) {
-				return fcr31.c;
-			}
-			if constexpr (OneOf(instr, BC1F, BC1FL)) {
-				return !fcr31.c;
-			}
+			if constexpr (OneOf(instr, BC1T, BC1TL)) return  fcr31.c;
+			if constexpr (OneOf(instr, BC1F, BC1FL)) return !fcr31.c;
 		}();
 
 		if (branch_cond) {
@@ -689,7 +771,7 @@ namespace VR4300
 	}
 
 
-	void FPUCompare(u32 instr_code)
+	void FpuCompare(u32 instr_code)
 	{
 		/* Floating-point Compare;
 		   Interprets and arithmetically compares the contents of FPU registers fs and ft
@@ -711,15 +793,14 @@ namespace VR4300
 			Float op2 = fpr.Get<Float>(ft);
 			/* See VR4300 User's Manual by NEC, p. 566 */
 			if (std::isnan(op1) || std::isnan(op2)) {
-				SetInvalidException(cond & 8);
 				fcr31.c = cond & 1;
+				if (cond & 8) SignalInvalidOp();
 			}
 			else {
-				SetInvalidException(false);
 				fcr31.c = (cond & 4) && op1 < op2 || (cond & 2) && op1 == op2;
 			}
 			AdvancePipeline(1);
-			unimplemented_operation = false;
+			fcr31.cause_unimplemented = false;
 		};
 
 		/* TODO not clear if this instruction should clear all exception flags other than invalid and unimplemented */
@@ -728,55 +809,57 @@ namespace VR4300
 		case FmtTypeID::Float32: INVOKE(Compare, f32); break;
 		case FmtTypeID::Float64: INVOKE(Compare, f64); break;
 		default:
-			unimplemented_operation = true;
+			fcr31.cause_unimplemented = true;
 			AdvancePipeline(2);
 			break;
 		}
 
-		TestUnimplementedOperationException();
-		TestInvalidException();
+		//TestUnimplementedOperationException();
+		//TestInvalidException();
 	}
 
 
-	template void FPULoad<COP1Instruction::LWC1>(u32);
-	template void FPULoad<COP1Instruction::LDC1>(u32);
+	template void FpuLoad<COP1Instruction::LWC1>(u32);
+	template void FpuLoad<COP1Instruction::LDC1>(u32);
 
-	template void FPUStore<COP1Instruction::SWC1>(u32);
-	template void FPUStore<COP1Instruction::SDC1>(u32);
+	template void FpuStore<COP1Instruction::SWC1>(u32);
+	template void FpuStore<COP1Instruction::SDC1>(u32);
 
-	template void FPUMove<COP1Instruction::MTC1>(u32);
-	template void FPUMove<COP1Instruction::MFC1>(u32);
-	template void FPUMove<COP1Instruction::CTC1>(u32);
-	template void FPUMove<COP1Instruction::CFC1>(u32);
-	template void FPUMove<COP1Instruction::DMTC1>(u32);
-	template void FPUMove<COP1Instruction::DMFC1>(u32);
+	template void FpuMove<COP1Instruction::MTC1>(u32);
+	template void FpuMove<COP1Instruction::MFC1>(u32);
+	template void FpuMove<COP1Instruction::CTC1>(u32);
+	template void FpuMove<COP1Instruction::CFC1>(u32);
+	template void FpuMove<COP1Instruction::DMTC1>(u32);
+	template void FpuMove<COP1Instruction::DMFC1>(u32);
+	template void FpuMove<COP1Instruction::DCFC1>(u32);
+	template void FpuMove<COP1Instruction::DCTC1>(u32);
 
-	template void FPUConvert<COP1Instruction::CVT_S>(u32);
-	template void FPUConvert<COP1Instruction::CVT_D>(u32);
-	template void FPUConvert<COP1Instruction::CVT_L>(u32);
-	template void FPUConvert<COP1Instruction::CVT_W>(u32);
-	template void FPUConvert<COP1Instruction::ROUND_L>(u32);
-	template void FPUConvert<COP1Instruction::ROUND_W>(u32);
-	template void FPUConvert<COP1Instruction::TRUNC_L>(u32);
-	template void FPUConvert<COP1Instruction::TRUNC_W>(u32);
-	template void FPUConvert<COP1Instruction::CEIL_L>(u32);
-	template void FPUConvert<COP1Instruction::CEIL_W>(u32);
-	template void FPUConvert<COP1Instruction::FLOOR_L>(u32);
-	template void FPUConvert<COP1Instruction::FLOOR_W>(u32);
+	template void FpuConvert<COP1Instruction::CVT_S>(u32);
+	template void FpuConvert<COP1Instruction::CVT_D>(u32);
+	template void FpuConvert<COP1Instruction::CVT_L>(u32);
+	template void FpuConvert<COP1Instruction::CVT_W>(u32);
+	template void FpuConvert<COP1Instruction::ROUND_L>(u32);
+	template void FpuConvert<COP1Instruction::ROUND_W>(u32);
+	template void FpuConvert<COP1Instruction::TRUNC_L>(u32);
+	template void FpuConvert<COP1Instruction::TRUNC_W>(u32);
+	template void FpuConvert<COP1Instruction::CEIL_L>(u32);
+	template void FpuConvert<COP1Instruction::CEIL_W>(u32);
+	template void FpuConvert<COP1Instruction::FLOOR_L>(u32);
+	template void FpuConvert<COP1Instruction::FLOOR_W>(u32);
 
-	template void FPUCompute<COP1Instruction::ADD>(u32);
-	template void FPUCompute<COP1Instruction::SUB>(u32);
-	template void FPUCompute<COP1Instruction::MUL>(u32);
-	template void FPUCompute<COP1Instruction::DIV>(u32);
-	template void FPUCompute<COP1Instruction::ABS>(u32);
-	template void FPUCompute<COP1Instruction::MOV>(u32);
-	template void FPUCompute<COP1Instruction::NEG>(u32);
-	template void FPUCompute<COP1Instruction::SQRT>(u32);
+	template void FpuCompute<COP1Instruction::ADD>(u32);
+	template void FpuCompute<COP1Instruction::SUB>(u32);
+	template void FpuCompute<COP1Instruction::MUL>(u32);
+	template void FpuCompute<COP1Instruction::DIV>(u32);
+	template void FpuCompute<COP1Instruction::ABS>(u32);
+	template void FpuCompute<COP1Instruction::MOV>(u32);
+	template void FpuCompute<COP1Instruction::NEG>(u32);
+	template void FpuCompute<COP1Instruction::SQRT>(u32);
 
-	template void FPUBranch<COP1Instruction::BC1T>(u32);
-	template void FPUBranch<COP1Instruction::BC1F>(u32);
-	template void FPUBranch<COP1Instruction::BC1TL>(u32);
-	template void FPUBranch<COP1Instruction::BC1FL>(u32);
+	template void FpuBranch<COP1Instruction::BC1T>(u32);
+	template void FpuBranch<COP1Instruction::BC1F>(u32);
+	template void FpuBranch<COP1Instruction::BC1TL>(u32);
+	template void FpuBranch<COP1Instruction::BC1FL>(u32);
 
 	template s32 FGR::Get<s32>(size_t) const;
 	template s64 FGR::Get<s64>(size_t) const;

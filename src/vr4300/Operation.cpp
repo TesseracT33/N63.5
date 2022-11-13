@@ -29,12 +29,9 @@ namespace VR4300
 	{
 		/* on real HW, these conditions are checked every cycle */
 		if (!cop0_reg.status.ie || cop0_reg.status.exl || cop0_reg.status.erl) {
-			/* interrupts disabled, or already handling exception or error */
-			return;
+			return; /* interrupts disabled, or already handling exception or error */
 		}
-		auto interrupt_pending = cop0_reg.cause.ip;
-		auto interrupt_enable_mask = cop0_reg.status.im;
-		if (interrupt_pending & interrupt_enable_mask) {
+		if (cop0_reg.cause.ip & cop0_reg.status.im) {
 			SignalException<Exception::Interrupt>();
 		}
 	}
@@ -111,20 +108,15 @@ namespace VR4300
 		jump_is_pending = false;
 
 		InitializeRegisters();
-		InitializeFPU();
+		InitializeFpu();
 		InitializeMMU();
 
-		if (hle_pif) {
+		if (hle_pif || skip_boot_rom) {
 			HlePif();
 		}
 		else {
-			if constexpr (skip_boot_rom) {
-				HlePif();
-			}
-			else {
-				SignalException<Exception::ColdReset>();
-				HandleException();
-			}
+			SignalException<Exception::ColdReset>();
+			HandleException();
 		}
 	}
 

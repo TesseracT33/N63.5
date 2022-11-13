@@ -66,11 +66,7 @@ namespace VR4300
 			u32 p : 1; /* Shows the success (0) or failure (1) of the last TLB Probe (TLBP) instruction executed. */
 		} index;
 
-		struct { /* (1) */
-			u32 value : 5; /* Decrements every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
-			u32 : 1; /* R/W, but has no function. */
-			u32 : 26;
-		} random;
+		u32 random; /* (1) 6 bits; Decremented every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
 
 		struct { /* (2), (3); Used to rewrite the TLB or to check coincidence of a TLB entry when addresses are converted. */
 			u32 g : 1; /* Global. If this bit is set in both EntryLo0 and EntryLo1, then the processor ignores the ASID during TLB lookup. */
@@ -92,10 +88,7 @@ namespace VR4300
 			Else, the operation of the TLB is undefined. As 0 represent 4 KB i.e. 12 bits, and bit 12 is 0,
 			this register is actually used to mask a virtual addr to get its VPN2. */
 
-		struct { /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
-			u32 value : 6;
-			u32 : 26;
-		} wired;
+		u32 wired; /* (6); Specifies the boundary between the "wired" and "random" entries of the TLB; wired entries cannot be overwritten by a TLBWR operation. */
 
 		u32 cop0_unused_7; /* (7) */
 

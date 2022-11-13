@@ -238,7 +238,7 @@ namespace VR4300
 		cop0_reg.status.erl = cop0_reg.status.bev = 1;
 		cop0_reg.config.ep = 0;
 		cop0_reg.config.be = 1;
-		cop0_reg.random.value = 31;
+		cop0_reg.random = 31;
 		cop0_reg.OnWriteToStatus();
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
