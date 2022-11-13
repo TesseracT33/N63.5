@@ -345,7 +345,7 @@ namespace VR4300
 				}
 			}
 			/* TLB hit */
-			return entry_lo.pfn | virt_addr & entry.offset_addr_mask;
+			return virt_addr & entry.offset_addr_mask | entry_lo.pfn << 12 & ~entry.offset_addr_mask;
 		}
 		/* TLB miss */
 		if (addressing_mode == AddressingMode::_32bit) SignalException<Exception::TlbMiss, operation>();
