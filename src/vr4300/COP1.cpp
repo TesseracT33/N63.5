@@ -421,6 +421,13 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuConvert(u32 instr_code)
 	{
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
+			return;
+		}
+		ClearAllExceptions();
+
 		using enum COP1Instruction;
 
 		/* Test for unimplemented operation exception sources for CVT/round instructions. These cannot be found out from std::fetestexcept.
@@ -572,6 +579,7 @@ namespace VR4300
 	{
 		if (!cop0_reg.status.cu1) {
 			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
 			return;
 		}
 		ClearAllExceptions();
@@ -731,6 +739,13 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuBranch(u32 instr_code)
 	{
+		if (!cop0_reg.status.cu1) {
+			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
+			return;
+		}
+		ClearAllExceptions();
+
 		using enum COP1Instruction;
 
 		/* For all instructions: Adds the instruction address in the delay slot and a 16-bit offset (shifted 2 bits
@@ -751,10 +766,10 @@ namespace VR4300
 		   If conditional branch does not take place, the instruction in the delay slot is invalidated. */
 
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} ${:X}", current_instr_name, s16(instr_code & 0xFFFF));
+			current_instr_log_output = std::format("{} ${:X}", current_instr_name, s16(instr_code));
 		}
 
-		s64 offset = s64(s16(instr_code & 0xFFFF)) << 2;
+		s64 offset = s64(s16(instr_code)) << 2;
 
 		bool branch_cond = [&] {
 			if constexpr (OneOf(instr, BC1T, BC1TL)) return  fcr31.c;
@@ -781,6 +796,7 @@ namespace VR4300
 		   result can be used by the FPU branch instruction of the CPU. */
 		if (!cop0_reg.status.cu1) {
 			SignalCoprocessorUnusableException(1);
+			AdvancePipeline(1);
 			return;
 		}
 		ClearAllExceptions();
