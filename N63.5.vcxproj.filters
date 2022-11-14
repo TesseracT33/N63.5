@@ -109,6 +109,8 @@
     <ClCompile Include="src\vr4300\Cache.ixx" />
     <ClCompile Include="src\vr4300\Cache.cpp" />
     <ClCompile Include="src\rdp\FakeRDP.ixx" />
+    <ClCompile Include="src\vr4300\COP2.ixx" />
+    <ClCompile Include="src\vr4300\COP2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\binning.h" />

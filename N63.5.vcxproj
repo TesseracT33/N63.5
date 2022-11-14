@@ -278,6 +278,8 @@
     <ClCompile Include="src\vr4300\COP0.ixx" />
     <ClCompile Include="src\vr4300\COP1.cpp" />
     <ClCompile Include="src\vr4300\COP1.ixx" />
+    <ClCompile Include="src\vr4300\COP2.cpp" />
+    <ClCompile Include="src\vr4300\COP2.ixx" />
     <ClCompile Include="src\vr4300\CPU.cpp" />
     <ClCompile Include="src\vr4300\CPU.ixx" />
     <ClCompile Include="src\vr4300\Exceptions.cpp" />

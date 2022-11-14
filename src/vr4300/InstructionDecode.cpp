@@ -3,6 +3,7 @@ module VR4300:Operation;
 import :Cache;
 import :COP0;
 import :COP1;
+import :COP2;
 import :CPU;
 import :Exceptions;
 import :MMU;
@@ -28,6 +29,10 @@ import Util;
 		current_instr_name = #INSTR; \
 	ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
 
+#define EXEC_COP2_INSTR(INSTR) { \
+	if constexpr (log_cpu_instructions) \
+		current_instr_name = #INSTR; \
+	ExecuteCOP2Instruction<COP2Instruction::INSTR>(); }
 
 namespace VR4300
 {
@@ -37,6 +42,7 @@ namespace VR4300
 	template<CPUInstruction instr> void ExecuteCPUInstruction();
 	template<COP0Instruction instr> void ExecuteCOP0Instruction();
 	template<COP1Instruction instr> void ExecuteCOP1Instruction();
+	template<COP2Instruction instr> void ExecuteCOP2Instruction();
 
 
 	void DecodeAndExecuteSpecialInstruction()
@@ -242,14 +248,28 @@ namespace VR4300
 
 	void DecodeAndExecuteCOP2Instruction()
 	{
-		SignalCoprocessorUnusableException(2);
-		AdvancePipeline(1);
+		auto opcode = instr_code >> 21 & 0x1F;
+		switch (opcode) {
+		case 0: EXEC_COP2_INSTR(MFC2); break;
+		case 1: EXEC_COP2_INSTR(DMFC2); break;
+		case 2: EXEC_COP2_INSTR(CFC2); break;
+		case 3: EXEC_COP2_INSTR(DCFC2); break;
+		case 4: EXEC_COP2_INSTR(MFC2); break;
+		case 5: EXEC_COP2_INSTR(DMFC2); break;
+		case 6: EXEC_COP2_INSTR(CTC2); break;
+		case 7: EXEC_COP2_INSTR(DCTC2); break;
+		default:
+			cop0.status.cu2 ? SignalCoprocessorUnusableException(2) :
+				SignalException<Exception::ReservedInstruction>();
+			AdvancePipeline(1);
+		}
 	}
 
 
 	void DecodeAndExecuteCOP3Instruction()
 	{
-		SignalCoprocessorUnusableException(3);
+		cop0.status.cu3 ? SignalCoprocessorUnusableException(3) :
+			SignalException<Exception::ReservedInstruction>();
 		AdvancePipeline(1);
 	}
 
@@ -432,6 +452,22 @@ namespace VR4300
 		}
 		else if constexpr (instr == C) {
 			FpuCompare(instr_code);
+		}
+		else {
+			static_assert(AlwaysFalse<instr>);
+		}
+		if constexpr (log_cpu_instructions) {
+			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
+		}
+	}
+
+
+	template<COP2Instruction instr>
+	void ExecuteCOP2Instruction()
+	{
+		using enum COP2Instruction;
+		if constexpr (OneOf(instr, CFC2, CTC2, MFC2, MTC2, DCFC2, DCTC2, DMFC2, DMTC2)) {
+			COP2Move<instr>(instr_code);
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);
