@@ -11,8 +11,10 @@ namespace VR4300
 {
 	void TlbEntry::Read() const
 	{
-		cop0.entry_lo[0] = this->entry_lo[0];
-		cop0.entry_lo[1] = this->entry_lo[1];
+		for (int i = 0; i < 2; ++i) {
+			cop0.entry_lo[i] = this->entry_lo[i];
+			cop0.entry_lo[i].g = this->entry_hi.g;
+		}
 		cop0.entry_hi = std::bit_cast<COP0Registers::EntryHi>(
 			std::bit_cast<u64>(this->entry_hi) & ~u64(this->page_mask));
 		cop0.page_mask = this->page_mask;
