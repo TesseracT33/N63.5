@@ -413,8 +413,7 @@ namespace VR4300
 			SignalCoprocessorUnusableException(0);
 			return;
 		}
-
-		auto index = cop0.random & 0x1F;
+		auto index = random_generator.Generate() & 0x1F;
 		auto wired = cop0.wired & 0x1F;
 		if (index <= wired) {
 			return;
