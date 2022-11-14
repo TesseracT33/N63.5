@@ -259,8 +259,8 @@ namespace VR4300
 		case 6: EXEC_COP2_INSTR(CTC2); break;
 		case 7: EXEC_COP2_INSTR(DCTC2); break;
 		default:
-			cop0.status.cu2 ? SignalCoprocessorUnusableException(2) :
-				SignalException<Exception::ReservedInstructionCop2>();
+			cop0.status.cu2 ? SignalException<Exception::ReservedInstructionCop2>()
+				: SignalCoprocessorUnusableException(2);
 			AdvancePipeline(1);
 		}
 	}
@@ -268,8 +268,14 @@ namespace VR4300
 
 	void DecodeAndExecuteCOP3Instruction()
 	{
-		cop0.status.cu3 ? SignalCoprocessorUnusableException(3) :
+		auto opcode = instr_code >> 21 & 0x1F;
+		if (opcode == 0) { /* MFC3 */
 			SignalException<Exception::ReservedInstruction>();
+		}
+		else {
+			cop0.status.cu3 ? SignalException<Exception::ReservedInstruction>()
+				: SignalCoprocessorUnusableException(3);
+		}
 		AdvancePipeline(1);
 	}
 
