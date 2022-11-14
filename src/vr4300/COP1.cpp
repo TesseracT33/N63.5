@@ -407,6 +407,7 @@ namespace VR4300
 			gpr.Set(rt, fpr.Get<s64>(fs));
 		}
 		else if constexpr (instr == DCFC1 || instr == DCTC1) {
+			ClearAllExceptions();
 			fcr31.cause_unimplemented = 1;
 			SignalException<Exception::FloatingPoint>();
 		}
