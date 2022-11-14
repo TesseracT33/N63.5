@@ -313,13 +313,6 @@ namespace VR4300
 	template<Memory::Operation operation>
 	u32 VirtualToPhysicalAddressTlb(u64 virt_addr)
 	{
-		if (addressing_mode == AddressingMode::_32bit) {
-			virt_addr &= 0xFFFF'FFFF;
-		}
-		auto OnBadEntry = [&](const TlbEntry& entry) {
-			address_failure.bad_virt_addr = virt_addr;
-			address_failure.bad_asid = entry.entry_hi.asid;
-		};
 		for (const TlbEntry& entry : tlb_entries) {
 			/* Compare the virtual page number (divided by two; VPN2) of the entry with the VPN2 of the virtual address */
 			if ((virt_addr & entry.vpn2_addr_mask) != entry.vpn2_compare) continue;
@@ -332,13 +325,13 @@ namespace VR4300
 			auto entry_lo = entry.entry_lo[vpn_odd];
 			if (!entry_lo.v) { /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
 				SignalException<Exception::TlbInvalid, operation>();
-				OnBadEntry(entry);
+				exception_bad_virt_addr = virt_addr;
 				return 0;
 			}
 			if constexpr (operation == Memory::Operation::Write) {
 				if (!entry_lo.d) { /* If the "Dirty" bit is clear, writing is disallowed. */
 					SignalException<Exception::TlbModification, operation>();
-					OnBadEntry(entry);
+					exception_bad_virt_addr = virt_addr;
 					return 0;
 				}
 			}
@@ -348,8 +341,7 @@ namespace VR4300
 		/* TLB miss */
 		if (addressing_mode == AddressingMode::_32bit) SignalException<Exception::TlbMiss, operation>();
 		else                                           SignalException<Exception::XtlbMiss, operation>();
-		address_failure.bad_virt_addr = virt_addr;
-		address_failure.bad_asid = cop0.entry_hi.asid; /* TODO: ??? */
+		exception_bad_virt_addr = virt_addr;
 		return 0;
 	}
 

@@ -185,8 +185,7 @@ namespace VR4300
 	void SignalAddressErrorException(u64 bad_virt_addr)
 	{
 		SignalException<Exception::AddressError, operation>();
-		address_failure.bad_virt_addr = bad_virt_addr;
-		address_failure.bad_asid = cop0.entry_hi.asid;
+		exception_bad_virt_addr = bad_virt_addr;
 	}
 
 
@@ -197,9 +196,9 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 5;
 			else                                                 return 4;
 		}();
-		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_virt_addr >> 13;
-		cop0.x_context.r = address_failure.bad_virt_addr >> 62;
+		cop0.bad_v_addr = exception_bad_virt_addr;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = exception_bad_virt_addr >> 13;
+		cop0.x_context.r = exception_bad_virt_addr >> 62;
 		cop0.cause.ce = 0;
 	}
 
@@ -302,10 +301,10 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
-		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.bad_v_addr = exception_bad_virt_addr;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
 		cop0.cause.ce = 0;
+		/* Tests indicate we should not update entry_hi.asid */
 	}
 
 
@@ -316,9 +315,8 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
-		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.bad_v_addr = exception_bad_virt_addr;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
 		cop0.cause.ce = 0;
 	}
 
@@ -326,9 +324,8 @@ namespace VR4300
 	void TlbModException()
 	{
 		cop0.cause.exc_code = 1;
-		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
-		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.bad_v_addr = exception_bad_virt_addr;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
 		cop0.cause.ce = 0;
 	}
 
@@ -354,9 +351,8 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
-		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.bad_v_addr = exception_bad_virt_addr;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
 		cop0.cause.ce = 0;
 	}
 

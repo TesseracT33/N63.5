@@ -79,15 +79,10 @@ namespace VR4300
 	void TrapException();
 	void WatchException();
 
-	/* Details for when a TLB Miss etc. or Address Error exception happens */
-	struct AddressFailure {
-		u64 bad_virt_addr;
-		u64 bad_asid;
-	} address_failure;
-
 	Exception occurred_exception;
 	bool exception_has_occurred = false;
 	int occurred_exception_priority = -1;
+	u64 exception_bad_virt_addr;
 	u64 exception_vector;
 	uint coprocessor_unusable_source; /* 0 if COP0 signaled the exception, 1 if COP1 did it. */
 	ExceptionHandler exception_handler;
