@@ -260,7 +260,7 @@ namespace VR4300
 		case 7: EXEC_COP2_INSTR(DCTC2); break;
 		default:
 			cop0.status.cu2 ? SignalCoprocessorUnusableException(2) :
-				SignalException<Exception::ReservedInstruction>();
+				SignalException<Exception::ReservedInstructionCop2>();
 			AdvancePipeline(1);
 		}
 	}

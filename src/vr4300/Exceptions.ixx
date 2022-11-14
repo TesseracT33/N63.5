@@ -24,6 +24,7 @@ namespace VR4300
 			Interrupt,
 			Nmi,
 			ReservedInstruction,
+			ReservedInstructionCop2,
 			SoftReset,
 			Syscall,
 			TlbInvalid,
@@ -73,6 +74,7 @@ namespace VR4300
 	void InterruptException();
 	void NmiException();
 	void ReservedInstructionException();
+	void ReservedInstructionExceptionCop2();
 	void SoftResetException();
 	void SyscallException();
 	void TlbModException();

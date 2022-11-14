@@ -36,7 +36,7 @@ namespace VR4300
 		     if constexpr (OneOf(instr, CFC2, MFC2))        gpr.Set(rt, s32(cop2_latch));
 		else if constexpr (instr == DMFC2)                  gpr.Set(rt, cop2_latch);
 		else if constexpr (OneOf(instr, CTC2, DMTC2, MTC2)) cop2_latch = gpr[rt];
-		else if constexpr (OneOf(instr, DCFC2, DCTC2))      SignalException<Exception::ReservedInstruction>();
+		else if constexpr (OneOf(instr, DCFC2, DCTC2))      SignalException<Exception::ReservedInstructionCop2>();
 		else static_assert(AlwaysFalse<instr>);
 	}
 

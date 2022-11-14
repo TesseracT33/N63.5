@@ -42,7 +42,7 @@ namespace VR4300
 		else if constexpr (exception == Exception::Nmi) {
 			return 18;
 		}
-		else if constexpr (exception == Exception::ReservedInstruction) {
+		else if constexpr (OneOf(exception, Exception::ReservedInstruction, Exception::ReservedInstructionCop2)) {
 			return 10;
 		}
 		else if constexpr (exception == Exception::SoftReset) {
@@ -55,7 +55,7 @@ namespace VR4300
 			if constexpr (operation == Memory::Operation::InstrFetch) return 15;
 			else return 4;
 		}
-		else if constexpr (exception == Exception::TlbMiss || exception == Exception::XtlbMiss) {
+		else if constexpr (OneOf(exception, Exception::TlbMiss, Exception::XtlbMiss)) {
 			if constexpr (operation == Memory::Operation::InstrFetch) return 16;
 			else return 5;
 		}
@@ -77,25 +77,26 @@ namespace VR4300
 	template<Exception exception, Memory::Operation operation>
 	constexpr ExceptionHandler GetExceptionHandler()
 	{
-		     if constexpr (exception == Exception::AddressError)        return AddressErrorException<operation>;
-		else if constexpr (exception == Exception::Breakpoint)          return BreakPointException;
-		else if constexpr (exception == Exception::BusError)            return BusErrorException<operation>;
-		else if constexpr (exception == Exception::ColdReset)           return ColdResetException;
-		else if constexpr (exception == Exception::CoprocessorUnusable) return CoprocessorUnusableException;
-		else if constexpr (exception == Exception::FloatingPoint)       return FloatingpointException;
-		else if constexpr (exception == Exception::IntegerOverflow)     return IntegerOverflowException;
-		else if constexpr (exception == Exception::Interrupt)           return InterruptException;
-		else if constexpr (exception == Exception::Nmi)                 return NmiException;
-		else if constexpr (exception == Exception::ReservedInstruction) return ReservedInstructionException;
-		else if constexpr (exception == Exception::SoftReset)           return SoftResetException;
-		else if constexpr (exception == Exception::Syscall)             return SyscallException;
-		else if constexpr (exception == Exception::TlbInvalid)          return TlbInvalidException<operation>;
-		else if constexpr (exception == Exception::TlbMiss)             return TlbMissException<operation>;
-		else if constexpr (exception == Exception::TlbModification)     return TlbModException;
-		else if constexpr (exception == Exception::Trap)                return TrapException;
-		else if constexpr (exception == Exception::Watch)               return WatchException;
-		else if constexpr (exception == Exception::XtlbMiss)            return XtlbMissException<operation>;
-		else                                                            static_assert(AlwaysFalse<exception>);
+		     if constexpr (exception == Exception::AddressError)            return AddressErrorException<operation>;
+		else if constexpr (exception == Exception::Breakpoint)              return BreakPointException;
+		else if constexpr (exception == Exception::BusError)                return BusErrorException<operation>;
+		else if constexpr (exception == Exception::ColdReset)               return ColdResetException;
+		else if constexpr (exception == Exception::CoprocessorUnusable)     return CoprocessorUnusableException;
+		else if constexpr (exception == Exception::FloatingPoint)           return FloatingpointException;
+		else if constexpr (exception == Exception::IntegerOverflow)         return IntegerOverflowException;
+		else if constexpr (exception == Exception::Interrupt)               return InterruptException;
+		else if constexpr (exception == Exception::Nmi)                     return NmiException;
+		else if constexpr (exception == Exception::ReservedInstruction)     return ReservedInstructionException;
+		else if constexpr (exception == Exception::ReservedInstructionCop2) return ReservedInstructionExceptionCop2;
+		else if constexpr (exception == Exception::SoftReset)               return SoftResetException;
+		else if constexpr (exception == Exception::Syscall)                 return SyscallException;
+		else if constexpr (exception == Exception::TlbInvalid)              return TlbInvalidException<operation>;
+		else if constexpr (exception == Exception::TlbMiss)                 return TlbMissException<operation>;
+		else if constexpr (exception == Exception::TlbModification)         return TlbModException;
+		else if constexpr (exception == Exception::Trap)                    return TrapException;
+		else if constexpr (exception == Exception::Watch)                   return WatchException;
+		else if constexpr (exception == Exception::XtlbMiss)                return XtlbMissException<operation>;
+		else static_assert(AlwaysFalse<exception>);
 	}
 
 
@@ -277,6 +278,13 @@ namespace VR4300
 	}
 
 
+	void ReservedInstructionExceptionCop2()
+	{
+		cop0.cause.exc_code = 10;
+		cop0.cause.ce = 2;
+	}
+
+
 	void SoftResetException()
 	{
 		if (cop0.status.erl == 0) {
@@ -360,25 +368,26 @@ namespace VR4300
 	constexpr std::string_view ExceptionToString(Exception exception)
 	{
 		switch (exception) {
-		case Exception::AddressError:        return "Address Error";
-		case Exception::Breakpoint:          return "Breakpoint";
-		case Exception::BusError:            return "Bus Error";
-		case Exception::ColdReset:           return "Cold Reset";
-		case Exception::CoprocessorUnusable: return "Coprocessor Unusable";
-		case Exception::FloatingPoint:       return "Floating Point";
-		case Exception::IntegerOverflow:     return "Integer Overflow";
-		case Exception::Interrupt:           return "Interrupt";
-		case Exception::Nmi:                 return "NMI";
-		case Exception::ReservedInstruction: return "Reserved instruction";
-		case Exception::SoftReset:           return "Soft Reset";
-		case Exception::Syscall:             return "Syscall";
-		case Exception::TlbInvalid:          return "Invalid TLB";
-		case Exception::TlbMiss:             return "TLB Miss";
-		case Exception::TlbModification:     return "TLB Modification";
-		case Exception::Trap:                return "Trap";
-		case Exception::Watch:               return "Watch";
-		case Exception::XtlbMiss:            return "XTLB Miss";
-		default: assert(false);              return "";
+		case Exception::AddressError:            return "Address Error";
+		case Exception::Breakpoint:              return "Breakpoint";
+		case Exception::BusError:                return "Bus Error";
+		case Exception::ColdReset:               return "Cold Reset";
+		case Exception::CoprocessorUnusable:     return "Coprocessor Unusable";
+		case Exception::FloatingPoint:           return "Floating Point";
+		case Exception::IntegerOverflow:         return "Integer Overflow";
+		case Exception::Interrupt:               return "Interrupt";
+		case Exception::Nmi:                     return "NMI";
+		case Exception::ReservedInstruction:     return "Reserved instruction";
+		case Exception::ReservedInstructionCop2: return "Reserved instruction COP2";
+		case Exception::SoftReset:               return "Soft Reset";
+		case Exception::Syscall:                 return "Syscall";
+		case Exception::TlbInvalid:              return "Invalid TLB";
+		case Exception::TlbMiss:                 return "TLB Miss";
+		case Exception::TlbModification:         return "TLB Modification";
+		case Exception::Trap:                    return "Trap";
+		case Exception::Watch:                   return "Watch";
+		case Exception::XtlbMiss:                return "XTLB Miss";
+		default: assert(false);                  return "";
 		}
 	}
 
@@ -394,6 +403,7 @@ namespace VR4300
 	template void SignalException<Exception::Interrupt, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::Nmi, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::ReservedInstruction, MEMORY_OPERATION>(); \
+	template void SignalException<Exception::ReservedInstructionCop2, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::SoftReset, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::Syscall, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::TlbInvalid, MEMORY_OPERATION>(); \
