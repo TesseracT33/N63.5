@@ -346,7 +346,7 @@ namespace VR4300
 		});
 		if (index == tlb_entries.end()) {
 			cop0.index.p = 1;
-			/* cop0.index.value undefined */
+			cop0.index.value = 0; /* technically undefined, but n64-systemtest tlb::TLBPMatch seems to prefer this */
 		}
 		else {
 			cop0.index.p = 0;
