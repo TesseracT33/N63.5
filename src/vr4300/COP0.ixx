@@ -226,7 +226,7 @@ namespace VR4300
 		void OnWriteToCount();
 		void OnWriteToStatus();
 		void OnWriteToWired();
-	} cop0_reg;
+	} cop0;
 
 	/* Used to generate random numbers in the interval [wired, 31], when the 'random' register is read. */
 	class RandomGenerator

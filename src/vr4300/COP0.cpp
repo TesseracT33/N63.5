@@ -241,7 +241,7 @@ namespace VR4300
 
 	void OnCountCompareMatchEvent()
 	{
-		cop0_reg.cause.ip |= 0x80;
+		cop0.cause.ip |= 0x80;
 		CheckInterrupts();
 		ReloadCountCompareEvent();
 	}
@@ -250,8 +250,8 @@ namespace VR4300
 	template<bool initial_add>
 	void ReloadCountCompareEvent()
 	{
-		u64 cycles_until_count_compare_match = (cop0_reg.compare - cop0_reg.count) & 0x1'FFFF'FFFF;
-		if ((cop0_reg.count & 0x1'FFFF'FFFF) >= (cop0_reg.compare & 0x1'FFFF'FFFF)) {
+		u64 cycles_until_count_compare_match = (cop0.compare - cop0.count) & 0x1'FFFF'FFFF;
+		if ((cop0.count & 0x1'FFFF'FFFF) >= (cop0.compare & 0x1'FFFF'FFFF)) {
 			cycles_until_count_compare_match += 0x2'0000'0000;
 		}
 		if constexpr (initial_add) {
@@ -270,7 +270,7 @@ namespace VR4300
 		using enum COP0Instruction;
 
 		if (operating_mode != OperatingMode::Kernel) {
-			if (!cop0_reg.status.cu0) {
+			if (!cop0.status.cu0) {
 				SignalCoprocessorUnusableException(0);
 				return;
 			}
@@ -293,25 +293,25 @@ namespace VR4300
 			/* Move To System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			cop0_reg.Set(rd, s32(gpr[rt]));
+			cop0.Set(rd, s32(gpr[rt]));
 		}
 		else if constexpr (instr == MFC0) {
 			/* Move From System Control Coprocessor;
 			   Loads the contents of the word of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			gpr.Set(rt, s32(cop0_reg.Get(rd)));
+			gpr.Set(rt, s32(cop0.Get(rd)));
 		}
 		else if constexpr (instr == DMTC0) {
 			/* Doubleword Move To System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rt of the CPU
 			   to the general purpose register rd of CP0. */
-			cop0_reg.Set(rd, gpr[rt]);
+			cop0.Set(rd, gpr[rt]);
 		}
 		else if constexpr (instr == DMFC0) {
 			/* Doubleword Move From System Control Coprocessor;
 			   Loads the contents of the doubleword of the general purpose register rd of CP0
 			   to the general purpose register rt of the CPU. */
-			gpr.Set(rt, cop0_reg.Get(rd));
+			gpr.Set(rt, cop0.Get(rd));
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);
@@ -331,25 +331,25 @@ namespace VR4300
 
 		AdvancePipeline(1);
 
-		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
 			SignalCoprocessorUnusableException(0);
 			return;
 		}
 
 		auto index = std::ranges::find_if(tlb_entries, [](const TlbEntry& entry) {
 			if ((std::bit_cast<u64>(entry.entry_hi.vpn2) & ~u64(entry.page_mask))
-				!= (std::bit_cast<u64>(cop0_reg.entry_hi.vpn2) & ~u64(entry.page_mask))) return false;
-			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0_reg.entry_hi.asid)      return false;
-			if (entry.entry_hi.r != cop0_reg.entry_hi.r)                                 return false; /* TODO: manual suggests this is not checked? */
+				!= (std::bit_cast<u64>(cop0.entry_hi.vpn2) & ~u64(entry.page_mask))) return false;
+			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0.entry_hi.asid)      return false;
+			if (entry.entry_hi.r != cop0.entry_hi.r)                                 return false; /* TODO: manual suggests this is not checked? */
 			return true;
 		});
 		if (index == tlb_entries.end()) {
-			cop0_reg.index.p = 1;
-			/* cop0_reg.index.value undefined */
+			cop0.index.p = 1;
+			/* cop0.index.value undefined */
 		}
 		else {
-			cop0_reg.index.p = 0;
-			cop0_reg.index.value = std::distance(tlb_entries.begin(), index);
+			cop0.index.p = 0;
+			cop0.index.value = std::distance(tlb_entries.begin(), index);
 		}
 	}
 
@@ -366,12 +366,12 @@ namespace VR4300
 
 		AdvancePipeline(1);
 
-		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
 			SignalCoprocessorUnusableException(0);
 			return;
 		}
 
-		tlb_entries[cop0_reg.index.value & 0x1F].Read();
+		tlb_entries[cop0.index.value & 0x1F].Read();
 	}
 
 
@@ -387,12 +387,12 @@ namespace VR4300
 
 		AdvancePipeline(1);
 
-		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
 			SignalCoprocessorUnusableException(0);
 			return;
 		}
 
-		tlb_entries[cop0_reg.index.value & 0x1F].Write();
+		tlb_entries[cop0.index.value & 0x1F].Write();
 	}
 
 
@@ -409,13 +409,13 @@ namespace VR4300
 
 		AdvancePipeline(1);
 
-		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
 			SignalCoprocessorUnusableException(0);
 			return;
 		}
 
-		auto index = cop0_reg.random & 0x1F;
-		auto wired = cop0_reg.wired & 0x1F;
+		auto index = cop0.random & 0x1F;
+		auto wired = cop0.wired & 0x1F;
 		if (index <= wired) {
 			return;
 		}
@@ -433,18 +433,18 @@ namespace VR4300
 
 		AdvancePipeline(1);
 
-		if (operating_mode != OperatingMode::Kernel && !cop0_reg.status.cu0) {
+		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
 			SignalCoprocessorUnusableException(0);
 			return;
 		}
 
-		if (cop0_reg.status.erl == 0) {
-			pc = cop0_reg.epc;
-			cop0_reg.status.exl = 0;
+		if (cop0.status.erl == 0) {
+			pc = cop0.epc;
+			cop0.status.exl = 0;
 		}
 		else {
-			pc = cop0_reg.error_epc;
-			cop0_reg.status.erl = 0;
+			pc = cop0.error_epc;
+			cop0.status.erl = 0;
 		}
 		ll_bit = 0;
 

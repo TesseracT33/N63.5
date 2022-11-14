@@ -11,24 +11,24 @@ namespace VR4300
 {
 	void TlbEntry::Read() const
 	{
-		cop0_reg.entry_lo[0] = this->entry_lo[0];
-		cop0_reg.entry_lo[1] = this->entry_lo[1];
-		cop0_reg.entry_hi = std::bit_cast<COP0Registers::EntryHi>(
+		cop0.entry_lo[0] = this->entry_lo[0];
+		cop0.entry_lo[1] = this->entry_lo[1];
+		cop0.entry_hi = std::bit_cast<COP0Registers::EntryHi>(
 			std::bit_cast<u64>(this->entry_hi) & ~u64(this->page_mask));
-		cop0_reg.page_mask = this->page_mask;
+		cop0.page_mask = this->page_mask;
 	}
 
 
 	void TlbEntry::Write()
 	{
-		this->entry_lo[0] = cop0_reg.entry_lo[0];
-		this->entry_lo[1] = cop0_reg.entry_lo[1];
+		this->entry_lo[0] = cop0.entry_lo[0];
+		this->entry_lo[1] = cop0.entry_lo[1];
 		this->entry_hi = std::bit_cast<COP0Registers::EntryHi>(
-			std::bit_cast<u64>(cop0_reg.entry_hi) & ~u64(cop0_reg.page_mask));
-		this->page_mask = cop0_reg.page_mask;
-		this->entry_hi.g = cop0_reg.entry_lo[0].g & cop0_reg.entry_lo[1].g;
+			std::bit_cast<u64>(cop0.entry_hi) & ~u64(cop0.page_mask));
+		this->page_mask = cop0.page_mask;
+		this->entry_hi.g = cop0.entry_lo[0].g & cop0.entry_lo[1].g;
 		/* Compute things that speed up virtual-to-physical-address translation. */
-		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask >> 13];
+		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0.page_mask >> 13];
 		u64 vpn2_mask = addressing_mode == AddressingMode::_32bit ? 0xFFFF'FFFF : 0xFF'FFFF'FFFF;
 		vpn2_addr_mask = vpn2_mask << (addr_offset_bit_length + 1) & vpn2_mask;
 		offset_addr_mask = (1 << addr_offset_bit_length) - 1;
@@ -93,9 +93,9 @@ namespace VR4300
 		using enum AddressingMode;
 		using enum OperatingMode;
 
-		if (cop0_reg.status.ksu == 0 || cop0_reg.status.erl == 1 || cop0_reg.status.exl == 1) { /* Kernel mode */
+		if (cop0.status.ksu == 0 || cop0.status.erl == 1 || cop0.status.exl == 1) { /* Kernel mode */
 			operating_mode = Kernel;
-			if (cop0_reg.status.kx == 0) {
+			if (cop0.status.kx == 0) {
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<Memory::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<Memory::Operation::Write>;
 				addressing_mode = _32bit;
@@ -106,9 +106,9 @@ namespace VR4300
 				addressing_mode = _64bit;
 			}
 		}
-		else if (cop0_reg.status.ksu == 1) { /* Supervisor mode */
+		else if (cop0.status.ksu == 1) { /* Supervisor mode */
 			operating_mode = Supervisor;
-			if (cop0_reg.status.sx == 0) {
+			if (cop0.status.sx == 0) {
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<Memory::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<Memory::Operation::Write>;
 				addressing_mode = _32bit;
@@ -119,9 +119,9 @@ namespace VR4300
 				addressing_mode = _64bit;
 			}
 		}
-		else if (cop0_reg.status.ksu == 2) { /* User mode */
+		else if (cop0.status.ksu == 2) { /* User mode */
 			operating_mode = User;
-			if (cop0_reg.status.ux == 0) {
+			if (cop0.status.ux == 0) {
 				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<Memory::Operation::Read>;
 				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<Memory::Operation::Write>;
 				addressing_mode = _32bit;
@@ -326,7 +326,7 @@ namespace VR4300
 			/* Compare the virtual page number (divided by two; VPN2) of the entry with the VPN2 of the virtual address */
 			if ((virt_addr & entry.vpn2_addr_mask) != entry.vpn2_shifted) continue;
 			/* If the global bit is clear, the entry's ASID (Address space ID field) must coincide with the one in the EntryHi register. */
-			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0_reg.entry_hi.asid) continue;
+			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0.entry_hi.asid) continue;
 			/* Bits 62-63 of vaddr must match the entry's region */      /* TODO: also checked in 32-bit mode? */
 			if (virt_addr >> 62 != entry.entry_hi.r) continue; 
 			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */
@@ -351,8 +351,8 @@ namespace VR4300
 		if (addressing_mode == AddressingMode::_32bit) SignalException<Exception::TlbMiss, operation>();
 		else                                           SignalException<Exception::XtlbMiss, operation>();
 		address_failure.bad_virt_addr = virt_addr;
-		address_failure.bad_vpn2 = virt_addr >> page_size_to_addr_offset_bit_length[cop0_reg.page_mask >> 13] & 0xFF'FFFF'FFFF;
-		address_failure.bad_asid = cop0_reg.entry_hi.asid;
+		address_failure.bad_vpn2 = virt_addr >> page_size_to_addr_offset_bit_length[cop0.page_mask >> 13] & 0xFF'FFFF'FFFF;
+		address_failure.bad_asid = cop0.entry_hi.asid;
 		return 0;
 	}
 

@@ -53,7 +53,7 @@ namespace VR4300
 			return std::bit_cast<f32>(s32(fpr[index]));
 		}
 		if constexpr (std::same_as<T, s64>) {
-			if (cop0_reg.status.fr) {
+			if (cop0.status.fr) {
 				return fpr[index];
 			}
 			else {
@@ -64,7 +64,7 @@ namespace VR4300
 			}
 		}
 		if constexpr (std::same_as<T, f64>) {
-			if (cop0_reg.status.fr) {
+			if (cop0.status.fr) {
 				return std::bit_cast<f64>(fpr[index]);
 			}
 			else {
@@ -87,7 +87,7 @@ namespace VR4300
 			fpr[index] = std::bit_cast<s32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
 		}
 		if constexpr (std::same_as<T, s64>) {
-			if (cop0_reg.status.fr) {
+			if (cop0.status.fr) {
 				fpr[index] = data;
 			}
 			else {
@@ -99,7 +99,7 @@ namespace VR4300
 			}
 		}
 		if constexpr (std::same_as<T, f64>) {
-			if (cop0_reg.status.fr) {
+			if (cop0.status.fr) {
 				fpr[index] = std::bit_cast<s64, f64>(data);
 			}
 			else {
@@ -265,7 +265,7 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuLoad(u32 instr_code)
 	{
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -316,7 +316,7 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuStore(u32 instr_code)
 	{
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -359,7 +359,7 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuMove(u32 instr_code)
 	{
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -421,7 +421,7 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuConvert(u32 instr_code)
 	{
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -577,7 +577,7 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuCompute(u32 instr_code)
 	{
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -739,7 +739,7 @@ namespace VR4300
 	template<COP1Instruction instr>
 	void FpuBranch(u32 instr_code)
 	{
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -794,7 +794,7 @@ namespace VR4300
 		   in the specified format (fmt). The result is identified by comparison and the
 		   specified condition (cond). After a delay of one instruction, the comparison
 		   result can be used by the FPU branch instruction of the CPU. */
-		if (!cop0_reg.status.cu1) {
+		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
@@ -836,7 +836,7 @@ namespace VR4300
 				fcr31.c = cond & 1;
 			}
 			else {
-				fcr31.c = (cond >> 2 & 1) & op1 < op2 | (cond >> 1 & 1) & op1 == op2;
+				fcr31.c = (cond >> 2 & 1) & (op1 < op2) | (cond >> 1 & 1) & (op1 == op2);
 			}
 			AdvancePipeline(1);
 		};

@@ -111,17 +111,17 @@ namespace VR4300
 					0xFFFF'FFFF'8000'0000, 0xFFFF'FFFF'8000'0180,
 					0xFFFF'FFFF'BFC0'0200, 0xFFFF'FFFF'BFC0'0380
 				};
-				return base_addr[cop0_reg.status.bev][cop0_reg.status.exl];
+				return base_addr[cop0.status.bev][cop0.status.exl];
 			}
 			else if constexpr (exception == Exception::XtlbMiss) {
 				static constexpr u64 base_addr[2][2] = {
 					0xFFFF'FFFF'8000'0080, 0xFFFF'FFFF'8000'0180,
 					0xFFFF'FFFF'BFC0'0280, 0xFFFF'FFFF'BFC0'0380
 				};
-				return base_addr[cop0_reg.status.bev][cop0_reg.status.exl];
+				return base_addr[cop0.status.bev][cop0.status.exl];
 			}
 			else {
-				return cop0_reg.status.bev ? 0xFFFF'FFFF'BFC0'0380 : 0xFFFF'FFFF'8000'0180;
+				return cop0.status.bev ? 0xFFFF'FFFF'BFC0'0380 : 0xFFFF'FFFF'8000'0180;
 			}
 		}
 	}
@@ -135,13 +135,13 @@ namespace VR4300
 
 		exception_has_occurred = false;
 
-		if (cop0_reg.status.exl == 0) {
-			cop0_reg.cause.bd = in_branch_delay_slot; /* Peter Lemon exception tests indicate that this should only be set if !exl */
+		if (cop0.status.exl == 0) {
+			cop0.cause.bd = in_branch_delay_slot; /* Peter Lemon exception tests indicate that this should only be set if !exl */
 			/* Store to the EPC register the address of the instruction causing the exception.
 			   If the instruction was executing in a branch delay slot, the CPU loads the EPC register
 			   to the address of the branch instruction immediately preceding the branch delay slot. */
-			cop0_reg.epc = pc - (in_branch_delay_slot ? 8 : 4);
-			cop0_reg.status.exl = 1;
+			cop0.epc = pc - (in_branch_delay_slot ? 8 : 4);
+			cop0.status.exl = 1;
 			SetActiveVirtualToPhysicalFunctions();
 		}
 		pc = exception_vector;
@@ -186,8 +186,8 @@ namespace VR4300
 	{
 		SignalException<Exception::AddressError, operation>();
 		address_failure.bad_virt_addr = bad_virt_addr;
-		address_failure.bad_vpn2 = bad_virt_addr >> page_size_to_addr_offset_bit_length[cop0_reg.page_mask >> 13] & 0xFF'FFFF'FFFF;
-		address_failure.bad_asid = cop0_reg.entry_hi.asid;
+		address_failure.bad_vpn2 = bad_virt_addr >> page_size_to_addr_offset_bit_length[cop0.page_mask >> 13] & 0xFF'FFFF'FFFF;
+		address_failure.bad_asid = cop0.entry_hi.asid;
 		/* TODO: should this not depend on virt addr? */
 		address_failure.bad_space_id = [&] {
 			if (operating_mode == OperatingMode::Kernel &&
@@ -202,121 +202,121 @@ namespace VR4300
 	template<Memory::Operation operation>
 	void AddressErrorException()
 	{
-		cop0_reg.cause.exc_code = [&] {
+		cop0.cause.exc_code = [&] {
 			if constexpr (operation == Memory::Operation::Write) return 5;
 			else                                                 return 4;
 		}();
-		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0_reg.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0_reg.x_context.r = address_failure.bad_space_id;
-		cop0_reg.cause.ce = 0;
+		cop0.bad_v_addr = address_failure.bad_virt_addr;
+		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.x_context.r = address_failure.bad_space_id;
+		cop0.cause.ce = 0;
 	}
 
 
 	void BreakPointException()
 	{
-		cop0_reg.cause.exc_code = 9;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 9;
+		cop0.cause.ce = 0;
 	}
 
 
 	template<Memory::Operation operation>
 	void BusErrorException()
 	{
-		cop0_reg.cause.exc_code = [&] {
+		cop0.cause.exc_code = [&] {
 			if constexpr (operation == Memory::Operation::InstrFetch) return 6;
 			else                                                      return 7;
 		}();
-		cop0_reg.cause.ce = 0;
+		cop0.cause.ce = 0;
 	}
 
 
 	void ColdResetException()
 	{
-		cop0_reg.status.rp = cop0_reg.status.sr = cop0_reg.status.ts = 0;
-		cop0_reg.status.erl = cop0_reg.status.bev = 1;
-		cop0_reg.config.ep = 0;
-		cop0_reg.config.be = 1;
-		cop0_reg.random = 31;
-		cop0_reg.OnWriteToStatus();
+		cop0.status.rp = cop0.status.sr = cop0.status.ts = 0;
+		cop0.status.erl = cop0.status.bev = 1;
+		cop0.config.ep = 0;
+		cop0.config.be = 1;
+		cop0.random = 31;
+		cop0.OnWriteToStatus();
 		/* TODO The EC(2:0) bits of the Config register are set to the contents of the DivMode(1:0)* pins */
 	}
 
 
 	void CoprocessorUnusableException()
 	{
-		cop0_reg.cause.exc_code = 11;
-		cop0_reg.cause.ce = coprocessor_unusable_source;
+		cop0.cause.exc_code = 11;
+		cop0.cause.ce = coprocessor_unusable_source;
 	}
 
 
 	void FloatingpointException()
 	{
-		cop0_reg.cause.exc_code = 15;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 15;
+		cop0.cause.ce = 0;
 	}
 
 
 	void IntegerOverflowException()
 	{
-		cop0_reg.cause.exc_code = 12;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 12;
+		cop0.cause.ce = 0;
 	}
 
 
 	void InterruptException()
 	{
-		cop0_reg.cause.exc_code = 0;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 0;
+		cop0.cause.ce = 0;
 	}
 
 
 	void NmiException()
 	{
-		pc = cop0_reg.error_epc;
-		cop0_reg.status.ts = 0;
-		cop0_reg.status.erl = cop0_reg.status.sr = cop0_reg.status.bev = 1;
-		cop0_reg.cause.ce = 0;
+		pc = cop0.error_epc;
+		cop0.status.ts = 0;
+		cop0.status.erl = cop0.status.sr = cop0.status.bev = 1;
+		cop0.cause.ce = 0;
 	}
 
 
 	void ReservedInstructionException()
 	{
-		cop0_reg.cause.exc_code = 10;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 10;
+		cop0.cause.ce = 0;
 	}
 
 
 	void SoftResetException()
 	{
-		if (cop0_reg.status.erl == 0) {
-			pc = cop0_reg.error_epc;
+		if (cop0.status.erl == 0) {
+			pc = cop0.error_epc;
 		}
-		cop0_reg.status.rp = cop0_reg.status.ts = 0;
-		cop0_reg.status.bev = cop0_reg.status.erl = cop0_reg.status.sr = 1;
+		cop0.status.rp = cop0.status.ts = 0;
+		cop0.status.bev = cop0.status.erl = cop0.status.sr = 1;
 	}
 
 
 	void SyscallException()
 	{
-		cop0_reg.cause.exc_code = 8;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 8;
+		cop0.cause.ce = 0;
 	}
 
 
 	template<Memory::Operation operation>
 	void TlbInvalidException()
 	{
-		cop0_reg.cause.exc_code = [&] {
+		cop0.cause.exc_code = [&] {
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
-		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
-		cop0_reg.entry_hi.asid = address_failure.bad_asid;
-		cop0_reg.cause.ce = 0;
+		cop0.bad_v_addr = address_failure.bad_virt_addr;
+		cop0.context.bad_vpn2 = address_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.cause.ce = 0;
 		/* TODO: what about the R field in entry_hi? */
 	}
 
@@ -324,56 +324,56 @@ namespace VR4300
 	template<Memory::Operation operation>
 	void TlbMissException()
 	{
-		cop0_reg.cause.exc_code = [&] {
+		cop0.cause.exc_code = [&] {
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
-		cop0_reg.entry_hi.asid = address_failure.bad_asid;
-		cop0_reg.cause.ce = 0;
+		cop0.bad_v_addr = address_failure.bad_virt_addr;
+		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.cause.ce = 0;
 	}
 
 
 	void TlbModException()
 	{
-		cop0_reg.cause.exc_code = 1;
-		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
-		cop0_reg.entry_hi.asid = address_failure.bad_asid;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 1;
+		cop0.bad_v_addr = address_failure.bad_virt_addr;
+		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.cause.ce = 0;
 	}
 
 
 	void TrapException()
 	{
-		cop0_reg.cause.exc_code = 13;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 13;
+		cop0.cause.ce = 0;
 	}
 
 
 	void WatchException()
 	{
-		cop0_reg.cause.exc_code = 23;
-		cop0_reg.cause.ce = 0;
+		cop0.cause.exc_code = 23;
+		cop0.cause.ce = 0;
 	}
 
 
 	template<Memory::Operation operation>
 	void XtlbMissException()
 	{
-		cop0_reg.cause.exc_code = [&] {
+		cop0.cause.exc_code = [&] {
 			if constexpr (operation == Memory::Operation::Write) return 3;
 			else                                                 return 2;
 		}();
-		cop0_reg.bad_v_addr = address_failure.bad_virt_addr;
-		cop0_reg.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0_reg.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0_reg.entry_hi.vpn2 = address_failure.bad_vpn2;
-		cop0_reg.entry_hi.asid = address_failure.bad_asid;
-		cop0_reg.cause.ce = 0;
+		cop0.bad_v_addr = address_failure.bad_virt_addr;
+		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.asid = address_failure.bad_asid;
+		cop0.cause.ce = 0;
 	}
 
 

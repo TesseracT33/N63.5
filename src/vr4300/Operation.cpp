@@ -21,17 +21,17 @@ namespace VR4300
 	void AdvancePipeline(u64 cycles)
 	{
 		p_cycle_counter += cycles;
-		cop0_reg.count += cycles;
+		cop0.count += cycles;
 	}
 
 
 	void CheckInterrupts()
 	{
 		/* on real HW, these conditions are checked every cycle */
-		if (!cop0_reg.status.ie || cop0_reg.status.exl || cop0_reg.status.erl) {
+		if (!cop0.status.ie || cop0.status.exl || cop0.status.erl) {
 			return; /* interrupts disabled, or already handling exception or error */
 		}
-		if (cop0_reg.cause.ip & cop0_reg.status.im) {
+		if (cop0.cause.ip & cop0.status.im) {
 			SignalException<Exception::Interrupt>();
 		}
 	}
@@ -40,7 +40,7 @@ namespace VR4300
 	/* Devices external to the CPU (e.g. the console's reset button) use this function to tell the CPU about interrupts. */
 	void ClearInterruptPending(ExternalInterruptSource interrupt)
 	{
-		cop0_reg.cause.ip &= ~std::to_underlying(interrupt);
+		cop0.cause.ip &= ~std::to_underlying(interrupt);
 	}
 
 
@@ -64,8 +64,8 @@ namespace VR4300
 		gpr.Set(20, 1);
 		gpr.Set(22, 0x3F);
 		gpr.Set(29, 0xA400'1FF0);
-		cop0_reg.SetRaw(cop0_index_status, 0x2410'00E0);
-		cop0_reg.SetRaw(cop0_index_config, 0x7006'E463);
+		cop0.SetRaw(cop0_index_status, 0x2410'00E0);
+		cop0.SetRaw(cop0_index_config, 0x7006'E463);
 		for (u64 i = 0; i < 0x1000; i += 4) {
 			u64 src_addr = 0xFFFF'FFFF'B000'0000 + i;
 			u64 dst_addr = 0xFFFF'FFFF'A400'0000 + i;
@@ -80,18 +80,18 @@ namespace VR4300
 		std::memset(&gpr, 0, sizeof(gpr));
 		std::memset(&fpr, 0, sizeof(fpr));
 		gpr.Set(Reg::sp, 0xFFFF'FFFF'A400'1FF0);
-		cop0_reg.SetRaw(cop0_index_index, 0x3F);
-		cop0_reg.SetRaw(cop0_index_config, 0x7006'E463);
-		cop0_reg.SetRaw(cop0_index_context, 0x007F'FFF0);
-		cop0_reg.SetRaw(cop0_index_bad_v_addr, 0xFFFF'FFFF'FFFF'FFFF);
-		cop0_reg.SetRaw(cop0_index_cause, 0xB000'007C);
-		cop0_reg.SetRaw(cop0_index_epc, 0xFFFF'FFFF'FFFF'FFFF);
-		cop0_reg.SetRaw(cop0_index_status, 0x3400'0000);
-		cop0_reg.SetRaw(cop0_index_ll_addr, 0xFFFF'FFFF);
-		cop0_reg.SetRaw(cop0_index_watch_lo, 0xFFFF'FFFB);
-		cop0_reg.SetRaw(cop0_index_watch_hi, 0xF);
-		cop0_reg.SetRaw(cop0_index_x_context, 0xFFFF'FFFF'FFFF'FFF0);
-		cop0_reg.SetRaw(cop0_index_error_epc, 0xFFFF'FFFF'FFFF'FFFF);
+		cop0.SetRaw(cop0_index_index, 0x3F);
+		cop0.SetRaw(cop0_index_config, 0x7006'E463);
+		cop0.SetRaw(cop0_index_context, 0x007F'FFF0);
+		cop0.SetRaw(cop0_index_bad_v_addr, 0xFFFF'FFFF'FFFF'FFFF);
+		cop0.SetRaw(cop0_index_cause, 0xB000'007C);
+		cop0.SetRaw(cop0_index_epc, 0xFFFF'FFFF'FFFF'FFFF);
+		cop0.SetRaw(cop0_index_status, 0x3400'0000);
+		cop0.SetRaw(cop0_index_ll_addr, 0xFFFF'FFFF);
+		cop0.SetRaw(cop0_index_watch_lo, 0xFFFF'FFFB);
+		cop0.SetRaw(cop0_index_watch_hi, 0xF);
+		cop0.SetRaw(cop0_index_x_context, 0xFFFF'FFFF'FFFF'FFF0);
+		cop0.SetRaw(cop0_index_error_epc, 0xFFFF'FFFF'FFFF'FFFF);
 	}
 
 
@@ -163,7 +163,7 @@ namespace VR4300
 
 	void SetInterruptPending(ExternalInterruptSource interrupt)
 	{
-		cop0_reg.cause.ip |= std::to_underlying(interrupt);
+		cop0.cause.ip |= std::to_underlying(interrupt);
 		CheckInterrupts();
 	}
 }

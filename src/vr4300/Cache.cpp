@@ -26,7 +26,7 @@ namespace VR4300
 		uint cycles = 1;
 		/* The below makes everything crash and burn */
 #if 0
-		if (!cop0_reg.status.cu0 || operating_mode != OperatingMode::Kernel) {
+		if (!cop0.status.cu0 || operating_mode != OperatingMode::Kernel) {
 			SignalException<Exception::CoprocessorUnusable>();
 			AdvancePipeline(cycles);
 			return;
@@ -64,18 +64,18 @@ namespace VR4300
 				break;
 
 			case 1: /* Index_Load_Tag */
-				cop0_reg.tag_lo.ptag = cache_line.ptag >> 12;
-				cop0_reg.tag_lo.pstate = cache_line.valid << 1;
+				cop0.tag_lo.ptag = cache_line.ptag >> 12;
+				cop0.tag_lo.pstate = cache_line.valid << 1;
 				if constexpr (is_d_cache) {
-					cop0_reg.tag_lo.pstate |= u32(cache_line.dirty);
+					cop0.tag_lo.pstate |= u32(cache_line.dirty);
 				}
 				break;
 
 			case 2: /* Index_Store_Tag */
-				cache_line.ptag = cop0_reg.tag_lo.ptag << 12;
-				cache_line.valid = cop0_reg.tag_lo.pstate >> 1;
+				cache_line.ptag = cop0.tag_lo.ptag << 12;
+				cache_line.valid = cop0.tag_lo.pstate >> 1;
 				if constexpr (is_d_cache) {
-					cache_line.dirty = cop0_reg.tag_lo.pstate & 1;
+					cache_line.dirty = cop0.tag_lo.pstate & 1;
 				}
 				break;
 
