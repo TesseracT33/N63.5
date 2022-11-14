@@ -31,9 +31,9 @@ namespace VR4300
 		COP0Registers::EntryHi entry_hi;
 		u32 page_mask; /* Determines the virtual page size of the corresponding entry. */
 
-		u64 vpn2_shifted; /* entry_hi.vpn2 shifted to the right according to page_mask. E.g. page size 4 KB => vpn2_shifted == entry_hi.vpn2 << 13 */
-		u64 vpn2_addr_mask; /* Used to extract the VPN2 from a virtual address, given page_mask.  */
-		u64 offset_addr_mask;  /* Used to extract the offset from a virtual address, given page_mask, i.e., the bits lower than those part of the VPN. */
+		u64 vpn2_addr_mask; /* Used to extract the VPN2 from a virtual address, given page_mask. */
+		u64 vpn2_compare; /* entry_hi.vpn2, but shifted left according to page_mask. */
+		u32 offset_addr_mask;  /* Used to extract the offset from a virtual address, given page_mask, i.e., the bits lower than those part of the VPN. */
 	};
 
 	template<Memory::Operation> u32 VirtualToPhysicalAddressUserMode32(u64, bool&);
@@ -53,23 +53,6 @@ namespace VR4300
 	u32 FetchInstruction(u64 virtual_address);
 	void InitializeMMU();
 	void SetActiveVirtualToPhysicalFunctions();
-
-	/* Given a TLB entry page size, how many bits is the virtual/physical address offset? */
-	constexpr std::array page_size_to_addr_offset_bit_length = [] {
-		std::array<u8, 0x1000> table{};
-		for (size_t i = 0; i < table.size(); i++) {
-			table[i] = [&] {
-				if (i == 0) return 12;
-				if (i <= 0x3) return 14;
-				if (i <= 0xF) return 16;
-				if (i <= 0x3F) return 18;
-				if (i <= 0xFF) return 20;
-				if (i <= 0x3FF) return 22;
-				return 24;
-			}();
-		}
-		return table;
-	}();
 
 	u32 last_physical_address_on_load;
 

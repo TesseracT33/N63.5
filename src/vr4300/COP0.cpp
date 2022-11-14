@@ -415,10 +415,9 @@ namespace VR4300
 		}
 		auto index = random_generator.Generate() & 0x1F;
 		auto wired = cop0.wired & 0x1F;
-		if (index <= wired) {
-			return;
+		if (index > wired) {
+			tlb_entries[index].Write();
 		}
-		tlb_entries[index].Write();
 	}
 
 

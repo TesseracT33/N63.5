@@ -28,11 +28,9 @@ namespace VR4300
 		this->page_mask = cop0.page_mask;
 		this->entry_hi.g = cop0.entry_lo[0].g & cop0.entry_lo[1].g;
 		/* Compute things that speed up virtual-to-physical-address translation. */
-		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0.page_mask >> 13];
-		u64 vpn2_mask = addressing_mode == AddressingMode::_32bit ? 0xFFFF'FFFF : 0xFF'FFFF'FFFF;
-		vpn2_addr_mask = vpn2_mask << (addr_offset_bit_length + 1) & vpn2_mask;
-		offset_addr_mask = (1 << addr_offset_bit_length) - 1;
-		vpn2_shifted = entry_hi.vpn2 << (addr_offset_bit_length + 1);
+		vpn2_addr_mask = 0xFF'FFFF'E000 & ~u64(page_mask);
+		vpn2_compare = std::bit_cast<u64>(entry_hi) & vpn2_addr_mask;
+		offset_addr_mask = page_mask >> 1 | 0xFFF;
 	}
 
 
@@ -48,7 +46,7 @@ namespace VR4300
 			entry.entry_hi.asid = 0xFF;
 			entry.entry_hi.g = 1;
 			entry.entry_hi.vpn2 = 0x07FF'FFFF;
-			entry.vpn2_shifted = 0xFFFF'FFFF'FFFF'FFFF;
+			/* TODO: vpn2_addr_mask, vpn2_compare, offset_addr_mask? */
 		}
 	}
 
@@ -133,6 +131,7 @@ namespace VR4300
 			}
 		}
 		else { /* Unknown?! */
+			Log("Warning: cop0.status.ksu was set to 3.");
 			assert(false);
 		}
 	}
@@ -319,12 +318,11 @@ namespace VR4300
 		}
 		auto OnBadEntry = [&](const TlbEntry& entry) {
 			address_failure.bad_virt_addr = virt_addr;
-			address_failure.bad_vpn2 = entry.entry_hi.vpn2;
 			address_failure.bad_asid = entry.entry_hi.asid;
 		};
 		for (const TlbEntry& entry : tlb_entries) {
 			/* Compare the virtual page number (divided by two; VPN2) of the entry with the VPN2 of the virtual address */
-			if ((virt_addr & entry.vpn2_addr_mask) != entry.vpn2_shifted) continue;
+			if ((virt_addr & entry.vpn2_addr_mask) != entry.vpn2_compare) continue;
 			/* If the global bit is clear, the entry's ASID (Address space ID field) must coincide with the one in the EntryHi register. */
 			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0.entry_hi.asid) continue;
 			/* Bits 62-63 of vaddr must match the entry's region */      /* TODO: also checked in 32-bit mode? */
@@ -351,8 +349,7 @@ namespace VR4300
 		if (addressing_mode == AddressingMode::_32bit) SignalException<Exception::TlbMiss, operation>();
 		else                                           SignalException<Exception::XtlbMiss, operation>();
 		address_failure.bad_virt_addr = virt_addr;
-		address_failure.bad_vpn2 = virt_addr >> page_size_to_addr_offset_bit_length[cop0.page_mask >> 13] & 0xFF'FFFF'FFFF;
-		address_failure.bad_asid = cop0.entry_hi.asid;
+		address_failure.bad_asid = cop0.entry_hi.asid; /* TODO: ??? */
 		return 0;
 	}
 

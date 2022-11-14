@@ -186,16 +186,7 @@ namespace VR4300
 	{
 		SignalException<Exception::AddressError, operation>();
 		address_failure.bad_virt_addr = bad_virt_addr;
-		address_failure.bad_vpn2 = bad_virt_addr >> page_size_to_addr_offset_bit_length[cop0.page_mask >> 13] & 0xFF'FFFF'FFFF;
 		address_failure.bad_asid = cop0.entry_hi.asid;
-		/* TODO: should this not depend on virt addr? */
-		address_failure.bad_space_id = [&] {
-			if (operating_mode == OperatingMode::Kernel &&
-				(bad_virt_addr >= 0xFFFF'FFFF'0000'0000 || addressing_mode == AddressingMode::_64bit)) return 3;
-			if (addressing_mode == AddressingMode::_32bit) return 0;
-			if (operating_mode == OperatingMode::User) return 0;
-			if (operating_mode == OperatingMode::Supervisor) return 1;
-		}();
 	}
 
 
@@ -207,9 +198,8 @@ namespace VR4300
 			else                                                 return 4;
 		}();
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.x_context.r = address_failure.bad_space_id;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_virt_addr >> 13;
+		cop0.x_context.r = address_failure.bad_virt_addr >> 62;
 		cop0.cause.ce = 0;
 	}
 
@@ -313,11 +303,9 @@ namespace VR4300
 			else                                                 return 2;
 		}();
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
-		/* TODO: what about the R field in entry_hi? */
 	}
 
 
@@ -329,8 +317,7 @@ namespace VR4300
 			else                                                 return 2;
 		}();
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
 	}
@@ -340,8 +327,7 @@ namespace VR4300
 	{
 		cop0.cause.exc_code = 1;
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
 	}
@@ -369,9 +355,7 @@ namespace VR4300
 			else                                                 return 2;
 		}();
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = address_failure.bad_virt_addr >> 13;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
 	}
