@@ -313,8 +313,8 @@ namespace VR4300
 			else                                                 return 2;
 		}();
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = address_failure.bad_vpn2; /* TODO: write to xcontext in 64 bit mode? */
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
 		/* TODO: what about the R field in entry_hi? */
@@ -329,8 +329,8 @@ namespace VR4300
 			else                                                 return 2;
 		}();
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
 	}
@@ -340,8 +340,8 @@ namespace VR4300
 	{
 		cop0.cause.exc_code = 1;
 		cop0.bad_v_addr = address_failure.bad_virt_addr;
-		cop0.context.bad_vpn2 = address_failure.bad_vpn2;
-		cop0.entry_hi.vpn2 = address_failure.bad_vpn2; /* TODO: should this assignment be made? */
+		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = address_failure.bad_vpn2;
+		cop0.entry_hi.vpn2 = address_failure.bad_vpn2;
 		cop0.entry_hi.asid = address_failure.bad_asid;
 		cop0.cause.ce = 0;
 	}
