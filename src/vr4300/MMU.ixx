@@ -1,14 +1,15 @@
 export module VR4300:MMU;
 
+import :COP0;
 import :Operation;
 
 import Memory;
 import Util;
 
 import <array>;
+import <bit>;
 import <cassert>;
 import <concepts>;
-import <cstring>;
 import <type_traits>;
 
 namespace VR4300
@@ -16,7 +17,7 @@ namespace VR4300
 	/* Used for logging. Set when memory is read during an instruction fetch. */
 	export u32 last_instr_fetch_phys_addr;
 
-	using VirtualToPhysicalAddressFun = u32(*)(u64 /* in: v_addr */, bool& /* out: cache area? */);
+	using VirtualToPhysicalAddressFun = u32(*)(u64 /* in: v_addr */, bool& /* out: cached area? */);
 
 	enum class AddressingMode {
 		_32bit, _64bit
@@ -26,24 +27,8 @@ namespace VR4300
 		void Read() const;
 		void Write();
 
-		struct {
-			u32     :  1;
-			u32 v   :  1; /* Valid. Is this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
-			u32 d   :  1; /* Dirty. If this bit is set, the page is marked as writeable. */
-			u32 c   :  3; /* Specifies the TLB page attribute (2 => do not access cache; else => access cache). */
-			u32 pfn : 20; /* Page frame number; the high-order bits of the physical address. */
-			u32     :  6;
-		} entry_lo[2];
-
-		struct {
-			u64 asid :  8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
-			u64      :  4;
-			u64 g    :  1; /* Global. If this bit is set, the processor ignores the ASID during TLB lookup. */
-			u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
-			u64      : 22;
-			u64 r    :  2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */
-		} entry_hi;
-
+		COP0Registers::EntryLo entry_lo[2];
+		COP0Registers::EntryHi entry_hi;
 		u32 page_mask; /* Determines the virtual page size of the corresponding entry. */
 
 		u64 vpn2_shifted; /* entry_hi.vpn2 shifted to the right according to page_mask. E.g. page size 4 KB => vpn2_shifted == entry_hi.vpn2 << 13 */

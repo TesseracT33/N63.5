@@ -68,14 +68,14 @@ namespace VR4300
 
 		u32 random; /* (1) 6 bits; Decremented every instruction, and specifies the entry in the TLB that is affected by the TLB Write instruction. */
 
-		struct { /* (2), (3); Used to rewrite the TLB or to check coincidence of a TLB entry when addresses are converted. */
+		struct EntryLo { /* (2), (3); Used to rewrite the TLB or to check coincidence of a TLB entry when addresses are converted. */
 			u32 g : 1; /* Global. If this bit is set in both EntryLo0 and EntryLo1, then the processor ignores the ASID during TLB lookup. */
 			u32 v : 1; /* Valid. If this bit is set, it indicates that the TLB entry is valid; otherwise, a TLBL or TLBS miss occurs. */
 			u32 d : 1; /* Dirty. If this bit is set, the page is marked as dirty, and therefore writable. */
 			u32 c : 3; /* Specifies the TLB page attribute. */
 			u32 pfn : 20; /* Page frame number -- the high-order bits of the physical address. */
 			u32 : 6;
-		} entry_lo_0, entry_lo_1;
+		} entry_lo[2];
 
 		struct { /* (4) */
 			u64 : 4;
@@ -98,9 +98,10 @@ namespace VR4300
 			 /* On real HW, the register is 32 bits. Here, we make it 64 bits and increment it every PCycle instead of every other PCycle.
 			 When we read from it, we shift it right one bit and then return it. When we write to it, we set it to the data shifted left one bit. */
 
-		struct { /* (10) */
+		struct EntryHi { /* (10) */
 			u64 asid : 8; /* Address space ID field. Lets multiple processes share the TLB; virtual addresses for each process can be shared. */
-			u64 padding_of_zeroes : 5; /* named because it needs to be set to zero in the TLBR instruction, as data is copied to here from a TLB entry that is not zero. */
+			u64 : 4;
+			u64 g : 1;
 			u64 vpn2 : 27; /* Virtual page number divided by two (maps to two pages). */
 			u64 : 22;
 			u64 r : 2; /* Region (00 => user; 01 => supervisor; 11 => kernel) used to match virtual address bits 63..62. */

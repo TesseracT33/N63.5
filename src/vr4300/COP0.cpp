@@ -55,8 +55,8 @@ namespace VR4300
 		switch (reg_index & 31) {
 		case cop0_index_index: return StructToInt(index);
 		case cop0_index_random: return random_generator.Generate(); /* Generate a random number in the interval [wired, 31] */
-		case cop0_index_entry_lo_0: return StructToInt(entry_lo_0);
-		case cop0_index_entry_lo_1: return StructToInt(entry_lo_1);
+		case cop0_index_entry_lo_0: return StructToInt(entry_lo[0]);
+		case cop0_index_entry_lo_1: return StructToInt(entry_lo[1]);
 		case cop0_index_context: return StructToInt(context);
 		case cop0_index_page_mask: return page_mask;
 		case cop0_index_wired: return wired;
@@ -130,14 +130,14 @@ namespace VR4300
 			else               random = value & 0x20;
 			break;
 
-		case cop0_index_entry_lo_0:
-			if constexpr (raw) IntToStruct(entry_lo_0, value);
-			else               IntToStructMasked(entry_lo_0, value, 0x3FFF'FFFF);
+			case cop0_index_entry_lo_0:
+			if constexpr (raw) IntToStruct(entry_lo[0], value);
+			else               IntToStructMasked(entry_lo[0], value, 0x3FFF'FFFF);
 			break;
 
 		case cop0_index_entry_lo_1:
-			if constexpr (raw) IntToStruct(entry_lo_1, value);
-			else               IntToStructMasked(entry_lo_1, value, 0x3FFF'FFFF);
+			if constexpr (raw) IntToStruct(entry_lo[1], value);
+			else               IntToStructMasked(entry_lo[1], value, 0x3FFF'FFFF);
 			break;
 
 		case cop0_index_context:
@@ -337,12 +337,15 @@ namespace VR4300
 		}
 
 		auto index = std::ranges::find_if(tlb_entries, [](const TlbEntry& entry) {
-				return entry.entry_hi.asid == cop0_reg.entry_hi.asid &&
-					entry.entry_hi.vpn2 == cop0_reg.entry_hi.vpn2 &&
-					entry.entry_hi.r == cop0_reg.entry_hi.r;
+			if ((std::bit_cast<u64>(entry.entry_hi.vpn2) & ~u64(entry.page_mask))
+				!= (std::bit_cast<u64>(cop0_reg.entry_hi.vpn2) & ~u64(entry.page_mask))) return false;
+			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0_reg.entry_hi.asid)      return false;
+			if (entry.entry_hi.r != cop0_reg.entry_hi.r)                                 return false; /* TODO: manual suggests this is not checked? */
+			return true;
 		});
 		if (index == tlb_entries.end()) {
 			cop0_reg.index.p = 1;
+			/* cop0_reg.index.value undefined */
 		}
 		else {
 			cop0_reg.index.p = 0;

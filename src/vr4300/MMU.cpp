@@ -11,22 +11,22 @@ namespace VR4300
 {
 	void TlbEntry::Read() const
 	{
-		std::memcpy(&cop0_reg.entry_lo_0, &entry_lo[0], 4);
-		std::memcpy(&cop0_reg.entry_lo_1, &entry_lo[1], 4);
-		std::memcpy(&cop0_reg.entry_hi, &entry_hi, 8);
-		cop0_reg.page_mask = page_mask;
-		cop0_reg.entry_hi.padding_of_zeroes = 0; /* entry_hi, unlike an TLB entry, does not have the G bit, but this is copied in from the memcpy. */
-		cop0_reg.entry_lo_0.g = cop0_reg.entry_lo_1.g = entry_hi.g;
+		cop0_reg.entry_lo[0] = this->entry_lo[0];
+		cop0_reg.entry_lo[1] = this->entry_lo[1];
+		cop0_reg.entry_hi = std::bit_cast<COP0Registers::EntryHi>(
+			std::bit_cast<u64>(this->entry_hi) & ~u64(this->page_mask));
+		cop0_reg.page_mask = this->page_mask;
 	}
 
 
 	void TlbEntry::Write()
 	{
-		std::memcpy(&entry_lo[0], &cop0_reg.entry_lo_0, 4);
-		std::memcpy(&entry_lo[1], &cop0_reg.entry_lo_1, 4);
-		std::memcpy(&entry_hi, &cop0_reg.entry_hi, 8);
-		page_mask = cop0_reg.page_mask;
-		entry_hi.g = cop0_reg.entry_lo_0.g & cop0_reg.entry_lo_1.g;
+		this->entry_lo[0] = cop0_reg.entry_lo[0];
+		this->entry_lo[1] = cop0_reg.entry_lo[1];
+		this->entry_hi = std::bit_cast<COP0Registers::EntryHi>(
+			std::bit_cast<u64>(cop0_reg.entry_hi) & ~u64(cop0_reg.page_mask));
+		this->page_mask = cop0_reg.page_mask;
+		this->entry_hi.g = cop0_reg.entry_lo[0].g & cop0_reg.entry_lo[1].g;
 		/* Compute things that speed up virtual-to-physical-address translation. */
 		auto addr_offset_bit_length = page_size_to_addr_offset_bit_length[cop0_reg.page_mask >> 13];
 		u64 vpn2_mask = addressing_mode == AddressingMode::_32bit ? 0xFFFF'FFFF : 0xFF'FFFF'FFFF;
