@@ -337,10 +337,11 @@ namespace VR4300
 		}
 
 		auto index = std::ranges::find_if(tlb_entries, [](const TlbEntry& entry) {
-			if ((std::bit_cast<u64>(entry.entry_hi.vpn2) & ~u64(entry.page_mask))
-				!= (std::bit_cast<u64>(cop0.entry_hi.vpn2) & ~u64(entry.page_mask))) return false;
-			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0.entry_hi.asid)      return false;
-			if (entry.entry_hi.r != cop0.entry_hi.r)                                 return false; /* TODO: manual suggests this is not checked? */
+			u64 vpn2_mask = 0xFF'FFFF'E000 & ~u64(entry.page_mask);
+			if ((std::bit_cast<u64>(entry.entry_hi) & vpn2_mask)
+				!= (std::bit_cast<u64>(cop0.entry_hi) & vpn2_mask))             return false;
+			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0.entry_hi.asid) return false;
+			if (entry.entry_hi.r != cop0.entry_hi.r)                            return false;
 			return true;
 		});
 		if (index == tlb_entries.end()) {
