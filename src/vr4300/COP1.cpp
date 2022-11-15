@@ -661,11 +661,13 @@ namespace VR4300
 						return op1 - op2;
 					}
 					if constexpr (instr == MUL) {
-						AdvancePipeline(29);
+						if constexpr (sizeof(Float) == 4) AdvancePipeline(5);
+						else                              AdvancePipeline(8);
 						return op1 * op2;
 					}
 					if constexpr (instr == DIV) {
-						AdvancePipeline(58);
+						if constexpr (sizeof(Float) == 4) AdvancePipeline(29);
+						else                              AdvancePipeline(58);
 						return op1 / op2;
 					}
 				}();
