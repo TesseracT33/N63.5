@@ -44,19 +44,27 @@ namespace SI
 		}
 		else { /* RDRAM to PIF */
 			size_t num_bytes_in_rom_area = PIF::GetNumberOfBytesUntilRamStart(pif_addr);
-			pif_addr += num_bytes_in_rom_area;
-			rdram_ptr += num_bytes_in_rom_area;
-			dma_len -= num_bytes_in_rom_area;
-			for (size_t i = 0; i < dma_len; i += 4) {
-				s32 val;
-				std::memcpy(&val, rdram_ptr, 4);
-				PIF::WriteMemory<4>(pif_addr, val);
-				pif_addr += 4;
-				rdram_ptr += 4;
+			if (num_bytes_in_rom_area < dma_len) {
+				pif_addr += num_bytes_in_rom_area;
+				rdram_ptr += num_bytes_in_rom_area;
+				dma_len -= num_bytes_in_rom_area;
+				for (size_t i = 0; i < dma_len; i += 4) {
+					s32 val;
+					std::memcpy(&val, rdram_ptr, 4);
+					PIF::WriteMemory<4>(pif_addr, val);
+					pif_addr += 4;
+					rdram_ptr += 4;
+				}
+				if constexpr (log_dma) {
+					LogDma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
+						si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
+				}
 			}
-			if constexpr (log_dma) {
-				LogDma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
-					si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
+			else {
+				LogDma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
+					si.dram_addr, pif_addr));
+				OnDmaFinish();
+				return;
 			}
 		}
 
