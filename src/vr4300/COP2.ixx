@@ -6,14 +6,14 @@ import <format>;
 
 namespace VR4300
 {
-	enum class COP2Instruction {
+	enum class Cop2Instruction {
 		CFC2, CTC2, MFC2, MTC2, DCFC2, DCTC2, DMFC2, DMTC2
 	};
 
-	template<COP2Instruction>
-	void COP2Move(u32 instr_code);
+	template<Cop2Instruction>
+	void Cop2Move(u32 instr_code);
 
-	void InitializeCOP2();
+	void InitializeCop22();
 
 	u64 cop2_latch;
 }

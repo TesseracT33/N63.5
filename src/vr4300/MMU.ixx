@@ -27,8 +27,8 @@ namespace VR4300
 		void Read() const;
 		void Write();
 
-		COP0Registers::EntryLo entry_lo[2];
-		COP0Registers::EntryHi entry_hi;
+		Cop0Registers::EntryLo entry_lo[2];
+		Cop0Registers::EntryHi entry_hi;
 		u32 page_mask; /* Determines the virtual page size of the corresponding entry. */
 
 		u64 vpn2_addr_mask; /* Used to extract the VPN2 from a virtual address, given page_mask. */

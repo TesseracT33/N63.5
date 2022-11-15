@@ -18,7 +18,7 @@ namespace VR4300
 		std::same_as<f32, T> || std::same_as<f64, T> ||
 		std::same_as<s32, T> || std::same_as<s64, T>;
 
-	enum class COP1Instruction {
+	enum class Cop1Instruction {
 		/* Load/store/transfer instructions */
 		LWC1, SWC1, LDC1, SDC1, MTC1, MFC1, CTC1, CFC1, DMTC1, DMFC1, DCFC1, DCTC1,
 
@@ -46,12 +46,12 @@ namespace VR4300
 	};
 
 	/* COP1/FPU instructions */
-	template<COP1Instruction> void FpuLoad(u32 instr_code);
-	template<COP1Instruction> void FpuStore(u32 instr_code);
-	template<COP1Instruction> void FpuMove(u32 instr_code);
-	template<COP1Instruction> void FpuConvert(u32 instr_code);
-	template<COP1Instruction> void FpuCompute(u32 instr_code);
-	template<COP1Instruction> void FpuBranch(u32 instr_code);
+	template<Cop1Instruction> void FpuLoad(u32 instr_code);
+	template<Cop1Instruction> void FpuStore(u32 instr_code);
+	template<Cop1Instruction> void FpuMove(u32 instr_code);
+	template<Cop1Instruction> void FpuConvert(u32 instr_code);
+	template<Cop1Instruction> void FpuCompute(u32 instr_code);
+	template<Cop1Instruction> void FpuBranch(u32 instr_code);
 	void FpuCompare(u32 instr_code);
 
 	void ClearAllExceptions();

@@ -15,7 +15,7 @@ namespace VR4300
 			cop0.entry_lo[i] = this->entry_lo[i];
 			cop0.entry_lo[i].g = this->entry_hi.g;
 		}
-		cop0.entry_hi = std::bit_cast<COP0Registers::EntryHi>(
+		cop0.entry_hi = std::bit_cast<Cop0Registers::EntryHi>(
 			std::bit_cast<u64>(this->entry_hi) & ~u64(this->page_mask));
 		cop0.page_mask = this->page_mask;
 	}
@@ -25,7 +25,7 @@ namespace VR4300
 	{
 		this->entry_lo[0] = cop0.entry_lo[0];
 		this->entry_lo[1] = cop0.entry_lo[1];
-		this->entry_hi = std::bit_cast<COP0Registers::EntryHi>(
+		this->entry_hi = std::bit_cast<Cop0Registers::EntryHi>(
 			std::bit_cast<u64>(cop0.entry_hi) & ~u64(cop0.page_mask));
 		this->page_mask = cop0.page_mask;
 		this->entry_hi.g = cop0.entry_lo[0].g & cop0.entry_lo[1].g;

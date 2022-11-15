@@ -262,7 +262,7 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
+	template<Cop1Instruction instr>
 	void FpuLoad(u32 instr_code)
 	{
 		if (!cop0.status.cu1) {
@@ -271,7 +271,7 @@ namespace VR4300
 			return;
 		}
 
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 
 		s16 offset = instr_code & 0xFFFF;
 		auto ft = instr_code >> 16 & 0x1F;
@@ -313,7 +313,7 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
+	template<Cop1Instruction instr>
 	void FpuStore(u32 instr_code)
 	{
 		if (!cop0.status.cu1) {
@@ -322,7 +322,7 @@ namespace VR4300
 			return;
 		}
 
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 
 		s16 offset = instr_code & 0xFFFF;
 		auto ft = instr_code >> 16 & 0x1F;
@@ -356,7 +356,7 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
+	template<Cop1Instruction instr>
 	void FpuMove(u32 instr_code)
 	{
 		if (!cop0.status.cu1) {
@@ -365,7 +365,7 @@ namespace VR4300
 			return;
 		}
 
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 
 		auto fs = instr_code >> 11 & 0x1F;
 		auto rt = instr_code >> 16 & 0x1F;
@@ -419,7 +419,7 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
+	template<Cop1Instruction instr>
 	void FpuConvert(u32 instr_code)
 	{
 		if (!cop0.status.cu1) {
@@ -429,7 +429,7 @@ namespace VR4300
 		}
 		ClearAllExceptions();
 
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 
 		/* Test for unimplemented operation exception sources for CVT/round instructions. These cannot be found out from std::fetestexcept.
 		   This function should be called after the conversion has been made.
@@ -575,7 +575,7 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
+	template<Cop1Instruction instr>
 	void FpuCompute(u32 instr_code)
 	{
 		if (!cop0.status.cu1) {
@@ -585,7 +585,7 @@ namespace VR4300
 		}
 		ClearAllExceptions();
 
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 
 		auto fd = instr_code >> 6 & 0x1F;
 		auto fs = instr_code >> 11 & 0x1F;
@@ -737,7 +737,7 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
+	template<Cop1Instruction instr>
 	void FpuBranch(u32 instr_code)
 	{
 		if (!cop0.status.cu1) {
@@ -747,7 +747,7 @@ namespace VR4300
 		}
 		ClearAllExceptions();
 
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 
 		/* For all instructions: Adds the instruction address in the delay slot and a 16-bit offset (shifted 2 bits
 		   to the left and sign-extended) to calculate the branch target address.
@@ -854,47 +854,47 @@ namespace VR4300
 	}
 
 
-	template void FpuLoad<COP1Instruction::LWC1>(u32);
-	template void FpuLoad<COP1Instruction::LDC1>(u32);
+	template void FpuLoad<Cop1Instruction::LWC1>(u32);
+	template void FpuLoad<Cop1Instruction::LDC1>(u32);
 
-	template void FpuStore<COP1Instruction::SWC1>(u32);
-	template void FpuStore<COP1Instruction::SDC1>(u32);
+	template void FpuStore<Cop1Instruction::SWC1>(u32);
+	template void FpuStore<Cop1Instruction::SDC1>(u32);
 
-	template void FpuMove<COP1Instruction::MTC1>(u32);
-	template void FpuMove<COP1Instruction::MFC1>(u32);
-	template void FpuMove<COP1Instruction::CTC1>(u32);
-	template void FpuMove<COP1Instruction::CFC1>(u32);
-	template void FpuMove<COP1Instruction::DMTC1>(u32);
-	template void FpuMove<COP1Instruction::DMFC1>(u32);
-	template void FpuMove<COP1Instruction::DCFC1>(u32);
-	template void FpuMove<COP1Instruction::DCTC1>(u32);
+	template void FpuMove<Cop1Instruction::MTC1>(u32);
+	template void FpuMove<Cop1Instruction::MFC1>(u32);
+	template void FpuMove<Cop1Instruction::CTC1>(u32);
+	template void FpuMove<Cop1Instruction::CFC1>(u32);
+	template void FpuMove<Cop1Instruction::DMTC1>(u32);
+	template void FpuMove<Cop1Instruction::DMFC1>(u32);
+	template void FpuMove<Cop1Instruction::DCFC1>(u32);
+	template void FpuMove<Cop1Instruction::DCTC1>(u32);
 
-	template void FpuConvert<COP1Instruction::CVT_S>(u32);
-	template void FpuConvert<COP1Instruction::CVT_D>(u32);
-	template void FpuConvert<COP1Instruction::CVT_L>(u32);
-	template void FpuConvert<COP1Instruction::CVT_W>(u32);
-	template void FpuConvert<COP1Instruction::ROUND_L>(u32);
-	template void FpuConvert<COP1Instruction::ROUND_W>(u32);
-	template void FpuConvert<COP1Instruction::TRUNC_L>(u32);
-	template void FpuConvert<COP1Instruction::TRUNC_W>(u32);
-	template void FpuConvert<COP1Instruction::CEIL_L>(u32);
-	template void FpuConvert<COP1Instruction::CEIL_W>(u32);
-	template void FpuConvert<COP1Instruction::FLOOR_L>(u32);
-	template void FpuConvert<COP1Instruction::FLOOR_W>(u32);
+	template void FpuConvert<Cop1Instruction::CVT_S>(u32);
+	template void FpuConvert<Cop1Instruction::CVT_D>(u32);
+	template void FpuConvert<Cop1Instruction::CVT_L>(u32);
+	template void FpuConvert<Cop1Instruction::CVT_W>(u32);
+	template void FpuConvert<Cop1Instruction::ROUND_L>(u32);
+	template void FpuConvert<Cop1Instruction::ROUND_W>(u32);
+	template void FpuConvert<Cop1Instruction::TRUNC_L>(u32);
+	template void FpuConvert<Cop1Instruction::TRUNC_W>(u32);
+	template void FpuConvert<Cop1Instruction::CEIL_L>(u32);
+	template void FpuConvert<Cop1Instruction::CEIL_W>(u32);
+	template void FpuConvert<Cop1Instruction::FLOOR_L>(u32);
+	template void FpuConvert<Cop1Instruction::FLOOR_W>(u32);
 
-	template void FpuCompute<COP1Instruction::ADD>(u32);
-	template void FpuCompute<COP1Instruction::SUB>(u32);
-	template void FpuCompute<COP1Instruction::MUL>(u32);
-	template void FpuCompute<COP1Instruction::DIV>(u32);
-	template void FpuCompute<COP1Instruction::ABS>(u32);
-	template void FpuCompute<COP1Instruction::MOV>(u32);
-	template void FpuCompute<COP1Instruction::NEG>(u32);
-	template void FpuCompute<COP1Instruction::SQRT>(u32);
+	template void FpuCompute<Cop1Instruction::ADD>(u32);
+	template void FpuCompute<Cop1Instruction::SUB>(u32);
+	template void FpuCompute<Cop1Instruction::MUL>(u32);
+	template void FpuCompute<Cop1Instruction::DIV>(u32);
+	template void FpuCompute<Cop1Instruction::ABS>(u32);
+	template void FpuCompute<Cop1Instruction::MOV>(u32);
+	template void FpuCompute<Cop1Instruction::NEG>(u32);
+	template void FpuCompute<Cop1Instruction::SQRT>(u32);
 
-	template void FpuBranch<COP1Instruction::BC1T>(u32);
-	template void FpuBranch<COP1Instruction::BC1F>(u32);
-	template void FpuBranch<COP1Instruction::BC1TL>(u32);
-	template void FpuBranch<COP1Instruction::BC1FL>(u32);
+	template void FpuBranch<Cop1Instruction::BC1T>(u32);
+	template void FpuBranch<Cop1Instruction::BC1F>(u32);
+	template void FpuBranch<Cop1Instruction::BC1TL>(u32);
+	template void FpuBranch<Cop1Instruction::BC1FL>(u32);
 
 	template s32 FGR::Get<s32>(size_t) const;
 	template s64 FGR::Get<s64>(size_t) const;

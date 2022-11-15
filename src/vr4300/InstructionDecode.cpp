@@ -17,134 +17,29 @@ import Util;
 #define EXEC_CPU_INSTR(INSTR) { \
 	if constexpr (log_cpu_instructions) \
 		current_instr_name = #INSTR; \
-	ExecuteCPUInstruction<CPUInstruction::INSTR>(); }
+	ExecuteCpuInstruction<CpuInstruction::INSTR>(); }
 
 #define EXEC_COP0_INSTR(INSTR) { \
 	if constexpr (log_cpu_instructions) \
 		current_instr_name = #INSTR; \
-	ExecuteCOP0Instruction<COP0Instruction::INSTR>(); }
+	ExecuteCop0Instruction<Cop0Instruction::INSTR>(); }
 
 #define EXEC_COP1_INSTR(INSTR) { \
 	if constexpr (log_cpu_instructions) \
 		current_instr_name = #INSTR; \
-	ExecuteCOP1Instruction<COP1Instruction::INSTR>(); }
+	ExecuteCop1Instruction<Cop1Instruction::INSTR>(); }
 
 #define EXEC_COP2_INSTR(INSTR) { \
 	if constexpr (log_cpu_instructions) \
 		current_instr_name = #INSTR; \
-	ExecuteCOP2Instruction<COP2Instruction::INSTR>(); }
+	ExecuteCop2Instruction<Cop2Instruction::INSTR>(); }
 
 namespace VR4300
 {
 	u32 instr_code;
 
 
-	template<CPUInstruction instr> void ExecuteCPUInstruction();
-	template<COP0Instruction instr> void ExecuteCOP0Instruction();
-	template<COP1Instruction instr> void ExecuteCOP1Instruction();
-	template<COP2Instruction instr> void ExecuteCOP2Instruction();
-
-
-	void DecodeAndExecuteSpecialInstruction()
-	{
-		auto opcode = instr_code & 0x3F;
-
-		switch (opcode) {
-		case 0b100000: EXEC_CPU_INSTR(ADD); break; 
-		case 0b100001: EXEC_CPU_INSTR(ADDU); break;
-		case 0b100100: EXEC_CPU_INSTR(AND); break;
-		case 0b101100: EXEC_CPU_INSTR(DADD); break;
-		case 0b101101: EXEC_CPU_INSTR(DADDU); break;
-		case 0b101110: EXEC_CPU_INSTR(DSUB); break;
-		case 0b101111: EXEC_CPU_INSTR(DSUBU); break;
-		case 0b100111: EXEC_CPU_INSTR(NOR); break;
-		case 0b100101: EXEC_CPU_INSTR(OR); break;
-		case 0b101010: EXEC_CPU_INSTR(SLT); break;
-		case 0b101011: EXEC_CPU_INSTR(SLTU); break;
-		case 0b100010: EXEC_CPU_INSTR(SUB); break;
-		case 0b100011: EXEC_CPU_INSTR(SUBU); break;
-		case 0b100110: EXEC_CPU_INSTR(XOR); break;
-
-		case 0b111000: EXEC_CPU_INSTR(DSLL); break;
-		case 0b010100: EXEC_CPU_INSTR(DSLLV); break;
-		case 0b111100: EXEC_CPU_INSTR(DSLL32); break;
-		case 0b111011: EXEC_CPU_INSTR(DSRA); break;
-		case 0b010111: EXEC_CPU_INSTR(DSRAV); break;
-		case 0b111111: EXEC_CPU_INSTR(DSRA32); break;
-		case 0b111010: EXEC_CPU_INSTR(DSRL); break;
-		case 0b010110: EXEC_CPU_INSTR(DSRLV); break;
-		case 0b111110: EXEC_CPU_INSTR(DSRL32); break;
-		case 0b000000: EXEC_CPU_INSTR(SLL); break;
-		case 0b000100: EXEC_CPU_INSTR(SLLV); break;
-		case 0b000011: EXEC_CPU_INSTR(SRA); break;
-		case 0b000111: EXEC_CPU_INSTR(SRAV); break;
-		case 0b000010: EXEC_CPU_INSTR(SRL); break;
-		case 0b000110: EXEC_CPU_INSTR(SRLV); break;
-
-		case 0b011110: EXEC_CPU_INSTR(DDIV); break;
-		case 0b011111: EXEC_CPU_INSTR(DDIVU); break;
-		case 0b011010: EXEC_CPU_INSTR(DIV); break;
-		case 0b011011: EXEC_CPU_INSTR(DIVU); break;
-		case 0b011100: EXEC_CPU_INSTR(DMULT); break;
-		case 0b011101: EXEC_CPU_INSTR(DMULTU); break;
-		case 0b011000: EXEC_CPU_INSTR(MULT); break;
-		case 0b011001: EXEC_CPU_INSTR(MULTU); break;
-
-		case 0b001001: EXEC_CPU_INSTR(JALR); break;
-		case 0b001000: EXEC_CPU_INSTR(JR); break;
-
-		case 0b110100: EXEC_CPU_INSTR(TEQ); break;
-		case 0b110000: EXEC_CPU_INSTR(TGE); break;
-		case 0b110001: EXEC_CPU_INSTR(TGEU); break;
-		case 0b110010: EXEC_CPU_INSTR(TLT); break;
-		case 0b110011: EXEC_CPU_INSTR(TLTU); break;
-		case 0b110110: EXEC_CPU_INSTR(TNE); break;
-
-		case 0b010000: EXEC_CPU_INSTR(MFHI); break;
-		case 0b010010: EXEC_CPU_INSTR(MFLO); break;
-		case 0b010001: EXEC_CPU_INSTR(MTHI); break;
-		case 0b010011: EXEC_CPU_INSTR(MTLO); break;
-
-		case 0b001101: EXEC_CPU_INSTR(BREAK); break;
-		case 0b001111: EXEC_CPU_INSTR(SYNC); break;
-		case 0b001100: EXEC_CPU_INSTR(SYSCALL); break;
-
-		default:
-			NotifyIllegalInstrCode(instr_code);
-			SignalException<Exception::ReservedInstruction>();
-		}
-	}
-
-
-	void DecodeAndExecuteRegimmInstruction()
-	{
-		auto opcode = instr_code >> 16 & 0x1F;
-
-		switch (opcode) {
-		case 0b00001: EXEC_CPU_INSTR(BGEZ); break;
-		case 0b10001: EXEC_CPU_INSTR(BGEZAL); break;
-		case 0b10011: EXEC_CPU_INSTR(BGEZALL); break;
-		case 0b00011: EXEC_CPU_INSTR(BGEZL); break;
-		case 0b00000: EXEC_CPU_INSTR(BLTZ); break;
-		case 0b10000: EXEC_CPU_INSTR(BLTZAL); break;
-		case 0b10010: EXEC_CPU_INSTR(BLTZALL); break;
-		case 0b00010: EXEC_CPU_INSTR(BLTZL); break;
-
-		case 0b01100: EXEC_CPU_INSTR(TEQI); break;
-		case 0b01000: EXEC_CPU_INSTR(TGEI); break;
-		case 0b01001: EXEC_CPU_INSTR(TGEIU); break;
-		case 0b01010: EXEC_CPU_INSTR(TLTI); break;
-		case 0b01011: EXEC_CPU_INSTR(TLTIU); break;
-		case 0b01110: EXEC_CPU_INSTR(TNEI); break;
-
-		default:
-			NotifyIllegalInstrCode(instr_code);
-			SignalException<Exception::ReservedInstruction>();
-		}
-	}
-
-
-	void DecodeAndExecuteCOP0Instruction()
+	void DecodeExecuteCop0Instruction()
 	{
 		auto opcode = instr_code >> 21 & 0x1F;
 
@@ -177,7 +72,7 @@ namespace VR4300
 	}
 
 
-	void DecodeAndExecuteCOP1Instruction()
+	void DecodeExecuteCop1Instruction()
 	{
 		auto opcode = instr_code >> 21 & 0x1F;
 
@@ -246,7 +141,7 @@ namespace VR4300
 	}
 
 
-	void DecodeAndExecuteCOP2Instruction()
+	void DecodeExecuteCop2Instruction()
 	{
 		auto opcode = instr_code >> 21 & 0x1F;
 		switch (opcode) {
@@ -266,7 +161,7 @@ namespace VR4300
 	}
 
 
-	void DecodeAndExecuteCOP3Instruction()
+	void DecodeExecuteCOP3Instruction()
 	{
 		auto opcode = instr_code >> 21 & 0x1F;
 		if (opcode == 0) { /* MFC3 */
@@ -287,12 +182,12 @@ namespace VR4300
 		auto opcode = instr_code >> 26; /* (0-63) */
 
 		switch (opcode) {
-		case 0b000000: DecodeAndExecuteSpecialInstruction(); break;
-		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
-		case 0b010000: DecodeAndExecuteCOP0Instruction(); break;
-		case 0b010001: DecodeAndExecuteCOP1Instruction(); break;
-		case 0b010010: DecodeAndExecuteCOP2Instruction(); break;
-		case 0b010011: DecodeAndExecuteCOP3Instruction(); break;
+		case 0b000000: DecodeExecuteSpecialInstruction(); break;
+		case 0b000001: DecodeExecuteRegimmInstruction(); break;
+		case 0b010000: DecodeExecuteCop0Instruction(); break;
+		case 0b010001: DecodeExecuteCop1Instruction(); break;
+		case 0b010010: DecodeExecuteCop2Instruction(); break;
+		case 0b010011: DecodeExecuteCOP3Instruction(); break;
 
 		case 0b100000: EXEC_CPU_INSTR(LB); break;
 		case 0b100100: EXEC_CPU_INSTR(LBU); break;
@@ -356,10 +251,109 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
-	void ExecuteCPUInstruction()
+	void DecodeExecuteRegimmInstruction()
 	{
-		using enum CPUInstruction;
+		auto opcode = instr_code >> 16 & 0x1F;
+
+		switch (opcode) {
+		case 0b00001: EXEC_CPU_INSTR(BGEZ); break;
+		case 0b10001: EXEC_CPU_INSTR(BGEZAL); break;
+		case 0b10011: EXEC_CPU_INSTR(BGEZALL); break;
+		case 0b00011: EXEC_CPU_INSTR(BGEZL); break;
+		case 0b00000: EXEC_CPU_INSTR(BLTZ); break;
+		case 0b10000: EXEC_CPU_INSTR(BLTZAL); break;
+		case 0b10010: EXEC_CPU_INSTR(BLTZALL); break;
+		case 0b00010: EXEC_CPU_INSTR(BLTZL); break;
+
+		case 0b01100: EXEC_CPU_INSTR(TEQI); break;
+		case 0b01000: EXEC_CPU_INSTR(TGEI); break;
+		case 0b01001: EXEC_CPU_INSTR(TGEIU); break;
+		case 0b01010: EXEC_CPU_INSTR(TLTI); break;
+		case 0b01011: EXEC_CPU_INSTR(TLTIU); break;
+		case 0b01110: EXEC_CPU_INSTR(TNEI); break;
+
+		default:
+			NotifyIllegalInstrCode(instr_code);
+			SignalException<Exception::ReservedInstruction>();
+		}
+	}
+
+
+	void DecodeExecuteSpecialInstruction()
+	{
+		auto opcode = instr_code & 0x3F;
+
+		switch (opcode) {
+		case 0b100000: EXEC_CPU_INSTR(ADD); break;
+		case 0b100001: EXEC_CPU_INSTR(ADDU); break;
+		case 0b100100: EXEC_CPU_INSTR(AND); break;
+		case 0b101100: EXEC_CPU_INSTR(DADD); break;
+		case 0b101101: EXEC_CPU_INSTR(DADDU); break;
+		case 0b101110: EXEC_CPU_INSTR(DSUB); break;
+		case 0b101111: EXEC_CPU_INSTR(DSUBU); break;
+		case 0b100111: EXEC_CPU_INSTR(NOR); break;
+		case 0b100101: EXEC_CPU_INSTR(OR); break;
+		case 0b101010: EXEC_CPU_INSTR(SLT); break;
+		case 0b101011: EXEC_CPU_INSTR(SLTU); break;
+		case 0b100010: EXEC_CPU_INSTR(SUB); break;
+		case 0b100011: EXEC_CPU_INSTR(SUBU); break;
+		case 0b100110: EXEC_CPU_INSTR(XOR); break;
+
+		case 0b111000: EXEC_CPU_INSTR(DSLL); break;
+		case 0b010100: EXEC_CPU_INSTR(DSLLV); break;
+		case 0b111100: EXEC_CPU_INSTR(DSLL32); break;
+		case 0b111011: EXEC_CPU_INSTR(DSRA); break;
+		case 0b010111: EXEC_CPU_INSTR(DSRAV); break;
+		case 0b111111: EXEC_CPU_INSTR(DSRA32); break;
+		case 0b111010: EXEC_CPU_INSTR(DSRL); break;
+		case 0b010110: EXEC_CPU_INSTR(DSRLV); break;
+		case 0b111110: EXEC_CPU_INSTR(DSRL32); break;
+		case 0b000000: EXEC_CPU_INSTR(SLL); break;
+		case 0b000100: EXEC_CPU_INSTR(SLLV); break;
+		case 0b000011: EXEC_CPU_INSTR(SRA); break;
+		case 0b000111: EXEC_CPU_INSTR(SRAV); break;
+		case 0b000010: EXEC_CPU_INSTR(SRL); break;
+		case 0b000110: EXEC_CPU_INSTR(SRLV); break;
+
+		case 0b011110: EXEC_CPU_INSTR(DDIV); break;
+		case 0b011111: EXEC_CPU_INSTR(DDIVU); break;
+		case 0b011010: EXEC_CPU_INSTR(DIV); break;
+		case 0b011011: EXEC_CPU_INSTR(DIVU); break;
+		case 0b011100: EXEC_CPU_INSTR(DMULT); break;
+		case 0b011101: EXEC_CPU_INSTR(DMULTU); break;
+		case 0b011000: EXEC_CPU_INSTR(MULT); break;
+		case 0b011001: EXEC_CPU_INSTR(MULTU); break;
+
+		case 0b001001: EXEC_CPU_INSTR(JALR); break;
+		case 0b001000: EXEC_CPU_INSTR(JR); break;
+
+		case 0b110100: EXEC_CPU_INSTR(TEQ); break;
+		case 0b110000: EXEC_CPU_INSTR(TGE); break;
+		case 0b110001: EXEC_CPU_INSTR(TGEU); break;
+		case 0b110010: EXEC_CPU_INSTR(TLT); break;
+		case 0b110011: EXEC_CPU_INSTR(TLTU); break;
+		case 0b110110: EXEC_CPU_INSTR(TNE); break;
+
+		case 0b010000: EXEC_CPU_INSTR(MFHI); break;
+		case 0b010010: EXEC_CPU_INSTR(MFLO); break;
+		case 0b010001: EXEC_CPU_INSTR(MTHI); break;
+		case 0b010011: EXEC_CPU_INSTR(MTLO); break;
+
+		case 0b001101: EXEC_CPU_INSTR(BREAK); break;
+		case 0b001111: EXEC_CPU_INSTR(SYNC); break;
+		case 0b001100: EXEC_CPU_INSTR(SYSCALL); break;
+
+		default:
+			NotifyIllegalInstrCode(instr_code);
+			SignalException<Exception::ReservedInstruction>();
+		}
+	}
+
+
+	template<CpuInstruction instr>
+	void ExecuteCpuInstruction()
+	{
+		using enum CpuInstruction;
 
 		if constexpr (OneOf(instr, LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD)) {
 			CPULoad<instr>(instr_code);
@@ -416,17 +410,17 @@ namespace VR4300
 	}
 
 
-	template<COP0Instruction instr>
-	void ExecuteCOP0Instruction()
+	template<Cop0Instruction instr>
+	void ExecuteCop0Instruction()
 	{
-		if constexpr (OneOf(instr, COP0Instruction::MTC0, COP0Instruction::MFC0, COP0Instruction::DMTC0, COP0Instruction::DMFC0)) {
-			COP0Move<instr>(instr_code);
+		if constexpr (OneOf(instr, Cop0Instruction::MTC0, Cop0Instruction::MFC0, Cop0Instruction::DMTC0, Cop0Instruction::DMFC0)) {
+			Cop0Move<instr>(instr_code);
 		}
-		else if constexpr (instr == COP0Instruction::TLBP)  TLBP();
-		else if constexpr (instr == COP0Instruction::TLBR)  TLBR();
-		else if constexpr (instr == COP0Instruction::TLBWI) TLBWI();
-		else if constexpr (instr == COP0Instruction::TLBWR) TLBWR();
-		else if constexpr (instr == COP0Instruction::ERET)  ERET();
+		else if constexpr (instr == Cop0Instruction::TLBP)  TLBP();
+		else if constexpr (instr == Cop0Instruction::TLBR)  TLBR();
+		else if constexpr (instr == Cop0Instruction::TLBWI) TLBWI();
+		else if constexpr (instr == Cop0Instruction::TLBWR) TLBWR();
+		else if constexpr (instr == Cop0Instruction::ERET)  ERET();
 		else static_assert(AlwaysFalse<instr>);
 		if constexpr (log_cpu_instructions) {
 			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
@@ -434,10 +428,10 @@ namespace VR4300
 	}
 
 
-	template<COP1Instruction instr>
-	void ExecuteCOP1Instruction()
+	template<Cop1Instruction instr>
+	void ExecuteCop1Instruction()
 	{
-		using enum COP1Instruction;
+		using enum Cop1Instruction;
 		if constexpr (OneOf(instr, LWC1, LDC1)) {
 			FpuLoad<instr>(instr_code);
 		}
@@ -468,12 +462,12 @@ namespace VR4300
 	}
 
 
-	template<COP2Instruction instr>
-	void ExecuteCOP2Instruction()
+	template<Cop2Instruction instr>
+	void ExecuteCop2Instruction()
 	{
-		using enum COP2Instruction;
+		using enum Cop2Instruction;
 		if constexpr (OneOf(instr, CFC2, CTC2, MFC2, MTC2, DCFC2, DCTC2, DMFC2, DMTC2)) {
-			COP2Move<instr>(instr_code);
+			Cop2Move<instr>(instr_code);
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);

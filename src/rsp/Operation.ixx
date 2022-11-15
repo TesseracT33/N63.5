@@ -1,5 +1,8 @@
 export module RSP:Operation;
 
+import :ScalarUnit;
+import :VectorUnit;
+
 import Util;
 
 import <array>;
@@ -28,16 +31,18 @@ namespace RSP
 	}
 
 	void AdvancePipeline(u64 cycles);
+	void DecodeExecuteCop0Instruction();
+	void DecodeExecuteCop2Instruction();
 	void DecodeExecuteInstruction(u32 instr_code);
+	void DecodeExecuteRegimmInstruction();
+	void DecodeExecuteSpecialInstruction();
+	template<ScalarInstruction> void ExecuteScalarInstruction();
+	template<VectorInstruction> void ExecuteVectorInstruction();
 	void FetchDecodeExecuteInstruction();
 	void NotifyIllegalInstrCode(u32 instr_code);
 	void PrepareJump(u32 target_address);
-
-	template<std::signed_integral Int>
-	Int ReadDMEM(u32 addr);
-
-	template<std::signed_integral Int>
-	void WriteDMEM(u32 addr, Int data);
+	template<std::signed_integral Int> Int ReadDMEM(u32 addr);
+	template<std::signed_integral Int> void WriteDMEM(u32 addr, Int data);
 
 	bool in_branch_delay_slot;
 	bool jump_is_pending;

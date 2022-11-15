@@ -10,7 +10,7 @@ import <random>;
 
 namespace VR4300
 {
-	enum class COP0Instruction {
+	enum class Cop0Instruction {
 		/* Move instructions */
 		MTC0, MFC0, DMTC0, DMFC0,
 
@@ -25,7 +25,7 @@ namespace VR4300
 	template<bool initial_add = false> void ReloadCountCompareEvent();
 
 	/* COP0 instructions */
-	template<COP0Instruction> void COP0Move(u32 instr_code);
+	template<Cop0Instruction> void Cop0Move(u32 instr_code);
 	void TLBR();
 	void TLBWI();
 	void TLBWR();
@@ -59,7 +59,7 @@ namespace VR4300
 	constexpr uint cop0_index_error_epc = 30;
 
 	/* TODO: for registers that contain only one field, make them simple u32/u64, not structs */
-	struct COP0Registers {
+	struct Cop0Registers {
 		struct { /* (0) */
 			u32 value : 6; /* Index to the TLB entry affected by the TLB Read (TLBR) and TLB Write (TLBW) instructions. */
 			u32 : 25;

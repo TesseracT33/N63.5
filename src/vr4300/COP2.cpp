@@ -15,8 +15,8 @@ namespace VR4300
 	}
 
 
-	template<COP2Instruction instr>
-	void COP2Move(u32 instr_code)
+	template<Cop2Instruction instr>
+	void Cop2Move(u32 instr_code)
 	{
 		AdvancePipeline(1);
 
@@ -31,7 +31,7 @@ namespace VR4300
 			return;
 		}
 
-		using enum COP2Instruction;
+		using enum Cop2Instruction;
 
 		     if constexpr (OneOf(instr, CFC2, MFC2))        gpr.Set(rt, s32(cop2_latch));
 		else if constexpr (instr == DMFC2)                  gpr.Set(rt, cop2_latch);
@@ -41,12 +41,12 @@ namespace VR4300
 	}
 
 
-	template void COP2Move<COP2Instruction::CFC2>(u32);
-	template void COP2Move<COP2Instruction::CTC2>(u32);
-	template void COP2Move<COP2Instruction::MFC2>(u32);
-	template void COP2Move<COP2Instruction::MTC2>(u32);
-	template void COP2Move<COP2Instruction::DCFC2>(u32);
-	template void COP2Move<COP2Instruction::DCTC2>(u32);
-	template void COP2Move<COP2Instruction::DMFC2>(u32);
-	template void COP2Move<COP2Instruction::DMTC2>(u32);
+	template void Cop2Move<Cop2Instruction::CFC2>(u32);
+	template void Cop2Move<Cop2Instruction::CTC2>(u32);
+	template void Cop2Move<Cop2Instruction::MFC2>(u32);
+	template void Cop2Move<Cop2Instruction::MTC2>(u32);
+	template void Cop2Move<Cop2Instruction::DCFC2>(u32);
+	template void Cop2Move<Cop2Instruction::DCTC2>(u32);
+	template void Cop2Move<Cop2Instruction::DMFC2>(u32);
+	template void Cop2Move<Cop2Instruction::DMTC2>(u32);
 }

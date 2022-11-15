@@ -12,39 +12,39 @@ import Scheduler;
 
 namespace VR4300
 {
-	void COP0Registers::OnWriteToCause()
+	void Cop0Registers::OnWriteToCause()
 	{
 		CheckInterrupts();
 	}
 
 
-	void COP0Registers::OnWriteToCompare()
+	void Cop0Registers::OnWriteToCompare()
 	{
 		cause.ip &= ~0x80; /* TODO: not sure if anything else needs to be done? */
 		ReloadCountCompareEvent();
 	}
 
 
-	void COP0Registers::OnWriteToCount()
+	void Cop0Registers::OnWriteToCount()
 	{
 		ReloadCountCompareEvent();
 	}
 
 
-	void COP0Registers::OnWriteToStatus()
+	void Cop0Registers::OnWriteToStatus()
 	{
 		SetActiveVirtualToPhysicalFunctions();
 		CheckInterrupts();
 	}
 
 
-	void COP0Registers::OnWriteToWired()
+	void Cop0Registers::OnWriteToWired()
 	{
 		random_generator.SetRange(wired);
 	}
 
 
-	u64 COP0Registers::Get(size_t reg_index) const
+	u64 Cop0Registers::Get(size_t reg_index) const
 	{
 		auto StructToInt = [](auto struct_) {
 			     if constexpr (sizeof(struct_) == 4) return std::bit_cast<u32>(struct_);
@@ -91,7 +91,7 @@ namespace VR4300
 
 
 	template<bool raw>
-	void COP0Registers::Set(size_t reg_index, auto value)
+	void Cop0Registers::Set(size_t reg_index, auto value)
 	{
 		auto IntToStruct = [](auto& struct_, auto value) {
 			/* The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined.
@@ -263,11 +263,11 @@ namespace VR4300
 	}
 
 
-	template<COP0Instruction instr>
-	void COP0Move(u32 instr_code)
+	template<Cop0Instruction instr>
+	void Cop0Move(u32 instr_code)
 	{
 		AdvancePipeline(1);
-		using enum COP0Instruction;
+		using enum Cop0Instruction;
 
 		if (operating_mode != OperatingMode::Kernel) {
 			if (!cop0.status.cu0) {
@@ -457,17 +457,17 @@ namespace VR4300
 	}
 
 
-	template void COP0Registers::Set<false>(size_t, s32);
-	template void COP0Registers::Set<false>(size_t, u32);
-	template void COP0Registers::Set<false>(size_t, u64);
-	template void COP0Registers::Set<true>(size_t, s32);
-	template void COP0Registers::Set<true>(size_t, u32);
-	template void COP0Registers::Set<true>(size_t, u64);
+	template void Cop0Registers::Set<false>(size_t, s32);
+	template void Cop0Registers::Set<false>(size_t, u32);
+	template void Cop0Registers::Set<false>(size_t, u64);
+	template void Cop0Registers::Set<true>(size_t, s32);
+	template void Cop0Registers::Set<true>(size_t, u32);
+	template void Cop0Registers::Set<true>(size_t, u64);
 
-	template void COP0Move<COP0Instruction::MTC0>(u32);
-	template void COP0Move<COP0Instruction::MFC0>(u32);
-	template void COP0Move<COP0Instruction::DMTC0>(u32);
-	template void COP0Move<COP0Instruction::DMFC0>(u32);
+	template void Cop0Move<Cop0Instruction::MTC0>(u32);
+	template void Cop0Move<Cop0Instruction::MFC0>(u32);
+	template void Cop0Move<Cop0Instruction::DMTC0>(u32);
+	template void Cop0Move<Cop0Instruction::DMFC0>(u32);
 
 	template void ReloadCountCompareEvent<false>();
 	template void ReloadCountCompareEvent<true>();

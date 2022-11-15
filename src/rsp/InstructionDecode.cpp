@@ -24,59 +24,7 @@ namespace RSP
 	u32 instr_code;
 
 
-	template<ScalarInstruction instr> void ExecuteScalarInstruction();
-	template<VectorInstruction instr> void ExecuteVectorInstruction();
-
-
-	void DecodeAndExecuteSpecialInstruction()
-	{
-		auto opcode = instr_code & 0x3F;
-
-		switch (opcode) {
-		case 0b100000: EXEC_SCALAR_INSTR(ADD); break;
-		case 0b100001: EXEC_SCALAR_INSTR(ADDU); break;
-		case 0b100100: EXEC_SCALAR_INSTR(AND); break;
-		case 0b100111: EXEC_SCALAR_INSTR(NOR); break;
-		case 0b100101: EXEC_SCALAR_INSTR(OR); break;
-		case 0b101010: EXEC_SCALAR_INSTR(SLT); break;
-		case 0b101011: EXEC_SCALAR_INSTR(SLTU); break;
-		case 0b100010: EXEC_SCALAR_INSTR(SUB); break;
-		case 0b100011: EXEC_SCALAR_INSTR(SUBU); break;
-		case 0b100110: EXEC_SCALAR_INSTR(XOR); break;
-
-		case 0b000000: EXEC_SCALAR_INSTR(SLL); break;
-		case 0b000100: EXEC_SCALAR_INSTR(SLLV); break;
-		case 0b000011: EXEC_SCALAR_INSTR(SRA); break;
-		case 0b000111: EXEC_SCALAR_INSTR(SRAV); break;
-		case 0b000010: EXEC_SCALAR_INSTR(SRL); break;
-		case 0b000110: EXEC_SCALAR_INSTR(SRLV); break;
-
-		case 0b001001: EXEC_SCALAR_INSTR(JALR); break;
-		case 0b001000: EXEC_SCALAR_INSTR(JR); break;
-
-		case 0b001101: EXEC_SCALAR_INSTR(BREAK); break;
-
-		default: NotifyIllegalInstrCode(instr_code);
-		}
-	}
-
-
-	void DecodeAndExecuteRegimmInstruction()
-	{
-		auto opcode = instr_code >> 16 & 0x1F;
-
-		switch (opcode) {
-		case 0b00001: EXEC_SCALAR_INSTR(BGEZ); break;
-		case 0b10001: EXEC_SCALAR_INSTR(BGEZAL); break;
-		case 0b00000: EXEC_SCALAR_INSTR(BLTZ); break;
-		case 0b10000: EXEC_SCALAR_INSTR(BLTZAL); break;
-
-		default: NotifyIllegalInstrCode(instr_code);
-		}
-	}
-
-
-	void DecodeAndExecuteCOP0Instruction()
+	void DecodeExecuteCop0Instruction()
 	{
 		auto opcode = instr_code >> 21 & 0x1F;
 
@@ -89,7 +37,7 @@ namespace RSP
 	}
 
 
-	void DecodeAndExecuteCOP2Instruction()
+	void DecodeExecuteCop2Instruction()
 	{
 		if (instr_code & 1 << 25) {
 			auto opcode = instr_code & 0x3F;
@@ -154,17 +102,17 @@ namespace RSP
 	}
 
 
-	void DecodeExecuteInstruction(const u32 instr_code)
+	void DecodeExecuteInstruction(u32 instr_code)
 	{
 		RSP::instr_code = instr_code;
 
 		auto opcode = instr_code >> 26; /* (0-63) */
 
 		switch (opcode) {
-		case 0b000000: DecodeAndExecuteSpecialInstruction(); break;
-		case 0b000001: DecodeAndExecuteRegimmInstruction(); break;
-		case 0b010000: DecodeAndExecuteCOP0Instruction(); break;
-		case 0b010010: DecodeAndExecuteCOP2Instruction(); break;
+		case 0b000000: DecodeExecuteSpecialInstruction(); break;
+		case 0b000001: DecodeExecuteRegimmInstruction(); break;
+		case 0b010000: DecodeExecuteCop0Instruction(); break;
+		case 0b010010: DecodeExecuteCop2Instruction(); break;
 
 		case 0b100000: EXEC_SCALAR_INSTR(LB); break;
 		case 0b100100: EXEC_SCALAR_INSTR(LBU); break;
@@ -235,6 +183,54 @@ namespace RSP
 			}
 			break;
 		}
+
+		default: NotifyIllegalInstrCode(instr_code);
+		}
+	}
+
+
+	void DecodeExecuteRegimmInstruction()
+	{
+		auto opcode = instr_code >> 16 & 0x1F;
+
+		switch (opcode) {
+		case 0b00001: EXEC_SCALAR_INSTR(BGEZ); break;
+		case 0b10001: EXEC_SCALAR_INSTR(BGEZAL); break;
+		case 0b00000: EXEC_SCALAR_INSTR(BLTZ); break;
+		case 0b10000: EXEC_SCALAR_INSTR(BLTZAL); break;
+
+		default: NotifyIllegalInstrCode(instr_code);
+		}
+	}
+
+
+	void DecodeExecuteSpecialInstruction()
+	{
+		auto opcode = instr_code & 0x3F;
+
+		switch (opcode) {
+		case 0b100000: EXEC_SCALAR_INSTR(ADD); break;
+		case 0b100001: EXEC_SCALAR_INSTR(ADDU); break;
+		case 0b100100: EXEC_SCALAR_INSTR(AND); break;
+		case 0b100111: EXEC_SCALAR_INSTR(NOR); break;
+		case 0b100101: EXEC_SCALAR_INSTR(OR); break;
+		case 0b101010: EXEC_SCALAR_INSTR(SLT); break;
+		case 0b101011: EXEC_SCALAR_INSTR(SLTU); break;
+		case 0b100010: EXEC_SCALAR_INSTR(SUB); break;
+		case 0b100011: EXEC_SCALAR_INSTR(SUBU); break;
+		case 0b100110: EXEC_SCALAR_INSTR(XOR); break;
+
+		case 0b000000: EXEC_SCALAR_INSTR(SLL); break;
+		case 0b000100: EXEC_SCALAR_INSTR(SLLV); break;
+		case 0b000011: EXEC_SCALAR_INSTR(SRA); break;
+		case 0b000111: EXEC_SCALAR_INSTR(SRAV); break;
+		case 0b000010: EXEC_SCALAR_INSTR(SRL); break;
+		case 0b000110: EXEC_SCALAR_INSTR(SRLV); break;
+
+		case 0b001001: EXEC_SCALAR_INSTR(JALR); break;
+		case 0b001000: EXEC_SCALAR_INSTR(JR); break;
+
+		case 0b001101: EXEC_SCALAR_INSTR(BREAK); break;
 
 		default: NotifyIllegalInstrCode(instr_code);
 		}

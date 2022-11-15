@@ -42,10 +42,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void CPULoad(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		s16 offset = instr_code & 0xFFFF;
 		auto rt = instr_code >> 16 & 0x1F;
@@ -227,10 +227,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void CPUStore(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		s16 offset = instr_code & 0xFFFF;
 		auto rt = instr_code >> 16 & 0x1F;
@@ -340,10 +340,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void ALUImmediate(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto rt = instr_code >> 16 & 0x1F;
 		auto rs = instr_code >> 21 & 0x1F;
@@ -449,10 +449,10 @@ namespace VR4300
 		AdvancePipeline(1);
 	}
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void ALUThreeOperand(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto rd = instr_code >> 11 & 0x1F;
 		auto rt = instr_code >> 16 & 0x1F;
@@ -579,10 +579,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void ALUShift(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto sa = instr_code >>  6 & 0x1F;
 		auto rd = instr_code >> 11 & 0x1F;
@@ -711,10 +711,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void ALUMulDiv(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto rt = instr_code >> 16 & 0x1F;
 		auto rs = instr_code >> 21 & 0x1F;
@@ -865,10 +865,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void Jump(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		/* J: Jump;
 		   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
@@ -924,10 +924,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void CPUBranch(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto rt = instr_code >> 16 & 0x1F;
 		auto rs = instr_code >> 21 & 0x1F;
@@ -973,10 +973,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void TrapThreeOperand(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto rt = instr_code >> 16 & 0x1F;
 		auto rs = instr_code >> 21 & 0x1F;
@@ -1004,10 +1004,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void TrapImmediate(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		auto rs = instr_code >> 21 & 0x1F;
 		s16 immediate = instr_code & 0xFFFF;
@@ -1034,10 +1034,10 @@ namespace VR4300
 	}
 
 
-	template<CPUInstruction instr>
+	template<CpuInstruction instr>
 	void CPUMove(u32 instr_code)
 	{
-		using enum CPUInstruction;
+		using enum CpuInstruction;
 
 		if constexpr (OneOf(instr, MFLO, MFHI)) {
 			/* Move From LO/HI;
@@ -1102,120 +1102,120 @@ namespace VR4300
 	}
 
 
-	template void CPULoad<CPUInstruction::LB>(u32);
-	template void CPULoad<CPUInstruction::LBU>(u32);
-	template void CPULoad<CPUInstruction::LH>(u32);
-	template void CPULoad<CPUInstruction::LHU>(u32);
-	template void CPULoad<CPUInstruction::LW>(u32);
-	template void CPULoad<CPUInstruction::LWU>(u32);
-	template void CPULoad<CPUInstruction::LWL>(u32);
-	template void CPULoad<CPUInstruction::LWR>(u32);
-	template void CPULoad<CPUInstruction::LD>(u32);
-	template void CPULoad<CPUInstruction::LDL>(u32);
-	template void CPULoad<CPUInstruction::LDR>(u32);
-	template void CPULoad<CPUInstruction::LL>(u32);
-	template void CPULoad<CPUInstruction::LLD>(u32);
+	template void CPULoad<CpuInstruction::LB>(u32);
+	template void CPULoad<CpuInstruction::LBU>(u32);
+	template void CPULoad<CpuInstruction::LH>(u32);
+	template void CPULoad<CpuInstruction::LHU>(u32);
+	template void CPULoad<CpuInstruction::LW>(u32);
+	template void CPULoad<CpuInstruction::LWU>(u32);
+	template void CPULoad<CpuInstruction::LWL>(u32);
+	template void CPULoad<CpuInstruction::LWR>(u32);
+	template void CPULoad<CpuInstruction::LD>(u32);
+	template void CPULoad<CpuInstruction::LDL>(u32);
+	template void CPULoad<CpuInstruction::LDR>(u32);
+	template void CPULoad<CpuInstruction::LL>(u32);
+	template void CPULoad<CpuInstruction::LLD>(u32);
 
-	template void CPUStore<CPUInstruction::SB>(u32);
-	template void CPUStore<CPUInstruction::SH>(u32);
-	template void CPUStore<CPUInstruction::SW>(u32);
-	template void CPUStore<CPUInstruction::SWL>(u32);
-	template void CPUStore<CPUInstruction::SWR>(u32);
-	template void CPUStore<CPUInstruction::SC>(u32);
-	template void CPUStore<CPUInstruction::SCD>(u32);
-	template void CPUStore<CPUInstruction::SD>(u32);
-	template void CPUStore<CPUInstruction::SDL>(u32);
-	template void CPUStore<CPUInstruction::SDR>(u32);
+	template void CPUStore<CpuInstruction::SB>(u32);
+	template void CPUStore<CpuInstruction::SH>(u32);
+	template void CPUStore<CpuInstruction::SW>(u32);
+	template void CPUStore<CpuInstruction::SWL>(u32);
+	template void CPUStore<CpuInstruction::SWR>(u32);
+	template void CPUStore<CpuInstruction::SC>(u32);
+	template void CPUStore<CpuInstruction::SCD>(u32);
+	template void CPUStore<CpuInstruction::SD>(u32);
+	template void CPUStore<CpuInstruction::SDL>(u32);
+	template void CPUStore<CpuInstruction::SDR>(u32);
 
-	template void ALUImmediate<CPUInstruction::ADDI>(u32);
-	template void ALUImmediate<CPUInstruction::ADDIU>(u32);
-	template void ALUImmediate<CPUInstruction::SLTI>(u32);
-	template void ALUImmediate<CPUInstruction::SLTIU>(u32);
-	template void ALUImmediate<CPUInstruction::ANDI>(u32);
-	template void ALUImmediate<CPUInstruction::ORI>(u32);
-	template void ALUImmediate<CPUInstruction::XORI>(u32);
-	template void ALUImmediate<CPUInstruction::LUI>(u32);
-	template void ALUImmediate<CPUInstruction::DADDI>(u32);
-	template void ALUImmediate<CPUInstruction::DADDIU>(u32);
+	template void ALUImmediate<CpuInstruction::ADDI>(u32);
+	template void ALUImmediate<CpuInstruction::ADDIU>(u32);
+	template void ALUImmediate<CpuInstruction::SLTI>(u32);
+	template void ALUImmediate<CpuInstruction::SLTIU>(u32);
+	template void ALUImmediate<CpuInstruction::ANDI>(u32);
+	template void ALUImmediate<CpuInstruction::ORI>(u32);
+	template void ALUImmediate<CpuInstruction::XORI>(u32);
+	template void ALUImmediate<CpuInstruction::LUI>(u32);
+	template void ALUImmediate<CpuInstruction::DADDI>(u32);
+	template void ALUImmediate<CpuInstruction::DADDIU>(u32);
 
-	template void ALUThreeOperand<CPUInstruction::ADD>(u32);
-	template void ALUThreeOperand<CPUInstruction::ADDU>(u32);
-	template void ALUThreeOperand<CPUInstruction::SUB>(u32);
-	template void ALUThreeOperand<CPUInstruction::SUBU>(u32);
-	template void ALUThreeOperand<CPUInstruction::SLT>(u32);
-	template void ALUThreeOperand<CPUInstruction::SLTU>(u32);
-	template void ALUThreeOperand<CPUInstruction::AND>(u32);
-	template void ALUThreeOperand<CPUInstruction::OR>(u32);
-	template void ALUThreeOperand<CPUInstruction::XOR>(u32);
-	template void ALUThreeOperand<CPUInstruction::NOR>(u32);
-	template void ALUThreeOperand<CPUInstruction::DADD>(u32);
-	template void ALUThreeOperand<CPUInstruction::DADDU>(u32);
-	template void ALUThreeOperand<CPUInstruction::DSUB>(u32);
-	template void ALUThreeOperand<CPUInstruction::DSUBU>(u32);
+	template void ALUThreeOperand<CpuInstruction::ADD>(u32);
+	template void ALUThreeOperand<CpuInstruction::ADDU>(u32);
+	template void ALUThreeOperand<CpuInstruction::SUB>(u32);
+	template void ALUThreeOperand<CpuInstruction::SUBU>(u32);
+	template void ALUThreeOperand<CpuInstruction::SLT>(u32);
+	template void ALUThreeOperand<CpuInstruction::SLTU>(u32);
+	template void ALUThreeOperand<CpuInstruction::AND>(u32);
+	template void ALUThreeOperand<CpuInstruction::OR>(u32);
+	template void ALUThreeOperand<CpuInstruction::XOR>(u32);
+	template void ALUThreeOperand<CpuInstruction::NOR>(u32);
+	template void ALUThreeOperand<CpuInstruction::DADD>(u32);
+	template void ALUThreeOperand<CpuInstruction::DADDU>(u32);
+	template void ALUThreeOperand<CpuInstruction::DSUB>(u32);
+	template void ALUThreeOperand<CpuInstruction::DSUBU>(u32);
 
-	template void ALUShift<CPUInstruction::SLL>(u32);
-	template void ALUShift<CPUInstruction::SRL>(u32);
-	template void ALUShift<CPUInstruction::SRA>(u32);
-	template void ALUShift<CPUInstruction::SLLV>(u32);
-	template void ALUShift<CPUInstruction::SRLV>(u32);
-	template void ALUShift<CPUInstruction::SRAV>(u32);
-	template void ALUShift<CPUInstruction::DSLL>(u32);
-	template void ALUShift<CPUInstruction::DSRL>(u32);
-	template void ALUShift<CPUInstruction::DSRA>(u32);
-	template void ALUShift<CPUInstruction::DSLLV>(u32);
-	template void ALUShift<CPUInstruction::DSRLV>(u32);
-	template void ALUShift<CPUInstruction::DSRAV>(u32);
-	template void ALUShift<CPUInstruction::DSLL32>(u32);
-	template void ALUShift<CPUInstruction::DSRL32>(u32);
-	template void ALUShift<CPUInstruction::DSRA32>(u32);
+	template void ALUShift<CpuInstruction::SLL>(u32);
+	template void ALUShift<CpuInstruction::SRL>(u32);
+	template void ALUShift<CpuInstruction::SRA>(u32);
+	template void ALUShift<CpuInstruction::SLLV>(u32);
+	template void ALUShift<CpuInstruction::SRLV>(u32);
+	template void ALUShift<CpuInstruction::SRAV>(u32);
+	template void ALUShift<CpuInstruction::DSLL>(u32);
+	template void ALUShift<CpuInstruction::DSRL>(u32);
+	template void ALUShift<CpuInstruction::DSRA>(u32);
+	template void ALUShift<CpuInstruction::DSLLV>(u32);
+	template void ALUShift<CpuInstruction::DSRLV>(u32);
+	template void ALUShift<CpuInstruction::DSRAV>(u32);
+	template void ALUShift<CpuInstruction::DSLL32>(u32);
+	template void ALUShift<CpuInstruction::DSRL32>(u32);
+	template void ALUShift<CpuInstruction::DSRA32>(u32);
 
-	template void ALUMulDiv<CPUInstruction::MULT>(u32);
-	template void ALUMulDiv<CPUInstruction::MULTU>(u32);
-	template void ALUMulDiv<CPUInstruction::DIV>(u32);
-	template void ALUMulDiv<CPUInstruction::DIVU>(u32);
-	template void ALUMulDiv<CPUInstruction::DMULT>(u32);
-	template void ALUMulDiv<CPUInstruction::DMULTU>(u32);
-	template void ALUMulDiv<CPUInstruction::DDIV>(u32);
-	template void ALUMulDiv<CPUInstruction::DDIVU>(u32);
+	template void ALUMulDiv<CpuInstruction::MULT>(u32);
+	template void ALUMulDiv<CpuInstruction::MULTU>(u32);
+	template void ALUMulDiv<CpuInstruction::DIV>(u32);
+	template void ALUMulDiv<CpuInstruction::DIVU>(u32);
+	template void ALUMulDiv<CpuInstruction::DMULT>(u32);
+	template void ALUMulDiv<CpuInstruction::DMULTU>(u32);
+	template void ALUMulDiv<CpuInstruction::DDIV>(u32);
+	template void ALUMulDiv<CpuInstruction::DDIVU>(u32);
 
-	template void Jump<CPUInstruction::J>(u32);
-	template void Jump<CPUInstruction::JAL>(u32);
-	template void Jump<CPUInstruction::JR>(u32);
-	template void Jump<CPUInstruction::JALR>(u32);
+	template void Jump<CpuInstruction::J>(u32);
+	template void Jump<CpuInstruction::JAL>(u32);
+	template void Jump<CpuInstruction::JR>(u32);
+	template void Jump<CpuInstruction::JALR>(u32);
 
-	template void CPUBranch<CPUInstruction::BEQ>(u32);
-	template void CPUBranch<CPUInstruction::BNE>(u32);
-	template void CPUBranch<CPUInstruction::BLEZ>(u32);
-	template void CPUBranch<CPUInstruction::BGTZ>(u32);
-	template void CPUBranch<CPUInstruction::BLTZ>(u32);
-	template void CPUBranch<CPUInstruction::BGEZ>(u32);
-	template void CPUBranch<CPUInstruction::BLTZAL>(u32);
-	template void CPUBranch<CPUInstruction::BGEZAL>(u32);
-	template void CPUBranch<CPUInstruction::BEQL>(u32);
-	template void CPUBranch<CPUInstruction::BNEL>(u32);
-	template void CPUBranch<CPUInstruction::BLEZL>(u32);
-	template void CPUBranch<CPUInstruction::BGTZL>(u32);
-	template void CPUBranch<CPUInstruction::BLTZL>(u32);
-	template void CPUBranch<CPUInstruction::BGEZL>(u32);
-	template void CPUBranch<CPUInstruction::BLTZALL>(u32);
-	template void CPUBranch<CPUInstruction::BGEZALL>(u32);
+	template void CPUBranch<CpuInstruction::BEQ>(u32);
+	template void CPUBranch<CpuInstruction::BNE>(u32);
+	template void CPUBranch<CpuInstruction::BLEZ>(u32);
+	template void CPUBranch<CpuInstruction::BGTZ>(u32);
+	template void CPUBranch<CpuInstruction::BLTZ>(u32);
+	template void CPUBranch<CpuInstruction::BGEZ>(u32);
+	template void CPUBranch<CpuInstruction::BLTZAL>(u32);
+	template void CPUBranch<CpuInstruction::BGEZAL>(u32);
+	template void CPUBranch<CpuInstruction::BEQL>(u32);
+	template void CPUBranch<CpuInstruction::BNEL>(u32);
+	template void CPUBranch<CpuInstruction::BLEZL>(u32);
+	template void CPUBranch<CpuInstruction::BGTZL>(u32);
+	template void CPUBranch<CpuInstruction::BLTZL>(u32);
+	template void CPUBranch<CpuInstruction::BGEZL>(u32);
+	template void CPUBranch<CpuInstruction::BLTZALL>(u32);
+	template void CPUBranch<CpuInstruction::BGEZALL>(u32);
 
-	template void TrapThreeOperand<CPUInstruction::TGE>(u32);
-	template void TrapThreeOperand<CPUInstruction::TGEU>(u32);
-	template void TrapThreeOperand<CPUInstruction::TLT>(u32);
-	template void TrapThreeOperand<CPUInstruction::TLTU>(u32);
-	template void TrapThreeOperand<CPUInstruction::TEQ>(u32);
-	template void TrapThreeOperand<CPUInstruction::TNE>(u32);
+	template void TrapThreeOperand<CpuInstruction::TGE>(u32);
+	template void TrapThreeOperand<CpuInstruction::TGEU>(u32);
+	template void TrapThreeOperand<CpuInstruction::TLT>(u32);
+	template void TrapThreeOperand<CpuInstruction::TLTU>(u32);
+	template void TrapThreeOperand<CpuInstruction::TEQ>(u32);
+	template void TrapThreeOperand<CpuInstruction::TNE>(u32);
 
-	template void TrapImmediate<CPUInstruction::TGEI>(u32);
-	template void TrapImmediate<CPUInstruction::TGEIU>(u32);
-	template void TrapImmediate<CPUInstruction::TLTI>(u32);
-	template void TrapImmediate<CPUInstruction::TLTIU>(u32);
-	template void TrapImmediate<CPUInstruction::TEQI>(u32);
-	template void TrapImmediate<CPUInstruction::TNEI>(u32);
+	template void TrapImmediate<CpuInstruction::TGEI>(u32);
+	template void TrapImmediate<CpuInstruction::TGEIU>(u32);
+	template void TrapImmediate<CpuInstruction::TLTI>(u32);
+	template void TrapImmediate<CpuInstruction::TLTIU>(u32);
+	template void TrapImmediate<CpuInstruction::TEQI>(u32);
+	template void TrapImmediate<CpuInstruction::TNEI>(u32);
 
-	template void CPUMove<CPUInstruction::MFLO>(u32);
-	template void CPUMove<CPUInstruction::MFHI>(u32);
-	template void CPUMove<CPUInstruction::MTLO>(u32);
-	template void CPUMove<CPUInstruction::MTHI>(u32);
+	template void CPUMove<CpuInstruction::MFLO>(u32);
+	template void CPUMove<CpuInstruction::MFHI>(u32);
+	template void CPUMove<CpuInstruction::MTLO>(u32);
+	template void CPUMove<CpuInstruction::MTHI>(u32);
 }

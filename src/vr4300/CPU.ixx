@@ -1,7 +1,5 @@
 export module VR4300:CPU;
 
-import :Operation;
-
 import Util;
 
 import <array>;
@@ -17,7 +15,7 @@ import <intrin.h>;
 
 namespace VR4300
 {
-	enum class CPUInstruction {
+	enum class CpuInstruction {
 		/* Load instructions */
 		LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD,
 
@@ -60,17 +58,17 @@ namespace VR4300
 	void PrepareJump(u64 target_address);
 
 	/* Main processor instructions */
-	template<CPUInstruction> void CPULoad(u32 instr_code);
-	template<CPUInstruction> void CPUStore(u32 instr_code);
-	template<CPUInstruction> void ALUImmediate(u32 instr_code);
-	template<CPUInstruction> void ALUThreeOperand(u32 instr_code);
-	template<CPUInstruction> void ALUShift(u32 instr_code);
-	template<CPUInstruction> void ALUMulDiv(u32 instr_code);
-	template<CPUInstruction> void Jump(u32 instr_code);
-	template<CPUInstruction> void CPUBranch(u32 instr_code);
-	template<CPUInstruction> void TrapThreeOperand(u32 instr_code);
-	template<CPUInstruction> void TrapImmediate(u32 instr_code);
-	template<CPUInstruction> void CPUMove(u32 instr_code);
+	template<CpuInstruction> void CPULoad(u32 instr_code);
+	template<CpuInstruction> void CPUStore(u32 instr_code);
+	template<CpuInstruction> void ALUImmediate(u32 instr_code);
+	template<CpuInstruction> void ALUThreeOperand(u32 instr_code);
+	template<CpuInstruction> void ALUShift(u32 instr_code);
+	template<CpuInstruction> void ALUMulDiv(u32 instr_code);
+	template<CpuInstruction> void Jump(u32 instr_code);
+	template<CpuInstruction> void CPUBranch(u32 instr_code);
+	template<CpuInstruction> void TrapThreeOperand(u32 instr_code);
+	template<CpuInstruction> void TrapImmediate(u32 instr_code);
+	template<CpuInstruction> void CPUMove(u32 instr_code);
 	void Sync();
 	void Syscall();
 	void Break();

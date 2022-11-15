@@ -1,5 +1,10 @@
 export module VR4300:Operation;
 
+import :CPU;
+import :COP0;
+import :COP1;
+import :COP2;
+
 import Util;
 
 import <cstring>;
@@ -41,7 +46,17 @@ namespace VR4300
 	};
 
 	void AdvancePipeline(u64 cycles);
+	void DecodeExecuteCop0Instruction();
+	void DecodeExecuteCop1Instruction();
+	void DecodeExecuteCop2Instruction();
+	void DecodeExecuteCop3Instruction();
 	void DecodeExecuteInstruction(u32 instr_code);
+	void DecodeExecuteRegimmInstruction();
+	void DecodeExecuteSpecialInstruction();
+	template<CpuInstruction> void ExecuteCpuInstruction();
+	template<Cop0Instruction> void ExecuteCop0Instruction();
+	template<Cop1Instruction> void ExecuteCop1Instruction();
+	template<Cop2Instruction> void ExecuteCop2Instruction();
 	void FetchDecodeExecuteInstruction();
 	void InitializeRegisters();
 	void HlePif();
