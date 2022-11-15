@@ -145,6 +145,61 @@ namespace VR4300
 	}
 
 
+	bool IsValidInput(std::floating_point auto f)
+	{
+		switch (std::fpclassify(f)) {
+		case FP_NAN: {
+			bool signal_fpu_exc = IsQuietNan(f) ? SignalInvalidOp() : SignalUnimplementedOp();
+			if (signal_fpu_exc) {
+				SignalException<Exception::FloatingPoint>();
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+
+		case FP_SUBNORMAL:
+			SignalUnimplementedOp();
+			SignalException<Exception::FloatingPoint>();
+			return false;
+		}
+		return true;
+	}
+
+	bool IsValidOutput(std::floating_point auto& f, bool exc_raised)
+	{
+		switch (std::fpclassify(f)) {
+		case FP_NAN:
+			if constexpr (sizeof(f) == 4) f = std::bit_cast<f32>(0x7FBF'FFFF);
+			else                          f = std::bit_cast<f64>(0x7FF7'FFFF'FFFF'FFFF);
+			return true;
+
+		case FP_SUBNORMAL:
+			if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact) {
+				SignalUnimplementedOp();
+				if (!exc_raised) SignalException<Exception::FloatingPoint>();
+				return false;
+			}
+			else {
+				SignalUnderflow();
+				SignalInexactOp();
+				f = Flush(f);
+				return true;
+			}
+		}
+		return true;
+	}
+
+
+	void OnInvalidFormat()
+	{
+		AdvancePipeline(2);
+		SignalUnimplementedOp();
+		SignalException<Exception::FloatingPoint>();
+	}
+
+
 	bool SignalDivZero()
 	{ /* return true if floatingpoint exception should be raised */
 		fcr31.cause_div_zero = true;
@@ -250,12 +305,14 @@ namespace VR4300
 	}
 
 
+	template<>
 	bool IsQuietNan(f32 f)
 	{ /* Precondition: std::isnan(f) == true */
 		return std::bit_cast<u32>(f) >> 22 & 1;
 	}
 
 
+	template<>
 	bool IsQuietNan(f64 f)
 	{ /* Precondition: std::isnan(f) == true */
 		return std::bit_cast<u64>(f) >> 51 & 1;
@@ -283,24 +340,9 @@ namespace VR4300
 		}
 
 		auto result = [&] {
-			if constexpr (instr == LWC1) {
-				/* Load Word To FPU;
-				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
-				   an address. Loads the contents of the word specified by the address to the
-				   FPU general purpose register ft. */
-				return ReadVirtual<s32>(addr);
-			}
-			else if constexpr (instr == LDC1) {
-				/* Load Doubleword To FPU;
-				   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
-				   an address. Loads the contents of the doubleword specified by the address to
-				   the FPU general purpose registers ft and ft+1 when FR = 0, or to the FPU
-				   general purpose register ft when FR = 1. */
-				return ReadVirtual<s64>(addr);
-			}
-			else {
-				static_assert(AlwaysFalse<instr>);
-			}
+			if constexpr (instr == LWC1) return ReadVirtual<s32>(addr);
+			else if constexpr (instr == LDC1) return ReadVirtual<s64>(addr);
+			else static_assert(AlwaysFalse<instr>);
 		}();
 
 		AdvancePipeline(1);
@@ -333,24 +375,9 @@ namespace VR4300
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
 		}
 
-		if constexpr (instr == SWC1) {
-			/* Store Word From FPU;
-			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
-			   an address. Stores the contents of the FPU general purpose register ft to the
-			   memory position specified by the address. */
-			WriteVirtual(addr, fpr.Get<s32>(ft));
-		}
-		else if constexpr (instr == SDC1) {
-			/* Store Doubleword From FPU;
-			   Sign-extends the 16-bit offset and adds it to the CPU register base to generate
-			   an address. Stores the contents of the FPU general purpose registers ft and
-			   ft+1 to the memory position specified by the address when FR = 0, and the
-			   contents of the FPU general purpose register ft when FR = 1. */
-			WriteVirtual(addr, fpr.Get<s64>(ft));
-		}
-		else {
-			static_assert(AlwaysFalse<instr>);
-		}
+		if constexpr (instr == SWC1) WriteVirtual(addr, fpr.Get<s32>(ft));
+		else if constexpr (instr == SDC1) WriteVirtual(addr, fpr.Get<s64>(ft));
+		else static_assert(AlwaysFalse<instr>);
 
 		AdvancePipeline(1);
 	}
@@ -359,13 +386,12 @@ namespace VR4300
 	template<Cop1Instruction instr>
 	void FpuMove(u32 instr_code)
 	{
+		using enum Cop1Instruction;
 		if (!cop0.status.cu1) {
 			SignalCoprocessorUnusableException(1);
 			AdvancePipeline(1);
 			return;
 		}
-
-		using enum Cop1Instruction;
 
 		auto fs = instr_code >> 11 & 0x1F;
 		auto rt = instr_code >> 16 & 0x1F;
@@ -408,7 +434,7 @@ namespace VR4300
 		}
 		else if constexpr (instr == DCFC1 || instr == DCTC1) {
 			ClearAllExceptions();
-			fcr31.cause_unimplemented = 1;
+			SignalUnimplementedOp();
 			SignalException<Exception::FloatingPoint>();
 		}
 		else {
@@ -437,15 +463,15 @@ namespace VR4300
 			 * If the source operand is infinity or NaN, or
 			 * If overflow occurs during conversion to integer format. */
 		auto TestForUnimplementedException = [&] <typename From, typename To> (From source) -> bool {
-			if constexpr (std::is_integral_v<From> && std::same_as<To, f64>) {
+			if constexpr (std::integral<From> && std::same_as<To, f64>) {
 				return false; /* zero-cost shortcut; integers cannot be infinity or NaN, and the operation is then always exact when converting to a double */
 			}
-			if constexpr (std::is_floating_point_v<From>) {
+			if constexpr (std::floating_point<From>) {
 				if (std::isnan(source) || std::isinf(source)) {
 					return true;
 				}
 			}
-			if constexpr (std::is_integral_v<To>) {
+			if constexpr (std::integral<To>) {
 				return std::fetestexcept(FE_OVERFLOW) != 0; // TODO: should this also include underflow?
 			}
 			return false;
@@ -469,23 +495,52 @@ namespace VR4300
 			auto Convert = [&] <FpuNumericType InputType> {
 				/* Interpret a source operand as type 'From', "convert" (round according to the current rounding mode) it to a new type 'To', and store the result. */
 				auto Convert = [&] <FpuNumericType From, FpuNumericType To> {
-					From source = fpr.Get<From>(fs);
-					std::feclearexcept(FE_ALL_EXCEPT);
-					To conv = To(source); 
-					fpr.Set<To>(fd, conv);
-					fcr31.cause_unimplemented = TestForUnimplementedException.template operator () < From, To > (source);
-					/* Note: if the input and output formats are the same, the result is undefined,
-					   according to table B-19 in "MIPS IV Instruction Set (Revision 3.2)" by Charles Price, 1995. */
 					/* TODO: the below is assuming that conv. between W and L takes 2 cycles.
-					   See footnote 2 in table 7-14, VR4300 manual */
+					See footnote 2 in table 7-14, VR4300 manual */
 					static constexpr int cycles = [&] {
-						     if constexpr (std::same_as<From, To>)                             return 1;
+						     if constexpr (std::same_as<From, To>)                           return 1;
 						else if constexpr (std::same_as<From, f32> && std::same_as<To, f64>) return 1;
 						else if constexpr (std::same_as<From, f64> && std::same_as<To, f32>) return 2;
-						else if constexpr (std::is_integral_v<From> && std::is_integral_v<To>)   return 2;
-						else                                                                     return 5;
+						else if constexpr (std::integral<From> && std::integral<To>)         return 2;
+						else                                                                 return 5;
 					}();
 					AdvancePipeline(cycles);
+					if constexpr (std::same_as<From, To> || std::integral<From> && std::integral<To>) {
+						SignalUnimplementedOp();
+						SignalException<Exception::FloatingPoint>();
+						return;
+					}
+					From source = fpr.Get<From>(fs);
+					if constexpr (std::floating_point<From>) {
+						if (!IsValidInput(source)) return;
+					}
+					if constexpr (std::same_as<From, s64> && std::floating_point<To>) {
+						if (source >= s64(0x0080'0000'0000'0000) || source < s64(0xFF80'0000'0000'0000)) {
+							SignalUnimplementedOp();
+							SignalException<Exception::FloatingPoint>();
+							return;
+						}
+					}
+					To conv = To(source);
+					bool exc_raised = TestAllExceptions();
+					if constexpr (std::floating_point<From> && std::same_as<To, s64>) {
+						if (conv >= s64(0x0020'0000'0000'0000) || conv < s64(0xFFE0'0000'0000'0000)) {
+							SignalUnimplementedOp();
+							SignalException<Exception::FloatingPoint>();
+							return;
+						}
+					}
+					if constexpr (std::floating_point<To>) {
+						if (IsValidOutput(conv, exc_raised)) {
+							fpr.Set<To>(fd, conv);
+						}
+					}
+					else if (exc_raised) {
+						SignalException<Exception::FloatingPoint>();
+					}
+					else {
+						fpr.Set<To>(fd, conv);
+					}
 				};
 				if constexpr (instr == CVT_S) INVOKE(Convert, InputType, f32);
 				if constexpr (instr == CVT_D) INVOKE(Convert, InputType, f64);
@@ -498,11 +553,7 @@ namespace VR4300
 			case FmtTypeID::Float64: INVOKE(Convert, f64); break;
 			case FmtTypeID::Int32:   INVOKE(Convert, s32); break;
 			case FmtTypeID::Int64:   INVOKE(Convert, s64); break;
-			default:
-				fcr31.cause_unimplemented = true;
-				std::feclearexcept(FE_ALL_EXCEPT);
-				AdvancePipeline(2);
-				break;
+			default: OnInvalidFormat(); break;
 			}
 
 			TestAllExceptions();
@@ -512,7 +563,7 @@ namespace VR4300
 			   Rounds the contents of floating-point register fs to a value closest to the 32/64-bit
 			   fixed-point format and converts them from the specified format (fmt). Stores the result to floating-point register fd. */
 
-			/* Interpret the source operand (as a float), and round it to an integer (s32 or s64). */
+			   /* Interpret the source operand (as a float), and round it to an integer (s32 or s64). */
 			auto Round = [&] <std::floating_point InputFloat, std::signed_integral OutputInt> {
 				InputFloat source = fpr.Get<InputFloat>(fs);
 
@@ -561,13 +612,8 @@ namespace VR4300
 				break;
 
 			default:
-				fcr31.cause_unimplemented = true;
-				std::feclearexcept(FE_ALL_EXCEPT);
-				AdvancePipeline(2);
-				break;
+				OnInvalidFormat();
 			}
-
-			TestAllExceptions();
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);
@@ -591,49 +637,6 @@ namespace VR4300
 		auto fs = instr_code >> 11 & 0x1F;
 		auto ft = instr_code >> 16 & 0x1F;
 		auto fmt = instr_code >> 21 & 0x1F;
-
-		auto IsValidInput = [](std::floating_point auto f) {
-			switch (std::fpclassify(f)) {
-			case FP_NAN: {
-				bool signal_fpu_exc = IsQuietNan(f) ? SignalInvalidOp() : SignalUnimplementedOp();
-				if (signal_fpu_exc) {
-					SignalException<Exception::FloatingPoint>();
-					return false;
-				}
-				else {
-					return true;
-				}
-			}
-
-			case FP_SUBNORMAL:
-				SignalUnimplementedOp();
-				return false;
-			}
-			return true;
-		};
-
-		auto IsValidOutput = [](std::floating_point auto& f, bool exc_raised) {
-			switch (std::fpclassify(f)) {
-			case FP_NAN:
-				if constexpr (sizeof(f) == 4) f = std::bit_cast<f32>(0x7FBF'FFFF);
-				else                          f = std::bit_cast<f64>(0x7FF7'FFFF'FFFF'FFFF);
-				return true;
-
-			case FP_SUBNORMAL:
-				if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact) {
-					SignalUnimplementedOp();
-					if (!exc_raised) SignalException<Exception::FloatingPoint>();
-					return false;
-				}
-				else {
-					SignalUnderflow();
-					SignalInexactOp();
-					f = Flush(f);
-					return true;
-				}
-			}
-			return true;
-		};
 
 		if constexpr (OneOf(instr, ADD, SUB, MUL, DIV)) {
 			if constexpr (log_cpu_instructions) {
@@ -680,11 +683,7 @@ namespace VR4300
 			switch (fmt) {
 			case FmtTypeID::Float32: INVOKE(Compute, f32); break;
 			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
-			default:
-				AdvancePipeline(2);
-				SignalUnimplementedOp();
-				SignalException<Exception::FloatingPoint>();
-				break;
+			default: OnInvalidFormat(); break;
 			}
 		}
 		else if constexpr (OneOf(instr, ABS, MOV, NEG, SQRT)) {
@@ -726,11 +725,7 @@ namespace VR4300
 			switch (fmt) {
 			case FmtTypeID::Float32: INVOKE(Compute, f32); break;
 			case FmtTypeID::Float64: INVOKE(Compute, f64); break;
-			default:
-				AdvancePipeline(2);
-				SignalUnimplementedOp();
-				SignalException<Exception::FloatingPoint>();
-				break;
+			default: OnInvalidFormat(); break;
 			}
 		}
 		else {
@@ -847,14 +842,12 @@ namespace VR4300
 		switch (fmt) {
 		case FmtTypeID::Float32: INVOKE(Compare, f32); break;
 		case FmtTypeID::Float64: INVOKE(Compare, f64); break;
-		default:
-			AdvancePipeline(2);
-			SignalUnimplementedOp();
-			SignalException<Exception::FloatingPoint>();
-			break;
+		default: OnInvalidFormat(); break;
 		}
 	}
 
+	template bool IsQuietNan<f32>(f32);
+	template bool IsQuietNan<f64>(f64);
 
 	template void FpuLoad<Cop1Instruction::LWC1>(u32);
 	template void FpuLoad<Cop1Instruction::LDC1>(u32);

@@ -58,6 +58,9 @@ namespace VR4300
 	template<std::floating_point Float> Float Flush(Float f);
 	void InitializeFpu();
 	bool IsQuietNan(std::floating_point auto f);
+	bool IsValidInput(std::floating_point auto f);
+	bool IsValidOutput(std::floating_point auto& f, bool exc_raised);
+	void OnInvalidFormat();
 	bool SignalDivZero();
 	bool SignalInexactOp();
 	bool SignalInvalidOp();
