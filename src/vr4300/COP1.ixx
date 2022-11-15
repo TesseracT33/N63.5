@@ -67,12 +67,10 @@ namespace VR4300
 	bool SignalOverflow();
 	bool SignalUnderflow();
 	bool SignalUnimplementedOp();
-	bool TestAllExceptions();
+	template<bool check_env = true> bool TestAllExceptions();
 
 	/* Floating point control register #31 */
 	struct FCR31 {
-		void Set(u32 data);
-
 		u32 rm : 2; /* Rounding mode */
 
 		u32 flag_inexact : 1;

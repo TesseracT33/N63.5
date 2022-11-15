@@ -13,22 +13,6 @@ import DebugOptions;
 
 namespace VR4300
 {
-	void FCR31::Set(u32 data)
-	{
-		*this = std::bit_cast<FCR31>(data & 0x183'FFFF);
-		auto new_rounding_mode = [&] {
-			switch (rm) {
-			case 0: return FE_TONEAREST;  /* RN */
-			case 1: return FE_TOWARDZERO; /* RZ */
-			case 2: return FE_UPWARD;     /* RP */
-			case 3: return FE_DOWNWARD;   /* RM */
-			default: std::unreachable();
-			}
-		}();
-		std::fesetround(new_rounding_mode);
-	}
-
-
 	u32 FPUControl::Get(size_t index) const
 	{
 		if (index == 31) return std::bit_cast<u32>(fcr31);
@@ -39,7 +23,20 @@ namespace VR4300
 
 	void FPUControl::Set(size_t index, u32 data)
 	{
-		if (index == 31) fcr31.Set(data);
+		if (index == 31) {
+			fcr31 = std::bit_cast<FCR31>(data & 0x183'FFFF | std::bit_cast<u32>(fcr31) & ~0x183'FFFF);
+			auto new_rounding_mode = [&] {
+				switch (fcr31.rm) {
+				case 0: return FE_TONEAREST;  /* RN */
+				case 1: return FE_TOWARDZERO; /* RZ */
+				case 2: return FE_UPWARD;     /* RP */
+				case 3: return FE_DOWNWARD;   /* RM */
+				default: std::unreachable();
+				}
+			}();
+			std::fesetround(new_rounding_mode);
+			TestAllExceptions<false>();
+		}
 	}
 
 
@@ -247,6 +244,7 @@ namespace VR4300
 	}
 
 
+	template<bool check_env>
 	bool TestAllExceptions()
 	{
 		/* * The Cause bits are updated by the floating-point operations (except load, store,
@@ -262,11 +260,13 @@ namespace VR4300
 		   reset. Flag bits are set to 1 if an IEEE754 exception is raised but the occurrence
 		   of the exception is prohibited. Otherwise, they remain unchanged.
 		*/
-		fcr31.cause_inexact |= std::fetestexcept(FE_INEXACT);
-		fcr31.cause_underflow |= std::fetestexcept(FE_UNDERFLOW);
-		fcr31.cause_overflow |= std::fetestexcept(FE_OVERFLOW);
-		fcr31.cause_div_zero |= std::fetestexcept(FE_DIVBYZERO);
-		fcr31.cause_invalid |= std::fetestexcept(FE_INVALID);
+		if constexpr (check_env) {
+			fcr31.cause_inexact |= std::fetestexcept(FE_INEXACT);
+			fcr31.cause_underflow |= std::fetestexcept(FE_UNDERFLOW);
+			fcr31.cause_overflow |= std::fetestexcept(FE_OVERFLOW);
+			fcr31.cause_div_zero |= std::fetestexcept(FE_DIVBYZERO);
+			fcr31.cause_invalid |= std::fetestexcept(FE_INVALID);
+		}
 
 		if (fcr31.cause_underflow && (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact)) {
 			fcr31.cause_unimplemented = true;
@@ -413,9 +413,7 @@ namespace VR4300
 		else if constexpr (instr == CTC1) {
 			/* Move Control Word To FPU;
 			   Transfers the contents of CPU general purpose register rt to FPU control register fs. */
-			if (fs == 31) { // Only #31 is writeable
-				fpu_control.Set(fs, u32(gpr[rt]));
-			}
+			fpu_control.Set(fs, u32(gpr[rt]));
 		}
 		else if constexpr (instr == CFC1) {
 			/* Move Control Word From FPU;
