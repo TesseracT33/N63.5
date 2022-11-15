@@ -43,70 +43,31 @@ namespace VR4300
 	template<FpuNumericType T>
 	T FGR::Get(size_t index) const
 	{
-		if constexpr (std::same_as<T, s32>) {
-			return s32(fpr[index]);
+		if constexpr (sizeof(T) == 4) {
+			u32 data = [&] {
+				if (cop0.status.fr || !(index & 1)) return u32(fpr[index]);
+				else return u32(fpr[index & ~1] >> 32);
+			}();
+			return std::bit_cast<T>(data);
 		}
-		if constexpr (std::same_as<T, f32>) {
-			return std::bit_cast<f32>(s32(fpr[index]));
-		}
-		if constexpr (std::same_as<T, s64>) {
-			if (cop0.status.fr) {
-				return fpr[index];
-			}
-			else {
-				/* If the index is odd, then the result is undefined.
-				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
-				auto aligned_index = (index + (index & 1)) & 0x1F;
-				return fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32;
-			}
-		}
-		if constexpr (std::same_as<T, f64>) {
-			if (cop0.status.fr) {
-				return std::bit_cast<f64>(fpr[index]);
-			}
-			else {
-				/* If the index is odd, then the result is undefined.
-				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
-				auto aligned_index = (index + (index & 1)) & 0x1F;
-				return std::bit_cast<f64, s64>(fpr[aligned_index] & 0xFFFF'FFFF | fpr[aligned_index + 1] << 32);
-			}
+		else {
+			if (!cop0.status.fr) index &= ~1;
+			return std::bit_cast<T>(fpr[index]);
 		}
 	}
 
 
 	template<FpuNumericType T>
-	void FGR::Set(size_t index, T data)
+	void FGR::Set(size_t index, T value)
 	{
-		if constexpr (std::same_as<T, s32>) {
-			fpr[index] = data;
+		if constexpr (sizeof(T) == 4) {
+			u32 data = std::bit_cast<u32>(value);
+			if (cop0.status.fr || !(index & 1)) fpr[index] = fpr[index] & 0xFFFF'FFFF'0000'0000 | data;
+			else fpr[index & ~1] = fpr[index & ~1] & 0xFFFF'FFFF | u64(data) << 32;
 		}
-		if constexpr (std::same_as<T, f32>) {
-			fpr[index] = std::bit_cast<s32>(data); /* TODO: no clue if sign-extending will lead to unwanted results */
-		}
-		if constexpr (std::same_as<T, s64>) {
-			if (cop0.status.fr) {
-				fpr[index] = data;
-			}
-			else {
-				/* If the index is odd, then the result is undefined.
-				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
-				auto aligned_index = (index + (index & 1)) & 0x1F;
-				fpr[aligned_index] = data & 0xFFFFFFFF;
-				fpr[aligned_index + 1] = data >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
-			}
-		}
-		if constexpr (std::same_as<T, f64>) {
-			if (cop0.status.fr) {
-				fpr[index] = std::bit_cast<s64, f64>(data);
-			}
-			else {
-				/* If the index is odd, then the result is undefined.
-				 The only way I can get PeterLemons's fpu tests to pass is to add 1 to the index if it is odd. */
-				auto aligned_index = (index + (index & 1)) & 0x1F;
-				s64 conv = std::bit_cast<s64>(data);
-				fpr[aligned_index] = conv & 0xFFFFFFFF;
-				fpr[aligned_index + 1] = conv >> 32; /* TODO: no clue if sign-extending will lead to unwanted results */
-			}
+		else {
+			if (!cop0.status.fr) index &= ~1;
+			fpr[index] = std::bit_cast<s64>(value);
 		}
 	}
 
@@ -347,11 +308,9 @@ namespace VR4300
 
 		AdvancePipeline(1);
 
-		if (exception_has_occurred) {
-			return;
+		if (!exception_has_occurred) {
+			fpr.Set(ft, result);
 		}
-
-		fpr.Set(ft, result);
 	}
 
 

@@ -7,6 +7,7 @@ import <bit>;
 import <cfenv>;
 import <cmath>;
 import <concepts>;
+import <cstring>;
 import <limits>;
 import <string_view>;
 import <type_traits>;
@@ -102,7 +103,7 @@ namespace VR4300
 	/* Floating point control registers. Only #0 and #31 are "valid", and #0 is read-only. */
 	struct FPUControl {
 		u32 Get(size_t index) const;
-		void Set(size_t index, u32 data);
+		void Set(size_t index, u32 value);
 	} fpu_control;
 
 	/* General-purpose floating point registers. */
