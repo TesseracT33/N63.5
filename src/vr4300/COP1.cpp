@@ -24,7 +24,8 @@ namespace VR4300
 	void FPUControl::Set(size_t index, u32 data)
 	{
 		if (index == 31) {
-			fcr31 = std::bit_cast<FCR31>(data & 0x183'FFFF | std::bit_cast<u32>(fcr31) & ~0x183'FFFF);
+			static constexpr u32 mask = 0x183'FFFF;
+			fcr31 = std::bit_cast<FCR31>(data & mask | std::bit_cast<u32>(fcr31) & ~mask);
 			auto new_rounding_mode = [&] {
 				switch (fcr31.rm) {
 				case 0: return FE_TONEAREST;  /* RN */
@@ -35,7 +36,7 @@ namespace VR4300
 				}
 			}();
 			std::fesetround(new_rounding_mode);
-			TestAllExceptions<false>();
+			TestAllExceptions<false /* don't check fe */, false /* don't set flags */>();
 		}
 	}
 
@@ -205,7 +206,7 @@ namespace VR4300
 	}
 
 
-	template<bool check_env>
+	template<bool check_env, bool set_flags>
 	bool TestAllExceptions()
 	{
 		/* * The Cause bits are updated by the floating-point operations (except load, store,
@@ -236,9 +237,11 @@ namespace VR4300
 		u32 fcr31_u32 = std::bit_cast<u32>(fcr31);
 		u32 enables = fcr31_u32 >> 7 & 0x1F;
 		u32 causes = fcr31_u32 >> 12 & 0x1F;
-		u32 flags = causes & ~enables;
-		fcr31_u32 |= flags << 2;
-		fcr31 = std::bit_cast<FCR31>(fcr31_u32);
+		if constexpr (set_flags) {
+			u32 flags = causes & ~enables;
+			fcr31_u32 |= flags << 2;
+			fcr31 = std::bit_cast<FCR31>(fcr31_u32);
+		}
 		if ((enables & causes) || fcr31.cause_unimplemented) {
 			SignalException<Exception::FloatingPoint>();
 			return true;
