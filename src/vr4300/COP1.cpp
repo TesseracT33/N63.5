@@ -63,8 +63,8 @@ namespace VR4300
 	{
 		if constexpr (sizeof(T) == 4) {
 			u32 data = std::bit_cast<u32>(value);
-			if (cop0.status.fr || !(index & 1)) fpr[index] = fpr[index] & 0xFFFF'FFFF'0000'0000 | data;
-			else fpr[index & ~1] = fpr[index & ~1] & 0xFFFF'FFFF | u64(data) << 32;
+			if (cop0.status.fr || !(index & 1)) std::memcpy(&fpr[index], &data, 4);
+			else std::memcpy((u8*)(&fpr[index & ~1]) + 4, &data, 4);
 		}
 		else {
 			if (!cop0.status.fr) index &= ~1;
