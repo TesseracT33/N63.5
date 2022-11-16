@@ -64,7 +64,7 @@ namespace VR4300
 		gpr.Set(20, 1);
 		gpr.Set(22, 0x3F);
 		gpr.Set(29, 0xA400'1FF0);
-		cop0.SetRaw(cop0_index_status, 0x2410'00E0);
+		cop0.SetRaw(cop0_index_status, 0x3400'0000);
 		cop0.SetRaw(cop0_index_config, 0x7006'E463);
 		for (u64 i = 0; i < 0x1000; i += 4) {
 			u64 src_addr = 0xFFFF'FFFF'B000'0000 + i;
