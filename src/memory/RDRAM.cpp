@@ -37,7 +37,7 @@ namespace RDRAM
 	Int Read(u32 addr)
 	{ /* CPU precondition: addr is always aligned */
 		Int ret;
-		std::memcpy(&ret, rdram + addr, sizeof(Int));
+		std::memcpy(&ret, rdram + (addr & (sizeof(rdram) - 1)), sizeof(Int));
 		return std::byteswap(ret);
 	}
 
@@ -64,12 +64,23 @@ namespace RDRAM
 	}
 
 
+	u32 RdpReadCommand(u32 addr)
+	{
+		/* addr may be misaligned */
+		u64 command;
+		for (int i = 0; i < 8; ++i) {
+			*((u8*)(&command) + i) = rdram[(addr + i) & (sizeof(rdram) - 1)];
+		}
+		return command;
+	}
+
+
 	/* 0 - $7F'FFFF */
 	template<size_t num_bytes>
 	void Write(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
 		data = std::byteswap(data);
-		std::memcpy(rdram + addr, &data, num_bytes);
+		std::memcpy(rdram + (addr & (sizeof(rdram) - 1)), &data, num_bytes);
 	}
 
 

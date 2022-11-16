@@ -1,6 +1,5 @@
 module Cart;
 
-import Memory;
 import UserMessage;
 
 namespace Cart
@@ -9,7 +8,6 @@ namespace Cart
 	{
 		sram.resize(sram_size);
 		std::ranges::fill(sram, 0xFF);
-		Memory::ReloadPageTables();
 	}
 
 
@@ -52,7 +50,6 @@ namespace Cart
 		original_rom_size = rom.size();
 		ResizeRomToPowerOfTwo();
 		rom_access_mask = u32(rom.size() - 1);
-		Memory::ReloadPageTables();
 		AllocateSram();
 		return true;
 	}
@@ -73,7 +70,6 @@ namespace Cart
 			UserMessage::Show(std::format("Sram file has size different than the allowed ({} bytes). ", sram_size), UserMessage::Type::Warning);
 			sram.resize(sram_size);
 		}
-		Memory::ReloadPageTables();
 		return true;
 	}
 

@@ -17,32 +17,32 @@ import VR4300;
 
 namespace Memory
 {
-#define READ_INTERFACE(INTERFACE, INT, ADDR) [&] {                         \
-if constexpr (sizeof(INT) == 4) {                                          \
-	return INTERFACE::ReadReg(ADDR);                                       \
-}                                                                          \
-else {                                                                     \
-	Log(std::format(                                                       \
-		"Attempted to read IO region at address ${:08X} for sized int {}", \
-		ADDR, sizeof(INT)));                                               \
-	return INT{};                                                          \
-}                                                                          \
-}()
+#define READ_INTERFACE(INTERFACE, INT, ADDR) [&] {                             \
+	if constexpr (sizeof(INT) == 4) {                                          \
+		return INTERFACE::ReadReg(ADDR);                                       \
+	}                                                                          \
+	else {                                                                     \
+		Log(std::format(                                                       \
+			"Attempted to read IO region at address ${:08X} for sized int {}", \
+			ADDR, sizeof(INT)));                                               \
+		return INT{};                                                          \
+	}                                                                          \
+	}()
 
 
-#define WRITE_INTERFACE(INTERFACE, NUM_BYTES, ADDR, DATA)                   \
-if constexpr (NUM_BYTES == 4) {                                             \
-	INTERFACE::WriteReg(ADDR, DATA);                                        \
-}                                                                           \
-else {                                                                      \
-	Log(std::format(                                                        \
-		"Attempted to write IO region at address ${:08X} for sized int {}", \
-		ADDR, NUM_BYTES));                                                  \
-}
+#define WRITE_INTERFACE(INTERFACE, NUM_BYTES, ADDR, DATA)                       \
+	if constexpr (NUM_BYTES == 4) {                                             \
+		INTERFACE::WriteReg(ADDR, DATA);                                        \
+	}                                                                           \
+	else {                                                                      \
+		Log(std::format(                                                        \
+			"Attempted to write IO region at address ${:08X} for sized int {}", \
+			ADDR, NUM_BYTES));                                                  \
+	}
 
 	void Initialize()
 	{
-		ReloadPageTables();
+		
 	}
 
 
@@ -54,16 +54,11 @@ else {                                                                      \
 				VR4300::last_instr_fetch_phys_addr = addr;
 			}
 		}
-		u32 page = addr >> 16;
-		u8* ptr = read_page_table[page];
-		if (ptr) {
-			Int ret;
-			u16 addr_mask = page_table_addr_mask[page];
-			std::memcpy(&ret, ptr + (addr & addr_mask), sizeof(Int));
-			return std::byteswap(ret);
+		if (addr <= 0x03EF'FFFF) {
+			return RDRAM::Read<Int>(addr);
 		}
-		else if (page >= 0x3F0 && page <= 0x4FF) {
-			switch (((addr >> 20) - 0x3F) & 0xF) {
+		if (addr <= 0x048F'FFFF) {
+			switch ((addr >> 20) - 0x3F) {
 			case 0: /* $03F0'0000 - $03FF'FFFF */
 				return READ_INTERFACE(RDRAM, Int, addr);
 
@@ -95,65 +90,32 @@ else {                                                                      \
 			case 9: /* $0480'0000 - $048F'FFFF */
 				return READ_INTERFACE(SI, Int, addr);
 
-			default: /* $0490'0000 - $04EF'FFFF */
-				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
-				return Int{};
+			default: 
+				std::unreachable();
 			}
 		}
-		else if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
+		if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
 			return Cart::ReadSram<Int>(addr);
 		}
-		else if (addr >= 0x1000'0000 && addr <= 0x1FBF'FFFF) {
+		if (addr >= 0x1000'0000 && addr <= 0x1FBF'FFFF) {
 			return Cart::ReadRom<Int>(addr);
 		}
-		else {
-			Log(std::format("Unexpected cpu read to address ${:08X}", addr));
-			return Int{};
+		if ((addr & 0xFFFF'F800) == 0x1FC0'0000) { /* $1FC0'0000 - $1FC0'07FF */
+			return PIF::ReadMemory<Int>(addr);
 		}
-	}
-
-
-	void ReloadPageTables()
-	{
-		u32 page = 0;
-		for (u8*& ptr : read_page_table) {
-			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
-			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
-			else if (page == 0x1FC0)                   ptr = PIF::GetPointerToMemory(page << 16);
-			else                                       ptr = nullptr;
-			++page;
-		}
-		page = 0;
-		for (u8*& ptr : write_page_table) {
-			if (page <= 0x007F)                        ptr = RDRAM::GetPointerToMemory(page << 16);
-			else if (page >= 0x0400 && page <= 0x0403) ptr = RSP::GetPointerToMemory(page << 16);
-			else                                       ptr = nullptr;
-			++page;
-		}
-		page = 0;
-		for (u16& mask : page_table_addr_mask) {
-			if (page <= 0x007F)                        mask = 0xFFFF;
-			else if (page >= 0x0400 && page <= 0x0403) mask = 0x1FFF;
-			else if (page >= 0x0800 && page <= 0x0FFF) mask = 0xFFFF; /* TODO: should be dependent on sram size */
-			else if (page >= 0x1000 && page <= 0x1FBF) mask = 0xFFFF; /* TODO: should be dependent on rom size */
-			else if (page == 0x1FC0)                   mask = 0x07FF;
-			++page;
-		}
+		Log(std::format("Unexpected cpu read to address ${:08X}", addr));
+		return Int{};
 	}
 
 
 	template<size_t num_bytes>
 	void WritePhysical(u32 addr, std::signed_integral auto data)
 	{ /* Precondition: 'addr' is aligned according to the size of 'Int' */
-		u32 page = addr >> 16;
-		u8* ptr = write_page_table[page];
-		if (ptr) {
-			data = std::byteswap(data);
-			u16 addr_mask = page_table_addr_mask[page];
-			std::memcpy(ptr + (addr & addr_mask), &data, num_bytes);
+		if (addr <= 0x03EF'FFFF) {
+			RDRAM::Write<num_bytes>(addr, data);
 		}
-		else if (page >= 0x3F0 && page <= 0x4FF) {
-			switch (((addr >> 20) - 0x3F) & 0xF) {
+		else if (addr <= 0x048F'FFFF) {
+			switch ((addr >> 20) - 0x3F) {
 			case 0: /* $03F0'0000 - $03FF'FFFF */
 				WRITE_INTERFACE(RDRAM, num_bytes, addr, data); break;
 
@@ -184,8 +146,8 @@ else {                                                                      \
 			case 9: /* $0480'0000 - $048F'FFFF */
 				WRITE_INTERFACE(SI, num_bytes, addr, data); break;
 
-			default: /* $0490'0000 - $04EF'FFFF */
-				Log(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
+			default:
+				std::unreachable();
 			}
 		}
 		else if (addr >= 0x800'0000 && addr <= 0xFFF'FFFF) {
