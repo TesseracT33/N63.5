@@ -56,11 +56,15 @@ namespace PIF
 	template<std::signed_integral Int>
 	Int ReadMemory(u32 addr)
 	{ /* CPU precondition: addr is aligned */
-		// TODO: Reading from the PIF_ROM area will simply return 0 after boot is finished, because the PIF locks PIF_ROM accesses for security reasons.
-		// Also for SI DMA
 		Int ret;
 		std::memcpy(&ret, memory.data() + (addr & 0x7FF), sizeof(Int));
 		return std::byteswap(ret);
+	}
+
+
+	void RomLockout()
+	{
+
 	}
 
 
@@ -77,7 +81,7 @@ namespace PIF
 			break;
 
 		case 0x01: /* Controller State */
-			std::memcpy(memory.data() + ram_start, &joypad_status, 4);
+			std::memcpy(&memory[ram_start], &joypad_status, 4);
 			break;
 
 		case 0x02: /* Read Controller Accessory */
@@ -91,7 +95,17 @@ namespace PIF
 
 		case 0x05: /* Write EEPROM */
 			break;
+
+		case 0x06: /* Real-Time Clock Info */
+			std::memset(&memory[ram_start], 0, 3); /* clock does not exist */
+			break;
 		}
+	}
+
+
+	void TerminateBootProcess()
+	{
+
 	}
 
 
@@ -99,26 +113,34 @@ namespace PIF
 	void WriteMemory(u32 addr, std::signed_integral auto data)
 	{ /* CPU precondition: write does not go to the next boundary */
 		addr &= 0x7FF;
-		if (addr >= ram_start) { /* $0-$7BF: rom; $7C0-$7FF: ram */
-			data = std::byteswap(data);
-			std::memcpy(memory.data() + addr, &data, num_bytes);
-			if (addr + num_bytes > 0x7FF) {
-				if (memory[command_byte_index] & 1) {
-					RunJoybusProtocol();
-					memory[command_byte_index] &= ~1;
-				}
-				if (memory[command_byte_index] & 2) {
-					ChallengeProtection();
-					memory[command_byte_index] &= ~2;
-				}
-				if (memory[command_byte_index] & 0x20) {
-					ChecksumVerification();
-					memory[command_byte_index] &= ~0x20;
-				}
-				if (memory[command_byte_index] & 0x40) {
-					ClearRam();
-					memory[command_byte_index] &= ~0x40;
-				}
+		if (addr < ram_start) return;
+		data = std::byteswap(data);
+		std::memcpy(memory.data() + addr, &data, num_bytes);
+		
+		if (addr + num_bytes >= command_byte_index) {
+			if (memory[command_byte_index] & 1) {
+				RunJoybusProtocol();
+				memory[command_byte_index] &= ~1;
+			}
+			if (memory[command_byte_index] & 2) {
+				ChallengeProtection();
+				memory[command_byte_index] &= ~2;
+			}
+			if (memory[command_byte_index] & 8) {
+				TerminateBootProcess();
+				memory[command_byte_index] &= ~8;
+			}
+			if (memory[command_byte_index] & 0x10) {
+				RomLockout();
+				memory[command_byte_index] &= ~0x10;
+			}
+			if (memory[command_byte_index] & 0x20) {
+				ChecksumVerification();
+				memory[command_byte_index] &= ~0x20;
+			}
+			if (memory[command_byte_index] & 0x40) {
+				ClearRam();
+				memory[command_byte_index] &= ~0x40;
 			}
 		}
 	}

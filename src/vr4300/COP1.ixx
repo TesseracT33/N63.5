@@ -9,7 +9,6 @@ import <cmath>;
 import <concepts>;
 import <cstring>;
 import <limits>;
-import <string_view>;
 import <type_traits>;
 import <utility>;
 
@@ -57,6 +56,7 @@ namespace VR4300
 
 	void ClearAllExceptions();
 	template<std::floating_point Float> Float Flush(Float f);
+	constexpr char FmtToChar(u32 fmt);
 	void InitializeFpu();
 	bool IsQuietNan(std::floating_point auto f);
 	bool IsValidInput(std::floating_point auto f);

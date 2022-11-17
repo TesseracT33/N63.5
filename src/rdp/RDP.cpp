@@ -49,12 +49,11 @@ namespace RDP
 		if (dp.status.freeze) {
 			return;
 		}
+		dp.status.pipe_busy = dp.status.start_gclk = true;
 		u32 current = dp.current;
 		if (dp.end <= current) {
 			return;
 		}
-		dp.status.pipe_busy = dp.status.start_gclk;
-		dp.status.ready = false;
 		u32 num_dwords = (dp.end - current) / 8;
 		if (num_queued_words + 2 * num_dwords >= cmd_buffer_word_capacity) {
 			return;
@@ -95,7 +94,6 @@ namespace RDP
 		}
 
 		queue_word_offset = num_queued_words = 0;
-		dp.status.ready = true;
 		dp.current = dp.end;
 	}
 

@@ -78,8 +78,7 @@ namespace RSP
 		}
 
 		if constexpr (log_dma) {
-			std::string_view rsp_mem_bank = sp.dma_spaddr & 0x1000
-				? "IMEM" : "DMEM";
+			std::string_view rsp_mem_bank = sp.dma_spaddr & 0x1000 ? "IMEM" : "DMEM";
 			std::string output = [&] {
 				if constexpr (dma_type == DmaType::RdToSp) {
 					return std::format("From RDRAM ${:X} to RSP {} ${:X}; ${:X} bytes",

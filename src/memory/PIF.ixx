@@ -29,7 +29,9 @@ namespace PIF
 	void ChallengeProtection();
 	void ChecksumVerification();
 	void ClearRam();
+	void RomLockout();
 	void RunJoybusProtocol();
+	void TerminateBootProcess();
 
 	constexpr size_t command_byte_index = 0x7FF;
 	constexpr size_t ram_size = 0x40;
@@ -37,7 +39,7 @@ namespace PIF
 	constexpr size_t ram_start = rom_size;
 	constexpr size_t memory_size = ram_size + rom_size;
 
-	struct JoypadStatus { /* TODO: correct endianness? */
+	struct JoypadStatus { /* TODO: wrong endianess if ram kept in BE */
 		u32 a : 1;
 		u32 b : 1;
 		u32 z : 1;

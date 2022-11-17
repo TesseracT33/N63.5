@@ -62,7 +62,7 @@ namespace RSP
 		/* Addr may be misaligned and the read can go out of bounds */
 		Int ret;
 		for (size_t i = 0; i < sizeof(Int); ++i) {
-			*((u8*)(&ret) + sizeof(Int) - i - 1) = dmem[(addr + i) & 0xFFF];
+			*((u8*)(&ret) + sizeof(Int) - i - 1) = dmem[addr + i & 0xFFF];
 		}
 		return ret;
 	}
@@ -94,6 +94,17 @@ namespace RSP
 		u64 command;
 		for (int i = 0; i < 8; ++i) {
 			*((u8*)(&command) + i) = dmem[(addr + 7 - i) & 0xFFF];
+		}
+		return command;
+	}
+
+
+	u32 RdpReadCommand(u32 addr)
+	{
+		/* The address may be unaligned */
+		u64 command;
+		for (int i = 0; i < 8; ++i) {
+			*((u8*)(&command) + i) = dmem[(addr + i) & 0xFFF];
 		}
 		return command;
 	}

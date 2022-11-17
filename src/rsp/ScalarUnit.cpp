@@ -87,17 +87,17 @@ namespace RSP
 		if constexpr (instr == SB) {
 			/* Store Byte;
 			   Stores the contents of the low-order byte of register rt to the memory specified by the address. */
-			WriteDMEM<s8>(address, s8(gpr[rt]));
+			WriteDMEM(address, s8(gpr[rt]));
 		}
 		else if constexpr (instr == SH) {
 			/* Store Halfword;
 			   Stores the contents of the low-order halfword of register rt to the memory specified by the address. */
-			WriteDMEM<s16>(address, s16(gpr[rt]));
+			WriteDMEM(address, s16(gpr[rt]));
 		}
 		else if constexpr (instr == SW) {
 			/* Store Word;
 			   Stores the contents of the low-order word of register rt to the memory specified by the address. */
-			WriteDMEM<s32>(address, gpr[rt]);
+			WriteDMEM(address, gpr[rt]);
 		}
 		else if constexpr (instr == SC) {
 			/* Store Conditional;
@@ -106,7 +106,7 @@ namespace RSP
 			   If the LL bit is 0, does not store the contents of the word, and clears register
 			   rt to 0. */
 			if (ll_bit == 1) {
-				WriteDMEM<s32>(address, gpr[rt]);
+				WriteDMEM(address, gpr[rt]);
 				gpr.Set(rt, 1);
 			}
 			else {

@@ -95,11 +95,11 @@ namespace VR4300
 		case 0b00010: EXEC_COP1_INSTR(CFC1); break;
 		case 0b00011: EXEC_COP1_INSTR(DCFC1); break;
 		case 0b00110: EXEC_COP1_INSTR(CTC1); break;
-		case 0b00001: EXEC_COP1_INSTR(DMFC1); break;
-		case 0b00101: EXEC_COP1_INSTR(DMTC1); break;
-		case 0b00000: EXEC_COP1_INSTR(MFC1); break;
-		case 0b00100: EXEC_COP1_INSTR(MTC1); break;
 		case 0b00111: EXEC_COP1_INSTR(DCTC1); break;
+		case 0b00000: EXEC_COP1_INSTR(MFC1); break;
+		case 0b00001: EXEC_COP1_INSTR(DMFC1); break;
+		case 0b00100: EXEC_COP1_INSTR(MTC1); break;
+		case 0b00101: EXEC_COP1_INSTR(DMTC1); break;
 
 		default: {
 			if ((instr_code & 0x30) == 0x30) {

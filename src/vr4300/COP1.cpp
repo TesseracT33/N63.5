@@ -62,9 +62,8 @@ namespace VR4300
 	void FGR::Set(size_t index, T value)
 	{
 		if constexpr (sizeof(T) == 4) {
-			u32 data = std::bit_cast<u32>(value);
-			if (cop0.status.fr || !(index & 1)) std::memcpy(&fpr[index], &data, 4);
-			else std::memcpy((u8*)(&fpr[index & ~1]) + 4, &data, 4);
+			if (cop0.status.fr || !(index & 1)) std::memcpy(&fpr[index], &value, 4);
+			else std::memcpy((u8*)(&fpr[index & ~1]) + 4, &value, 4);
 		}
 		else {
 			if (!cop0.status.fr) index &= ~1;
@@ -73,21 +72,15 @@ namespace VR4300
 	}
 
 
-	constexpr std::string_view FmtToString(FmtTypeID fmt)
+	constexpr char FmtToChar(u32 fmt)
 	{
 		switch (fmt) {
-		case FmtTypeID::Float32: return "S";
-		case FmtTypeID::Float64: return "D";
-		case FmtTypeID::Int32: return "W";
-		case FmtTypeID::Int64: return "L";
-		default: return "INVALID";
+		case FmtTypeID::Float32: return 'S';
+		case FmtTypeID::Float64: return 'D';
+		case FmtTypeID::Int32: return 'W';
+		case FmtTypeID::Int64: return 'L';
+		default: return '?';
 		}
-	}
-
-
-	constexpr std::string_view FmtToString(int fmt)
-	{
-		return FmtToString(static_cast<FmtTypeID>(fmt));
 	}
 
 
@@ -442,7 +435,7 @@ namespace VR4300
 		auto fmt = instr_code >> 21 & 0x1F;
 
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
+			current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToChar(fmt), fd, fs);
 		}
 
 		if constexpr (OneOf(instr, CVT_S, CVT_D, CVT_W, CVT_L)) {
@@ -527,8 +520,6 @@ namespace VR4300
 			auto Round = [&] <std::floating_point InputFloat, std::signed_integral OutputInt> {
 				InputFloat source = fpr.Get<InputFloat>(fs);
 
-				std::feclearexcept(FE_ALL_EXCEPT);
-
 				OutputInt result = [&] {
 					if constexpr (OneOf(instr, ROUND_W, ROUND_L)) return OutputInt(std::nearbyint(source));
 					if constexpr (OneOf(instr, TRUNC_W, TRUNC_L)) return OutputInt(std::trunc(source));
@@ -600,7 +591,7 @@ namespace VR4300
 
 		if constexpr (OneOf(instr, ADD, SUB, MUL, DIV)) {
 			if constexpr (log_cpu_instructions) {
-				current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToString(fmt), fd, fs, ft);
+				current_instr_log_output = std::format("{}.{} {}, {}, {}", current_instr_name, FmtToChar(fmt), fd, fs, ft);
 			}
 
 			auto Compute = [&] <std::floating_point Float> {
@@ -648,7 +639,7 @@ namespace VR4300
 		}
 		else if constexpr (OneOf(instr, ABS, MOV, NEG, SQRT)) {
 			if constexpr (log_cpu_instructions) {
-				current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToString(fmt), fd, fs);
+				current_instr_log_output = std::format("{}.{} {}, {}", current_instr_name, FmtToChar(fmt), fd, fs);
 			}
 
 			auto Compute = [&] <std::floating_point Float> {
@@ -765,7 +756,7 @@ namespace VR4300
 		auto fmt = instr_code >> 21 & 0x1F;
 
 		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("C.{}.{} {}, {}", compare_cond_strings[cond], FmtToString(fmt), fs, ft);
+			current_instr_log_output = std::format("C.{}.{} {}, {}", compare_cond_strings[cond], FmtToChar(fmt), fs, ft);
 		}
 
 		auto Compare = [&] <std::floating_point Float> {
