@@ -154,7 +154,7 @@ namespace RSP
 	{
 		s32 to_write = [&] {
 			if constexpr (access_size == 1) return data << (8 * (3 - (addr & 3)));
-			if constexpr (access_size == 2) return data << (8 * (2 - (addr & 3)));
+			if constexpr (access_size == 2) return data << (8 * (2 - (addr & 2)));
 			if constexpr (access_size == 4) return data;
 			if constexpr (access_size == 8) return data >> 32;
 		}();
@@ -162,13 +162,8 @@ namespace RSP
 			to_write = std::byteswap(to_write);
 			std::memcpy(&mem[addr & 0x1FFC], &to_write, 4);
 		}
-		else if constexpr (access_size == 4) {
-			WriteReg(addr, to_write);
-		}
 		else {
-			Log(std::format(
-				"Attempted to write to RSP memory region at address ${:08X} for sized int {}",
-				addr, access_size));
+			WriteReg(addr, to_write);
 		}
 	}
 
