@@ -22,8 +22,8 @@ namespace PIF
 		template<std::signed_integral Int>
 		Int ReadMemory(u32 addr);
 
-		template<size_t num_bytes>
-		void WriteMemory(u32 addr, std::signed_integral auto data);
+		template<size_t access_size>
+		void WriteMemory(u32 addr, s64 data);
 	}
 
 	void ChallengeProtection();

@@ -451,7 +451,7 @@ namespace VR4300
 		   Then, there is no need to check if the pc is misaligned every time an instruction is fetched
 		   (this is one of the few places where the pc can be set to a misaligned value). */
 		if (pc & 3) {
-			SignalAddressErrorException<Memory::Operation::InstrFetch>(pc);
+			SignalAddressErrorException<MemOp::InstrFetch>(pc);
 		}
 		SetActiveVirtualToPhysicalFunctions();
 	}

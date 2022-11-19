@@ -149,20 +149,25 @@ namespace RSP
 	}
 
 
-	template<size_t num_bytes>
-	void WriteMemoryCpu(u32 addr, std::signed_integral auto data)
+	template<size_t access_size>
+	void WriteMemoryCpu(u32 addr, s64 data)
 	{ /* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
 		if (addr < 0x0404'0000) {
-			data = std::byteswap(data);
-			std::memcpy(mem.data() + (addr & 0x1FFF), &data, num_bytes);
+			auto to_write = [&] { /* TODO: behavior is different from this */
+				if constexpr (access_size == 1) return u8(data);
+				if constexpr (access_size == 2) return std::byteswap(u16(data));
+				if constexpr (access_size == 4) return std::byteswap(u32(data));
+				if constexpr (access_size == 8) return std::byteswap(data);
+			}();
+			std::memcpy(mem.data() + (addr & 0x1FFF), &to_write, access_size);
 		}
-		else if constexpr (num_bytes == 4) {
+		else if constexpr (access_size == 4) {
 			WriteReg(addr, data);
 		}
 		else {
 			Log(std::format(
 				"Attempted to write to RSP memory region at address ${:08X} for sized int {}",
-				addr, num_bytes));
+				addr, access_size));
 		}
 	}
 
@@ -181,19 +186,8 @@ namespace RSP
 	template s32 ReadMemoryCpu<s32>(u32);
 	template s64 ReadMemoryCpu<s64>(u32);
 
-	template void WriteMemoryCpu<1>(u32, s8);
-	template void WriteMemoryCpu<1>(u32, s16);
-	template void WriteMemoryCpu<1>(u32, s32);
 	template void WriteMemoryCpu<1>(u32, s64);
-	template void WriteMemoryCpu<2>(u32, s16);
-	template void WriteMemoryCpu<2>(u32, s32);
 	template void WriteMemoryCpu<2>(u32, s64);
-	template void WriteMemoryCpu<3>(u32, s32);
-	template void WriteMemoryCpu<3>(u32, s64);
-	template void WriteMemoryCpu<4>(u32, s32);
 	template void WriteMemoryCpu<4>(u32, s64);
-	template void WriteMemoryCpu<5>(u32, s64);
-	template void WriteMemoryCpu<6>(u32, s64);
-	template void WriteMemoryCpu<7>(u32, s64);
 	template void WriteMemoryCpu<8>(u32, s64);
 }

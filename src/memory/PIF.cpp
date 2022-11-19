@@ -109,15 +109,20 @@ namespace PIF
 	}
 
 
-	template<size_t num_bytes>
-	void WriteMemory(u32 addr, std::signed_integral auto data)
+	template<size_t access_size>
+	void WriteMemory(u32 addr, s64 data)
 	{ /* CPU precondition: write does not go to the next boundary */
 		addr &= 0x7FF;
 		if (addr < ram_start) return;
-		data = std::byteswap(data);
-		std::memcpy(memory.data() + addr, &data, num_bytes);
+		auto to_write = [&] { /* TODO: behavior is different from this */
+			if constexpr (access_size == 1) return u8(data);
+			if constexpr (access_size == 2) return std::byteswap(u16(data));
+			if constexpr (access_size == 4) return std::byteswap(u32(data));
+			if constexpr (access_size == 8) return std::byteswap(data);
+		}();
+		std::memcpy(memory.data() + addr, &to_write, access_size);
 		
-		if (addr + num_bytes >= command_byte_index) {
+		if (addr + access_size >= command_byte_index) {
 			if (memory[command_byte_index] & 1) {
 				RunJoybusProtocol();
 				memory[command_byte_index] &= ~1;
@@ -150,19 +155,8 @@ namespace PIF
 	template s16 ReadMemory<s16>(u32);
 	template s32 ReadMemory<s32>(u32);
 	template s64 ReadMemory<s64>(u32);
-	template void WriteMemory<1>(u32, s8);
-	template void WriteMemory<1>(u32, s16);
-	template void WriteMemory<1>(u32, s32);
 	template void WriteMemory<1>(u32, s64);
-	template void WriteMemory<2>(u32, s16);
-	template void WriteMemory<2>(u32, s32);
 	template void WriteMemory<2>(u32, s64);
-	template void WriteMemory<3>(u32, s32);
-	template void WriteMemory<3>(u32, s64);
-	template void WriteMemory<4>(u32, s32);
 	template void WriteMemory<4>(u32, s64);
-	template void WriteMemory<5>(u32, s64);
-	template void WriteMemory<6>(u32, s64);
-	template void WriteMemory<7>(u32, s64);
 	template void WriteMemory<8>(u32, s64);
 }

@@ -5,6 +5,7 @@ import :COP0;
 import :Exceptions;
 import :Operation;
 
+import DebugOptions;
 import Logging;
 
 namespace VR4300
@@ -37,7 +38,7 @@ namespace VR4300
 
 	u32 FetchInstruction(u64 virtual_address)
 	{
-		return ReadVirtual<s32, Alignment::Aligned, Memory::Operation::InstrFetch>(virtual_address);
+		return ReadVirtual<s32, Alignment::Aligned, MemOp::InstrFetch>(virtual_address);
 	}
 
 
@@ -52,15 +53,15 @@ namespace VR4300
 	}
 
 
-	template<std::signed_integral Int, Alignment alignment, Memory::Operation operation>
+	template<std::signed_integral Int, Alignment alignment, MemOp mem_op>
 	Int ReadVirtual(u64 virtual_address)
 	{
 		/* For aligned accesses, check if the address is misaligned. No need to do it for instruction fetches.
 		   The PC can be misaligned after an ERET instruction, but we manually check there if the PC read from the EPC register is misaligned. */
-		if constexpr (sizeof(Int) > 1 && operation != Memory::Operation::InstrFetch) {
+		if constexpr (sizeof(Int) > 1 && mem_op != MemOp::InstrFetch) {
 			if constexpr (alignment == Alignment::Aligned) {
 				if (virtual_address & (sizeof(Int) - 1)) {
-					SignalAddressErrorException<operation>(virtual_address);
+					SignalAddressErrorException<mem_op>(virtual_address);
 					return {};
 				}
 			}
@@ -75,14 +76,19 @@ namespace VR4300
 		if (exception_has_occurred) {
 			return {};
 		}
+		if constexpr (mem_op == MemOp::InstrFetch) {
+			if constexpr (log_cpu_instructions) {
+				last_instr_fetch_phys_addr = physical_address;
+			}
+		}
 		last_physical_address_on_load = physical_address;
 		if (cacheable_area) { /* TODO: figure out some way to avoid this branch, if possible */
 			/* cycle counter incremented in the function, depending on if cache hit/miss */
-			return ReadCacheableArea<Int, operation>(physical_address);
+			return ReadCacheableArea<Int, mem_op>(physical_address);
 		}
 		else {
 			p_cycle_counter += cache_miss_cycle_delay; /* using the same number here */
-			return Memory::ReadPhysical<Int, operation>(physical_address);
+			return Memory::Read<Int>(physical_address);
 		}
 	}
 
@@ -95,39 +101,39 @@ namespace VR4300
 		if (cop0.status.ksu == 0 || cop0.status.erl == 1 || cop0.status.exl == 1) { /* Kernel mode */
 			operating_mode = Kernel;
 			if (cop0.status.kx == 0) {
-				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<Memory::Operation::Read>;
-				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<Memory::Operation::Write>;
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode32<MemOp::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode32<MemOp::Write>;
 				addressing_mode = _32bit;
 			}
 			else {
-				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode64<Memory::Operation::Read>;
-				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode64<Memory::Operation::Write>;
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressKernelMode64<MemOp::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressKernelMode64<MemOp::Write>;
 				addressing_mode = _64bit;
 			}
 		}
 		else if (cop0.status.ksu == 1) { /* Supervisor mode */
 			operating_mode = Supervisor;
 			if (cop0.status.sx == 0) {
-				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<Memory::Operation::Read>;
-				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<Memory::Operation::Write>;
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode32<MemOp::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode32<MemOp::Write>;
 				addressing_mode = _32bit;
 			}
 			else {
-				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode64<Memory::Operation::Read>;
-				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode64<Memory::Operation::Write>;
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressSupervisorMode64<MemOp::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressSupervisorMode64<MemOp::Write>;
 				addressing_mode = _64bit;
 			}
 		}
 		else if (cop0.status.ksu == 2) { /* User mode */
 			operating_mode = User;
 			if (cop0.status.ux == 0) {
-				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<Memory::Operation::Read>;
-				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<Memory::Operation::Write>;
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode32<MemOp::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode32<MemOp::Write>;
 				addressing_mode = _32bit;
 			}
 			else {
-				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode64<Memory::Operation::Read>;
-				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode64<Memory::Operation::Write>;
+				active_virtual_to_physical_fun_read = VirtualToPhysicalAddressUserMode64<MemOp::Read>;
+				active_virtual_to_physical_fun_write = VirtualToPhysicalAddressUserMode64<MemOp::Write>;
 				addressing_mode = _64bit;
 			}
 		}
@@ -138,72 +144,72 @@ namespace VR4300
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressUserMode32(u64 virt_addr, bool& cacheable_area)
 	{
 		if (virt_addr & 0x8000'0000) {
-			SignalAddressErrorException<operation>(virt_addr);
+			SignalAddressErrorException<mem_op>(virt_addr);
 			return 0;
 		}
 		else {
 			cacheable_area = false;
-			return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+			return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 
 		}
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressUserMode64(u64 virt_addr, bool& cacheable_area)
 	{
 		if (virt_addr < 0x100'0000'0000) {
 			cacheable_area = false;
-			return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+			return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 		}
 		else {
-			SignalAddressErrorException<operation>(virt_addr);
+			SignalAddressErrorException<mem_op>(virt_addr);
 			return 0;
 		}
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressSupervisorMode32(u64 virt_addr, bool& cacheable_area)
 	{
 		/* $8000'0000-$BFFF'FFFF; $E000'0000-$FFFF'FFFF */
 		if ((virt_addr & 1 << 31) && (virt_addr & 0b11 << 29) != 0b10 << 29) {
-			SignalAddressErrorException<operation>(virt_addr);
+			SignalAddressErrorException<mem_op>(virt_addr);
 			return 0;
 		}
 		/* 0-$7FFF'FFFF; $C000'0000-$DFFF'FFFF */
-		else  {
+		else {
 			cacheable_area = false;
-			return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+			return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 		}
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressSupervisorMode64(u64 virt_addr, bool& cacheable_area)
 	{
 		switch (virt_addr >> 60) {
 		case 0x0:
 			if (virt_addr <= 0x0000'00FF'FFFF'FFFF) {
 				cacheable_area = false;
-				return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+				return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
 		case 0x4:
 			if (virt_addr <= 0x4000'00FF'FFFF'FFFF) {
 				cacheable_area = false;
-				return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+				return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
@@ -211,26 +217,26 @@ namespace VR4300
 			/* $FFFF'FFFF'C0000'0000 -- $FFFF'FFFF'DFFF'FFFF */
 			if ((virt_addr & 0xFFFF'FFFF'E000'0000) == 0xFFFF'FFFF'C000'0000) {
 				cacheable_area = false;
-				return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+				return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 			}
 			/* $F000'0000'0000'0000 -- $FFFF'FFFF'BFFF'FFFF; $FFFF'FFFF'E000'0000 -- $FFFF'FFFF'FFFF'FFFF */
-			else  {
-				SignalAddressErrorException<operation>(virt_addr);
+			else {
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
 		default:
-			SignalAddressErrorException<operation>(virt_addr);
+			SignalAddressErrorException<mem_op>(virt_addr);
 			return 0;
 		}
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressKernelMode32(u64 virt_addr, bool& cacheable_area)
 	{
 		//if (virt_addr < 0xFFFF'FFFF'0000'0000) { /* TODO: same for user and supervisor modes? */
-		//	SignalAddressErrorException<operation>(virt_addr);
+		//	SignalAddressErrorException<mem_op>(virt_addr);
 		//	return 0;
 		//}
 		if ((virt_addr & 0xE000'0000) == 0x8000'0000) {
@@ -245,32 +251,32 @@ namespace VR4300
 		}
 		else {
 			cacheable_area = false;
-			return VirtualToPhysicalAddressTlb<operation>(s32(virt_addr)); /* TLB mapped */
+			return VirtualToPhysicalAddressTlb<mem_op>(s32(virt_addr)); /* TLB mapped */
 		}
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressKernelMode64(u64 virt_addr, bool& cacheable_area)
 	{
 		switch (virt_addr >> 60 & 0xF) {
 		case 0x0:
 			if (virt_addr <= 0x0000'00FF'FFFF'FFFF) {
 				cacheable_area = false;
-				return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+				return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
 		case 0x4:
 			if (virt_addr <= 0x4000'00FF'FFFF'FFFF) {
 				cacheable_area = false;
-				return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+				return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
@@ -281,37 +287,37 @@ namespace VR4300
 				return phys_addr;
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
 		case 0xC:
 			if (virt_addr <= 0xC000'00FF'7FFF'FFFF) {
 				cacheable_area = false;
-				return VirtualToPhysicalAddressTlb<operation>(virt_addr);
+				return VirtualToPhysicalAddressTlb<mem_op>(virt_addr);
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
 		case 0xF:
 			if (virt_addr >= 0xFFFF'FFFF'0000'0000) {
-				return VirtualToPhysicalAddressKernelMode32<operation>(virt_addr, cacheable_area);
+				return VirtualToPhysicalAddressKernelMode32<mem_op>(virt_addr, cacheable_area);
 			}
 			else {
-				SignalAddressErrorException<operation>(virt_addr);
+				SignalAddressErrorException<mem_op>(virt_addr);
 				return 0;
 			}
 
 		default:
-			SignalAddressErrorException<operation>(virt_addr);
+			SignalAddressErrorException<mem_op>(virt_addr);
 			return 0;
 		}
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	u32 VirtualToPhysicalAddressTlb(u64 virt_addr)
 	{
 		for (const TlbEntry& entry : tlb_entries) {
@@ -320,18 +326,18 @@ namespace VR4300
 			/* If the global bit is clear, the entry's ASID (Address space ID field) must coincide with the one in the EntryHi register. */
 			if (!entry.entry_hi.g && entry.entry_hi.asid != cop0.entry_hi.asid) continue;
 			/* Bits 62-63 of vaddr must match the entry's region */      /* TODO: also checked in 32-bit mode? */
-			if (virt_addr >> 62 != entry.entry_hi.r) continue; 
+			if (virt_addr >> 62 != entry.entry_hi.r) continue;
 			/* The VPN maps to two (consecutive) pages; EntryLo0 for even virtual pages and EntryLo1 for odd virtual pages. */
 			bool vpn_odd = (virt_addr & (entry.offset_addr_mask + 1)) != 0;
 			auto entry_lo = entry.entry_lo[vpn_odd];
 			if (!entry_lo.v) { /* If the "Valid" bit is clear, it indicates that the TLB entry is invalid. */
-				SignalException<Exception::TlbInvalid, operation>();
+				SignalException<Exception::TlbInvalid, mem_op>();
 				exception_bad_virt_addr = virt_addr;
 				return 0;
 			}
-			if constexpr (operation == Memory::Operation::Write) {
+			if constexpr (mem_op == MemOp::Write) {
 				if (!entry_lo.d) { /* If the "Dirty" bit is clear, writing is disallowed. */
-					SignalException<Exception::TlbModification, operation>();
+					SignalException<Exception::TlbModification, mem_op>();
 					exception_bad_virt_addr = virt_addr;
 					return 0;
 				}
@@ -340,19 +346,21 @@ namespace VR4300
 			return virt_addr & entry.offset_addr_mask | entry_lo.pfn << 12 & ~entry.offset_addr_mask;
 		}
 		/* TLB miss */
-		if (addressing_mode == AddressingMode::_32bit) SignalException<Exception::TlbMiss, operation>();
-		else                                           SignalException<Exception::XtlbMiss, operation>();
+		if (addressing_mode == AddressingMode::_32bit) SignalException<Exception::TlbMiss, mem_op>();
+		else                                           SignalException<Exception::XtlbMiss, mem_op>();
 		exception_bad_virt_addr = virt_addr;
 		return 0;
 	}
 
 
-	template<Alignment alignment>
-	void WriteVirtual(u64 virtual_address, std::signed_integral auto data)
+	template<size_t access_size, Alignment alignment>
+	void WriteVirtual(u64 virtual_address, s64 data)
 	{
-		if constexpr (sizeof(data) > 1 && alignment == Alignment::Aligned) {
-			if (virtual_address & (sizeof(data) - 1)) {
-				SignalAddressErrorException<Memory::Operation::Write>(virtual_address);
+		static_assert(std::has_single_bit(access_size) && access_size <= 8);
+		u32 offset = virtual_address & (access_size - 1);
+		if constexpr (access_size > 1 && alignment == Alignment::Aligned) {
+			if (offset != 0) {
+				SignalAddressErrorException<MemOp::Write>(virtual_address);
 				return;
 			}
 		}
@@ -361,41 +369,25 @@ namespace VR4300
 		if (exception_has_occurred) {
 			return;
 		}
-
-#define WRITE(NUM_BYTES) { \
-		if (cacheable_area) WriteCacheableArea<NUM_BYTES>(physical_address, data); \
-		else { p_cycle_counter += cache_miss_cycle_delay; Memory::WritePhysical<NUM_BYTES>(physical_address, data); } }
-
-		if constexpr (sizeof(data) == 1 || alignment == Alignment::Aligned) {
-			WRITE(sizeof(data));
+		static constexpr bool use_mask = alignment != Alignment::Aligned;
+		auto Mask = [&] {
+			if constexpr (alignment == Alignment::UnalignedLeft) { /* Store (Double)Word Left */
+				/* offset => mask; 0 => 0; 1 => 0000'00FF; 2 => 0000'FFFF; 3 => 00FF'FFFF; ... */
+				return (1ll << (8 * offset)) - 1;
+			}
+			else { /* UnalignedRight; Store (Double)Word Right */
+				/* offset => mask; 0 => FFFF'FF00; 1 => FFFF'0000; 2 => FF00'0000; 3 => 0000'0000; ... */
+				return std::byteswap(((1ll << (8 * (7 - offset))) - 1));
+			}
+		};
+		if (cacheable_area) {
+			if constexpr (use_mask) WriteCacheableArea<access_size>(physical_address, data, Mask());
+			else                    WriteCacheableArea<access_size>(physical_address, data);
 		}
 		else {
-			/* Find out how many bytes to write. The result will differ from sizeof(Int) only for unaligned memory accesses. */
-			size_t num_bytes = [&] {
-				if constexpr (alignment == Alignment::UnalignedLeft) { /* Store (Double)Word Left */
-					return sizeof(data) - (physical_address & (sizeof(data) - 1));
-				}
-				else { /* UnalignedRight; Store (Double)Word Right */
-					return (physical_address & (sizeof(data) - 1)) + 1;
-				}
-			}();
-			if constexpr (alignment == Alignment::UnalignedRight) {
-				physical_address &= ~(sizeof(data) - 1);
-			}
-			/* This branch will be worth it; the fact that we can pass the number of bytes to access
-			   as a template argument means that, among other things, memcpy will be optimized away
-			   to a single or just a few 'mov' instructions, when we later go to actually access data. */
-			switch (num_bytes) {
-			case 1: WRITE(1); break;
-			case 2: if constexpr (sizeof(data) >= 2) WRITE(2); break;
-			case 3: if constexpr (sizeof(data) >= 3) WRITE(3); break;
-			case 4: if constexpr (sizeof(data) >= 4) WRITE(4); break;
-			case 5: if constexpr (sizeof(data) >= 5) WRITE(5); break;
-			case 6: if constexpr (sizeof(data) >= 6) WRITE(6); break;
-			case 7: if constexpr (sizeof(data) >= 7) WRITE(7); break;
-			case 8: if constexpr (sizeof(data) >= 8) WRITE(8); break;
-			default: std::unreachable();
-			}
+			p_cycle_counter += cache_miss_cycle_delay;
+			if constexpr (use_mask) Memory::Write<access_size>(physical_address, data, Mask());
+			else                    Memory::Write<access_size>(physical_address, data);
 		}
 	}
 
@@ -409,28 +401,28 @@ namespace VR4300
 	template s32 ReadVirtual<s32, Alignment::UnalignedRight>(u64);
 	template s64 ReadVirtual<s64, Alignment::UnalignedRight>(u64);
 
-	template void WriteVirtual<Alignment::Aligned>(u64, s8);
-	template void WriteVirtual<Alignment::Aligned>(u64, s16);
-	template void WriteVirtual<Alignment::Aligned>(u64, s32);
-	template void WriteVirtual<Alignment::Aligned>(u64, s64);
-	template void WriteVirtual<Alignment::UnalignedLeft>(u64, s32);
-	template void WriteVirtual<Alignment::UnalignedLeft>(u64, s64);
-	template void WriteVirtual<Alignment::UnalignedRight>(u64, s32);
-	template void WriteVirtual<Alignment::UnalignedRight>(u64, s64);
+	template void WriteVirtual<1, Alignment::Aligned>(u64, s64);
+	template void WriteVirtual<2, Alignment::Aligned>(u64, s64);
+	template void WriteVirtual<4, Alignment::Aligned>(u64, s64);
+	template void WriteVirtual<8, Alignment::Aligned>(u64, s64);
+	template void WriteVirtual<4, Alignment::UnalignedLeft>(u64, s64);
+	template void WriteVirtual<8, Alignment::UnalignedLeft>(u64, s64);
+	template void WriteVirtual<4, Alignment::UnalignedRight>(u64, s64);
+	template void WriteVirtual<8, Alignment::UnalignedRight>(u64, s64);
 
-	template u32 VirtualToPhysicalAddressUserMode32<Memory::Operation::Read>(u64, bool&);
-	template u32 VirtualToPhysicalAddressUserMode32<Memory::Operation::Write>(u64, bool&);
-	template u32 VirtualToPhysicalAddressUserMode64<Memory::Operation::Read>(u64, bool&);
-	template u32 VirtualToPhysicalAddressUserMode64<Memory::Operation::Write>(u64, bool&);
-	template u32 VirtualToPhysicalAddressSupervisorMode32<Memory::Operation::Read>(u64, bool&);
-	template u32 VirtualToPhysicalAddressSupervisorMode32<Memory::Operation::Write>(u64, bool&);
-	template u32 VirtualToPhysicalAddressSupervisorMode64<Memory::Operation::Read>(u64, bool&);
-	template u32 VirtualToPhysicalAddressSupervisorMode64<Memory::Operation::Write>(u64, bool&);
-	template u32 VirtualToPhysicalAddressKernelMode32<Memory::Operation::Read>(u64, bool&);
-	template u32 VirtualToPhysicalAddressKernelMode32<Memory::Operation::Write>(u64, bool&);
-	template u32 VirtualToPhysicalAddressKernelMode64<Memory::Operation::Read>(u64, bool&);
-	template u32 VirtualToPhysicalAddressKernelMode64<Memory::Operation::Write>(u64, bool&);
+	template u32 VirtualToPhysicalAddressUserMode32<MemOp::Read>(u64, bool&);
+	template u32 VirtualToPhysicalAddressUserMode32<MemOp::Write>(u64, bool&);
+	template u32 VirtualToPhysicalAddressUserMode64<MemOp::Read>(u64, bool&);
+	template u32 VirtualToPhysicalAddressUserMode64<MemOp::Write>(u64, bool&);
+	template u32 VirtualToPhysicalAddressSupervisorMode32<MemOp::Read>(u64, bool&);
+	template u32 VirtualToPhysicalAddressSupervisorMode32<MemOp::Write>(u64, bool&);
+	template u32 VirtualToPhysicalAddressSupervisorMode64<MemOp::Read>(u64, bool&);
+	template u32 VirtualToPhysicalAddressSupervisorMode64<MemOp::Write>(u64, bool&);
+	template u32 VirtualToPhysicalAddressKernelMode32<MemOp::Read>(u64, bool&);
+	template u32 VirtualToPhysicalAddressKernelMode32<MemOp::Write>(u64, bool&);
+	template u32 VirtualToPhysicalAddressKernelMode64<MemOp::Read>(u64, bool&);
+	template u32 VirtualToPhysicalAddressKernelMode64<MemOp::Write>(u64, bool&);
 
-	template u32 VirtualToPhysicalAddressTlb<Memory::Operation::Read>(u64);
-	template u32 VirtualToPhysicalAddressTlb<Memory::Operation::Write>(u64);
+	template u32 VirtualToPhysicalAddressTlb<MemOp::Read>(u64);
+	template u32 VirtualToPhysicalAddressTlb<MemOp::Write>(u64);
 }

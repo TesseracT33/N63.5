@@ -1,5 +1,7 @@
 export module VR4300:Exceptions;
 
+import :MMU;
+
 import Memory;
 import Util;
 
@@ -35,10 +37,10 @@ namespace VR4300
 			XtlbMiss
 		};
 
-		template<Exception exception, Memory::Operation operation = Memory::Operation::Read>
+		template<Exception exception, MemOp mem_op = MemOp::Read>
 		void SignalException();
 
-		template<Memory::Operation operation>
+		template<MemOp mem_op>
 		void SignalAddressErrorException(u64 bad_virt_addr);
 
 		void HandleException();
@@ -46,10 +48,10 @@ namespace VR4300
 
 	using ExceptionHandler = void(*)();
 
-	template<Exception, Memory::Operation>
+	template<Exception, MemOp>
 	constexpr ExceptionHandler GetExceptionHandlerFun();
 
-	template<Exception, Memory::Operation>
+	template<Exception, MemOp>
 	constexpr int GetExceptionPriority();
 
 	template<Exception>
@@ -60,11 +62,11 @@ namespace VR4300
 	void SignalCoprocessorUnusableException(int co);
 
 	/* Exception handlers */
-	template<Memory::Operation> void AddressErrorException();
-	template<Memory::Operation> void BusErrorException();
-	template<Memory::Operation> void TlbInvalidException();
-	template<Memory::Operation> void TlbMissException();
-	template<Memory::Operation> void XtlbMissException();
+	template<MemOp> void AddressErrorException();
+	template<MemOp> void BusErrorException();
+	template<MemOp> void TlbInvalidException();
+	template<MemOp> void TlbMissException();
+	template<MemOp> void XtlbMissException();
 	void BreakPointException();
 	void BusErrorException();
 	void ColdResetException();

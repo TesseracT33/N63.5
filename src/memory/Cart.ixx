@@ -28,8 +28,11 @@ namespace Cart
 		template<std::signed_integral Int>
 		Int ReadSram(u32 addr);
 
-		template<size_t num_bytes>
-		void WriteSram(u32 addr, std::signed_integral auto data);
+		template<size_t access_size>
+		void WriteSram(u32 addr, s64 data);
+
+		template<size_t access_size>
+		void WriteRom(u32 addr, s64 data);
 	}
 
 	void AllocateSram();

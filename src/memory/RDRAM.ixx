@@ -18,7 +18,7 @@ namespace RDRAM
 		s32 ReadReg(u32 addr);
 		u64 RdpReadCommandByteswapped(u32 addr);
 		u32 RdpReadCommand(u32 addr);
-		template<size_t num_bytes> void Write(u32 addr, std::signed_integral auto data);
+		template<size_t access_size, typename... MaskT> void Write(u32 addr, s64 data, MaskT... mask);
 		void WriteReg(u32 addr, s32 data);
 	}
 

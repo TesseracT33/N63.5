@@ -2,20 +2,15 @@ export module Memory;
 
 import Util;
 
+import <bit>;
 import <concepts>;
 import <format>;
 
 export namespace Memory
 {
-	enum class Operation {
-		Read, InstrFetch, Write
-	};
+	template<std::signed_integral Int>
+	Int Read(u32 addr);
 
-	void Initialize();
-
-	template<std::signed_integral Int, Memory::Operation>
-	Int ReadPhysical(u32 addr);
-
-	template<size_t num_bytes>
-	void WritePhysical(u32 addr, std::signed_integral auto data);
+	template<size_t access_size, typename... MaskT>
+	void Write(u32 addr, s64 data, MaskT... mask);
 }

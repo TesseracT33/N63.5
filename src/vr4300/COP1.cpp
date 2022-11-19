@@ -297,7 +297,7 @@ namespace VR4300
 		}
 
 		auto result = [&] {
-			if constexpr (instr == LWC1) return ReadVirtual<s32>(addr);
+			     if constexpr (instr == LWC1) return ReadVirtual<s32>(addr);
 			else if constexpr (instr == LDC1) return ReadVirtual<s64>(addr);
 			else static_assert(AlwaysFalse<instr>);
 		}();
@@ -330,8 +330,8 @@ namespace VR4300
 			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, ft, static_cast<std::make_unsigned<decltype(addr)>::type>(addr));
 		}
 
-		if constexpr (instr == SWC1) WriteVirtual(addr, fpr.Get<s32>(ft));
-		else if constexpr (instr == SDC1) WriteVirtual(addr, fpr.Get<s64>(ft));
+		     if constexpr (instr == SWC1) WriteVirtual<4>(addr, fpr.Get<s32>(ft));
+		else if constexpr (instr == SDC1) WriteVirtual<4>(addr, fpr.Get<s64>(ft));
 		else static_assert(AlwaysFalse<instr>);
 
 		AdvancePipeline(1);

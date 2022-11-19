@@ -27,8 +27,8 @@ namespace RSP
 		template<std::signed_integral Int>
 		Int ReadMemoryCpu(u32 addr);
 
-		template<size_t num_bytes>
-		void WriteMemoryCpu(u32 addr, std::signed_integral auto data);
+		template<size_t access_size>
+		void WriteMemoryCpu(u32 addr, s64 data);
 	}
 
 	void AdvancePipeline(u64 cycles);

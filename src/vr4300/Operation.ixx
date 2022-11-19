@@ -39,12 +39,6 @@ namespace VR4300
 		void SetInterruptPending(ExternalInterruptSource);
 	}
 
-	enum class Alignment {
-		Aligned,
-		UnalignedLeft, /* Load/Store (Double)Word Left instructions */
-		UnalignedRight /* Load/Store (Double)Word Right instructions */
-	};
-
 	void AdvancePipeline(u64 cycles);
 	void DecodeExecuteCop0Instruction();
 	void DecodeExecuteCop1Instruction();

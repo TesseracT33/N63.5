@@ -72,7 +72,7 @@ namespace AI
 	void Sample()
 	{
 		if (dma_count != 0) {
-			s32 data = Memory::ReadPhysical<s32, Memory::Operation::Read>(ai.dram_addr);
+			s32 data = Memory::Read<s32>(ai.dram_addr);
 			// TODO output sample
 			ai.dram_addr += 4;
 			ai.len -= 4;

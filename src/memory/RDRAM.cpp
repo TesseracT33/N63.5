@@ -76,11 +76,28 @@ namespace RDRAM
 
 
 	/* 0 - $7F'FFFF */
-	template<size_t num_bytes>
-	void Write(u32 addr, std::signed_integral auto data)
-	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
-		data = std::byteswap(data);
-		std::memcpy(rdram + (addr & (sizeof(rdram) - 1)), &data, num_bytes);
+	template<size_t access_size, typename... MaskT>
+	void Write(u32 addr, s64 data, MaskT... mask)
+	{ /* Precondition: phys_addr is aligned to access_size if sizeof...(mask) == 0 */
+		static_assert(std::has_single_bit(access_size) && access_size <= 8);
+		static_assert(sizeof...(mask) <= 1);
+		auto to_write = [&] {
+			if constexpr (access_size == 1) return u8(data);
+			if constexpr (access_size == 2) return std::byteswap(u16(data));
+			if constexpr (access_size == 4) return std::byteswap(u32(data));
+			if constexpr (access_size == 8) return std::byteswap(data);
+		}();
+		static constexpr bool apply_mask = sizeof...(mask) == 1;
+		if constexpr (apply_mask) {
+			addr &= ~(access_size - 1);
+		}
+		u8* ram = rdram + (addr & (sizeof(rdram) - 1));
+		if constexpr (apply_mask) {
+			u64 existing;
+			std::memcpy(&existing, ram, access_size);
+			to_write |= existing & (..., mask);
+		}
+		std::memcpy(ram, &to_write, access_size);
 	}
 
 
@@ -95,19 +112,10 @@ namespace RDRAM
 	template s16 Read<s16>(u32);
 	template s32 Read<s32>(u32);
 	template s64 Read<s64>(u32);
-	template void Write<1>(u32, s8);
-	template void Write<1>(u32, s16);
-	template void Write<1>(u32, s32);
 	template void Write<1>(u32, s64);
-	template void Write<2>(u32, s16);
-	template void Write<2>(u32, s32);
 	template void Write<2>(u32, s64);
-	template void Write<3>(u32, s32);
-	template void Write<3>(u32, s64);
-	template void Write<4>(u32, s32);
 	template void Write<4>(u32, s64);
-	template void Write<5>(u32, s64);
-	template void Write<6>(u32, s64);
-	template void Write<7>(u32, s64);
 	template void Write<8>(u32, s64);
+	template void Write<4, s64>(u32, s64, s64);
+	template void Write<8, s64>(u32, s64, s64);
 }

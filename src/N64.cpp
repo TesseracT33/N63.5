@@ -3,7 +3,6 @@ module N64;
 import AI;
 import Cart;
 import Input;
-import Memory;
 import MI;
 import PI;
 import PIF;
@@ -35,7 +34,6 @@ namespace N64
 		SI::Initialize();
 		VI::Initialize();
 		RDRAM::Initialize();
-		Memory::Initialize();
 
 		if (!Cart::LoadRom(rom_path)) {
 			return false;

@@ -110,14 +110,21 @@ namespace Cart
 	}
 
 
-	template<size_t num_bytes>
-	void WriteSram(u32 addr, std::signed_integral auto data)
+	template<size_t access_size>
+	void WriteSram(u32 addr, s64 data)
 	{ /* CPU precondition: addr + number_of_bytes does not go beyond the next alignment boundary */
-		if constexpr (sizeof(data) < 4) {
+		if constexpr (access_size < 4) {
 			addr += addr & 2; /* PI external bus glitch */     /* TODO: not sure how it works for writes */
 		}
 		data = std::byteswap(data);
-		std::memcpy(GetPointerToSram(addr), &data, num_bytes);
+		std::memcpy(GetPointerToSram(addr), &data, access_size);
+	}
+
+
+	template<size_t access_size>
+	void WriteRom(u32 addr, s64 data)
+	{
+		/* TODO */
 	}
 
 
@@ -129,19 +136,12 @@ namespace Cart
 	template s16 ReadSram<s16>(u32);
 	template s32 ReadSram<s32>(u32);
 	template s64 ReadSram<s64>(u32);
-	template void WriteSram<1>(u32, s8);
-	template void WriteSram<1>(u32, s16);
-	template void WriteSram<1>(u32, s32);
 	template void WriteSram<1>(u32, s64);
-	template void WriteSram<2>(u32, s16);
-	template void WriteSram<2>(u32, s32);
 	template void WriteSram<2>(u32, s64);
-	template void WriteSram<3>(u32, s32);
-	template void WriteSram<3>(u32, s64);
-	template void WriteSram<4>(u32, s32);
 	template void WriteSram<4>(u32, s64);
-	template void WriteSram<5>(u32, s64);
-	template void WriteSram<6>(u32, s64);
-	template void WriteSram<7>(u32, s64);
 	template void WriteSram<8>(u32, s64);
+	template void WriteRom<1>(u32, s64);
+	template void WriteRom<2>(u32, s64);
+	template void WriteRom<4>(u32, s64);
+	template void WriteRom<8>(u32, s64);
 }

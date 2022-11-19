@@ -10,18 +10,18 @@ import Logging;
 
 namespace VR4300
 {
-	template<Exception exception, Memory::Operation operation>
+	template<Exception exception, MemOp mem_op>
 	constexpr int GetExceptionPriority()
 	{
 		if constexpr (exception == Exception::AddressError) {
-			if constexpr (operation == Memory::Operation::InstrFetch) return 17;
+			if constexpr (mem_op == MemOp::InstrFetch) return 17;
 			else return 6;
 		}
 		else if constexpr (exception == Exception::Breakpoint) {
 			return 12;
 		}
 		else if constexpr (exception == Exception::BusError) {
-			if constexpr (operation == Memory::Operation::InstrFetch) return 14;
+			if constexpr (mem_op == MemOp::InstrFetch) return 14;
 			else return 1;
 		}
 		else if constexpr (exception == Exception::ColdReset) {
@@ -52,11 +52,11 @@ namespace VR4300
 			return 13;
 		}
 		else if constexpr (exception == Exception::TlbInvalid) {
-			if constexpr (operation == Memory::Operation::InstrFetch) return 15;
+			if constexpr (mem_op == MemOp::InstrFetch) return 15;
 			else return 4;
 		}
 		else if constexpr (OneOf(exception, Exception::TlbMiss, Exception::XtlbMiss)) {
-			if constexpr (operation == Memory::Operation::InstrFetch) return 16;
+			if constexpr (mem_op == MemOp::InstrFetch) return 16;
 			else return 5;
 		}
 		else if constexpr (exception == Exception::TlbModification) {
@@ -74,12 +74,12 @@ namespace VR4300
 	}
 
 
-	template<Exception exception, Memory::Operation operation>
+	template<Exception exception, MemOp mem_op>
 	constexpr ExceptionHandler GetExceptionHandler()
 	{
-		     if constexpr (exception == Exception::AddressError)            return AddressErrorException<operation>;
+		     if constexpr (exception == Exception::AddressError)            return AddressErrorException<mem_op>;
 		else if constexpr (exception == Exception::Breakpoint)              return BreakPointException;
-		else if constexpr (exception == Exception::BusError)                return BusErrorException<operation>;
+		else if constexpr (exception == Exception::BusError)                return BusErrorException<mem_op>;
 		else if constexpr (exception == Exception::ColdReset)               return ColdResetException;
 		else if constexpr (exception == Exception::CoprocessorUnusable)     return CoprocessorUnusableException;
 		else if constexpr (exception == Exception::FloatingPoint)           return FloatingpointException;
@@ -90,12 +90,12 @@ namespace VR4300
 		else if constexpr (exception == Exception::ReservedInstructionCop2) return ReservedInstructionExceptionCop2;
 		else if constexpr (exception == Exception::SoftReset)               return SoftResetException;
 		else if constexpr (exception == Exception::Syscall)                 return SyscallException;
-		else if constexpr (exception == Exception::TlbInvalid)              return TlbInvalidException<operation>;
-		else if constexpr (exception == Exception::TlbMiss)                 return TlbMissException<operation>;
+		else if constexpr (exception == Exception::TlbInvalid)              return TlbInvalidException<mem_op>;
+		else if constexpr (exception == Exception::TlbMiss)                 return TlbMissException<mem_op>;
 		else if constexpr (exception == Exception::TlbModification)         return TlbModException;
 		else if constexpr (exception == Exception::Trap)                    return TrapException;
 		else if constexpr (exception == Exception::Watch)                   return WatchException;
-		else if constexpr (exception == Exception::XtlbMiss)                return XtlbMissException<operation>;
+		else if constexpr (exception == Exception::XtlbMiss)                return XtlbMissException<mem_op>;
 		else static_assert(AlwaysFalse<exception>);
 	}
 
@@ -160,10 +160,10 @@ namespace VR4300
 	}
 
 
-	template<Exception exception, Memory::Operation operation>
+	template<Exception exception, MemOp mem_op>
 	void SignalException()
 	{
-		constexpr static auto new_exception_priority = GetExceptionPriority<exception, operation>();
+		constexpr static auto new_exception_priority = GetExceptionPriority<exception, mem_op>();
 		if (exception_has_occurred) {
 			/* Compare exception priorities; return if the new exception has a lower priority than an already occured one. */
 			if (new_exception_priority < occurred_exception_priority) {
@@ -178,24 +178,24 @@ namespace VR4300
 		   'GetExceptionCauseCode' and 'GetExceptionHandlerFun' could not take 'exception' as a template argument, and would
 		   instead have to take it as a function argument. Then, several run-time branches would have to be taken over this argument. */
 		exception_vector = GetExceptionVector<exception>();
-		exception_handler = GetExceptionHandler<exception, operation>();
+		exception_handler = GetExceptionHandler<exception, mem_op>();
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	void SignalAddressErrorException(u64 bad_virt_addr)
 	{
-		SignalException<Exception::AddressError, operation>();
+		SignalException<Exception::AddressError, mem_op>();
 		exception_bad_virt_addr = bad_virt_addr;
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	void AddressErrorException()
 	{
 		cop0.cause.exc_code = [&] {
-			if constexpr (operation == Memory::Operation::Write) return 5;
-			else                                                 return 4;
+			if constexpr (mem_op == MemOp::Write) return 5;
+			else                                  return 4;
 		}();
 		cop0.bad_v_addr = exception_bad_virt_addr;
 		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = exception_bad_virt_addr >> 13;
@@ -211,12 +211,12 @@ namespace VR4300
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	void BusErrorException()
 	{
 		cop0.cause.exc_code = [&] {
-			if constexpr (operation == Memory::Operation::InstrFetch) return 6;
-			else                                                      return 7;
+			if constexpr (mem_op == MemOp::InstrFetch) return 6;
+			else                                       return 7;
 		}();
 		cop0.cause.ce = 0;
 	}
@@ -302,12 +302,12 @@ namespace VR4300
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	void TlbInvalidException()
 	{
 		cop0.cause.exc_code = [&] {
-			if constexpr (operation == Memory::Operation::Write) return 3;
-			else                                                 return 2;
+			if constexpr (mem_op == MemOp::Write) return 3;
+			else                                  return 2;
 		}();
 		cop0.bad_v_addr = exception_bad_virt_addr;
 		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
@@ -316,12 +316,12 @@ namespace VR4300
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	void TlbMissException()
 	{
 		cop0.cause.exc_code = [&] {
-			if constexpr (operation == Memory::Operation::Write) return 3;
-			else                                                 return 2;
+			if constexpr (mem_op == MemOp::Write) return 3;
+			else                                  return 2;
 		}();
 		cop0.bad_v_addr = exception_bad_virt_addr;
 		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
@@ -352,12 +352,12 @@ namespace VR4300
 	}
 
 
-	template<Memory::Operation operation>
+	template<MemOp mem_op>
 	void XtlbMissException()
 	{
 		cop0.cause.exc_code = [&] {
-			if constexpr (operation == Memory::Operation::Write) return 3;
-			else                                                 return 2;
+			if constexpr (mem_op == MemOp::Write) return 3;
+			else                                  return 2;
 		}();
 		cop0.bad_v_addr = exception_bad_virt_addr;
 		cop0.context.bad_vpn2 = cop0.x_context.bad_vpn2 = cop0.entry_hi.vpn2 = exception_bad_virt_addr >> 13;
@@ -413,11 +413,11 @@ namespace VR4300
 	template void SignalException<Exception::Watch, MEMORY_OPERATION>(); \
 	template void SignalException<Exception::XtlbMiss, MEMORY_OPERATION>();
 
-	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(Memory::Operation::Read)
-	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(Memory::Operation::Write)
-	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(Memory::Operation::InstrFetch)
+	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemOp::Read)
+	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemOp::Write)
+	ENUMERATE_SIGNAL_EXCEPTION_SPECIALIZATIONS(MemOp::InstrFetch)
 
-	template void SignalAddressErrorException<Memory::Operation::InstrFetch>(u64);
-	template void SignalAddressErrorException<Memory::Operation::Read>(u64);
-	template void SignalAddressErrorException<Memory::Operation::Write>(u64);
+	template void SignalAddressErrorException<MemOp::InstrFetch>(u64);
+	template void SignalAddressErrorException<MemOp::Read>(u64);
+	template void SignalAddressErrorException<MemOp::Write>(u64);
 }

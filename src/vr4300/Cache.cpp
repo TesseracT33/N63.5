@@ -162,15 +162,15 @@ namespace VR4300
 	}
 
 
-	template<std::signed_integral Int, Memory::Operation operation>
+	template<std::signed_integral Int, MemOp mem_op>
 	Int ReadCacheableArea(u32 phys_addr)
 	{ /* Precondition: phys_addr is aligned to sizeof(Int) */
-		static_assert(OneOf(operation, Memory::Operation::InstrFetch, Memory::Operation::Read));
-		if constexpr (log_cpu_instructions && operation == Memory::Operation::InstrFetch) {
+		static_assert(OneOf(mem_op, MemOp::InstrFetch, MemOp::Read));
+		if constexpr (log_cpu_instructions && mem_op == MemOp::InstrFetch) {
 			last_instr_fetch_phys_addr = phys_addr;
 		}
 		Int ret;
-		if constexpr (operation == Memory::Operation::InstrFetch) {
+		if constexpr (mem_op == MemOp::InstrFetch) {
 			ICacheLine& cache_line = i_cache[phys_addr >> 5 & 0x1FF];
 			if (cache_line.valid && (phys_addr & ~0xFFF) == cache_line.ptag) { /* cache hit */
 				p_cycle_counter += cache_hit_read_cycle_delay;
@@ -181,7 +181,7 @@ namespace VR4300
 			}
 			std::memcpy(&ret, cache_line.data + (phys_addr & (sizeof(cache_line.data) - 1)), sizeof(Int));
 		}
-		else { /* Memory::Operation::Read */
+		else { /* MemOp::Read */
 			DCacheLine& cache_line = d_cache[phys_addr >> 4 & 0x1FF];
 			if (cache_line.valid && (phys_addr & ~0xFFF) == cache_line.ptag) { /* cache hit */
 				p_cycle_counter += cache_hit_read_cycle_delay;
@@ -199,10 +199,11 @@ namespace VR4300
 	}
 
 
-	template<size_t num_bytes>
-	void WriteCacheableArea(u32 phys_addr, std::signed_integral auto data)
-	{ /* Precondition: phys_addr may not be aligned to sizeof(Int),
-		but phys_addr + number_of_bytes is at most the byte of the next boundary of sizeof(Int) */
+	template<size_t access_size, typename... MaskT>
+	void WriteCacheableArea(u32 phys_addr, s64 data, MaskT... mask)
+	{ /* Precondition: phys_addr is aligned to access_size if sizeof...(mask) == 0 */
+		static_assert(std::has_single_bit(access_size) && access_size <= 8);
+		static_assert(sizeof...(mask) <= 1);
 		DCacheLine& cache_line = d_cache[phys_addr >> 4 & 0x1FF];
 		if (cache_line.valid && (phys_addr & ~0xFFF) == cache_line.ptag) { /* cache hit */
 			cache_line.dirty = true;
@@ -215,8 +216,23 @@ namespace VR4300
 			FillCacheLine(cache_line, phys_addr);
 			p_cycle_counter += cache_miss_cycle_delay;
 		}
-		data = std::byteswap(data);
-		std::memcpy(cache_line.data + (phys_addr & (sizeof(cache_line.data) - 1)), &data, num_bytes);
+		auto to_write = [&] {
+			if constexpr (access_size == 1) return u8(data);
+			if constexpr (access_size == 2) return std::byteswap(u16(data));
+			if constexpr (access_size == 4) return std::byteswap(u32(data));
+			if constexpr (access_size == 8) return std::byteswap(data);
+		}();
+		constexpr static bool apply_mask = sizeof...(mask) == 1;
+		if constexpr (apply_mask) {
+			phys_addr &= ~(access_size - 1);
+		}
+		u8* cache = cache_line.data + (phys_addr & (sizeof(cache_line.data) - 1));
+		if constexpr (apply_mask) {
+			u64 existing;
+			std::memcpy(&existing, cache, access_size);
+			to_write |= existing & (..., mask);
+		}
+		std::memcpy(cache, &to_write, access_size);
 		cache_line.dirty = true;
 	}
 
@@ -232,24 +248,15 @@ namespace VR4300
 		}
 	}
 
-	template s32 ReadCacheableArea<s32, Memory::Operation::InstrFetch>(u32);
-	template s8 ReadCacheableArea<s8, Memory::Operation::Read>(u32);
-	template s16 ReadCacheableArea<s16, Memory::Operation::Read>(u32);
-	template s32 ReadCacheableArea<s32, Memory::Operation::Read>(u32);
-	template s64 ReadCacheableArea<s64, Memory::Operation::Read>(u32);
-	template void WriteCacheableArea<1>(u32, s8);
-	template void WriteCacheableArea<1>(u32, s16);
-	template void WriteCacheableArea<1>(u32, s32);
+	template s32 ReadCacheableArea<s32, MemOp::InstrFetch>(u32);
+	template s8 ReadCacheableArea<s8, MemOp::Read>(u32);
+	template s16 ReadCacheableArea<s16, MemOp::Read>(u32);
+	template s32 ReadCacheableArea<s32, MemOp::Read>(u32);
+	template s64 ReadCacheableArea<s64, MemOp::Read>(u32);
 	template void WriteCacheableArea<1>(u32, s64);
-	template void WriteCacheableArea<2>(u32, s16);
-	template void WriteCacheableArea<2>(u32, s32);
 	template void WriteCacheableArea<2>(u32, s64);
-	template void WriteCacheableArea<3>(u32, s32);
-	template void WriteCacheableArea<3>(u32, s64);
-	template void WriteCacheableArea<4>(u32, s32);
 	template void WriteCacheableArea<4>(u32, s64);
-	template void WriteCacheableArea<5>(u32, s64);
-	template void WriteCacheableArea<6>(u32, s64);
-	template void WriteCacheableArea<7>(u32, s64);
 	template void WriteCacheableArea<8>(u32, s64);
+	template void WriteCacheableArea<4, s64>(u32, s64, s64);
+	template void WriteCacheableArea<8, s64>(u32, s64, s64);
 }

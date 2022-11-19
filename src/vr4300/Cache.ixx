@@ -1,6 +1,7 @@
 export module VR4300:Cache;
 
-import Memory;
+import :MMU;
+
 import Util;
 
 import <algorithm>;
@@ -29,11 +30,11 @@ namespace VR4300
 	void FillCacheLine(auto& cache_line, u32 phys_addr);
 	void WritebackCacheLine(auto& cache_line, u32 new_phys_addr);
 
-	template<std::signed_integral Int, Memory::Operation>
+	template<std::signed_integral Int, MemOp>
 	Int ReadCacheableArea(u32 phys_addr);
 
-	template<size_t num_bytes>
-	void WriteCacheableArea(u32 phys_addr, std::signed_integral auto data);
+	template<size_t access_size, typename... MaskT>
+	void WriteCacheableArea(u32 phys_addr, s64 data, MaskT... mask);
 
 	/* TODO: making these anything but 0 makes NM64 not get to the title screen */
 	constexpr uint cache_hit_read_cycle_delay = 0;
