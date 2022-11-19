@@ -644,9 +644,11 @@ namespace VR4300
 
 			auto Compute = [&] <std::floating_point Float> {
 				Float op = fpr.Get<Float>(fs);
-				if (!IsValidInput(op)) {
-					AdvancePipeline(2);
-					return;
+				if constexpr (instr != MOV) {
+					if (!IsValidInput(op)) {
+						AdvancePipeline(2);
+						return;
+					}
 				}
 				Float result = [&] {
 					if constexpr (instr == ABS) {
@@ -667,9 +669,14 @@ namespace VR4300
 						return std::sqrt(op);
 					}
 				}();
-				bool exc_raised = TestAllExceptions();
-				if (IsValidOutput(result, exc_raised)) {
+				if constexpr (instr == MOV) {
 					fpr.Set<Float>(fd, result);
+				}
+				else {
+					bool exc_raised = TestAllExceptions();
+					if (IsValidOutput(result, exc_raised)) {
+						fpr.Set<Float>(fd, result);
+					}
 				}
 			};
 
