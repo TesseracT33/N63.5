@@ -151,18 +151,19 @@ namespace RSP
 
 	template<size_t access_size>
 	void WriteMemoryCpu(u32 addr, s64 data)
-	{ /* CPU precondition; the address may be misaligned, but then, 'number_of_bytes' is set so that it the write goes only to the next boundary. */
+	{
+		s32 to_write = [&] {
+			if constexpr (access_size == 1) return data << (8 * (3 - (addr & 3)));
+			if constexpr (access_size == 2) return data << (8 * (2 - (addr & 3)));
+			if constexpr (access_size == 4) return data;
+			if constexpr (access_size == 8) return data >> 32;
+		}();
 		if (addr < 0x0404'0000) {
-			auto to_write = [&] { /* TODO: behavior is different from this */
-				if constexpr (access_size == 1) return u8(data);
-				if constexpr (access_size == 2) return std::byteswap(u16(data));
-				if constexpr (access_size == 4) return std::byteswap(u32(data));
-				if constexpr (access_size == 8) return std::byteswap(data);
-			}();
-			std::memcpy(mem.data() + (addr & 0x1FFF), &to_write, access_size);
+			to_write = std::byteswap(to_write);
+			std::memcpy(&mem[addr & 0x1FFC], &to_write, 4);
 		}
 		else if constexpr (access_size == 4) {
-			WriteReg(addr, data);
+			WriteReg(addr, to_write);
 		}
 		else {
 			Log(std::format(
