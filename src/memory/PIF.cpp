@@ -114,15 +114,18 @@ namespace PIF
 	{ /* CPU precondition: write does not go to the next boundary */
 		addr &= 0x7FF;
 		if (addr < ram_start) return;
-		auto to_write = [&] { /* TODO: behavior is different from this */
-			if constexpr (access_size == 1) return u8(data);
-			if constexpr (access_size == 2) return std::byteswap(u16(data));
-			if constexpr (access_size == 4) return std::byteswap(u32(data));
-			if constexpr (access_size == 8) return std::byteswap(data);
+		u32 word_offset = addr & 3;
+		s32 to_write = [&] {
+			if constexpr (access_size == 1) return data << (8 * (3 - (addr & 3)));
+			if constexpr (access_size == 2) return data << (8 * (2 - (addr & 3)));
+			if constexpr (access_size == 4) return data;
+			if constexpr (access_size == 8) return data >> 32; /* TODO: not confirmed; could cause console lock-up? */
 		}();
-		std::memcpy(memory.data() + addr, &to_write, access_size);
+		to_write = std::byteswap(to_write);
+		addr &= ~3;
+		std::memcpy(memory.data() + addr, &to_write, 4);
 		
-		if (addr + access_size >= command_byte_index) {
+		if (addr == command_byte_index - 3) {
 			if (memory[command_byte_index] & 1) {
 				RunJoybusProtocol();
 				memory[command_byte_index] &= ~1;
