@@ -221,10 +221,9 @@ namespace VR4300
 			fcr31.cause_overflow |= std::fetestexcept(FE_OVERFLOW);
 			fcr31.cause_div_zero |= std::fetestexcept(FE_DIVBYZERO);
 			fcr31.cause_invalid |= std::fetestexcept(FE_INVALID);
-		}
-
-		if (fcr31.cause_underflow && (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact)) {
-			fcr31.cause_unimplemented = true;
+			if (fcr31.cause_underflow && (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact)) {
+				fcr31.cause_unimplemented = true;
+			}
 		}
 
 		u32 fcr31_u32 = std::bit_cast<u32>(fcr31);
@@ -394,7 +393,7 @@ namespace VR4300
 			static_assert(AlwaysFalse<instr>);
 		}
 
-		AdvancePipeline(1);
+		AdvancePipeline(2);
 	}
 
 
