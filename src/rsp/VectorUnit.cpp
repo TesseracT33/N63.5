@@ -409,28 +409,18 @@ namespace RSP
 		}
 
 		if constexpr (instr == MTC2) {
-			/* Pseudo-code:
-				VS<elem>(15..0) = GPR[rt](15..0)
-			*/
-			*((u8*)(&vpr[vs]) + (element ^ 1)) = u8(gpr[rt]);
-			if (element < 15) {
-				*((u8*)(&vpr[vs]) + (element + 1 ^ 1)) = u8(gpr[rt] >> 8);
-			}
-			//_mm_setlane_epi16(&vpr[vs], vs_elem, s16(gpr[rt]));
+			/* Pseudo-code: VS<elem>(15..0) = GPR[rt](15..0) */
+			u8* v = (u8*)(&vpr[vs]);
+			v[element ^ 1] = u8(gpr[rt]);
+			if (element < 0xF) v[element + 1 ^ 1] = u8(gpr[rt] >> 8);
 		}
 		else if constexpr (instr == MFC2) {
-			/* Pseudo-code:
-				GPR[rt](31..0) = sign_extend(VS<elem>(15..0))
-			*/
-			u8 lo = *((u8*)(&vpr[vs]) + (element ^ 1));
-			u8 hi = *((u8*)(&vpr[vs]) + (element + 1 & 15 ^ 1));
-			gpr.Set(rt, s16(lo | hi << 8));
-			//gpr.Set(rt, _mm_getlane_epi16(&vpr[vs], vs_elem));
+			/* Pseudo-code: GPR[rt](31..0) = sign_extend(VS<elem>(15..0)) */
+			u8* v = (u8*)(&vpr[vs]);
+			gpr.Set(rt, s16(v[element ^ 1] | v[element + 1 & 0xF ^ 1] << 8));
 		}
 		else if constexpr (instr == CTC2) {
-			/* Pseudo-code:
-				CTRL(15..0) = GPR(15..0)
-			*/
+			/* Pseudo-code: CTRL(15..0) = GPR(15..0) */
 			/* Control registers (16-bit) are encoded in two __m128i. Each lane represents one bit. */
 			static constexpr std::array lanes = {
 				s64(0x0000'0000'0000'0000), s64(0x0000'0000'0000'FFFF), s64(0x0000'0000'FFFF'0000), s64(0x0000'0000'FFFF'FFFF),
@@ -446,9 +436,7 @@ namespace RSP
 			}
 		}
 		else if constexpr (instr == CFC2) {
-			/* Pseudo-code:
-				GPR(31..0) = sign_extend(CTRL(15..0))
-			*/
+			/* Pseudo-code: GPR(31..0) = sign_extend(CTRL(15..0)) */
 			vs = std::min(vs & 3, 2u);
 			int lo = _mm_movemask_epi8(_mm_packs_epi16(ctrl_reg[vs].low, m128i_zero));
 			int hi = _mm_movemask_epi8(_mm_packs_epi16(ctrl_reg[vs].high, m128i_zero));
@@ -918,6 +906,10 @@ namespace RSP
 		else if constexpr (instr == VNXOR) {
 			vpr[vd] = acc.low = _mm_nxor_si128(vpr[vs], vt_op);
 		}
+		else if constexpr (instr == VZERO) {
+			acc.low = _mm_add_epi16(vpr[vs], vt_op);
+			vpr[vd] = m128i_zero;
+		}
 
 		AdvancePipeline(1);
 	}
@@ -1150,6 +1142,7 @@ namespace RSP
 	template void ComputeInstr<VectorInstruction::VNOR>(u32);
 	template void ComputeInstr<VectorInstruction::VXOR>(u32);
 	template void ComputeInstr<VectorInstruction::VNXOR>(u32);
+	template void ComputeInstr<VectorInstruction::VZERO>(u32);
 
 	template void SelectInstr<VectorInstruction::VLT>(u32);
 	template void SelectInstr<VectorInstruction::VEQ>(u32);

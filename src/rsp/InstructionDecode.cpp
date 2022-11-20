@@ -86,7 +86,8 @@ namespace RSP
 			case 0x35: EXEC_VECTOR_INSTR(VRSQL); break;
 			case 0x36: EXEC_VECTOR_INSTR(VRSQH); break;
 			case 0x37: EXEC_VECTOR_INSTR(VNOP); break;
-			default: NotifyIllegalInstrCode(instr_code);
+			case 0x3F: EXEC_VECTOR_INSTR(VNOP); break;
+			default: EXEC_VECTOR_INSTR(VZERO); break;
 			}
 		}
 		else {
@@ -294,7 +295,7 @@ namespace RSP
 			SingleLaneInstr<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, VMULF, VMULU, VMULQ, VMUDL, VMUDM, VMUDN, VMUDH, VMACF, VMACU, VMADL, VMADM,
-			VADMN, VADMH, VADD, VMACQ, VABS, VADDC, VSUB, VSUBC, VMADN, VMADH, VSAR, VAND, VNAND, VOR, VNOR, VXOR, VNXOR)) {
+			VADMN, VADMH, VADD, VMACQ, VABS, VADDC, VSUB, VSUBC, VMADN, VMADH, VSAR, VAND, VNAND, VOR, VNOR, VXOR, VNXOR, VZERO)) {
 			ComputeInstr<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, VLT, VEQ, VNE, VGE, VCH, VCR, VCL, VMRG)) {
