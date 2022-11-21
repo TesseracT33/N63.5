@@ -36,7 +36,7 @@ namespace VR4300
 				}
 			}();
 			std::fesetround(new_rounding_mode);
-			TestAllExceptions<false /* don't check fe */, false /* don't set flags */>();
+			TestAllExceptions<true /* ctc1 */>();
 		}
 	}
 
@@ -199,7 +199,7 @@ namespace VR4300
 	}
 
 
-	template<bool check_env, bool set_flags>
+	template<bool ctc1>
 	bool TestAllExceptions()
 	{
 		/* * The Cause bits are updated by the floating-point operations (except load, store,
@@ -215,7 +215,7 @@ namespace VR4300
 		   reset. Flag bits are set to 1 if an IEEE754 exception is raised but the occurrence
 		   of the exception is prohibited. Otherwise, they remain unchanged.
 		*/
-		if constexpr (check_env) {
+		if constexpr (!ctc1) {
 			fcr31.cause_inexact |= std::fetestexcept(FE_INEXACT);
 			fcr31.cause_underflow |= std::fetestexcept(FE_UNDERFLOW);
 			fcr31.cause_overflow |= std::fetestexcept(FE_OVERFLOW);
@@ -229,7 +229,7 @@ namespace VR4300
 		u32 fcr31_u32 = std::bit_cast<u32>(fcr31);
 		u32 enables = fcr31_u32 >> 7 & 0x1F;
 		u32 causes = fcr31_u32 >> 12 & 0x1F;
-		if constexpr (set_flags) {
+		if constexpr (!ctc1) {
 			u32 flags = causes & ~enables;
 			fcr31_u32 |= flags << 2;
 			fcr31 = std::bit_cast<FCR31>(fcr31_u32);
