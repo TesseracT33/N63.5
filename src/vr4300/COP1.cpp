@@ -119,7 +119,7 @@ namespace VR4300
 		return true;
 	}
 
-	bool IsValidOutput(std::floating_point auto& f, bool exc_raised)
+	bool IsValidOutput(std::floating_point auto& f)
 	{
 		switch (std::fpclassify(f)) {
 		case FP_NAN:
@@ -130,7 +130,7 @@ namespace VR4300
 		case FP_SUBNORMAL:
 			if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact) {
 				SignalUnimplementedOp();
-				if (!exc_raised) SignalException<Exception::FloatingPoint>();
+				SignalException<Exception::FloatingPoint>();
 				return false;
 			}
 			else {
@@ -483,7 +483,7 @@ namespace VR4300
 						}
 					}
 					if constexpr (std::floating_point<To>) {
-						if (IsValidOutput(conv, exc_raised)) {
+						if (!exc_raised && IsValidOutput(conv)) {
 							fpr.Set<To>(fd, conv);
 						}
 					}
@@ -625,7 +625,7 @@ namespace VR4300
 					}
 				}();
 				bool exc_raised = TestAllExceptions();
-				if (IsValidOutput(result, exc_raised)) {
+				if (!exc_raised && IsValidOutput(result)) {
 					fpr.Set<Float>(fd, result);
 				}
 			};
@@ -673,7 +673,7 @@ namespace VR4300
 				}
 				else {
 					bool exc_raised = TestAllExceptions();
-					if (IsValidOutput(result, exc_raised)) {
+					if (!exc_raised && IsValidOutput(result)) {
 						fpr.Set<Float>(fd, result);
 					}
 				}

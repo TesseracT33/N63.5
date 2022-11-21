@@ -60,7 +60,7 @@ namespace VR4300
 	void InitializeFpu();
 	bool IsQuietNan(std::floating_point auto f);
 	bool IsValidInput(std::floating_point auto f);
-	bool IsValidOutput(std::floating_point auto& f, bool exc_raised);
+	bool IsValidOutput(std::floating_point auto& f);
 	void OnInvalidFormat();
 	bool SignalDivZero();
 	bool SignalInexactOp();
