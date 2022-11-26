@@ -58,20 +58,28 @@ namespace VR4300
 	void PrepareJump(u64 target_address);
 
 	/* Main processor instructions */
-	template<CpuInstruction> void CPULoad(u32 instr_code);
-	template<CpuInstruction> void CPUStore(u32 instr_code);
-	template<CpuInstruction> void ALUImmediate(u32 instr_code);
-	template<CpuInstruction> void ALUThreeOperand(u32 instr_code);
-	template<CpuInstruction> void ALUShift(u32 instr_code);
-	template<CpuInstruction> void ALUMulDiv(u32 instr_code);
-	template<CpuInstruction> void Jump(u32 instr_code);
-	template<CpuInstruction> void CPUBranch(u32 instr_code);
-	template<CpuInstruction> void TrapThreeOperand(u32 instr_code);
-	template<CpuInstruction> void TrapImmediate(u32 instr_code);
-	template<CpuInstruction> void CPUMove(u32 instr_code);
-	void Sync();
-	void Syscall();
-	void Break();
+	template<CpuInstruction> void Load(u32 rs, u32 rt, s16 imm16);
+	template<CpuInstruction> void Store(u32 rs, u32 rt, s16 imm16);
+	template<CpuInstruction> void AluImmediate(u32 rs, u32 rt, s16 imm16);
+	template<CpuInstruction> void AluThreeOperand(u32 rs, u32 rt, u32 rd);
+	template<CpuInstruction> void Shift(u32 rt, u32 rd, u32 sa);
+	template<CpuInstruction> void ShiftVariable(u32 rs, u32 rt, u32 rd);
+	template<CpuInstruction> void MulDiv(u32 rs, u32 rt);
+	template<CpuInstruction> void Branch(u32 rs, s16 imm16);
+	template<CpuInstruction> void Branch(u32 rs, u32 rt, s16 imm16);
+	template<CpuInstruction> void TrapThreeOperand(u32 rs, u32 rt);
+	template<CpuInstruction> void TrapImmediate(u32 rs, s16 imm16);
+	void J(u32 imm26);
+	void JAL(u32 imm26);
+	void JR(u32 rs);
+	void JALR(u32 rs, u32 rd);
+	void MFLO(u32 rd);
+	void MFHI(u32 rd);
+	void MTLO(u32 rs);
+	void MTHI(u32 rs);
+	void SYNC();
+	void SYSCALL();
+	void BREAK();
 
 	class GPR
 	{

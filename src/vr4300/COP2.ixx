@@ -11,7 +11,7 @@ namespace VR4300
 	};
 
 	template<Cop2Instruction>
-	void Cop2Move(u32 instr_code);
+	void Cop2Move(u32 rt);
 
 	void InitializeCop22();
 

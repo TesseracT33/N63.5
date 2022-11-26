@@ -249,13 +249,13 @@ namespace RSP
 			ScalarStore<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI)) {
-			ALUImmediate<instr>(instr_code);
+			AluImmediate<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, ADD, ADDU, AND, NOR, OR, SLT, SLTU, SUB, SUBU, XOR)) {
-			ALUThreeOperand<instr>(instr_code);
+			AluThreeOperand<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, SLL, SRL, SRA, SLLV, SRLV, SRAV)) {
-			ALUShift<instr>(instr_code);
+			Shift<instr>(instr_code);
 		}
 		else if constexpr (OneOf(instr, J, JAL, JR, JALR)) {
 			Jump<instr>(instr_code);

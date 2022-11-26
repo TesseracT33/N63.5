@@ -13,16 +13,13 @@ import RDRAM;
 
 namespace VR4300
 {
-	void Cache(u32 instr_code)
+	void CACHE(u32 rs, u32 rt, s16 imm16)
 	{
 		/* Cache op;
 		   Sign-extends the 16-bit offset to 32 bits and adds it to register base to
 		   generate a virtual address. The virtual address is converted into a physical
 		   address by using the TLB, and a cache operation indicated by a 5-bit sub op
 		   code is executed to that address. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
 		uint cycles = 1;
 		/* The below makes everything crash and burn */
 #if 0
@@ -32,11 +29,9 @@ namespace VR4300
 			return;
 		}
 #endif
-		s16 offset = instr_code & 0xFFFF;
-		auto cache = instr_code >> 16 & 3;
-		auto op = instr_code >> 18 & 7;
-		auto base = instr_code >> 21 & 0x1F;
-		auto virt_addr = gpr[base] + offset;
+		auto cache = rt & 3;
+		auto op = rt >> 2;
+		auto virt_addr = gpr[rs] + imm16;
 		bool cacheable_area;
 		auto phys_addr = active_virtual_to_physical_fun_read(virt_addr, cacheable_area); /* may go unused below, but could also cause a TLB exception */
 		if (exception_has_occurred) {

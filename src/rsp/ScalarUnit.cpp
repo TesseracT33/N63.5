@@ -122,7 +122,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void ALUImmediate(u32 instr_code)
+	void AluImmediate(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -200,7 +200,7 @@ namespace RSP
 	}
 
 	template<ScalarInstruction instr>
-	void ALUThreeOperand(u32 instr_code)
+	void AluThreeOperand(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -269,7 +269,7 @@ namespace RSP
 
 
 	template<ScalarInstruction instr>
-	void ALUShift(u32 instr_code)
+	void Shift(u32 instr_code)
 	{
 		using enum ScalarInstruction;
 
@@ -498,32 +498,32 @@ namespace RSP
 	template void ScalarStore<ScalarInstruction::SW>(u32);
 	template void ScalarStore<ScalarInstruction::SC>(u32);
 
-	template void ALUImmediate<ScalarInstruction::ADDI>(u32);
-	template void ALUImmediate<ScalarInstruction::ADDIU>(u32);
-	template void ALUImmediate<ScalarInstruction::SLTI>(u32);
-	template void ALUImmediate<ScalarInstruction::SLTIU>(u32);
-	template void ALUImmediate<ScalarInstruction::ANDI>(u32);
-	template void ALUImmediate<ScalarInstruction::ORI>(u32);
-	template void ALUImmediate<ScalarInstruction::XORI>(u32);
-	template void ALUImmediate<ScalarInstruction::LUI>(u32);
+	template void AluImmediate<ScalarInstruction::ADDI>(u32);
+	template void AluImmediate<ScalarInstruction::ADDIU>(u32);
+	template void AluImmediate<ScalarInstruction::SLTI>(u32);
+	template void AluImmediate<ScalarInstruction::SLTIU>(u32);
+	template void AluImmediate<ScalarInstruction::ANDI>(u32);
+	template void AluImmediate<ScalarInstruction::ORI>(u32);
+	template void AluImmediate<ScalarInstruction::XORI>(u32);
+	template void AluImmediate<ScalarInstruction::LUI>(u32);
 
-	template void ALUThreeOperand<ScalarInstruction::ADD>(u32);
-	template void ALUThreeOperand<ScalarInstruction::ADDU>(u32);
-	template void ALUThreeOperand<ScalarInstruction::SUB>(u32);
-	template void ALUThreeOperand<ScalarInstruction::SUBU>(u32);
-	template void ALUThreeOperand<ScalarInstruction::SLT>(u32);
-	template void ALUThreeOperand<ScalarInstruction::SLTU>(u32);
-	template void ALUThreeOperand<ScalarInstruction::AND>(u32);
-	template void ALUThreeOperand<ScalarInstruction::OR>(u32);
-	template void ALUThreeOperand<ScalarInstruction::XOR>(u32);
-	template void ALUThreeOperand<ScalarInstruction::NOR>(u32);
+	template void AluThreeOperand<ScalarInstruction::ADD>(u32);
+	template void AluThreeOperand<ScalarInstruction::ADDU>(u32);
+	template void AluThreeOperand<ScalarInstruction::SUB>(u32);
+	template void AluThreeOperand<ScalarInstruction::SUBU>(u32);
+	template void AluThreeOperand<ScalarInstruction::SLT>(u32);
+	template void AluThreeOperand<ScalarInstruction::SLTU>(u32);
+	template void AluThreeOperand<ScalarInstruction::AND>(u32);
+	template void AluThreeOperand<ScalarInstruction::OR>(u32);
+	template void AluThreeOperand<ScalarInstruction::XOR>(u32);
+	template void AluThreeOperand<ScalarInstruction::NOR>(u32);
 
-	template void ALUShift<ScalarInstruction::SLL>(u32);
-	template void ALUShift<ScalarInstruction::SRL>(u32);
-	template void ALUShift<ScalarInstruction::SRA>(u32);
-	template void ALUShift<ScalarInstruction::SLLV>(u32);
-	template void ALUShift<ScalarInstruction::SRLV>(u32);
-	template void ALUShift<ScalarInstruction::SRAV>(u32);
+	template void Shift<ScalarInstruction::SLL>(u32);
+	template void Shift<ScalarInstruction::SRL>(u32);
+	template void Shift<ScalarInstruction::SRA>(u32);
+	template void Shift<ScalarInstruction::SLLV>(u32);
+	template void Shift<ScalarInstruction::SRLV>(u32);
+	template void Shift<ScalarInstruction::SRAV>(u32);
 
 	template void Jump<ScalarInstruction::J>(u32);
 	template void Jump<ScalarInstruction::JAL>(u32);

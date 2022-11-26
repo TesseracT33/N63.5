@@ -26,7 +26,7 @@ namespace VR4300
 		bool valid;
 	};
 
-	void Cache(u32 instr_code);
+	void CACHE(u32 rs, u32 rt, s16 imm16);
 	void FillCacheLine(auto& cache_line, u32 phys_addr);
 	void WritebackCacheLine(auto& cache_line, u32 new_phys_addr);
 

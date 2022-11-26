@@ -16,11 +16,9 @@ namespace VR4300
 
 
 	template<Cop2Instruction instr>
-	void Cop2Move(u32 instr_code)
+	void Cop2Move(u32 rt)
 	{
 		AdvancePipeline(1);
-
-		auto rt = instr_code >> 16 & 0x1F;
 
 		if constexpr (log_cpu_instructions) {
 			current_instr_log_output = std::format("{} {}", current_instr_name, rt);

@@ -264,7 +264,7 @@ namespace VR4300
 
 
 	template<Cop0Instruction instr>
-	void Cop0Move(u32 instr_code)
+	void Cop0Move(u32 rt, u32 rd)
 	{
 		AdvancePipeline(1);
 		using enum Cop0Instruction;
@@ -280,13 +280,6 @@ namespace VR4300
 					return;
 				}
 			}
-		}
-
-		auto rd = instr_code >> 11 & 0x1F;
-		auto rt = instr_code >> 16 & 0x1F;
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rt, cop0_reg_str_repr[rd]);
 		}
 
 		if constexpr (instr == MTC0) {
@@ -325,10 +318,6 @@ namespace VR4300
 		   Searches a TLB entry that matches with the contents of the entry Hi register and
 		   sets the number of that TLB entry to the index register. If a TLB entry that
 		   matches is not found, sets the most significant bit of the index register. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
-
 		AdvancePipeline(1);
 
 		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
@@ -361,10 +350,6 @@ namespace VR4300
 		   The EntryHi and EntryLo registers are loaded with the contents of the TLB entry
 		   pointed at by the contents of the Index register. The G bit (which controls ASID matching)
 		   read from the TLB is written into both of the EntryLo0 and EntryLo1 registers. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
-
 		AdvancePipeline(1);
 
 		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
@@ -382,10 +367,6 @@ namespace VR4300
 		   The TLB entry pointed at by the Index register is loaded with the contents of the
 		   EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
-
 		AdvancePipeline(1);
 
 		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
@@ -404,10 +385,6 @@ namespace VR4300
 		   the EntryHi and EntryLo registers. The G bit of the TLB is written with the logical
 		   AND of the G bits in the EntryLo0 and EntryLo1 registers.
 		   The 'wired' register determines which TLB entries cannot be overwritten. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
-
 		AdvancePipeline(1);
 
 		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
@@ -426,10 +403,6 @@ namespace VR4300
 	{
 		/* Return From Exception;
 		   Returns from an exception, interrupt, or error trap. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
-
 		AdvancePipeline(1);
 
 		if (operating_mode != OperatingMode::Kernel && !cop0.status.cu0) {
@@ -464,10 +437,10 @@ namespace VR4300
 	template void Cop0Registers::Set<true>(size_t, u32);
 	template void Cop0Registers::Set<true>(size_t, u64);
 
-	template void Cop0Move<Cop0Instruction::MTC0>(u32);
-	template void Cop0Move<Cop0Instruction::MFC0>(u32);
-	template void Cop0Move<Cop0Instruction::DMTC0>(u32);
-	template void Cop0Move<Cop0Instruction::DMFC0>(u32);
+	template void Cop0Move<Cop0Instruction::MTC0>(u32, u32);
+	template void Cop0Move<Cop0Instruction::MFC0>(u32, u32);
+	template void Cop0Move<Cop0Instruction::DMTC0>(u32, u32);
+	template void Cop0Move<Cop0Instruction::DMFC0>(u32, u32);
 
 	template void ReloadCountCompareEvent<false>();
 	template void ReloadCountCompareEvent<true>();

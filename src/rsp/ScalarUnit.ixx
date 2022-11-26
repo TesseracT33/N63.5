@@ -40,9 +40,9 @@ namespace RSP
 	/* Main processor instructions */
 	template<ScalarInstruction> void ScalarLoad(u32 instr_code);
 	template<ScalarInstruction> void ScalarStore(u32 instr_code);
-	template<ScalarInstruction> void ALUImmediate(u32 instr_code);
-	template<ScalarInstruction> void ALUThreeOperand(u32 instr_code);
-	template<ScalarInstruction> void ALUShift(u32 instr_code);
+	template<ScalarInstruction> void AluImmediate(u32 instr_code);
+	template<ScalarInstruction> void AluThreeOperand(u32 instr_code);
+	template<ScalarInstruction> void Shift(u32 instr_code);
 	template<ScalarInstruction> void Jump(u32 instr_code);
 	template<ScalarInstruction> void Branch(u32 instr_code);
 	template<ScalarInstruction> void Move(u32 instr_code);

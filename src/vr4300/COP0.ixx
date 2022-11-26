@@ -25,7 +25,7 @@ namespace VR4300
 	template<bool initial_add = false> void ReloadCountCompareEvent();
 
 	/* COP0 instructions */
-	template<Cop0Instruction> void Cop0Move(u32 instr_code);
+	template<Cop0Instruction> void Cop0Move(u32 rt, u32 rd);
 	void TLBR();
 	void TLBWI();
 	void TLBWR();

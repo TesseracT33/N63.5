@@ -34,6 +34,17 @@ import Util;
 		current_instr_name = #INSTR; \
 	ExecuteCop2Instruction<Cop2Instruction::INSTR>(); }
 
+#define LOG_INSTR(OUTPUT) { \
+	if constexpr (log_cpu_instructions) \
+		LogCpuInstruction(last_instr_fetch_phys_addr, OUTPUT); }
+
+#define IMM16 (instr_code & 0xFFFF)
+#define IMM26 (instr_code & 0x3FF'FFFF)
+#define SA (instr_code >>  6 & 0x1F)
+#define RD (instr_code >> 11 & 0x1F)
+#define RT (instr_code >> 16 & 0x1F)
+#define RS (instr_code >> 21 & 0x1F)
+
 namespace VR4300
 {
 	u32 instr_code;
@@ -353,59 +364,113 @@ namespace VR4300
 	template<CpuInstruction instr>
 	void ExecuteCpuInstruction()
 	{
-		using enum CpuInstruction;
-
-		if constexpr (OneOf(instr, LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD)) {
-			CPULoad<instr>(instr_code);
+		if constexpr (instr == CpuInstruction::J) {
+			LOG_INSTR(std::format("J ${:X}", pc & 0xFFFF'FFFF'F000'0000 | IMM26 << 2));
+			J(IMM26);
 		}
-		else if constexpr (OneOf(instr, SB, SH, SW, SWL, SWR, SC, SCD, SD, SDL, SDR)) {
-			CPUStore<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::JAL) {
+			LOG_INSTR(std::format("JAL ${:X}", pc & 0xFFFF'FFFF'F000'0000 | IMM26 << 2));
+			JAL(IMM26);
 		}
-		else if constexpr (OneOf(instr, ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI, DADDI, DADDIU)) {
-			ALUImmediate<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::JR) {
+			LOG_INSTR(std::format("JR {}", RS));
+			JR(RS);
 		}
-		else if constexpr (OneOf(instr, ADD, ADDU, AND, DADD, DADDU, DSUB, DSUBU, NOR, OR, SLT, SLTU, SUB, SUBU, XOR)) {
-			ALUThreeOperand<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::JALR) {
+			LOG_INSTR(std::format("JALR {}, {}", RS, RD));
+			JALR(RS, RD);
 		}
-		else if constexpr (OneOf(instr, SLL, SRL, SRA, SLLV, SRLV, SRAV, DSLL, DSRL, DSRA, DSLLV, DSRLV, DSRAV, DSLL32, DSRL32, DSRA32)) {
-			ALUShift<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::MFLO) {
+			LOG_INSTR(std::format("MFLO {}", RD));
+			MFLO(RD);
 		}
-		else if constexpr (OneOf(instr, MULT, MULTU, DIV, DIVU, DMULT, DMULTU, DDIV, DDIVU)) {
-			ALUMulDiv<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::MFHI) {
+			LOG_INSTR(std::format("MFHI {}", RD));
+			MFHI(RD);
 		}
-		else if constexpr (OneOf(instr, MFHI, MFLO, MTHI, MTLO)) {
-			CPUMove<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::MTLO) {
+			LOG_INSTR(std::format("MTLO {}", RS));
+			MTLO(RS);
 		}
-		else if constexpr (OneOf(instr, J, JAL, JR, JALR)) {
-			Jump<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::MTHI) {
+			LOG_INSTR(std::format("MTHI {}", RS));
+			MTHI(RS);
 		}
-		else if constexpr (OneOf(instr, BEQ, BNE, BLEZ, BGTZ, BLTZ, BGEZ, BLTZAL, BGEZAL, BEQL, BNEL, BLEZL, BGTZL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
-			CPUBranch<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::BREAK) {
+			LOG_INSTR("BREAK");
+			BREAK();
 		}
-		else if constexpr (OneOf(instr, TGE, TGEU, TLT, TLTU, TEQ, TNE)) {
-			TrapThreeOperand<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::SYNC) {
+			LOG_INSTR("SYNC");
+			SYNC();
 		}
-		else if constexpr (OneOf(instr, TGEI, TGEIU, TLTI, TLTIU, TEQI, TNEI)) {
-			TrapImmediate<instr>(instr_code);
+		else if constexpr (instr == CpuInstruction::SYSCALL) {
+			LOG_INSTR("SYSCALL");
+			SYSCALL();
 		}
-		else if constexpr (instr == BREAK) {
-			Break();
-		}
-		else if constexpr (instr == SYNC) {
-			Sync();
-		}
-		else if constexpr (instr == SYSCALL) {
-			Syscall();
-		}
-		else if constexpr (instr == CACHE) {
-			Cache(instr_code);
+		else if constexpr (instr == CpuInstruction::CACHE) {
+			LOG_INSTR("CACHE");
+			CACHE(RS, RT, IMM16);
 		}
 		else {
-			static_assert(AlwaysFalse<instr>);
-		}
-
-		if constexpr (log_cpu_instructions) {
-			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
+			using enum CpuInstruction;
+			if constexpr (OneOf(instr, LB, LBU, LH, LHU, LW, LWU, LWL, LWR, LD, LDL, LDR, LL, LLD)) {
+				LOG_INSTR(std::format("{} {}, ${:X}", current_instr_name, RT, MakeUnsigned(gpr[RS] + IMM16)));
+				Load<instr>(RS, RT, IMM16);
+			}
+			else if constexpr (OneOf(instr, SB, SH, SW, SWL, SWR, SC, SCD, SD, SDL, SDR)) {
+				LOG_INSTR(std::format("{} {}, ${:X}", current_instr_name, RT, MakeUnsigned(gpr[RS] + IMM16)));
+				Store<instr>(RS, RT, IMM16);
+			}
+			else if constexpr (OneOf(instr, ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI, DADDI, DADDIU)) {
+				if constexpr (instr == LUI) {
+					LOG_INSTR(std::format("{} {}, ${:X}", current_instr_name, RT, IMM16));
+				}
+				else {
+					LOG_INSTR(std::format("{} {}, {}, ${:X}", current_instr_name, RT, RS, IMM16));
+				}
+				AluImmediate<instr>(RS, RT, IMM16);
+			}
+			else if constexpr (OneOf(instr, ADD, ADDU, AND, DADD, DADDU, DSUB, DSUBU, NOR, OR, SLT, SLTU, SUB, SUBU, XOR)) {
+				LOG_INSTR(std::format("{} {}, {}, {}", current_instr_name, RD, RS, RT));
+				AluThreeOperand<instr>(RS, RT, RD);
+			}
+			else if constexpr (OneOf(instr, SLL, SRL, SRA, DSLL, DSRL, DSRA, DSLL32, DSRL32, DSRA32)) {
+				if (instr_code == 0) {
+					LOG_INSTR("NOP");
+				}
+				else {
+					LOG_INSTR(std::format("{} {}, {}, {}", current_instr_name, RD, RT, SA));
+				}
+				Shift<instr>(RT, RD, SA);
+			}
+			else if constexpr (OneOf(instr, SLLV, SRLV, SRAV, DSLLV, DSRLV, DSRAV)) {
+				LOG_INSTR(std::format("{} {}, {}, {}", current_instr_name, RD, RT, RS));
+				ShiftVariable<instr>(RS, RT, RD);
+			}
+			else if constexpr (OneOf(instr, MULT, MULTU, DIV, DIVU, DMULT, DMULTU, DDIV, DDIVU)) {
+				LOG_INSTR(std::format("{} {}, {}", current_instr_name, RS, RT));
+				MulDiv<instr>(RS, RT);
+			}
+			else if constexpr (OneOf(instr, BLEZ, BGTZ, BLTZ, BGEZ, BLTZAL, BGEZAL, BLEZL, BGTZL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
+				LOG_INSTR(std::format("{} {}, ${:X}", current_instr_name, RS, IMM16));
+				Branch<instr>(RS, IMM16);
+			}
+			else if constexpr (OneOf(instr, BEQ, BEQL, BNE, BNEL)) {
+				LOG_INSTR(std::format("{} {}, {}, ${:X}", current_instr_name, RS, RT, IMM16));
+				Branch<instr>(RS, RT, IMM16);
+			}
+			else if constexpr (OneOf(instr, TGE, TGEU, TLT, TLTU, TEQ, TNE)) {
+				LOG_INSTR(std::format("{} {}, {}", current_instr_name, RS, RT));
+				TrapThreeOperand<instr>(RS, RT);
+			}
+			else if constexpr (OneOf(instr, TGEI, TGEIU, TLTI, TLTIU, TEQI, TNEI)) {
+				LOG_INSTR(std::format("{} {}, ${:X}", current_instr_name, RS, IMM16));
+				TrapImmediate<instr>(RS, IMM16);
+			}
+			else {
+				static_assert(AlwaysFalse<instr>);
+			}
 		}
 	}
 
@@ -414,16 +479,17 @@ namespace VR4300
 	void ExecuteCop0Instruction()
 	{
 		if constexpr (OneOf(instr, Cop0Instruction::MTC0, Cop0Instruction::MFC0, Cop0Instruction::DMTC0, Cop0Instruction::DMFC0)) {
-			Cop0Move<instr>(instr_code);
+			LOG_INSTR(std::format("{} {}, {}", current_instr_name, RT, cop0_reg_str_repr[RD]))
+			Cop0Move<instr>(RT, RD);
 		}
-		else if constexpr (instr == Cop0Instruction::TLBP)  TLBP();
-		else if constexpr (instr == Cop0Instruction::TLBR)  TLBR();
-		else if constexpr (instr == Cop0Instruction::TLBWI) TLBWI();
-		else if constexpr (instr == Cop0Instruction::TLBWR) TLBWR();
-		else if constexpr (instr == Cop0Instruction::ERET)  ERET();
-		else static_assert(AlwaysFalse<instr>);
-		if constexpr (log_cpu_instructions) {
-			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
+		else {
+			LOG_INSTR(current_instr_name.data());
+			if constexpr (instr == Cop0Instruction::TLBP)       TLBP();
+			else if constexpr (instr == Cop0Instruction::TLBR)  TLBR();
+			else if constexpr (instr == Cop0Instruction::TLBWI) TLBWI();
+			else if constexpr (instr == Cop0Instruction::TLBWR) TLBWR();
+			else if constexpr (instr == Cop0Instruction::ERET)  ERET();
+			else static_assert(AlwaysFalse<instr>);
 		}
 	}
 
@@ -467,7 +533,7 @@ namespace VR4300
 	{
 		using enum Cop2Instruction;
 		if constexpr (OneOf(instr, CFC2, CTC2, MFC2, MTC2, DCFC2, DCTC2, DMFC2, DMTC2)) {
-			Cop2Move<instr>(instr_code);
+			Cop2Move<instr>(RT);
 		}
 		else {
 			static_assert(AlwaysFalse<instr>);

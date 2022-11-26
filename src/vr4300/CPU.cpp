@@ -5,7 +5,6 @@ import :Exceptions;
 import :MMU;
 import :Operation;
 
-import BuildOptions;
 import Memory;
 
 namespace VR4300
@@ -43,14 +42,11 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void CPULoad(u32 instr_code)
+	void Load(u32 rs, u32 rt, s16 imm16)
 	{
 		using enum CpuInstruction;
 
-		s16 offset = instr_code & 0xFFFF;
-		auto rt = instr_code >> 16 & 0x1F;
-		auto base = instr_code >> 21 & 0x1F;
-		auto addr = gpr[base] + offset;
+		auto addr = gpr[rs] + imm16;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base.
@@ -60,10 +56,6 @@ namespace VR4300
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
 				addr = s32(addr);
 			}
-		}
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}",
-				current_instr_name, rt, MakeUnsigned(addr));
 		}
 
 		auto result = [&] {
@@ -226,14 +218,11 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void CPUStore(u32 instr_code)
+	void Store(u32 rs, u32 rt, s16 imm16)
 	{
 		using enum CpuInstruction;
 
-		s16 offset = instr_code & 0xFFFF;
-		auto rt = instr_code >> 16 & 0x1F;
-		auto base = instr_code >> 21 & 0x1F;
-		auto addr = gpr[base] + offset;
+		auto addr = gpr[rs] + imm16;
 
 		/* For all instructions:
 		   Generates an address by adding a sign-extended offset to the contents of register base.
@@ -243,11 +232,6 @@ namespace VR4300
 			if (operating_mode == OperatingMode::Kernel && addressing_mode == AddressingMode::_32bit) {
 				addr = s32(addr);
 			}
-		}
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}",
-				current_instr_name, rt, MakeUnsigned(addr));
 		}
 
 		if constexpr (instr == SB) {
@@ -335,26 +319,14 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void ALUImmediate(u32 instr_code)
+	void AluImmediate(u32 rs, u32 rt, s16 imm16)
 	{
 		using enum CpuInstruction;
 
-		auto rt = instr_code >> 16 & 0x1F;
-		auto rs = instr_code >> 21 & 0x1F;
-
-		auto immediate = [&] {
-			if constexpr (OneOf(instr, ANDI, LUI, ORI, XORI)) return u16(instr_code);
-			else                                              return s16(instr_code);
+		auto imm = [&] {
+			if constexpr (OneOf(instr, ANDI, LUI, ORI, XORI)) return u16(imm16);
+			else                                              return s16(imm16);
 		}();
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = [&] {
-				if constexpr (instr == LUI)
-					return std::format("{} {}, ${:X}", current_instr_name, rt, immediate);
-				else
-					return std::format("{} {}, {}, ${:X}", current_instr_name, rt, rs, immediate);
-			}();
-		}
 
 		if constexpr (instr == ADDI) {
 			/* Add Immediate;
@@ -362,8 +334,8 @@ namespace VR4300
 			   32-bit result to register rt (sign-extends the result in the 64-bit mode).
 			   Generates an exception if a 2's complement integer overflow occurs.
 			   In that case, the contents of destination register rt are not modified */
-			s32 sum = s32(gpr[rs] + immediate);
-			if ((gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000) {
+			s32 sum = s32(gpr[rs] + imm);
+			if ((gpr[rs] ^ sum) & (imm ^ sum) & 0x8000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -375,53 +347,53 @@ namespace VR4300
 			   Sign-extends the 16-bit immediate and adds it to register rs. Stores the 32-bit
 			   result to register rt (sign-extends the result in the 64-bit mode). Does not
 			   generate an exception even if an integer overflow occurs. */
-			gpr.Set(rt, s32(gpr[rs] + immediate));
+			gpr.Set(rt, s32(gpr[rs] + imm));
 		}
 		else if constexpr (instr == SLTI) {
 			/* Set On Less Than Immediate;
 			   Sign-extends the 16-bit immediate and compares it with register rs as a
 			   signed integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
-			gpr.Set(rt, gpr[rs] < immediate);
+			gpr.Set(rt, gpr[rs] < imm);
 		}
 		else if constexpr (instr == SLTIU) {
 			/* Set On Less Than Immediate Unsigned;
 			   Sign-extends the 16-bit immediate and compares it with register rs as an
 			   unsigned integer. If rs is less than the immediate, stores 1 to register rt;
 			   otherwise, stores 0 to register rt. */
-			gpr.Set(rt, u64(gpr[rs]) < immediate);
+			gpr.Set(rt, u64(gpr[rs]) < imm);
 		}
 		else if constexpr (instr == ANDI) {
 			/* And Immediate;
 			   Zero-extends the 16-bit immediate, ANDs it with register rs, and stores the
 			   result to register rt. */
-			gpr.Set(rt, gpr[rs] & immediate);
+			gpr.Set(rt, gpr[rs] & imm);
 		}
 		else if constexpr (instr == ORI) {
 			/* Or Immediate;
 			   Zero-extends the 16-bit immediate, ORs it with register rs, and stores the
 			   result to register rt. */
-			gpr.Set(rt, gpr[rs] | immediate);
+			gpr.Set(rt, gpr[rs] | imm);
 		}
 		else if constexpr (instr == XORI) {
 			/* Exclusive Or Immediate;
 			   Zero-extends the 16-bit immediate, exclusive-ORs it with register rs, and
 			   stores the result to register rt. */
-			gpr.Set(rt, gpr[rs] ^ immediate);
+			gpr.Set(rt, gpr[rs] ^ imm);
 		}
 		else if constexpr (instr == LUI) {
 			/* Load Upper Immediate;
 			   Shifts the 16-bit immediate 16 bits to the left, and clears the low-order 16 bits
 			   of the word to 0.
 			   Stores the result to register rt (by sign-extending the result in the 64-bit mode). */
-			gpr.Set(rt, s32(immediate << 16));
+			gpr.Set(rt, s32(imm << 16));
 		}
 		else if constexpr (instr == DADDI) {
 			/* Doubleword Add Immediate;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Generates an exception if an integer overflow occurs. */
-			s64 sum = gpr[rs] + immediate;
-			if ((gpr[rs] ^ sum) & (immediate ^ sum) & 0x8000'0000'0000'0000) {
+			s64 sum = gpr[rs] + imm;
+			if ((gpr[rs] ^ sum) & (imm ^ sum) & 0x8000'0000'0000'0000) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -433,7 +405,7 @@ namespace VR4300
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Does not generate an exception even if an
 			   integer overflow occurs. */
-			s64 sum = gpr[rs] + immediate;
+			s64 sum = gpr[rs] + imm;
 			gpr.Set(rt, sum);
 		}
 		else {
@@ -444,17 +416,9 @@ namespace VR4300
 	}
 
 	template<CpuInstruction instr>
-	void ALUThreeOperand(u32 instr_code)
+	void AluThreeOperand(u32 rs, u32 rt, u32 rd)
 	{
 		using enum CpuInstruction;
-
-		auto rd = instr_code >> 11 & 0x1F;
-		auto rt = instr_code >> 16 & 0x1F;
-		auto rs = instr_code >> 21 & 0x1F;
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, {}, {}", current_instr_name, rd, rs, rt);
-		}
 
 		if constexpr (instr == ADD) {
 			/* Add;
@@ -574,25 +538,9 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void ALUShift(u32 instr_code)
+	void Shift(u32 rt, u32 rd, u32 sa)
 	{
 		using enum CpuInstruction;
-
-		auto sa = instr_code >>  6 & 0x1F;
-		auto rd = instr_code >> 11 & 0x1F;
-		auto rt = instr_code >> 16 & 0x1F;
-		auto rs = instr_code >> 21 & 0x1F;
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = [&] {
-				if (instr_code == 0)
-					return std::string("NOP");
-				if constexpr (OneOf(instr, SLLV, SRLV, SRAV, DSLLV, DSRLV, DSRAV))
-					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, rs);
-				else
-					return std::format("{} {}, {}, {}", current_instr_name, rd, rt, sa);
-			}();
-		}
 
 		s64 result = static_cast<s64>( [&] {
 			if constexpr (instr == SLL) {
@@ -613,30 +561,6 @@ namespace VR4300
 				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
 				return s32(gpr[rt] >> sa);
 			}
-			else if constexpr (instr == SLLV) {
-				/* Shift Left Logical Variable;
-				   Shifts the contents of register rt to the left and inserts 0 to the low-order bits.
-				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 5 bits of register rs.
-				   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
-				return s32(gpr[rt]) << (gpr[rs] & 0x1F);
-			}
-			else if constexpr (instr == SRLV) {
-				/* Shift Right Logical Variable;
-				   Shifts the contents of register rt to the right, and inserts 0 to the high-order bits.
-				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 5 bits of register rs.
-				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s32(u32(gpr[rt]) >> (gpr[rs] & 0x1F));
-			}
-			else if constexpr (instr == SRAV) {
-				/* Shift Right Arithmetic Variable;
-				   Shifts the contents of register rt to the right and sign-extends the high-order bits.
-				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 5 bits of register rs.
-				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
-				return s32(gpr[rt] >> (gpr[rs] & 0x1F));
-			}
 			else if constexpr (instr == DSLL) {
 				/* Doubleword Shift Left Logical;
 				   Shifts the contents of register rt sa bits to the left, and inserts 0 to the low-order bits.
@@ -654,28 +578,6 @@ namespace VR4300
 				   Shifts the contents of register rt sa bits to the right, and sign-extends the high-order bits.
 				   Stores the 64-bit result to register rd. */
 				return gpr[rt] >> sa;
-			}
-			else if constexpr (instr == DSLLV) {
-				/* Doubleword Shift Left Logical Variable;
-				   Shifts the contents of register rt to the left, and inserts 0 to the low-order bits.
-				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 6 bits of register rs.
-				   Stores the 64-bit result and stores it to register rd. */
-				return gpr[rt] << (gpr[rs] & 0x3F);
-			}
-			else if constexpr (instr == DSRLV) {
-				/* Doubleword Shift Right Logical Variable;
-				   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
-				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 6 bits of register rs. */
-				return u64(gpr[rt]) >> (gpr[rs] & 0x3F);
-			}
-			else if constexpr (instr == DSRAV) {
-				/* Doubleword Shift Right Arithmetic Variable;
-				   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
-				   The number of bits by which the register contents are to be shifted is
-				   specified by the low-order 6 bits of register rs.  */
-				return gpr[rt] >> (gpr[rs] & 0x3F);
 			}
 			else if constexpr (instr == DSLL32) {
 				/* Doubleword Shift Left Logical + 32;
@@ -706,16 +608,71 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void ALUMulDiv(u32 instr_code)
+	void ShiftVariable(u32 rs, u32 rt, u32 rd)
 	{
 		using enum CpuInstruction;
 
-		auto rt = instr_code >> 16 & 0x1F;
-		auto rs = instr_code >> 21 & 0x1F;
+		s64 result = static_cast<s64>([&] {
+			if constexpr (instr == SLLV) {
+				/* Shift Left Logical Variable;
+				   Shifts the contents of register rt to the left and inserts 0 to the low-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 5 bits of register rs.
+				   Sign-extends (in the 64-bit mode) the result and stores it to register rd. */
+				return s32(gpr[rt]) << (gpr[rs] & 0x1F);
+			}
+			else if constexpr (instr == SRLV) {
+				/* Shift Right Logical Variable;
+				   Shifts the contents of register rt to the right, and inserts 0 to the high-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 5 bits of register rs.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s32(u32(gpr[rt]) >> (gpr[rs] & 0x1F));
+			}
+			else if constexpr (instr == SRAV) {
+				/* Shift Right Arithmetic Variable;
+				   Shifts the contents of register rt to the right and sign-extends the high-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 5 bits of register rs.
+				   Sign-extends (in the 64-bit mode) the 32-bit result and stores it to register rd. */
+				return s32(gpr[rt] >> (gpr[rs] & 0x1F));
+			}
+			else if constexpr (instr == DSLLV) {
+				/* Doubleword Shift Left Logical Variable;
+				   Shifts the contents of register rt to the left, and inserts 0 to the low-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 6 bits of register rs.
+				   Stores the 64-bit result and stores it to register rd. */
+				return gpr[rt] << (gpr[rs] & 0x3F);
+			}
+			else if constexpr (instr == DSRLV) {
+				/* Doubleword Shift Right Logical Variable;
+				   Shifts the contents of register rt to the right, and inserts 0 to the higher bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 6 bits of register rs. */
+				return u64(gpr[rt]) >> (gpr[rs] & 0x3F);
+			}
+			else if constexpr (instr == DSRAV) {
+				/* Doubleword Shift Right Arithmetic Variable;
+				   Shifts the contents of register rt to the right, and sign-extends the high-order bits.
+				   The number of bits by which the register contents are to be shifted is
+				   specified by the low-order 6 bits of register rs.  */
+				return gpr[rt] >> (gpr[rs] & 0x3F);
+			}
+			else {
+				static_assert(AlwaysFalse<instr>);
+			}
+			}());
 
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
-		}
+		gpr.Set(rd, result);
+		AdvancePipeline(1);
+	}
+
+
+	template<CpuInstruction instr>
+	void MulDiv(u32 rs, u32 rt)
+	{
+		using enum CpuInstruction;
 
 		if constexpr (instr == MULT) {
 			/* Multiply;
@@ -860,90 +817,12 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void Jump(u32 instr_code)
+	void Branch(u32 rs, s16 imm16)
 	{
 		using enum CpuInstruction;
-
-		/* J: Jump;
-		   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
-		   coupled with the high-order 4 bits of the PC, delayed by one instruction.
-
-		   JAL: Jump And Link;
-		   Shifts the 26-bit target address 2 bits to the left, and jumps to the address
-		   coupled with the high-order 4 bits of the PC, delayed by one instruction.
-		   Stores the address of the instruction following the delay slot to r31 (link register).
-
-		   JR: Jump Register;
-		   Jumps to the address of register rs, delayed by one instruction.
-
-		   JALR: Jump And Link Register;
-		   Jumps to the address of register rs, delayed by one instruction.
-		   Stores the address of the instruction following the delay slot to register rd. */
-
-		if (!in_branch_delay_slot) {
-			u64 target = [&] {
-				if constexpr (OneOf(instr, J, JAL)) {
-					u64 target = u64((instr_code & 0x3FF'FFFF) << 2);
-					if constexpr (log_cpu_instructions) {
-						current_instr_log_output = std::format("{} ${:X}", current_instr_name, target);
-					}
-					return pc & 0xFFFF'FFFF'F000'0000 | target;
-				}
-				else if constexpr (OneOf(instr, JR, JALR)) {
-					auto rs = instr_code >> 21 & 0x1F;
-					if constexpr (log_cpu_instructions) {
-						current_instr_log_output = std::format("{} {}", current_instr_name, rs);
-					}
-					if (gpr[rs] & 3) {
-						SignalAddressErrorException<MemOp::InstrFetch>(gpr[rs]);
-					}
-					return gpr[rs];
-				}
-				else {
-					static_assert(AlwaysFalse<instr>);
-				}
-			}();
-			PrepareJump(target);
-		}
-
-		if constexpr (instr == JAL) {
-			gpr.Set(31, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
-		}
-		else if constexpr (instr == JALR) {
-			auto rd = instr_code >> 11 & 0x1F;
-			gpr.Set(rd, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
-		}
-
-		AdvancePipeline(1);
-	}
-
-
-	template<CpuInstruction instr>
-	void CPUBranch(u32 instr_code)
-	{
-		using enum CpuInstruction;
-
-		auto rt = instr_code >> 16 & 0x1F;
-		auto rs = instr_code >> 21 & 0x1F;
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = [&] {
-				s16 offset = s16(instr_code);
-				if constexpr (OneOf(instr, BEQ, BNE, BEQL, BNEL))
-					return std::format("{} {}, {}, ${:X}", current_instr_name, rs, rt, offset);
-				else
-					return std::format("{} {}, ${:X}", current_instr_name, rs, offset);
-			}();
-		}
-
-		/* For all instructions: branch to the branch address if the condition is met, with a delay of one instruction.
-		   For "likely" instructions: if the branch condition is not satisfied, the instruction in the branch delay slot is discarded.
-		   For "link" instructions: stores the address of the instruction following the delay slot to register r31 (link register). */
 
 		bool branch_cond = [&] {
-			if constexpr (OneOf(instr, BEQ, BEQL))            return gpr[rs] == gpr[rt];
-			else if constexpr (OneOf(instr, BNE, BNEL))       return gpr[rs] != gpr[rt];
-			else if constexpr (OneOf(instr, BLEZ, BLEZL))     return gpr[rs] <= 0;
+			if constexpr (OneOf(instr, BLEZ, BLEZL))          return gpr[rs] <= 0;
 			else if constexpr (OneOf(instr, BGTZ, BGTZL))     return gpr[rs] > 0;
 			else if constexpr (OneOf(instr, BLTZ, BLTZL))     return gpr[rs] < 0;
 			else if constexpr (OneOf(instr, BGEZ, BGEZL))     return gpr[rs] >= 0;
@@ -951,15 +830,14 @@ namespace VR4300
 			else if constexpr (OneOf(instr, BGEZAL, BGEZALL)) return gpr[rs] >= 0;
 			else static_assert(AlwaysFalse<instr>);
 		}();
-
 		if constexpr (OneOf(instr, BLTZAL, BGEZAL, BLTZALL, BGEZALL)) {
 			gpr.Set(31, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
 		}
 		if (branch_cond) {
-			auto offset = s16(instr_code) << 2;
+			auto offset = imm16 << 2;
 			PrepareJump(pc + offset);
 		}
-		else if constexpr (OneOf(instr, BEQL, BNEL, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
+		else if constexpr (OneOf(instr, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. */
 		}
 
@@ -968,16 +846,31 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void TrapThreeOperand(u32 instr_code)
+	void Branch(u32 rs, u32 rt, s16 imm16)
 	{
 		using enum CpuInstruction;
 
-		auto rt = instr_code >> 16 & 0x1F;
-		auto rs = instr_code >> 21 & 0x1F;
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, {}", current_instr_name, rs, rt);
+		bool branch_cond = [&] {
+			if constexpr (OneOf(instr, BEQ, BEQL))      return gpr[rs] == gpr[rt];
+			else if constexpr (OneOf(instr, BNE, BNEL)) return gpr[rs] != gpr[rt];
+			else static_assert(AlwaysFalse<instr>);
+		}();
+		if (branch_cond) {
+			auto offset = imm16 << 2;
+			PrepareJump(pc + offset);
 		}
+		else if constexpr (OneOf(instr, BEQL, BNEL)) {
+			pc += 4; /* The instruction in the branch delay slot is discarded. */
+		}
+
+		AdvancePipeline(1);
+	}
+
+
+	template<CpuInstruction instr>
+	void TrapThreeOperand(u32 rs, u32 rt)
+	{
+		using enum CpuInstruction;
 
 		/* Generates a trap exception if the given condition is true. */
 		bool cond = [&] {
@@ -999,24 +892,18 @@ namespace VR4300
 
 
 	template<CpuInstruction instr>
-	void TrapImmediate(u32 instr_code)
+	void TrapImmediate(u32 rs, s16 imm16)
 	{
 		using enum CpuInstruction;
 
-		auto rs = instr_code >> 21 & 0x1F;
-		s16 immediate = instr_code & 0xFFFF;
-
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = std::format("{} {}, ${:X}", current_instr_name, rs, immediate);
-		}
 		/* Generates a trap exception if the given condition is true. */
 		bool trap_cond = [&] {
-			     if constexpr (instr == TGEI)  return s64(gpr[rs]) >= immediate;
-			else if constexpr (instr == TGEIU) return u64(gpr[rs]) >= immediate;
-			else if constexpr (instr == TLTI)  return s64(gpr[rs]) <  immediate;
-			else if constexpr (instr == TLTIU) return u64(gpr[rs]) <  immediate;
-			else if constexpr (instr == TEQI)  return s64(gpr[rs]) == immediate;
-			else if constexpr (instr == TNEI)  return s64(gpr[rs]) != immediate;
+			     if constexpr (instr == TGEI)  return s64(gpr[rs]) >= imm16;
+			else if constexpr (instr == TGEIU) return u64(gpr[rs]) >= imm16;
+			else if constexpr (instr == TLTI)  return s64(gpr[rs]) <  imm16;
+			else if constexpr (instr == TLTIU) return u64(gpr[rs]) <  imm16;
+			else if constexpr (instr == TEQI)  return s64(gpr[rs]) == imm16;
+			else if constexpr (instr == TNEI)  return s64(gpr[rs]) != imm16;
 			else static_assert(AlwaysFalse<instr>);
 		}();
 
@@ -1028,188 +915,219 @@ namespace VR4300
 	}
 
 
-	template<CpuInstruction instr>
-	void CPUMove(u32 instr_code)
+	void J(u32 imm26)
 	{
-		using enum CpuInstruction;
-
-		if constexpr (OneOf(instr, MFLO, MFHI)) {
-			/* Move From LO/HI;
-			   Transfers the contents of special register LO/HI to register rd. */
-			auto rd = instr_code >> 11 & 0x1F;
-			gpr.Set(rd, [] {
-				if constexpr (instr == MFLO) return lo_reg;
-				else                         return hi_reg;
-			}());
-			if constexpr (log_cpu_instructions) {
-				current_instr_log_output = std::format("{} {}", current_instr_name, rd);
-			}
+		if (!in_branch_delay_slot) {
+			u64 target = pc & 0xFFFF'FFFF'F000'0000 | imm26 << 2;
+			PrepareJump(target);
 		}
-		else if constexpr (OneOf(instr, MTLO, MTHI)) {
-			/* Move To LO/HI;
-			   Transfers the contents of register rs to special register LO/HI. */
-			auto rs = instr_code >> 21 & 0x1F;
-			if constexpr (instr == MTLO) lo_reg = gpr[rs];
-			else                         hi_reg = gpr[rs];
+		AdvancePipeline(1);
+	}
 
-			if constexpr (log_cpu_instructions) {
-				current_instr_log_output = std::format("{} {}", current_instr_name, rs);
+
+	void JAL(u32 imm26)
+	{
+		if (!in_branch_delay_slot) {
+			u64 target = pc & 0xFFFF'FFFF'F000'0000 | imm26 << 2;
+			PrepareJump(target);
+		}
+		gpr.Set(31, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
+		AdvancePipeline(1);
+	}
+
+
+	void JR(u32 rs)
+	{
+		if (!in_branch_delay_slot) {
+			u64 target = gpr[rs];
+			if (target & 3) {
+				SignalAddressErrorException<MemOp::InstrFetch>(target);
+			}
+			else {
+				PrepareJump(target);
 			}
 		}
 		AdvancePipeline(1);
 	}
 
 
-	void Sync()
+	void JALR(u32 rs, u32 rd)
+	{
+		if (!in_branch_delay_slot) {
+			u64 target = gpr[rs];
+			if (target & 3) {
+				SignalAddressErrorException<MemOp::InstrFetch>(target);
+			}
+			else {
+				PrepareJump(target);
+			}
+		}
+		gpr.Set(rd, 4 + (in_branch_delay_slot ? addr_to_jump_to : pc));
+		AdvancePipeline(1);
+	}
+
+
+	void MFLO(u32 rd)
+	{
+		gpr.Set(rd, lo_reg);
+		AdvancePipeline(1);
+	}
+
+
+	void MFHI(u32 rd)
+	{
+		gpr.Set(rd, hi_reg);
+		AdvancePipeline(1);
+	}
+
+
+	void MTLO(u32 rs)
+	{
+		lo_reg = gpr[rs];
+		AdvancePipeline(1);
+	}
+
+
+	void MTHI(u32 rs)
+	{
+		hi_reg = gpr[rs];
+		AdvancePipeline(1);
+	}
+
+
+	void SYNC()
 	{
 		/* Synchronize;
 		   Completes the Load/store instruction currently in the pipeline before the new
 		   Load/store instruction is executed. Is executed as a NOP on the VR4300. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
 		AdvancePipeline(1);
 	}
 
 
-	void Syscall()
+	void SYSCALL()
 	{
 		/* System Call;
 		   Generates a system call exception and transfers control to the exception processing program. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
 		SignalException<Exception::Syscall>();
 		AdvancePipeline(1);
 	}
 
 
-	void Break()
+	void BREAK()
 	{
 		/* Breakpoint;
 		   Generates a breakpoint exception and transfers control to the exception processing program. */
-		if constexpr (log_cpu_instructions) {
-			current_instr_log_output = current_instr_name;
-		}
 		SignalException<Exception::Breakpoint>();
 		AdvancePipeline(1);
 	}
 
 
-	template void CPULoad<CpuInstruction::LB>(u32);
-	template void CPULoad<CpuInstruction::LBU>(u32);
-	template void CPULoad<CpuInstruction::LH>(u32);
-	template void CPULoad<CpuInstruction::LHU>(u32);
-	template void CPULoad<CpuInstruction::LW>(u32);
-	template void CPULoad<CpuInstruction::LWU>(u32);
-	template void CPULoad<CpuInstruction::LWL>(u32);
-	template void CPULoad<CpuInstruction::LWR>(u32);
-	template void CPULoad<CpuInstruction::LD>(u32);
-	template void CPULoad<CpuInstruction::LDL>(u32);
-	template void CPULoad<CpuInstruction::LDR>(u32);
-	template void CPULoad<CpuInstruction::LL>(u32);
-	template void CPULoad<CpuInstruction::LLD>(u32);
+	template void Load<CpuInstruction::LB>(u32, u32, s16);
+	template void Load<CpuInstruction::LBU>(u32, u32, s16);
+	template void Load<CpuInstruction::LH>(u32, u32, s16);
+	template void Load<CpuInstruction::LHU>(u32, u32, s16);
+	template void Load<CpuInstruction::LW>(u32, u32, s16);
+	template void Load<CpuInstruction::LWU>(u32, u32, s16);
+	template void Load<CpuInstruction::LWL>(u32, u32, s16);
+	template void Load<CpuInstruction::LWR>(u32, u32, s16);
+	template void Load<CpuInstruction::LD>(u32, u32, s16);
+	template void Load<CpuInstruction::LDL>(u32, u32, s16);
+	template void Load<CpuInstruction::LDR>(u32, u32, s16);
+	template void Load<CpuInstruction::LL>(u32, u32, s16);
+	template void Load<CpuInstruction::LLD>(u32, u32, s16);
 
-	template void CPUStore<CpuInstruction::SB>(u32);
-	template void CPUStore<CpuInstruction::SH>(u32);
-	template void CPUStore<CpuInstruction::SW>(u32);
-	template void CPUStore<CpuInstruction::SWL>(u32);
-	template void CPUStore<CpuInstruction::SWR>(u32);
-	template void CPUStore<CpuInstruction::SC>(u32);
-	template void CPUStore<CpuInstruction::SCD>(u32);
-	template void CPUStore<CpuInstruction::SD>(u32);
-	template void CPUStore<CpuInstruction::SDL>(u32);
-	template void CPUStore<CpuInstruction::SDR>(u32);
+	template void Store<CpuInstruction::SB>(u32, u32, s16);
+	template void Store<CpuInstruction::SH>(u32, u32, s16);
+	template void Store<CpuInstruction::SW>(u32, u32, s16);
+	template void Store<CpuInstruction::SWL>(u32, u32, s16);
+	template void Store<CpuInstruction::SWR>(u32, u32, s16);
+	template void Store<CpuInstruction::SC>(u32, u32, s16);
+	template void Store<CpuInstruction::SCD>(u32, u32, s16);
+	template void Store<CpuInstruction::SD>(u32, u32, s16);
+	template void Store<CpuInstruction::SDL>(u32, u32, s16);
+	template void Store<CpuInstruction::SDR>(u32, u32, s16);
 
-	template void ALUImmediate<CpuInstruction::ADDI>(u32);
-	template void ALUImmediate<CpuInstruction::ADDIU>(u32);
-	template void ALUImmediate<CpuInstruction::SLTI>(u32);
-	template void ALUImmediate<CpuInstruction::SLTIU>(u32);
-	template void ALUImmediate<CpuInstruction::ANDI>(u32);
-	template void ALUImmediate<CpuInstruction::ORI>(u32);
-	template void ALUImmediate<CpuInstruction::XORI>(u32);
-	template void ALUImmediate<CpuInstruction::LUI>(u32);
-	template void ALUImmediate<CpuInstruction::DADDI>(u32);
-	template void ALUImmediate<CpuInstruction::DADDIU>(u32);
+	template void AluImmediate<CpuInstruction::ADDI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::ADDIU>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::SLTI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::SLTIU>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::ANDI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::ORI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::XORI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::LUI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::DADDI>(u32, u32, s16);
+	template void AluImmediate<CpuInstruction::DADDIU>(u32, u32, s16);
 
-	template void ALUThreeOperand<CpuInstruction::ADD>(u32);
-	template void ALUThreeOperand<CpuInstruction::ADDU>(u32);
-	template void ALUThreeOperand<CpuInstruction::SUB>(u32);
-	template void ALUThreeOperand<CpuInstruction::SUBU>(u32);
-	template void ALUThreeOperand<CpuInstruction::SLT>(u32);
-	template void ALUThreeOperand<CpuInstruction::SLTU>(u32);
-	template void ALUThreeOperand<CpuInstruction::AND>(u32);
-	template void ALUThreeOperand<CpuInstruction::OR>(u32);
-	template void ALUThreeOperand<CpuInstruction::XOR>(u32);
-	template void ALUThreeOperand<CpuInstruction::NOR>(u32);
-	template void ALUThreeOperand<CpuInstruction::DADD>(u32);
-	template void ALUThreeOperand<CpuInstruction::DADDU>(u32);
-	template void ALUThreeOperand<CpuInstruction::DSUB>(u32);
-	template void ALUThreeOperand<CpuInstruction::DSUBU>(u32);
+	template void AluThreeOperand<CpuInstruction::ADD>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::ADDU>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::SUB>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::SUBU>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::SLT>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::SLTU>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::AND>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::OR>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::XOR>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::NOR>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::DADD>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::DADDU>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::DSUB>(u32, u32, u32);
+	template void AluThreeOperand<CpuInstruction::DSUBU>(u32, u32, u32);
 
-	template void ALUShift<CpuInstruction::SLL>(u32);
-	template void ALUShift<CpuInstruction::SRL>(u32);
-	template void ALUShift<CpuInstruction::SRA>(u32);
-	template void ALUShift<CpuInstruction::SLLV>(u32);
-	template void ALUShift<CpuInstruction::SRLV>(u32);
-	template void ALUShift<CpuInstruction::SRAV>(u32);
-	template void ALUShift<CpuInstruction::DSLL>(u32);
-	template void ALUShift<CpuInstruction::DSRL>(u32);
-	template void ALUShift<CpuInstruction::DSRA>(u32);
-	template void ALUShift<CpuInstruction::DSLLV>(u32);
-	template void ALUShift<CpuInstruction::DSRLV>(u32);
-	template void ALUShift<CpuInstruction::DSRAV>(u32);
-	template void ALUShift<CpuInstruction::DSLL32>(u32);
-	template void ALUShift<CpuInstruction::DSRL32>(u32);
-	template void ALUShift<CpuInstruction::DSRA32>(u32);
+	template void Shift<CpuInstruction::SLL>(u32, u32, u32);
+	template void Shift<CpuInstruction::SRL>(u32, u32, u32);
+	template void Shift<CpuInstruction::SRA>(u32, u32, u32);
+	template void Shift<CpuInstruction::DSLL>(u32, u32, u32);
+	template void Shift<CpuInstruction::DSRL>(u32, u32, u32);
+	template void Shift<CpuInstruction::DSRA>(u32, u32, u32);
+	template void Shift<CpuInstruction::DSLL32>(u32, u32, u32);
+	template void Shift<CpuInstruction::DSRL32>(u32, u32, u32);
+	template void Shift<CpuInstruction::DSRA32>(u32, u32, u32);
 
-	template void ALUMulDiv<CpuInstruction::MULT>(u32);
-	template void ALUMulDiv<CpuInstruction::MULTU>(u32);
-	template void ALUMulDiv<CpuInstruction::DIV>(u32);
-	template void ALUMulDiv<CpuInstruction::DIVU>(u32);
-	template void ALUMulDiv<CpuInstruction::DMULT>(u32);
-	template void ALUMulDiv<CpuInstruction::DMULTU>(u32);
-	template void ALUMulDiv<CpuInstruction::DDIV>(u32);
-	template void ALUMulDiv<CpuInstruction::DDIVU>(u32);
+	template void ShiftVariable<CpuInstruction::SLLV>(u32, u32, u32);
+	template void ShiftVariable<CpuInstruction::SRLV>(u32, u32, u32);
+	template void ShiftVariable<CpuInstruction::SRAV>(u32, u32, u32);
+	template void ShiftVariable<CpuInstruction::DSLLV>(u32, u32, u32);
+	template void ShiftVariable<CpuInstruction::DSRLV>(u32, u32, u32);
+	template void ShiftVariable<CpuInstruction::DSRAV>(u32, u32, u32);
 
-	template void Jump<CpuInstruction::J>(u32);
-	template void Jump<CpuInstruction::JAL>(u32);
-	template void Jump<CpuInstruction::JR>(u32);
-	template void Jump<CpuInstruction::JALR>(u32);
+	template void MulDiv<CpuInstruction::MULT>(u32, u32);
+	template void MulDiv<CpuInstruction::MULTU>(u32, u32);
+	template void MulDiv<CpuInstruction::DIV>(u32, u32);
+	template void MulDiv<CpuInstruction::DIVU>(u32, u32);
+	template void MulDiv<CpuInstruction::DMULT>(u32, u32);
+	template void MulDiv<CpuInstruction::DMULTU>(u32, u32);
+	template void MulDiv<CpuInstruction::DDIV>(u32, u32);
+	template void MulDiv<CpuInstruction::DDIVU>(u32, u32);
 
-	template void CPUBranch<CpuInstruction::BEQ>(u32);
-	template void CPUBranch<CpuInstruction::BNE>(u32);
-	template void CPUBranch<CpuInstruction::BLEZ>(u32);
-	template void CPUBranch<CpuInstruction::BGTZ>(u32);
-	template void CPUBranch<CpuInstruction::BLTZ>(u32);
-	template void CPUBranch<CpuInstruction::BGEZ>(u32);
-	template void CPUBranch<CpuInstruction::BLTZAL>(u32);
-	template void CPUBranch<CpuInstruction::BGEZAL>(u32);
-	template void CPUBranch<CpuInstruction::BEQL>(u32);
-	template void CPUBranch<CpuInstruction::BNEL>(u32);
-	template void CPUBranch<CpuInstruction::BLEZL>(u32);
-	template void CPUBranch<CpuInstruction::BGTZL>(u32);
-	template void CPUBranch<CpuInstruction::BLTZL>(u32);
-	template void CPUBranch<CpuInstruction::BGEZL>(u32);
-	template void CPUBranch<CpuInstruction::BLTZALL>(u32);
-	template void CPUBranch<CpuInstruction::BGEZALL>(u32);
+	template void Branch<CpuInstruction::BLEZ>(u32, s16);
+	template void Branch<CpuInstruction::BGTZ>(u32, s16);
+	template void Branch<CpuInstruction::BLTZ>(u32, s16);
+	template void Branch<CpuInstruction::BGEZ>(u32, s16);
+	template void Branch<CpuInstruction::BLTZAL>(u32, s16);
+	template void Branch<CpuInstruction::BGEZAL>(u32, s16);
+	template void Branch<CpuInstruction::BLEZL>(u32, s16);
+	template void Branch<CpuInstruction::BGTZL>(u32, s16);
+	template void Branch<CpuInstruction::BLTZL>(u32, s16);
+	template void Branch<CpuInstruction::BGEZL>(u32, s16);
+	template void Branch<CpuInstruction::BLTZALL>(u32, s16);
+	template void Branch<CpuInstruction::BGEZALL>(u32, s16);
 
-	template void TrapThreeOperand<CpuInstruction::TGE>(u32);
-	template void TrapThreeOperand<CpuInstruction::TGEU>(u32);
-	template void TrapThreeOperand<CpuInstruction::TLT>(u32);
-	template void TrapThreeOperand<CpuInstruction::TLTU>(u32);
-	template void TrapThreeOperand<CpuInstruction::TEQ>(u32);
-	template void TrapThreeOperand<CpuInstruction::TNE>(u32);
+	template void Branch<CpuInstruction::BEQ>(u32, u32, s16);
+	template void Branch<CpuInstruction::BNE>(u32, u32, s16);
+	template void Branch<CpuInstruction::BEQL>(u32, u32, s16);
+	template void Branch<CpuInstruction::BNEL>(u32, u32, s16);
 
-	template void TrapImmediate<CpuInstruction::TGEI>(u32);
-	template void TrapImmediate<CpuInstruction::TGEIU>(u32);
-	template void TrapImmediate<CpuInstruction::TLTI>(u32);
-	template void TrapImmediate<CpuInstruction::TLTIU>(u32);
-	template void TrapImmediate<CpuInstruction::TEQI>(u32);
-	template void TrapImmediate<CpuInstruction::TNEI>(u32);
+	template void TrapThreeOperand<CpuInstruction::TGE>(u32, u32);
+	template void TrapThreeOperand<CpuInstruction::TGEU>(u32, u32);
+	template void TrapThreeOperand<CpuInstruction::TLT>(u32, u32);
+	template void TrapThreeOperand<CpuInstruction::TLTU>(u32, u32);
+	template void TrapThreeOperand<CpuInstruction::TEQ>(u32, u32);
+	template void TrapThreeOperand<CpuInstruction::TNE>(u32, u32);
 
-	template void CPUMove<CpuInstruction::MFLO>(u32);
-	template void CPUMove<CpuInstruction::MFHI>(u32);
-	template void CPUMove<CpuInstruction::MTLO>(u32);
-	template void CPUMove<CpuInstruction::MTHI>(u32);
+	template void TrapImmediate<CpuInstruction::TGEI>(u32, s16);
+	template void TrapImmediate<CpuInstruction::TGEIU>(u32, s16);
+	template void TrapImmediate<CpuInstruction::TLTI>(u32, s16);
+	template void TrapImmediate<CpuInstruction::TLTIU>(u32, s16);
+	template void TrapImmediate<CpuInstruction::TEQI>(u32, s16);
+	template void TrapImmediate<CpuInstruction::TNEI>(u32, s16);
 }
