@@ -39,7 +39,7 @@
     <ClCompile Include="src\Input.ixx" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\memory\PIF.cpp" />
-    <ClCompile Include="src\debug\DebugOptions.ixx" />
+    <ClCompile Include="src\BuildOptions.ixx" />
     <ClCompile Include="src\interface\AI.ixx" />
     <ClCompile Include="src\interface\AI.cpp" />
     <ClCompile Include="src\rsp\InstructionDecode.cpp" />

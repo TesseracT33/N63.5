@@ -2,7 +2,7 @@ module RSP:Interface;
 
 import :Operation;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import MI;
 import RDRAM;

@@ -6,7 +6,7 @@ import :CPU;
 import :Exceptions;
 import :MMU;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import RDRAM;
 

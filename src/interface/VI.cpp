@@ -1,6 +1,6 @@
 module VI;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import MI;
 import N64;

@@ -3,7 +3,7 @@ module RSP:VectorUnit;
 import :Operation;
 import :ScalarUnit;
 
-import DebugOptions;
+import BuildOptions;
 
 #define vco ctrl_reg[0]
 #define vcc ctrl_reg[1]

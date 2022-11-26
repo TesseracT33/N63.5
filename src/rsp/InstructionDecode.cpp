@@ -3,7 +3,7 @@ module RSP:Operation;
 import :ScalarUnit;
 import :VectorUnit;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import Util;
 

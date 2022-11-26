@@ -1,6 +1,6 @@
 export module RSP:ScalarUnit;
 
-import DebugOptions;
+import BuildOptions;
 import Util;
 
 import <array>;

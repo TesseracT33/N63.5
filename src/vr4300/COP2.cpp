@@ -5,7 +5,7 @@ import :CPU;
 import :Exceptions;
 import :Operation;
 
-import DebugOptions;
+import BuildOptions;
 
 namespace VR4300
 {

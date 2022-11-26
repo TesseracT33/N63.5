@@ -1,7 +1,7 @@
 module PI;
 
 import Cart;
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import MI;
 import RDRAM;

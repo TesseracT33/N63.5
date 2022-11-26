@@ -6,7 +6,7 @@ import :Exceptions;
 import :Operation;
 import :MMU;
 
-import DebugOptions;
+import BuildOptions;
 import Memory;
 import Scheduler;
 

@@ -1,6 +1,6 @@
 module RDP;
 
-import DebugOptions;
+import BuildOptions;
 import FakeRDP;
 import Logging;
 import MI;

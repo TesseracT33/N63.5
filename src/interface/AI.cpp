@@ -1,6 +1,6 @@
 module AI;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import MI;
 import Memory;

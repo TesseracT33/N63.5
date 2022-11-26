@@ -5,7 +5,7 @@ import :Exceptions;
 import :MMU;
 import :Operation;
 
-import DebugOptions;
+import BuildOptions;
 import Memory;
 
 namespace VR4300

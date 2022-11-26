@@ -6,7 +6,7 @@ import :Exceptions;
 import :MMU;
 import :Operation;
 
-import DebugOptions;
+import BuildOptions;
 
 /* For invoking a parameter-free lambda template */
 #define INVOKE(LAMBDA, ...) LAMBDA.template operator() <__VA_ARGS__> ()

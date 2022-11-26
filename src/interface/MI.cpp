@@ -1,6 +1,6 @@
 module MI;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import VR4300;
 

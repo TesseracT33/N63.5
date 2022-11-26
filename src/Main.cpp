@@ -1,7 +1,7 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 import N64;
 import RDP;
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 		std::cerr << SDL_GetError();
 		exit(1);
 	}
-	if constexpr (logging_is_enabled) {
+	if constexpr (enable_logging) {
 		SetLogPath("F:\\n64.log");
 	}
 	if (!N64::PowerOn(rom_path, ipl_path, RDP::Implementation::None)) {

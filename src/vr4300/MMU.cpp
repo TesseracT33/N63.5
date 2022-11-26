@@ -5,7 +5,7 @@ import :COP0;
 import :Exceptions;
 import :Operation;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 
 namespace VR4300

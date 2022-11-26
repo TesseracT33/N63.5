@@ -5,7 +5,7 @@ import :CPU;
 import :MMU;
 import :Operation;
 
-import DebugOptions;
+import BuildOptions;
 import Logging;
 
 namespace VR4300
