@@ -42,6 +42,13 @@ namespace VR4300
 	}
 
 
+	u32 GetPhysicalPC()
+	{
+		bool cacheable_area;
+		return active_virtual_to_physical_fun_read(pc, cacheable_area);
+	}
+
+
 	void InitializeMMU()
 	{
 		for (TlbEntry& entry : tlb_entries) {

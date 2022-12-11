@@ -58,6 +58,7 @@ namespace VR4300
 	void WriteVirtual(u64 virtual_address, s64 data);
 
 	u32 FetchInstruction(u64 virtual_address);
+	u32 GetPhysicalPC();
 	void InitializeMMU();
 	void SetActiveVirtualToPhysicalFunctions();
 

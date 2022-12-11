@@ -8,6 +8,7 @@ import :CPU;
 import :Exceptions;
 import :MMU;
 import :Operation;
+import :Recompiler;
 
 import BuildOptions;
 import Logging;
@@ -364,6 +365,16 @@ namespace VR4300
 	template<CpuInstruction instr>
 	void ExecuteCpuInstruction()
 	{
+		static constexpr bool recompiler_breakup_block = [] {
+			using enum CpuInstruction;
+			return OneOf(instr, BEQ, BNE, BLEZ, BGTZ, BLTZ, BGEZ, BLTZAL, BGEZAL, BEQL, BNEL, BLEZL,
+				BGTZL, BLTZL, BGEZL, BLTZALL, BGEZALL, TGE, TGEU, TLT, TLTU, TEQ, TNE, TGEI, TGEIU,
+				TLTI, TLTIU, TEQI, TNEI, BREAK, SYSCALL);
+		}();
+		if constexpr (recompile_cpu && recompiler_breakup_block) {
+			Recompiler::BreakupBlock();
+		}
+
 		if constexpr (instr == CpuInstruction::J) {
 			LOG_INSTR(std::format("J ${:X}", pc & 0xFFFF'FFFF'F000'0000 | IMM26 << 2));
 			J(IMM26);

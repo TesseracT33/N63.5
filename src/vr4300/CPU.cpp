@@ -4,7 +4,9 @@ import :COP0;
 import :Exceptions;
 import :MMU;
 import :Operation;
+import :Recompiler;
 
+import BuildOptions;
 import Memory;
 
 namespace VR4300
@@ -821,12 +823,16 @@ namespace VR4300
 	{
 		using enum CpuInstruction;
 
+		if constexpr (recompile_cpu) {
+			Recompiler::BreakupBlock();
+		}
+
 		bool branch_cond = [&] {
 			if constexpr (OneOf(instr, BLEZ, BLEZL))          return gpr[rs] <= 0;
-			else if constexpr (OneOf(instr, BGTZ, BGTZL))     return gpr[rs] > 0;
-			else if constexpr (OneOf(instr, BLTZ, BLTZL))     return gpr[rs] < 0;
+			else if constexpr (OneOf(instr, BGTZ, BGTZL))     return gpr[rs] >  0;
+			else if constexpr (OneOf(instr, BLTZ, BLTZL))     return gpr[rs] <  0;
 			else if constexpr (OneOf(instr, BGEZ, BGEZL))     return gpr[rs] >= 0;
-			else if constexpr (OneOf(instr, BLTZAL, BLTZALL)) return gpr[rs] < 0;
+			else if constexpr (OneOf(instr, BLTZAL, BLTZALL)) return gpr[rs] <  0;
 			else if constexpr (OneOf(instr, BGEZAL, BGEZALL)) return gpr[rs] >= 0;
 			else static_assert(AlwaysFalse<instr>);
 		}();

@@ -135,7 +135,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL_SDK)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL2_SDK)\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
@@ -161,7 +161,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL_SDK)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL2_SDK)\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
@@ -291,6 +291,8 @@
     <ClCompile Include="src\vr4300\MMU.ixx" />
     <ClCompile Include="src\vr4300\Operation.cpp" />
     <ClCompile Include="src\vr4300\Operation.ixx" />
+    <ClCompile Include="src\vr4300\Recompiler.cpp" />
+    <ClCompile Include="src\vr4300\Recompiler.ixx" />
     <ClCompile Include="src\vr4300\VR4300.ixx" />
   </ItemGroup>
   <ItemGroup>

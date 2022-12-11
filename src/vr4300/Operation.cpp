@@ -5,6 +5,7 @@ import :COP1;
 import :CPU;
 import :Exceptions;
 import :MMU;
+import :Recompiler;
 
 import BuildOptions;
 import Logging;
@@ -22,6 +23,9 @@ namespace VR4300
 	{
 		p_cycle_counter += cycles;
 		cop0.count += cycles;
+		if constexpr (recompile_cpu) {
+			Recompiler::current_block_cycle_counter += cycles;
+		}
 	}
 
 
@@ -117,6 +121,10 @@ namespace VR4300
 		else {
 			SignalException<Exception::ColdReset>();
 			HandleException();
+		}
+
+		if constexpr (recompile_cpu) {
+			Recompiler::Initialize();
 		}
 	}
 

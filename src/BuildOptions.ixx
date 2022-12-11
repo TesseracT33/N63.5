@@ -20,4 +20,7 @@ export
 	constexpr bool log_rsp_instructions = enable_logging && false;
 
 	constexpr bool skip_boot_rom = true;
+
+	constexpr bool interpret_cpu = false;
+	constexpr bool recompile_cpu = !interpret_cpu;
 }

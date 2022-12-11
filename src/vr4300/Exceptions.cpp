@@ -4,6 +4,7 @@ import :COP0;
 import :CPU;
 import :MMU;
 import :Operation;
+import :Recompiler;
 
 import BuildOptions;
 import Logging;
@@ -179,6 +180,9 @@ namespace VR4300
 		   instead have to take it as a function argument. Then, several run-time branches would have to be taken over this argument. */
 		exception_vector = GetExceptionVector<exception>();
 		exception_handler = GetExceptionHandler<exception, mem_op>();
+		if constexpr (recompile_cpu) {
+
+		}
 	}
 
 
