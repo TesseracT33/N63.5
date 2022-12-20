@@ -39,7 +39,7 @@ export void LogCpuRead(u32 phys_addr, std::integral auto value)
 }
 
 
-export void LogCpuInstruction(u32 instr_phys_addr, const std::string& instr_output)
+export void LogCpuInstruction(u32 instr_phys_addr, const auto& instr_output)
 {
 	if (!log_enabled) return;
 	Log(std::format("CPU; ${:08X}  {}", instr_phys_addr, instr_output));
@@ -88,7 +88,7 @@ export void LogRspRead(u32 dmem_addr, std::integral auto value)
 }
 
 
-export void LogRspInstruction(u32 pc, const std::string& instr_output)
+export void LogRspInstruction(u32 pc, const auto& instr_output)
 {
 	if (!log_enabled) return;
 	Log(std::format("RSP; ${:03X}  {}", pc, instr_output));
@@ -102,7 +102,7 @@ export void LogRspWrite(u32 dmem_addr, std::integral auto value)
 }
 
 
-export void SetLogPath(const std::string& log_path)
+export void SetLogPath(const auto& log_path)
 {
 	if (log_.is_open()) {
 		log_.close();

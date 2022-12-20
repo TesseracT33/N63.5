@@ -1,6 +1,6 @@
 export module FakeRDP;
 
-import Input;
+import Events;
 import RDPImplementation;
 import VI;
 import Util;
@@ -129,7 +129,7 @@ export class FakeRDP : public RDPImplementation {
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, nullptr, nullptr);
 		SDL_RenderPresent(renderer);
-		Input::Poll();
+		Events::Poll();
 	}
 
 	void SetControl(u32 control) {

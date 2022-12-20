@@ -46,7 +46,7 @@ namespace VR4300
 
 	u64 Cop0Registers::Get(size_t reg_index) const
 	{
-		auto StructToInt = [](auto struct_) {
+		auto StructToInt = [](auto struct_) requires(sizeof(struct_) == 4 || sizeof(struct_) == 8) {
 			     if constexpr (sizeof(struct_) == 4) return std::bit_cast<u32>(struct_);
 			else if constexpr (sizeof(struct_) == 8) return std::bit_cast<u64>(struct_);
 			else static_assert(AlwaysFalse<sizeof(struct_)>, "Struct must be either 4 or 8 bytes.");
@@ -91,7 +91,7 @@ namespace VR4300
 
 
 	template<bool raw>
-	void Cop0Registers::Set(size_t reg_index, auto value)
+	void Cop0Registers::Set(size_t reg_index, std::integral auto value)
 	{
 		auto IntToStruct = [](auto& struct_, auto value) {
 			/* The operation of DMFC0 instruction on a 32-bit register of the CP0 is undefined.

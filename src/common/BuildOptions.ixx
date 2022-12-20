@@ -1,5 +1,7 @@
 export module BuildOptions;
 
+import <string_view>;
+
 export
 {
 	constexpr bool enable_logging = false;
@@ -18,6 +20,8 @@ export
 	constexpr bool log_io_rdp           = enable_logging && (log_io_all || true);
 	constexpr bool log_io_rsp           = enable_logging && (log_io_all || true);
 	constexpr bool log_rsp_instructions = enable_logging && false;
+
+	constexpr std::string_view log_path = "F:\\n64.log";
 
 	constexpr bool skip_boot_rom = true;
 

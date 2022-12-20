@@ -5,6 +5,7 @@ import Util;
 import <array>;
 import <bit>;
 import <cassert>;
+import <concepts>;
 import <cstring>;
 import <random>;
 
@@ -219,7 +220,7 @@ namespace VR4300
 		u32 cop0_unused_31; /* (31) */
 
 		u64 Get(size_t reg_index) const;
-		template<bool raw = false> void Set(size_t reg_index, auto value);
+		template<bool raw = false> void Set(size_t reg_index, std::integral auto value);
 		void SetRaw(size_t reg_index, auto value) { Set<true>(reg_index, value); }
 		void OnWriteToCause();
 		void OnWriteToCompare();

@@ -2,7 +2,7 @@ module N64;
 
 import AI;
 import Cart;
-import Input;
+import Events;
 import MI;
 import PI;
 import PIF;

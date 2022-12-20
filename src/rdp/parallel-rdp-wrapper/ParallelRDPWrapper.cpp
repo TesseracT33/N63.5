@@ -5,7 +5,7 @@
 
 module ParallelRDPWrapper;
 
-import Input;
+import Events;
 import RDRAM;
 import UserMessage;
 import VI;
@@ -213,5 +213,5 @@ u32 ParallelRDPWrapper::SDLWSIPlatform::get_surface_height()
 
 void ParallelRDPWrapper::SDLWSIPlatform::poll_input()
 {
-	Input::Poll();
+	Events::Poll();
 }

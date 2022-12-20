@@ -1,8 +1,8 @@
-export module Input;
+export module Events;
 
 import <SDL.h>;
 
-namespace Input
+namespace Events
 {
 	export void Poll();
 
