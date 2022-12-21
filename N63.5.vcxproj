@@ -175,7 +175,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SDL_SDK)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SDL2_SDK)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -274,26 +274,26 @@
     <ClCompile Include="src\common\Scheduler.cpp" />
     <ClCompile Include="src\common\Scheduler.ixx" />
     <ClCompile Include="src\frontend\UserMessage.ixx" />
-    <ClCompile Include="src\cpu\Cache.cpp" />
-    <ClCompile Include="src\cpu\Cache.ixx" />
-    <ClCompile Include="src\cpu\COP0.cpp" />
-    <ClCompile Include="src\cpu\COP0.ixx" />
-    <ClCompile Include="src\cpu\COP1.cpp" />
-    <ClCompile Include="src\cpu\COP1.ixx" />
-    <ClCompile Include="src\cpu\COP2.cpp" />
-    <ClCompile Include="src\cpu\COP2.ixx" />
-    <ClCompile Include="src\cpu\CPU.cpp" />
-    <ClCompile Include="src\cpu\CPU.ixx" />
-    <ClCompile Include="src\cpu\Exceptions.cpp" />
-    <ClCompile Include="src\cpu\Exceptions.ixx" />
-    <ClCompile Include="src\cpu\InstructionDecode.cpp" />
-    <ClCompile Include="src\cpu\MMU.cpp" />
-    <ClCompile Include="src\cpu\MMU.ixx" />
-    <ClCompile Include="src\cpu\Operation.cpp" />
-    <ClCompile Include="src\cpu\Operation.ixx" />
-    <ClCompile Include="src\cpu\Recompiler.cpp" />
-    <ClCompile Include="src\cpu\Recompiler.ixx" />
-    <ClCompile Include="src\cpu\VR4300.ixx" />
+    <ClCompile Include="src\vr4300\Cache.cpp" />
+    <ClCompile Include="src\vr4300\Cache.ixx" />
+    <ClCompile Include="src\vr4300\COP0.cpp" />
+    <ClCompile Include="src\vr4300\COP0.ixx" />
+    <ClCompile Include="src\vr4300\COP1.cpp" />
+    <ClCompile Include="src\vr4300\COP1.ixx" />
+    <ClCompile Include="src\vr4300\COP2.cpp" />
+    <ClCompile Include="src\vr4300\COP2.ixx" />
+    <ClCompile Include="src\vr4300\CPU.cpp" />
+    <ClCompile Include="src\vr4300\CPU.ixx" />
+    <ClCompile Include="src\vr4300\Exceptions.cpp" />
+    <ClCompile Include="src\vr4300\Exceptions.ixx" />
+    <ClCompile Include="src\vr4300\InstructionDecode.cpp" />
+    <ClCompile Include="src\vr4300\MMU.cpp" />
+    <ClCompile Include="src\vr4300\MMU.ixx" />
+    <ClCompile Include="src\vr4300\Operation.cpp" />
+    <ClCompile Include="src\vr4300\Operation.ixx" />
+    <ClCompile Include="src\vr4300\Recompiler.cpp" />
+    <ClCompile Include="src\vr4300\Recompiler.ixx" />
+    <ClCompile Include="src\vr4300\VR4300.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\command_ring.hpp" />
