@@ -53,6 +53,67 @@ namespace PIF
 	}
 
 
+	template<bool press>
+	void OnButtonAction(N64::Control control)
+	{
+		auto OnShoulderOrStartChanged = [] {
+			if constexpr (press) {
+				if (joypad_status.l && joypad_status.r && joypad_status.s) {
+					joypad_status.rst = 1;
+					joypad_status.s = joypad_status.x_axis = joypad_status.y_axis = 0;
+				}
+			}
+			else {
+				joypad_status.rst = 0;
+			}
+		};
+		switch (control) {
+		case N64::Control::A: joypad_status.a = press; break;
+		case N64::Control::B: joypad_status.b = press; break;
+		case N64::Control::CUp: joypad_status.cU = press; break;
+		case N64::Control::CDown: joypad_status.cD = press; break;
+		case N64::Control::CLeft: joypad_status.cL = press; break;
+		case N64::Control::CRight: joypad_status.cR = press; break;
+		case N64::Control::DUp: joypad_status.dU = press; break;
+		case N64::Control::DDown: joypad_status.dD = press; break;
+		case N64::Control::DLeft: joypad_status.dL = press; break;
+		case N64::Control::DRight: joypad_status.dR = press; break;
+		case N64::Control::ShoulderL: joypad_status.l = press; OnShoulderOrStartChanged(); break;
+		case N64::Control::ShoulderR: joypad_status.r = press; OnShoulderOrStartChanged(); break;
+		case N64::Control::Start: joypad_status.s = press; OnShoulderOrStartChanged(); break;
+		case N64::Control::Z: joypad_status.z = press; break;
+		default: std::unreachable();
+		}
+	}
+
+
+	void OnButtonDown(N64::Control control)
+	{
+		OnButtonAction<true>(control);
+	}
+
+
+	void OnButtonUp(N64::Control control)
+	{
+		OnButtonAction<false>(control);
+	}
+
+
+	void OnJoystickMovement(N64::Control control, s16 value)
+	{
+		u8 adjusted_value = u8(value >> 8);
+		if (control == N64::Control::JX) {
+			joypad_status.x_axis = adjusted_value;
+		}
+		else if (control == N64::Control::JY) {
+			joypad_status.y_axis = adjusted_value;
+		}
+		else {
+			std::unreachable();
+		}
+	}
+
+
 	template<std::signed_integral Int>
 	Int ReadMemory(u32 addr)
 	{ /* CPU precondition: addr is aligned */
@@ -81,7 +142,7 @@ namespace PIF
 			break;
 
 		case 0x01: /* Controller State */
-			std::memcpy(&memory[ram_start], &joypad_status, 4);
+			std::memcpy(&memory[ram_start], &joypad_status, sizeof(joypad_status));
 			break;
 
 		case 0x02: /* Read Controller Accessory */

@@ -2,6 +2,7 @@
 #include "SDL.h"
 
 import BuildOptions;
+import Events;
 import Logging;
 import N64;
 import RDP;
@@ -39,6 +40,8 @@ int main(int argc, char* argv[])
 		std::cerr << "An error occured when starting the emulator.\n";
 		exit(1);
 	}
+
+	Events::SetDefaultInputBindings();
 
 	N64::Run();
 

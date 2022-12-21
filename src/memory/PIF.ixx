@@ -1,5 +1,6 @@
 export module PIF;
 
+import N64;
 import Util;
 
 import <algorithm>;
@@ -9,6 +10,7 @@ import <concepts>;
 import <cstring>;
 import <optional>;
 import <string>;
+import <utility>;
 
 namespace PIF
 {
@@ -18,17 +20,17 @@ namespace PIF
 		size_t GetNumberOfBytesUntilRamStart(u32 offset);
 		u8* GetPointerToMemory(u32 address);
 		bool LoadIPL12(const std::string& path);
-
-		template<std::signed_integral Int>
-		Int ReadMemory(u32 addr);
-
-		template<size_t access_size>
-		void WriteMemory(u32 addr, s64 data);
+		void OnButtonDown(N64::Control control);
+		void OnButtonUp(N64::Control control);
+		void OnJoystickMovement(N64::Control control, s16 value);
+		template<std::signed_integral Int> Int ReadMemory(u32 addr);
+		template<size_t access_size> void WriteMemory(u32 addr, s64 data);
 	}
 
 	void ChallengeProtection();
 	void ChecksumVerification();
 	void ClearRam();
+	template<bool press> void OnButtonAction(N64::Control control);
 	void RomLockout();
 	void RunJoybusProtocol();
 	void TerminateBootProcess();
@@ -39,7 +41,7 @@ namespace PIF
 	constexpr size_t ram_start = rom_size;
 	constexpr size_t memory_size = ram_size + rom_size;
 
-	struct JoypadStatus { /* TODO: wrong endianess if ram kept in BE */
+	struct JoypadStatus {
 		u32 a : 1;
 		u32 b : 1;
 		u32 z : 1;
@@ -50,8 +52,8 @@ namespace PIF
 		u32 dR : 1;
 		u32 rst : 1;
 		u32 : 1;
-		u32 lt : 1;
-		u32 rt : 1;
+		u32 l : 1;
+		u32 r : 1;
 		u32 cU : 1;
 		u32 cD : 1;
 		u32 cL : 1;
