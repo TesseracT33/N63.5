@@ -35,7 +35,7 @@ bool ParallelRDPWrapper::Initialize()
 	wsi.set_present_mode(Vulkan::PresentMode::UnlockedMaybeTear);
 	Vulkan::Context::SystemHandles handles{};
 	if (!wsi.init_simple(1, handles)) {
-		UserMessage::Show("Failed to init wsi.", UserMessage::Type::Error);
+		UserMessage::ShowError("Failed to init wsi.");
 		return false;
 	}
 	wsi_device = &wsi.get_device();
@@ -49,7 +49,7 @@ bool ParallelRDPWrapper::Initialize()
 	cmd_processor = std::make_unique<RDP::CommandProcessor>(
 		*wsi_device, rdram_ptr, rdram_offset, rdram_size, hidden_rdram_size, flags);
 	if (!cmd_processor->device_is_supported()) {
-		UserMessage::Show("Vulkan device not supported.", UserMessage::Type::Error);
+		UserMessage::ShowError("Vulkan device not supported.");
 		return false;
 	}
 
@@ -160,7 +160,7 @@ VkSurfaceKHR ParallelRDPWrapper::SDLWSIPlatform::create_surface(VkInstance insta
 {
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	if (!SDL_Vulkan_CreateSurface(parallel_rdp_wrapper.sdl_window, instance, &vk_surface)) {
-		UserMessage::Show(std::format("Failed to create Vulkan surface: {}", SDL_GetError()), UserMessage::Type::Error);
+		UserMessage::ShowError(std::format("Failed to create Vulkan surface: {}", SDL_GetError()));
 		return VK_NULL_HANDLE;
 	}
 	return vk_surface;
@@ -187,12 +187,12 @@ std::vector<const char*> ParallelRDPWrapper::SDLWSIPlatform::get_instance_extens
 {
 	uint num_extensions;
 	if (!SDL_Vulkan_GetInstanceExtensions(parallel_rdp_wrapper.sdl_window, &num_extensions, nullptr)) {
-		UserMessage::Show("Failed to get Vulkan instance extensions.", UserMessage::Type::Error);
+		UserMessage::ShowError("Failed to get Vulkan instance extensions.");
 		return {};
 	}
 	std::vector<const char*> extensions(num_extensions);
 	if (!SDL_Vulkan_GetInstanceExtensions(parallel_rdp_wrapper.sdl_window, &num_extensions, extensions.data())) {
-		UserMessage::Show("Failed to get Vulkan instance extensions.", UserMessage::Type::Error);
+		UserMessage::ShowError("Failed to get Vulkan instance extensions.");
 		return {};
 	}
 	return extensions;

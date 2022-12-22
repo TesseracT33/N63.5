@@ -50,7 +50,9 @@ namespace N64
 		if (!sdl_window) {
 			return false;
 		}
-		UserMessage::SetWindow(sdl_window);
+		if (!UserMessage::Initialize(sdl_window)) {
+			std::cerr << "Failed to initialize user message system.\n";
+		}
 
 		Scheduler::Initialize(); /* init last */
 
