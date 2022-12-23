@@ -1,7 +1,9 @@
+module;
+
 #include <rdp_device.hpp>
-#include <wsi.hpp>
 #include <volk.h>
 #include <vulkan/vulkan.h>
+#include <wsi.hpp>
 
 export module ParallelRDPWrapper;
 
@@ -18,6 +20,7 @@ import <format>;
 import <iostream>;
 import <memory>;
 import <optional>;
+import <vector>;
 
 /* https://github.com/Themaister/parallel-rdp/blob/master/integration_example.cpp */
 
@@ -29,6 +32,14 @@ public:
 	void OnFullSync() override;
 	void TearDown() override;
 	void UpdateScreen() override;
+
+	VkCommandBuffer GetVkCommandBuffer();
+	VkDevice GetVkDevice();
+	VkFormat GetVkFormat();
+	u32 GetVkGraphicsQueueFamily();
+	VkInstance GetVkInstance();
+	VkPhysicalDevice GetVkPhysicalDevice();
+	VkQueue GetVkQueue();
 
 private:
 	void ReloadViRegisters();
@@ -157,7 +168,6 @@ private:
 		0x0003003e,0x00000009,0x00000014,0x000100fd,
 		0x00010038
 	};
-
 
 	static constexpr RDP::ScanoutOptions scanout_opts = [] {
 		RDP::ScanoutOptions opts;

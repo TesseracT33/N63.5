@@ -18,10 +18,25 @@ import VR4300;
 
 namespace N64
 {
+	bool LoadBios(std::string const& path)
+	{
+		return true;
+	}
+
+	bool LoadState()
+	{
+		return true;
+	}
+
+	void Pause()
+	{
+
+	}
+
 	bool PowerOn(
-		const std::string& rom_path,
-		const std::optional<std::string>& ipl_path,
-		RDP::Implementation rdp_implementation)
+		RDP::Implementation rdp_implementation,
+		std::string const& rom_path,
+		std::optional<std::string> const& ipl_path)
 	{
 		bool hle_ipl = true;
 		if (ipl_path.has_value()) {
@@ -35,8 +50,15 @@ namespace N64
 		VI::Initialize();
 		RDRAM::Initialize();
 
-		if (!Cart::LoadRom(rom_path)) {
-			return false;
+		if (rom_path.empty()) {
+			game_loaded = false;
+		}
+		else if (Cart::LoadRom(rom_path)) {
+			game_loaded = true;
+		}
+		else {
+			game_loaded = false;
+			UserMessage::ShowError(std::format("Failed to load rom at path {}", rom_path));
 		}
 
 		/* Power CPU after RSP, since CPU reads to RSP memory if hle_ipl and RSP clears it. */
@@ -46,22 +68,44 @@ namespace N64
 		if (!RDP::Initialize(rdp_implementation)) {
 			return false;
 		}
-		SDL_Window* sdl_window = RDP::implementation->GetWindow();
-		if (!sdl_window) {
-			return false;
-		}
-		if (!UserMessage::Initialize(sdl_window)) {
-			std::cerr << "Failed to initialize user message system.\n";
-		}
 
 		Scheduler::Initialize(); /* init last */
 
 		return true;
 	}
 
+	void Reset()
+	{
+
+	}
+
+	void Resume()
+	{
+
+	}
 
 	void Run()
 	{
 		Scheduler::Run();
+	}
+
+	bool SaveState()
+	{
+		return true;
+	}
+
+	bool StartGame(std::string const& rom_path)
+	{
+		return true;
+	}
+
+	void Stop()
+	{
+
+	}
+
+	void UpdateScreen()
+	{
+		RDP::implementation->UpdateScreen();
 	}
 }

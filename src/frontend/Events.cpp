@@ -1,5 +1,10 @@
+module;
+
+#include "imgui_impl_sdl.h"
+
 module Events;
 
+import Gui;
 import PIF;
 
 namespace Events
@@ -67,7 +72,11 @@ namespace Events
 
 	void OnKeyDown()
 	{
-		if (auto binding_it = key_bindings.find(event.key.keysym.scancode); binding_it != key_bindings.end()) {
+		SDL_Keycode keycode = event.key.keysym.sym;
+		if ((SDL_GetModState() & SDL_Keymod::KMOD_CTRL) != 0 && keycode != SDLK_LCTRL && keycode != SDLK_RCTRL) { /* LCTRL/RCTRL is held */
+			Gui::OnCtrlKeyPress(keycode);
+		}
+		else if (auto binding_it = key_bindings.find(event.key.keysym.scancode); binding_it != key_bindings.end()) {
 			N64::Control n64_control = binding_it->second;
 			PIF::OnButtonDown(n64_control);
 		}
@@ -100,6 +109,7 @@ namespace Events
 	void Poll()
 	{
 		while (SDL_PollEvent(&event)) {
+			ImGui_ImplSDL2_ProcessEvent(&event);
 			switch (event.type) {
 			case SDL_CONTROLLERAXISMOTION   : OnControllerAxisMotion();    break;
 			case SDL_CONTROLLERBUTTONDOWN   : OnControllerButtonDown();    break;

@@ -11,21 +11,59 @@ import UserMessage;
 import VI;
 
 
+void ParallelRDPWrapper::EnqueueCommand(int cmd_len, u32* cmd_ptr)
+{
+	cmd_processor->enqueue_command(cmd_len, cmd_ptr);
+}
+
+
+VkCommandBuffer ParallelRDPWrapper::GetVkCommandBuffer()
+{
+	requested_command_buffer = wsi.get_device().request_command_buffer();
+	return requested_command_buffer->get_command_buffer();
+}
+
+
+VkDevice ParallelRDPWrapper::GetVkDevice()
+{
+	return wsi.get_device().get_device();
+}
+
+
+VkFormat ParallelRDPWrapper::GetVkFormat()
+{
+	return wsi.get_device().get_swapchain_view().get_format();
+}
+
+
+u32 ParallelRDPWrapper::GetVkGraphicsQueueFamily()
+{
+	return wsi.get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
+}
+
+
+VkInstance ParallelRDPWrapper::GetVkInstance()
+{
+	return wsi.get_context().get_instance();
+}
+
+
+VkPhysicalDevice ParallelRDPWrapper::GetVkPhysicalDevice()
+{
+	return wsi.get_device().get_physical_device();
+}
+
+
+VkQueue ParallelRDPWrapper::GetVkQueue()
+{
+	return wsi.get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
+}
+
+
 bool ParallelRDPWrapper::Initialize()
 {
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-		std::cout << "Failed to init SDL video\n";
-		return false;
-	}
 	if (!Vulkan::Context::init_loader(nullptr)) {
 		std::cout << "Failed to initialize Vulkan loader.\n";
-		return false;
-	}
-	sdl_window = SDL_CreateWindow("N63.5",
-		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480,
-		SDL_WINDOW_VULKAN | SDL_WINDOW_INPUT_FOCUS);
-	if (!sdl_window) {
-		std::cout << "Failed to create SDL window\n";
 		return false;
 	}
 
@@ -56,12 +94,6 @@ bool ParallelRDPWrapper::Initialize()
 	ReloadViRegisters();
 
 	return true;
-}
-
-
-void ParallelRDPWrapper::EnqueueCommand(int cmd_len, u32* cmd_ptr)
-{
-	cmd_processor->enqueue_command(cmd_len, cmd_ptr);
 }
 
 

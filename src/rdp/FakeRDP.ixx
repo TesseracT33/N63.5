@@ -63,7 +63,7 @@ export class FakeRDP : public RDPImplementation {
 		/* Create SDL window and renderer */
 		SDL_Window* sdl_window = SDL_CreateWindow("N63.5",
 			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320 * 3, 240 * 3,
-			SDL_WINDOW_OPENGL | SDL_WINDOW_INPUT_FOCUS);
+			SDL_WINDOW_VULKAN | SDL_WINDOW_INPUT_FOCUS);
 
 		if (sdl_window == nullptr) {
 			exit(1);
