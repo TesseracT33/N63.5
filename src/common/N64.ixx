@@ -22,20 +22,21 @@ namespace N64
 		bool LoadBios(std::string const& bios_path);
 		bool LoadState();
 		void Pause();
-		bool PowerOn(
-			std::string const& rom_path,
-			std::optional<std::string> const& ipl_path,
-			RDP::Implementation rdp_implementation);
+		bool PowerOn(RDP::Implementation rdp_implementation);
 		void Reset();
 		void Resume();
 		void Run();
 		bool SaveState();
 		bool StartGame(std::string const& rom_path);
 		void Stop();
+		void UpdateScreen();
 
 		constexpr uint cpu_cycles_per_second = 93'750'000;
 		constexpr uint rsp_cycles_per_second = 62'500'500;
 		constexpr uint cpu_cycles_per_frame = cpu_cycles_per_second / 60; /* 1,562,500 */
 		constexpr uint rsp_cycles_per_frame = rsp_cycles_per_second / 60; /* 1,041,675 */
 	}
+
+	bool bios_loaded;
+	bool game_loaded;
 }

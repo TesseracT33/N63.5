@@ -1,8 +1,7 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 
-import BuildOptions;
-import Events;
+import Gui;
 import Logging;
 import N64;
 import RDP;
@@ -27,23 +26,20 @@ int main(int argc, char* argv[])
 		ipl_path.emplace(argv[2]);
 	}
 
-	SDL_SetMainReady();
+	if (!InitializeLogging()) {
+		std::cerr << "Failed to initialize logging.\n";
+	}
 
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-		std::cerr << SDL_GetError();
+	if (!Gui::Initialize()) {
+		std::cerr << "Failed to initialize GUI.\n";
 		exit(1);
 	}
-	if constexpr (enable_logging) {
-		SetLogPath("F:\\n64.log");
-	}
+
 	if (!N64::PowerOn(rom_path, ipl_path, RDP::Implementation::None)) {
 		std::cerr << "An error occured when starting the emulator.\n";
 		exit(1);
 	}
 
-	Events::SetDefaultInputBindings();
-
-	N64::Run();
-
-	SDL_Quit();
+	Gui::Run();
+	Gui::TearDown();
 }

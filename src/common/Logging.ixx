@@ -1,5 +1,6 @@
 export module Logging;
 
+import BuildOptions;
 import Util;
 
 import <concepts>;
@@ -13,6 +14,22 @@ bool log_enabled;
 std::ofstream log_;
 std::string prev_output;
 u64 repeat_counter;
+
+
+export bool InitializeLogging()
+{
+	if constexpr (enable_logging) {
+		if (log_.is_open()) {
+			log_.close();
+		}
+		log_.open(log_path.data());
+		log_enabled = log_.is_open();
+		return log_enabled;
+	}
+	else {
+		return true;
+	}
+}
 
 
 export void Log(const std::string& output)
@@ -99,14 +116,4 @@ export void LogRspWrite(u32 dmem_addr, std::integral auto value)
 {
 	if (!log_enabled) return;
 	Log(std::format("RSP WRITE; ${:0X} to DMEM ${:03X}", MakeUnsigned(value), dmem_addr));
-}
-
-
-export void SetLogPath(const auto& log_path)
-{
-	if (log_.is_open()) {
-		log_.close();
-	}
-	log_.open(log_path);
-	log_enabled = log_.is_open();
 }

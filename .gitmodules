@@ -4,3 +4,6 @@
 [submodule "external/EmuUtils"]
 	path = external/EmuUtils
 	url = https://github.com/TesseracT33/EmuUtils
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui

@@ -133,6 +133,17 @@
     <ClCompile Include="src\vr4300\Recompiler.cpp" />
     <ClCompile Include="src\vr4300\Recompiler.ixx" />
     <ClCompile Include="src\vr4300\VR4300.ixx" />
+    <ClCompile Include="external\imgui\backends\imgui_impl_sdl.cpp" />
+    <ClCompile Include="external\imgui\backends\imgui_impl_sdlrenderer.cpp" />
+    <ClCompile Include="external\imgui\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="external\imgui\imgui.cpp" />
+    <ClCompile Include="external\imgui\imgui_draw.cpp" />
+    <ClCompile Include="external\imgui\imgui_tables.cpp" />
+    <ClCompile Include="external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\frontend\Gui.ixx" />
+    <ClCompile Include="src\frontend\Gui.cpp" />
+    <ClCompile Include="src\frontend\Audio.ixx" />
+    <ClCompile Include="src\frontend\Audio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\binning.h" />
@@ -245,6 +256,15 @@
     <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xcb.h" />
     <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xlib.h" />
     <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xlib_xrandr.h" />
+    <ClInclude Include="external\imgui\backends\imgui_impl_sdl.h" />
+    <ClInclude Include="external\imgui\backends\imgui_impl_sdlrenderer.h" />
+    <ClInclude Include="external\imgui\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="external\imgui\imconfig.h" />
+    <ClInclude Include="external\imgui\imgui.h" />
+    <ClInclude Include="external\imgui\imgui_internal.h" />
+    <ClInclude Include="external\imgui\imstb_rectpack.h" />
+    <ClInclude Include="external\imgui\imstb_textedit.h" />
+    <ClInclude Include="external\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.MD" />
