@@ -3,7 +3,7 @@ export module N64;
 import RDP;
 import Util;
 
-import <SDL.h>;
+import "SDL.h";
 
 import <iostream>;
 import <optional>;
@@ -20,14 +20,14 @@ namespace N64
 		};
 
 		bool LoadBios(std::string const& bios_path);
+		bool LoadGame(std::string const& game_path);
 		bool LoadState();
 		void Pause();
-		bool PowerOn(RDP::Implementation rdp_implementation);
+		bool PowerOn();
 		void Reset();
 		void Resume();
 		void Run();
 		bool SaveState();
-		bool StartGame(std::string const& rom_path);
 		void Stop();
 		void UpdateScreen();
 

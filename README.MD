@@ -6,13 +6,15 @@ An experimental, work-in-progress N64 emulator. It can boot one game so far: Nam
 The path to the rom file used is supplied as the first command-line argument. It must be in big-endian format. Optionally, the path to the PIF boot room can be supplied as the second argument.
 
 # Dependencies
-[parallel-rdp-standalone](https://github.com/Themaister/parallel-rdp-standalone); SDL2-2.0.22
+- [Dear ImGui](https://github.com/ocornut/imgui) (git submodule)
+- [parallel-rdp-standalone](https://github.com/Themaister/parallel-rdp-standalone) (git submodule)
+- [SDL2](https://github.com/libsdl-org/SDL) (static and shared library; last tested SDL2-2.0.22)
 
 # Compiling
 This project uses C++23 features, and also C++20 modules. As such, this currently only compiles on MSVC due to Clang's and GCC's incomplete implementations of modules.
 
 # Host requirements
-x86; SSE4.1
+x86; SSE4.1; vulkan 
 
 # Tests
 | Suite | Passing | Notes |

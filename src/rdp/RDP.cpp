@@ -5,8 +5,10 @@ import FakeRDP;
 import Logging;
 import MI;
 import ParallelRDPWrapper;
+import RDPImplementation;
 import RDRAM;
 import RSP;
+import UserMessage;
 
 namespace RDP
 {
@@ -25,7 +27,7 @@ namespace RDP
 			return implementation->Initialize();
 
 		default:
-			assert(false);
+			UserMessage::Error("Unknown RDP implementation specified in RDP::Initialize");
 			return false;
 		}
 	}

@@ -29,7 +29,7 @@ namespace AI
 		audio_device_id = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, &obtained_spec, 0);
 		if (audio_device_id == 0) {
 			const char* error_msg = SDL_GetError();
-			UserMessage::ShowWarning(std::format("Could not open audio device; {}", error_msg));
+			UserMessage::Warning(std::format("Could not open audio device; {}", error_msg));
 		}
 		SDL_PauseAudioDevice(audio_device_id, 0);
 

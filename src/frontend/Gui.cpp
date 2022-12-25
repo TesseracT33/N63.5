@@ -2,28 +2,20 @@ module;
 
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
+#include "imgui_impl_sdlrenderer.h"
 #include "imgui_impl_vulkan.h"
 
 module Gui;
 
 import Audio;
+import BuildOptions;
 import Events;
 import N64;
 import UserMessage;
+import Vulkan;
 
 namespace Gui
 {
-	void CheckVkResult(VkResult vk_result)
-	{
-		if (vk_result != 0) {
-			std::cerr << "[vulkan]: Error: VkResult = " << int(vk_result) << '\n';
-			if (vk_result < 0) {
-				exit(1);
-			}
-		}
-	}
-
-
 	float GetImGuiMenuBarHeight()
 	{
 		// TODO
@@ -31,16 +23,31 @@ namespace Gui
 	}
 
 
-	bool Initialize()
+	SDL_Window* GetSdlWindow()
+	{
+		if (!sdl_window) {
+			InitSdl();
+		}
+		return sdl_window;
+	}
+
+
+	bool Init()
 	{
 		if (!InitSdl()) {
+			std::cerr << "[fatal] Failed to init SDL!\n";
 			return false;
 		}
-		if (!InitVulkan()) {
+		if (!InitGraphics()) {
+			std::cerr << "[fatal] Failed to init graphics system!\n";
 			return false;
 		}
 		if (!InitImgui()) {
+			std::cerr << "[fatal] Failed to init ImGui!\n";
 			return false;
+		}
+		if (!Audio::Init()) {
+			std::cerr << "[error] Failed to init audio system!\n";
 		}
 
 		auto menubar_height = GetImGuiMenuBarHeight();
@@ -52,29 +59,22 @@ namespace Gui
 		menu_pause_emulation = false;
 		quit = false;
 		show_input_bindings_window = false;
-		show_menubar = true;
+		show_menu = true;
 
 		return true;
 	}
 
 
-	bool InitSdl()
+	bool InitGraphics()
 	{
-		SDL_SetMainReady();
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-			std::cerr << std::format("Failed to init SDL: {}\n", SDL_GetError());
+		switch (render_backend) {
+		case RenderBackend::Sdl:
+			return true;
+		case RenderBackend::Vulkan:
+			return Vulkan::Init(sdl_window);
+		default:
 			return false;
 		}
-		sdl_window = SDL_CreateWindow("N63.5", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			960, 720, SDL_WINDOW_VULKAN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_RESIZABLE);
-		if (!sdl_window) {
-			std::cerr << std::format("Failed to create SDL window: {}\n", SDL_GetError());
-			return false;
-		}
-		if (!UserMessage::Initialize(sdl_window)) {
-			std::cerr << "Failed to initialize user message system\n";
-		}
-		return true;
 	}
 
 
@@ -85,115 +85,68 @@ namespace Gui
 		ImGuiIO& io = ImGui::GetIO();
 		ImGui::StyleColorsDark();
 
-		ImGui_ImplSDL2_InitForVulkan(sdl_window);
-
-		ImGui_ImplVulkan_InitInfo init_info = {
-			.Instance = vk_instance,
-			.PhysicalDevice = vk_physical_device,
-			.Device = vk_device,
-			.QueueFamily = vk_queue_family,
-			.Queue = vk_queue,
-			.PipelineCache = vk_pipeline_cache,
-			.DescriptorPool = vk_descriptor_pool,
-			.Subpass = 0,
-			.MinImageCount = vk_min_image_count,
-			.ImageCount = 2,
-			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-			.Allocator = vk_allocator,
-			.CheckVkResultFn = CheckVkResult
-		};
-
-		if (!ImGui_ImplVulkan_Init(&init_info, vk_render_pass)) {
-			UserMessage::ShowFatal("Failed call to ImGui_ImplVulkan_Init.");
-			return false;
+		if (render_backend == RenderBackend::Sdl) {
+			return true; // TODO
 		}
+		else if (render_backend == RenderBackend::Vulkan) {
+			ImGui_ImplSDL2_InitForVulkan(sdl_window);
 
-		io.Fonts->AddFontDefault();
-		// Upload Fonts
-		{
-			VkCommandBuffer command_buffer = get_vk_command_buffer();
-			ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-			submit_requested_vk_command_buffer();
+			ImGui_ImplVulkan_InitInfo init_info = {
+				.Instance = vk_instance,
+				.PhysicalDevice = vk_physical_device,
+				.Device = vk_device,
+				.QueueFamily = vk_queue_family,
+				.Queue = vk_queue,
+				.PipelineCache = vk_pipeline_cache,
+				.DescriptorPool = vk_descriptor_pool,
+				.Subpass = 0,
+				.MinImageCount = vk_min_image_count,
+				.ImageCount = 2,
+				.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+				.Allocator = vk_allocator,
+				.CheckVkResultFn = Vulkan::CheckVkResult
+			};
+
+			if (!ImGui_ImplVulkan_Init(&init_info, vk_render_pass)) {
+				UserMessage::Fatal("Failed call to ImGui_ImplVulkan_Init.");
+				return false;
+			}
+
+			io.Fonts->AddFontDefault();
+			// Upload Fonts
+			{
+				ImGui_ImplVulkan_CreateFontsTexture(Vulkan::GetVkCommandBuffer());
+				Vulkan::SubmitRequestedVkCommandBuffer();
+			}
+
+			return true;
+		}
+		else {
+			return false;
 		}
 	}
 
 
-	bool InitVulkan()
+	bool InitSdl()
 	{
-		// TODO: init parallel-rdp
-
-		vk_instance = get_vk_instance();
-		vk_physical_device = get_vk_physical_device();
-		vk_device = get_vk_device();
-		vk_queue_family = get_vk_graphics_queue_family();
-		vk_queue = get_graphics_queue();
-		vk_pipeline_cache = nullptr;
-		vk_descriptor_pool = nullptr;
-		vk_allocator = nullptr;
-		vk_min_image_count = 2;
-
-		VkResult vk_result;
-
-		{ // Create Descriptor Pool
-			VkDescriptorPoolSize pool_sizes[] = {
-				{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-				{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-				{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-			};
-			VkDescriptorPoolCreateInfo pool_info = {};
-			pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-			pool_info.poolSizeCount = (u32)IM_ARRAYSIZE(pool_sizes);
-			pool_info.pPoolSizes = pool_sizes;
-			vk_result = vkCreateDescriptorPool(vk_device, &pool_info, vk_allocator, &vk_descriptor_pool);
-			CheckVkResult(vk_result);
+		SDL_SetMainReady();
+		if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+			std::cerr << std::format("Failed to init SDL: {}\n", SDL_GetError());
+			return false;
 		}
-
-		// Create the Render Pass
-		{
-			VkAttachmentDescription attachment = {};
-			attachment.format = get_vk_format();
-			attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-			attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-			attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-			VkAttachmentReference color_attachment = {};
-			color_attachment.attachment = 0;
-			color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			VkSubpassDescription subpass = {};
-			subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			subpass.colorAttachmentCount = 1;
-			subpass.pColorAttachments = &color_attachment;
-			VkSubpassDependency dependency = {};
-			dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-			dependency.dstSubpass = 0;
-			dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			dependency.srcAccessMask = 0;
-			dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			VkRenderPassCreateInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-			info.attachmentCount = 1;
-			info.pAttachments = &attachment;
-			info.subpassCount = 1;
-			info.pSubpasses = &subpass;
-			info.dependencyCount = 1;
-			info.pDependencies = &dependency;
-			vk_result = vkCreateRenderPass(vk_device, &info, vk_allocator, &vk_render_pass);
-			CheckVkResult(vk_result);
+		auto window_flags = SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+		if (render_backend == RenderBackend::Vulkan) {
+			window_flags |= SDL_WINDOW_VULKAN;
 		}
+		sdl_window = SDL_CreateWindow("N63.5", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 720, window_flags);
+		if (!sdl_window) {
+			std::cerr << std::format("Failed to create SDL window: {}\n", SDL_GetError());
+			return false;
+		}
+		if (!UserMessage::Initialize(sdl_window)) {
+			std::cerr << "Failed to initialize user message system\n";
+		}
+		return true;
 	}
 
 
@@ -215,7 +168,7 @@ namespace Gui
 			break;
 
 		case SDLK_m:
-			show_menubar = !show_menubar;
+			show_menu = !show_menu;
 			//Video::SetGameRenderAreaOffsetY(show_gui ? 19 : 0); // TODO: make non-hacky
 			break;
 
@@ -288,7 +241,7 @@ namespace Gui
 	void OnMenuOpen()
 	{
 		//if (!N64::LoadRom(rom_path)) {
-		//	UserMessage::ShowWarning(std::format("Could not load rom at path \"{}\"", rom_path));
+		//	UserMessage::Warning(std::format("Could not load rom at path \"{}\"", rom_path));
 		//}
 	}
 
@@ -296,7 +249,7 @@ namespace Gui
 	void OnMenuOpenBios()
 	{
 		//if (!N64::LoadBios(bios_path)) {
-		//	UserMessage::ShowWarning(std::format("Could not load bios at path \"{}\"", bios_path));
+		//	UserMessage::Warning(std::format("Could not load bios at path \"{}\"", bios_path));
 		//}
 	}
 
@@ -353,7 +306,7 @@ namespace Gui
 	}
 
 
-	void Render()
+	void RenderMenu()
 	{
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
@@ -452,23 +405,28 @@ namespace Gui
 			}
 
 			// Start the Dear ImGui frame
-			ImGui_ImplVulkan_NewFrame();
+			if (render_backend == RenderBackend::Vulkan) {
+				ImGui_ImplVulkan_NewFrame();
+			}
+			else if (render_backend == RenderBackend::Sdl) {
+				// TODO
+			}
 			ImGui_ImplSDL2_NewFrame();
 			ImGui::NewFrame();
 			N64::UpdateScreen();
-			if (show_menubar) {
-				Render();
+			if (show_menu) {
+				RenderMenu();
 			}
 			ImGui::Render();
 			ImDrawData* draw_data = ImGui::GetDrawData();
 			bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
 			if (!is_minimized) {
-				wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-				wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-				wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-				wd->ClearValue.color.float32[3] = clear_color.w;
-				FrameRender(wd, draw_data);
-				FramePresent(wd);
+				//wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+				//wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+				//wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+				//wd->ClearValue.color.float32[3] = clear_color.w;
+				//FrameRender(wd, draw_data);
+				//FramePresent(wd);
 			}
 			//SDL_GL_SwapWindow(sdl_window);
 
@@ -502,9 +460,8 @@ namespace Gui
 
 	void TearDown()
 	{
-		VkResult vk_result;
 		N64::Stop();
-		vk_result = vkDeviceWaitIdle(vk_device);
+		/*vk_result = vkDeviceWaitIdle(vk_device);
 		CheckVkResult(vk_result);
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplSDL2_Shutdown();
@@ -514,6 +471,6 @@ namespace Gui
 		vkDestroyDevice(vk_device, vk_allocator);
 		vkDestroyInstance(vk_instance, vk_allocator);
 		SDL_DestroyWindow(sdl_window);
-		SDL_Quit();
+		SDL_Quit();*/
 	}
 }

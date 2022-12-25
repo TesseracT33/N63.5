@@ -45,7 +45,7 @@ namespace PIF
 	{
 		std::optional<std::array<u8, memory_size>> optional_rom = ReadFileIntoArray<memory_size>(path);
 		if (!optional_rom.has_value()) {
-			UserMessage::ShowWarning("Failed to open boot rom (IPL) file.");
+			UserMessage::Warning("Failed to open boot rom (IPL) file.");
 			return false;
 		}
 		memory = optional_rom.value();

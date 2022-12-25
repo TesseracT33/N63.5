@@ -30,12 +30,12 @@ int main(int argc, char* argv[])
 		std::cerr << "Failed to initialize logging.\n";
 	}
 
-	if (!Gui::Initialize()) {
+	if (!Gui::Init()) {
 		std::cerr << "Failed to initialize GUI.\n";
 		exit(1);
 	}
 
-	if (!N64::PowerOn(rom_path, ipl_path, RDP::Implementation::None)) {
+	if (!N64::PowerOn()) {
 		std::cerr << "An error occured when starting the emulator.\n";
 		exit(1);
 	}

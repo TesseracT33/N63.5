@@ -2,10 +2,7 @@ export module RDPImplementation;
 
 import Util;
 
-import <SDL.h>;
-
-export class RDPImplementation
-{
+export class RDPImplementation {
 public:
 	virtual ~RDPImplementation() = default;
 
@@ -18,9 +15,4 @@ public:
 	virtual void SetOrigin(u32) {};
 	virtual void SetWidth(u32) {};
 	virtual void SetControl(u32) {};
-
-	SDL_Window* GetWindow() const { return sdl_window; }
-
-protected:
-	SDL_Window* sdl_window;
 };

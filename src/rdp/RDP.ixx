@@ -3,8 +3,6 @@ export module RDP;
 import RDPImplementation;
 import Util;
 
-import <SDL.h>;
-
 import <array>;
 import <cassert>;
 import <cstring>;

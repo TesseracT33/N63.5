@@ -62,7 +62,7 @@ namespace VR4300::Recompiler
 		ret();
 		buffer_pos += current_block_buffer_pos;
 		if (buffer_pos >= buffer_end) [[unlikely]] {
-			UserMessage::ShowFatal("Out of memory for recompiler");
+			UserMessage::Fatal("Out of memory for recompiler");
 			std::cerr << "Out of memory for recompiler\n";
 			std::exit(1);
 		}

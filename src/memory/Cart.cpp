@@ -34,16 +34,16 @@ namespace Cart
 	{
 		std::optional<std::vector<u8>> optional_rom = ReadFileIntoVector(rom_path);
 		if (!optional_rom.has_value()) {
-			UserMessage::ShowError("Failed to open rom file.");
+			UserMessage::Error("Failed to open rom file.");
 			return false;
 		}
 		rom = optional_rom.value();
 		if (rom.empty()) {
-			UserMessage::ShowError("Rom file has size 0.");
+			UserMessage::Error("Rom file has size 0.");
 			return false;
 		}
 		if (rom.size() > rom_region_size) {
-			UserMessage::ShowWarning(std::format("Rom file has size larger than the maximum allowed ({} bytes). "
+			UserMessage::Warning(std::format("Rom file has size larger than the maximum allowed ({} bytes). "
 				"Truncating to the maximum allowed.", rom_region_size));
 			rom.resize(rom_region_size);
 		}
@@ -63,11 +63,11 @@ namespace Cart
 		}
 		sram = optional_sram.value();
 		if (sram.empty()) {
-			UserMessage::ShowError("Error: sram file has size 0.");
+			UserMessage::Error("Error: sram file has size 0.");
 			return false;
 		}
 		if (sram.size() != sram_size) {
-			UserMessage::ShowWarning(std::format("Sram file has size different than the allowed ({} bytes). ", sram_size));
+			UserMessage::Warning(std::format("Sram file has size different than the allowed ({} bytes). ", sram_size));
 			sram.resize(sram_size);
 		}
 		return true;

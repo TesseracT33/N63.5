@@ -9,3 +9,8 @@ void Audio::Enable()
 {
 
 }
+
+bool Audio::Init()
+{
+	return true;
+}

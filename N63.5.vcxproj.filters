@@ -144,6 +144,8 @@
     <ClCompile Include="src\frontend\Gui.cpp" />
     <ClCompile Include="src\frontend\Audio.ixx" />
     <ClCompile Include="src\frontend\Audio.cpp" />
+    <ClCompile Include="src\frontend\Vulkan.ixx" />
+    <ClCompile Include="src\frontend\Vulkan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\binning.h" />

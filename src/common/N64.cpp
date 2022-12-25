@@ -20,7 +20,19 @@ namespace N64
 {
 	bool LoadBios(std::string const& path)
 	{
-		return true;
+		return PIF::LoadIPL12(path);
+	}
+
+	bool LoadGame(std::string const& path)
+	{
+		if (Cart::LoadRom(path)) {
+			game_loaded = true;
+		}
+		else {
+			game_loaded = false;
+			UserMessage::Error(std::format("Failed to load rom at path {}", path));
+		}
+		return game_loaded;
 	}
 
 	bool LoadState()
@@ -33,15 +45,8 @@ namespace N64
 
 	}
 
-	bool PowerOn(
-		RDP::Implementation rdp_implementation,
-		std::string const& rom_path,
-		std::optional<std::string> const& ipl_path)
+	bool PowerOn()
 	{
-		bool hle_ipl = true;
-		if (ipl_path.has_value()) {
-			hle_ipl = !PIF::LoadIPL12(ipl_path.value());
-		}
 		AI::Initialize();
 		MI::Initialize();
 		PI::Initialize();
@@ -50,22 +55,13 @@ namespace N64
 		VI::Initialize();
 		RDRAM::Initialize();
 
-		if (rom_path.empty()) {
-			game_loaded = false;
-		}
-		else if (Cart::LoadRom(rom_path)) {
-			game_loaded = true;
-		}
-		else {
-			game_loaded = false;
-			UserMessage::ShowError(std::format("Failed to load rom at path {}", rom_path));
-		}
-
 		/* Power CPU after RSP, since CPU reads to RSP memory if hle_ipl and RSP clears it. */
 		RSP::PowerOn();
+		bool hle_ipl = !bios_loaded;
 		VR4300::PowerOn(hle_ipl);
 
-		if (!RDP::Initialize(rdp_implementation)) {
+		RDP::Implementation rdp_impl = RDP::Implementation::ParallelRDP; // TODO: settable; load from user settings file
+		if (!RDP::Initialize(rdp_impl)) {
 			return false;
 		}
 
@@ -90,11 +86,6 @@ namespace N64
 	}
 
 	bool SaveState()
-	{
-		return true;
-	}
-
-	bool StartGame(std::string const& rom_path)
 	{
 		return true;
 	}

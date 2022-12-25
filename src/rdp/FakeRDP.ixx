@@ -1,23 +1,23 @@
 export module FakeRDP;
 
 import Events;
+import Gui;
 import RDPImplementation;
 import VI;
 import Util;
 import RDRAM;
 
-import <bit>;
+import "SDL.h";
 
-import <SDL.h>;
+import <bit>;
+import <iostream>;
 
 export class FakeRDP : public RDPImplementation {
-
 	void EnqueueCommand(int cmd_len, u32* cmd_ptr) {};
 	void OnFullSync() {};
 	void TearDown() {};
 
-	struct Framebuffer
-	{
+	struct Framebuffer {
 		u8* src_ptr{};
 		uint width = 320, height = 240, pitch = 320 * 4;
 		uint bytes_per_pixel = 4;
@@ -25,9 +25,9 @@ export class FakeRDP : public RDPImplementation {
 		uint pixel_format = SDL_PIXELFORMAT_ABGR8888;
 	} framebuffer{};
 
-
 	SDL_Renderer* renderer{};
 	SDL_Texture* texture{};
+	SDL_Window* sdl_window{};
 
 	void ByteswapFramebuffer()
 	{
@@ -56,23 +56,16 @@ export class FakeRDP : public RDPImplementation {
 
 
 	bool Initialize() {
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-			exit(1);
+		sdl_window = Gui::GetSdlWindow();
+		if (!sdl_window) {
+			std::cerr << __FUNCTION__ << ": retrieved SDL_Window is nullptr\n";
+			return false;
 		}
-
-		/* Create SDL window and renderer */
-		SDL_Window* sdl_window = SDL_CreateWindow("N63.5",
-			SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 320 * 3, 240 * 3,
-			SDL_WINDOW_VULKAN | SDL_WINDOW_INPUT_FOCUS);
-
-		if (sdl_window == nullptr) {
-			exit(1);
-		}
-		this->sdl_window = sdl_window;
 
 		renderer = SDL_CreateRenderer(sdl_window, 0, SDL_RENDERER_ACCELERATED);
-		if (renderer == nullptr) {
-			exit(1);
+		if (!renderer) {
+			std::cerr << __FUNCTION__ << ": could not create SDL renderer: " << SDL_GetError() << '\n';
+			return false;
 		}
 		framebuffer.src_ptr = RDRAM::GetPointerToMemory();
 		framebuffer.pixel_format = SDL_PIXELFORMAT_RGBA5551;

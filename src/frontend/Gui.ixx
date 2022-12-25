@@ -7,7 +7,7 @@ export module Gui;
 
 import Util;
 
-import <SDL.h>;
+import "SDL.h";
 
 import <chrono>;
 import <format>;
@@ -15,22 +15,29 @@ import <iostream>;
 import <thread>;
 import <utility>;
 
+export enum class RenderBackend {
+	Sdl, Vulkan
+};
+
+// TODO: To be selectable
+RenderBackend render_backend = RenderBackend::Vulkan;
+
 namespace Gui
 {
 	export
 	{
-		bool Initialize();
+		SDL_Window* GetSdlWindow();
+		bool Init();
 		void OnCtrlKeyPress(SDL_Keycode keycode);
 		void OnSdlQuit();
 		void Run(bool boot_game_immediately = false);
 		void TearDown();
 	}
 
-	void CheckVkResult(VkResult vk_result);
 	float GetImGuiMenuBarHeight();
-	bool InitSdl();
+	bool InitGraphics();
 	bool InitImgui();
-	bool InitVulkan();
+	bool InitSdl();
 	void OnMenuConfigureBindings();
 	void OnMenuEnableAudio();
 	void OnMenuFullscreen();
@@ -45,7 +52,7 @@ namespace Gui
 	void OnMenuSaveState();
 	void OnMenuStop();
 	void OnMenuWindowScale();
-	void Render();
+	void RenderMenu();
 	void RenderInputBindingsWindow();
 	void ScheduleEmuThread(void(*function)());
 	void StartGame();
@@ -58,7 +65,7 @@ namespace Gui
 	bool menu_pause_emulation;
 	bool quit;
 	bool show_input_bindings_window;
-	bool show_menubar;
+	bool show_menu;
 
 	VkAllocationCallbacks*   vk_allocator;
 	VkInstance               vk_instance;

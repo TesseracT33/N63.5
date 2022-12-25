@@ -1,11 +1,15 @@
-#include <rdp_device.hpp>
-#include <wsi.hpp>
-#include <volk.h>
-#include <vulkan/vulkan.h>
+module;
+
+#include "rdp_device.hpp"
+#include "wsi.hpp"
+#include "volk.h"
+#include "vulkan/vulkan.h"
+#include "vulkan_common.hpp"
 
 module ParallelRDPWrapper;
 
 import Events;
+import Gui;
 import RDRAM;
 import UserMessage;
 import VI;
@@ -36,9 +40,9 @@ VkFormat ParallelRDPWrapper::GetVkFormat()
 }
 
 
-u32 ParallelRDPWrapper::GetVkGraphicsQueueFamily()
+u32 ParallelRDPWrapper::GetVkQueueFamily()
 {
-	return wsi.get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
+	return wsi.get_context().get_queue_info().family_indices[Vulkan::QueueIndices::QUEUE_INDEX_GRAPHICS];
 }
 
 
@@ -56,24 +60,30 @@ VkPhysicalDevice ParallelRDPWrapper::GetVkPhysicalDevice()
 
 VkQueue ParallelRDPWrapper::GetVkQueue()
 {
-	return wsi.get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
+	return wsi.get_context().get_queue_info().queues[Vulkan::QueueIndices::QUEUE_INDEX_GRAPHICS];
 }
 
 
 bool ParallelRDPWrapper::Initialize()
 {
 	if (!Vulkan::Context::init_loader(nullptr)) {
-		std::cout << "Failed to initialize Vulkan loader.\n";
+		std::cerr << __FUNCTION__ << ": failed to initialize Vulkan loader.\n";
 		return false;
 	}
 
-	sdl_wsi_platform = std::make_unique<SDLWSIPlatform>(*this);
+	SDL_Window* sdl_window = Gui::GetSdlWindow();
+	if (!sdl_window) {
+		std::cerr << __FUNCTION__ << ": retrieved SDL_Window is nullptr\n";
+		return false;
+	}
+
+	sdl_wsi_platform = std::make_unique<SDLWSIPlatform>(sdl_window);
 	wsi.set_backbuffer_srgb(false);
 	wsi.set_platform(sdl_wsi_platform.get());
 	wsi.set_present_mode(Vulkan::PresentMode::UnlockedMaybeTear);
 	Vulkan::Context::SystemHandles handles{};
 	if (!wsi.init_simple(1, handles)) {
-		UserMessage::ShowError("Failed to init wsi.");
+		UserMessage::Error("Failed to init wsi.");
 		return false;
 	}
 	wsi_device = &wsi.get_device();
@@ -87,7 +97,7 @@ bool ParallelRDPWrapper::Initialize()
 	cmd_processor = std::make_unique<RDP::CommandProcessor>(
 		*wsi_device, rdram_ptr, rdram_offset, rdram_size, hidden_rdram_size, flags);
 	if (!cmd_processor->device_is_supported()) {
-		UserMessage::ShowError("Vulkan device not supported.");
+		UserMessage::Error("Vulkan device not supported.");
 		return false;
 	}
 
@@ -124,12 +134,16 @@ void ParallelRDPWrapper::ReloadViRegisters()
 }
 
 
+void ParallelRDPWrapper::SubmitRequestedVkCommandBuffer()
+{
+	wsi.get_device().submit(requested_command_buffer);
+}
+
+
 void ParallelRDPWrapper::TearDown()
 {
 	cmd_processor.reset();
 	wsi.teardown();
-	SDL_DestroyWindow(sdl_window);
-	sdl_window = nullptr;
 }
 
 
@@ -182,6 +196,10 @@ void ParallelRDPWrapper::UpdateScreen()
 }
 
 
+ParallelRDPWrapper::SDLWSIPlatform::SDLWSIPlatform(SDL_Window* sdl_window)
+	: sdl_window(sdl_window) {}
+
+
 bool ParallelRDPWrapper::SDLWSIPlatform::alive(Vulkan::WSI& wsi)
 {
 	return true;
@@ -191,8 +209,8 @@ bool ParallelRDPWrapper::SDLWSIPlatform::alive(Vulkan::WSI& wsi)
 VkSurfaceKHR ParallelRDPWrapper::SDLWSIPlatform::create_surface(VkInstance instance, VkPhysicalDevice gpu)
 {
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
-	if (!SDL_Vulkan_CreateSurface(parallel_rdp_wrapper.sdl_window, instance, &vk_surface)) {
-		UserMessage::ShowError(std::format("Failed to create Vulkan surface: {}", SDL_GetError()));
+	if (!SDL_Vulkan_CreateSurface(sdl_window, instance, &vk_surface)) {
+		UserMessage::Error(std::format("Failed to create Vulkan surface: {}", SDL_GetError()));
 		return VK_NULL_HANDLE;
 	}
 	return vk_surface;
@@ -218,13 +236,13 @@ const VkApplicationInfo* ParallelRDPWrapper::SDLWSIPlatform::get_application_inf
 std::vector<const char*> ParallelRDPWrapper::SDLWSIPlatform::get_instance_extensions()
 {
 	uint num_extensions;
-	if (!SDL_Vulkan_GetInstanceExtensions(parallel_rdp_wrapper.sdl_window, &num_extensions, nullptr)) {
-		UserMessage::ShowError("Failed to get Vulkan instance extensions.");
+	if (!SDL_Vulkan_GetInstanceExtensions(sdl_window, &num_extensions, nullptr)) {
+		UserMessage::Error("Failed to get Vulkan instance extensions.");
 		return {};
 	}
 	std::vector<const char*> extensions(num_extensions);
-	if (!SDL_Vulkan_GetInstanceExtensions(parallel_rdp_wrapper.sdl_window, &num_extensions, extensions.data())) {
-		UserMessage::ShowError("Failed to get Vulkan instance extensions.");
+	if (!SDL_Vulkan_GetInstanceExtensions(sdl_window, &num_extensions, extensions.data())) {
+		UserMessage::Error("Failed to get Vulkan instance extensions.");
 		return {};
 	}
 	return extensions;

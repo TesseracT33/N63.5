@@ -6,5 +6,6 @@ namespace Audio
 	{
 		void Disable();
 		void Enable();
+		bool Init();
 	}
 }

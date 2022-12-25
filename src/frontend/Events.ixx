@@ -3,7 +3,7 @@ export module Events;
 import N64;
 import Util;
 
-import <SDL.h>;
+import "SDL.h";
 
 import <limits>;
 import <unordered_map>;

@@ -1,6 +1,6 @@
 export module UserMessage;
 
-import <SDL.h>;
+import "SDL.h";
 
 import <iostream>;
 import <string>;
@@ -21,7 +21,7 @@ namespace UserMessage
 		}
 	}
 
-	export void ShowError(auto const& message)
+	export void Error(auto const& message)
 	{
 		if (sdl_window) {
 			std::string shown_message = std::string("Error: ") + message;
@@ -29,7 +29,7 @@ namespace UserMessage
 		}
 	}
 
-	export void ShowFatal(auto const& message)
+	export void Fatal(auto const& message)
 	{
 		if (sdl_window) {
 			std::string shown_message = std::string("Fatal: ") + message;
@@ -37,7 +37,7 @@ namespace UserMessage
 		}
 	}
 
-	export void ShowInfo(auto const& message)
+	export void Info(auto const& message)
 	{
 		if (sdl_window) {
 			std::string shown_message = std::string("Info: ") + message;
@@ -45,7 +45,7 @@ namespace UserMessage
 		}
 	}
 
-	export void ShowWarning(auto const& message)
+	export void Warning(auto const& message)
 	{
 		if (sdl_window) {
 			std::string shown_message = std::string("Warning: ") + message;
