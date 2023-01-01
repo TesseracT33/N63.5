@@ -7,6 +7,7 @@ import <bit>;
 import <cassert>;
 import <concepts>;
 import <cstring>;
+import <filesystem>;
 import <format>;
 import <optional>;
 import <string>;
@@ -19,8 +20,8 @@ namespace Cart
 		size_t GetNumberOfBytesUntilRomEnd(u32 addr);
 		u8* GetPointerToRom(u32 addr);
 		u8* GetPointerToSram(u32 addr);
-		bool LoadRom(const std::string& rom_path);
-		bool LoadSram(const std::string& sram_path);
+		bool LoadRom(const std::filesystem::path& rom_path);
+		bool LoadSram(const std::filesystem::path& sram_path);
 
 		template<std::signed_integral Int>
 		Int ReadRom(u32 addr);

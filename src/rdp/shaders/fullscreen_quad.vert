@@ -1,19 +1,17 @@
 #version 450
+#extension GL_KHR_vulkan_glsl: enable
 
 layout(location = 0) out vec2 vUV;
 
 void main()
 {
-	if (gl_VertexIndex == 0)
-	{
+	if (gl_VertexIndex == 0) {
 		gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);
 	}
-	else if (gl_VertexIndex == 1)
-	{
+	else if (gl_VertexIndex == 1) {
 		gl_Position = vec4(-1.0, +3.0, 0.0, 1.0);
 	}
-	else
-	{
+	else {
 		gl_Position = vec4(+3.0, -1.0, 0.0, 1.0);
 	}
 

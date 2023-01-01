@@ -129,31 +129,32 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT;VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;GRANITE_VULKAN_MT;VK_USE_PLATFORM_WIN32_KHR;VULKAN_DEBUG</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(ProjectDir)\external\imgui;$(ProjectDir)\external\imgui\backends;$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL2_SDK)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\external\imgui;$(ProjectDir)\external\imgui\backends;$(ProjectDir)\external\nativefiledialog-extended\src\include;$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL2_SDK)\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <AdditionalOptions>/wd4267 /wd4244 /wd4309 /wd4005 /MP /DNOMINMAX %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SDL2_SDK)\lib\x64;$(VULKAN_SDK)\Lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;vulkan-1.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SDL2_SDK)\lib\x64;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -161,7 +162,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(ProjectDir)\external\imgui;$(ProjectDir)\external\imgui\backends;$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL2_SDK)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\external\imgui;$(ProjectDir)\external\imgui\backends;$(ProjectDir)\external\nativefiledialog-extended\src\include;$(ProjectDir)\external\parallel-rdp-standalone\parallel-rdp;$(ProjectDir)\external\parallel-rdp-standalone\util;$(ProjectDir)\external\parallel-rdp-standalone\volk;$(ProjectDir)\external\parallel-rdp-standalone\vulkan;$(ProjectDir)\external\parallel-rdp-standalone\vulkan-headers\include;$(SDL2_SDK)\include</AdditionalIncludeDirectories>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
@@ -169,14 +170,18 @@
       <AdditionalOptions>/wd4267 /wd4244 /wd4309 /wd4005 /MP /DNOMINMAX %(AdditionalOptions)</AdditionalOptions>
       <FloatingPointModel>Strict</FloatingPointModel>
       <FloatingPointExceptions>true</FloatingPointExceptions>
+      <Optimization>MaxSpeed</Optimization>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SDL2_SDK)\lib\x64;$(VULKAN_SDK)\Lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;vulkan-1.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SDL2_SDK)\lib\x64;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
@@ -194,12 +199,12 @@
     <ClCompile Include="external\EmuUtils\src\SSE.ixx" />
     <ClCompile Include="external\EmuUtils\src\Util.ixx" />
     <ClCompile Include="external\imgui\backends\imgui_impl_sdl.cpp" />
-    <ClCompile Include="external\imgui\backends\imgui_impl_sdlrenderer.cpp" />
     <ClCompile Include="external\imgui\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\imgui\imgui_tables.cpp" />
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="external\nativefiledialog-extended\src\nfd_win.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\command_ring.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\rdp_device.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\rdp_dump_write.cpp" />
@@ -239,20 +244,19 @@
     <ClCompile Include="src\common\Logging.ixx" />
     <ClCompile Include="src\frontend\Audio.cpp" />
     <ClCompile Include="src\frontend\Audio.ixx" />
-    <ClCompile Include="src\frontend\Events.cpp" />
-    <ClCompile Include="src\frontend\Events.ixx" />
     <ClCompile Include="src\frontend\Gui.cpp" />
     <ClCompile Include="src\frontend\Gui.ixx" />
-    <ClCompile Include="src\frontend\Vulkan.cpp" />
-    <ClCompile Include="src\frontend\Vulkan.ixx" />
+    <ClCompile Include="src\frontend\Input.cpp" />
+    <ClCompile Include="src\frontend\Input.ixx" />
+    <ClCompile Include="src\rdp\Vulkan.cpp" />
+    <ClCompile Include="src\rdp\Vulkan.ixx" />
     <ClCompile Include="src\interface\AI.cpp" />
     <ClCompile Include="src\interface\AI.ixx" />
     <ClCompile Include="src\interface\RI.cpp" />
     <ClCompile Include="src\interface\RI.ixx" />
     <ClCompile Include="src\memory\PIF.cpp" />
-    <ClCompile Include="src\rdp\FakeRDP.ixx" />
-    <ClCompile Include="src\rdp\parallel-rdp-wrapper\ParallelRDPWrapper.cpp" />
-    <ClCompile Include="src\rdp\parallel-rdp-wrapper\ParallelRDPWrapper.ixx" />
+    <ClCompile Include="src\rdp\ParallelRDPWrapper.cpp" />
+    <ClCompile Include="src\rdp\ParallelRDPWrapper.ixx" />
     <ClCompile Include="src\rdp\RDP.cpp" />
     <ClCompile Include="src\rdp\RDP.ixx" />
     <ClCompile Include="src\rdp\RDPImplementation.ixx" />
@@ -310,14 +314,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\imgui\backends\imgui_impl_sdl.h" />
-    <ClInclude Include="external\imgui\backends\imgui_impl_sdlrenderer.h" />
     <ClInclude Include="external\imgui\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="external\imgui\imconfig.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_internal.h" />
-    <ClInclude Include="external\imgui\imstb_rectpack.h" />
-    <ClInclude Include="external\imgui\imstb_textedit.h" />
-    <ClInclude Include="external\imgui\imstb_truetype.h" />
+    <ClInclude Include="external\nativefiledialog-extended\src\include\nfd.h" />
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\command_ring.hpp" />
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\luts.hpp" />
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\rdp_common.hpp" />
@@ -436,8 +437,8 @@
     <None Include=".gitmodules" />
     <None Include="LICENSE" />
     <None Include="README.MD" />
-    <None Include="src\rdp\parallel-rdp-wrapper\shaders\fullscreen_quad.frag" />
-    <None Include="src\rdp\parallel-rdp-wrapper\shaders\fullscreen_quad.vert" />
+    <None Include="src\rdp\shaders\fullscreen_quad.frag" />
+    <None Include="src\rdp\shaders\fullscreen_quad.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

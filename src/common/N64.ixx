@@ -3,8 +3,7 @@ export module N64;
 import RDP;
 import Util;
 
-import "SDL.h";
-
+import <filesystem>;
 import <iostream>;
 import <optional>;
 import <string>;
@@ -19,11 +18,14 @@ namespace N64
 			CX, CY /* alternative to CUp, CDown etc for controlling C buttons using a joystick */
 		};
 
-		bool LoadBios(std::string const& bios_path);
-		bool LoadGame(std::string const& game_path);
+		bool Init();
+		bool LoadBios(std::filesystem::path const& bios_path);
+		bool LoadGame(std::filesystem::path const& game_path);
 		bool LoadState();
+		void OnButtonDown(Control control);
+		void OnButtonUp(Control control);
+		void OnJoystickMovement(Control control, s16 axis_value);
 		void Pause();
-		bool PowerOn();
 		void Reset();
 		void Resume();
 		void Run();
@@ -39,4 +41,5 @@ namespace N64
 
 	bool bios_loaded;
 	bool game_loaded;
+	bool running;
 }

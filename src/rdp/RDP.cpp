@@ -1,7 +1,6 @@
 module RDP;
 
 import BuildOptions;
-import FakeRDP;
 import Logging;
 import MI;
 import ParallelRDPWrapper;
@@ -12,24 +11,10 @@ import UserMessage;
 
 namespace RDP
 {
-	bool Initialize(Implementation rdp_implementation)
+	void Initialize()
 	{
 		std::memset(&dp, 0, sizeof(dp));
 		dp.status.ready = 1;
-
-		switch (rdp_implementation) {
-		case Implementation::None:
-			implementation = std::make_unique<FakeRDP>();
-			return implementation->Initialize();
-
-		case Implementation::ParallelRDP:
-			implementation = std::make_unique<ParallelRDPWrapper>();
-			return implementation->Initialize();
-
-		default:
-			UserMessage::Error("Unknown RDP implementation specified in RDP::Initialize");
-			return false;
-		}
 	}
 
 
@@ -97,6 +82,16 @@ namespace RDP
 
 		queue_word_offset = num_queued_words = 0;
 		dp.current = dp.end;
+	}
+
+
+	bool MakeParallelRdp()
+	{
+		if (implementation) {
+			implementation->TearDown();
+		}
+		implementation = std::make_unique<ParallelRDPWrapper>();
+		return implementation->Initialize();
 	}
 
 

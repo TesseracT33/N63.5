@@ -8,6 +8,7 @@ import <array>;
 import <bit>;
 import <concepts>;
 import <cstring>;
+import <filesystem>;
 import <optional>;
 import <string>;
 import <utility>;
@@ -16,12 +17,11 @@ namespace PIF
 {
 	export
 	{
+		template<bool press> void OnButtonAction(N64::Control control);
 		size_t GetNumberOfBytesUntilMemoryEnd(u32 offset);
 		size_t GetNumberOfBytesUntilRamStart(u32 offset);
 		u8* GetPointerToMemory(u32 address);
-		bool LoadIPL12(const std::string& path);
-		void OnButtonDown(N64::Control control);
-		void OnButtonUp(N64::Control control);
+		bool LoadIPL12(const std::filesystem::path& path);
 		void OnJoystickMovement(N64::Control control, s16 value);
 		template<std::signed_integral Int> Int ReadMemory(u32 addr);
 		template<size_t access_size> void WriteMemory(u32 addr, s64 data);

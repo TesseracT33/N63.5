@@ -24,6 +24,7 @@ namespace Scheduler
 		void Initialize();
 		void RemoveEvent(EventType event);
 		void Run();
+		void Stop();
 	}
 
 	struct Event {
@@ -38,6 +39,8 @@ namespace Scheduler
 	constexpr s64 rsp_cycles_per_update = 2 * cpu_cycles_per_update / 3;
 	static_assert(2 * cpu_cycles_per_update == 3 * rsp_cycles_per_update,
 		"CPU cycles per update must be divisible by 3.");
+
+	bool quit;
 
 	std::vector<Event> events; /* sorted after when they will occur */
 }

@@ -20,20 +20,23 @@ namespace Vulkan
 		void CheckVkResult(VkResult vk_result);
 		void FramePresent(ImGui_ImplVulkanH_Window* wd);
 		void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data);
-		VkCommandBuffer GetVkCommandBuffer();
-		VkDevice GetVkDevice();
-		VkFormat GetVkFormat();
-		u32 GetVkGraphicsQueueFamily();
-		VkInstance GetVkInstance();
-		VkPhysicalDevice GetVkPhysicalDevice();
-		VkQueue GetVkQueue();
+		VkAllocationCallbacks* GetAllocator();
+		VkCommandBuffer GetCommandBuffer();
+		VkDescriptorPool GetDescriptorPool();
+		VkDevice GetDevice();
+		VkFormat GetFormat();
+		u32 GetGraphicsQueueFamily();
+		VkInstance GetInstance();
+		VkPhysicalDevice GetPhysicalDevice();
+		VkPipelineCache GetPipelineCache();
+		VkQueue GetQueue();
+		VkRenderPass GetRenderPass();
 		bool Init(SDL_Window* sdl_window);
-		void SubmitRequestedVkCommandBuffer();
+		bool InitForParallelRDP();
+		bool InitGeneric(SDL_Window* sdl_window);
+		void SubmitRequestedCommandBuffer();
 		void TearDown();
 	}
-
-	bool InitForParallelRDP();
-	bool InitGeneric(SDL_Window* sdl_window);
 
 	VkAllocationCallbacks* vk_allocator;
 	VkCommandBuffer        vk_command_buffer;

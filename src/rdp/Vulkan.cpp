@@ -20,8 +20,10 @@ void Vulkan::CheckVkResult(VkResult vk_result)
 	}
 }
 
+// Currently unused. To be used in the future if I ever write my own RDP implementation using vulkan
 void Vulkan::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 {
+#if 0
 	VkResult vk_result;
 
 	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
@@ -83,10 +85,13 @@ void Vulkan::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 		vk_result = vkQueueSubmit(vk_queue, 1, &info, fd->Fence);
 		CheckVkResult(vk_result);
 	}
+#endif
 }
 
+// Currently unused. To be used in the future if I ever write my own RDP implementation using vulkan
 void Vulkan::FramePresent(ImGui_ImplVulkanH_Window* wd)
 {
+#if 0
 	if (vk_swap_chain_rebuild) {
 		return;
 	}
@@ -105,71 +110,88 @@ void Vulkan::FramePresent(ImGui_ImplVulkanH_Window* wd)
 	}
 	CheckVkResult(vk_result);
 	wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
+#endif
 }
 
-VkCommandBuffer Vulkan::GetVkCommandBuffer()
+VkAllocationCallbacks* Vulkan::GetAllocator()
+{
+	return vk_allocator;
+}
+
+VkCommandBuffer Vulkan::GetCommandBuffer()
 {
 	return vk_command_buffer;
 }
 
-VkDevice Vulkan::GetVkDevice()
+VkDescriptorPool Vulkan::GetDescriptorPool()
+{
+	return vk_descriptor_pool;
+}
+
+VkDevice Vulkan::GetDevice()
 {
 	return vk_device;
 }
 
-VkFormat Vulkan::GetVkFormat()
+VkFormat Vulkan::GetFormat()
 {
 	return vk_format;
 }
 
-u32 Vulkan::GetVkGraphicsQueueFamily()
+u32 Vulkan::GetGraphicsQueueFamily()
 {
 	return vk_queue_family;
 }
 
-VkInstance Vulkan::GetVkInstance()
+VkInstance Vulkan::GetInstance()
 {
 	return vk_instance;
 }
 
-VkPhysicalDevice Vulkan::GetVkPhysicalDevice()
+VkPipelineCache Vulkan::GetPipelineCache()
+{
+	return vk_pipeline_cache;
+}
+
+VkPhysicalDevice Vulkan::GetPhysicalDevice()
 {
 	return vk_physical_device;
 }
 
-VkQueue Vulkan::GetVkQueue()
+VkQueue Vulkan::GetQueue()
 {
 	return vk_queue;
 }
 
+VkRenderPass Vulkan::GetRenderPass()
+{
+	return vk_render_pass;
+}
+
 bool Vulkan::Init([[maybe_unused]] SDL_Window* sdl_window)
 {
-	RDP::Implementation rdp_impl = RDP::Implementation::ParallelRDP; // TODO: make settable
-	return rdp_impl == RDP::Implementation::ParallelRDP
-		? InitForParallelRDP()
-		: InitGeneric(sdl_window);
+	return InitForParallelRDP();
 }
 
 bool Vulkan::InitForParallelRDP()
-{
-	if (!RDP::Initialize(RDP::Implementation::ParallelRDP) || RDP::implementation == nullptr) {
-		UserMessage::Error("Failed to initialize ParallelRDP!");
-		return false;
+{ // TODO: possibly put this in ParallelRDPWrapper class instead
+	if (!RDP::implementation) {
+		if (!RDP::MakeParallelRdp() || !RDP::implementation) {
+			UserMessage::Error("Failed to initialize vulkan for ParallelRDP");
+			return false;
+		}
 	}
-	ParallelRDPWrapper* rdp = dynamic_cast<ParallelRDPWrapper*>(RDP::implementation.get());
-	if (rdp == nullptr) {
-		UserMessage::Error("Logic error: failed to cast RDPImplementation to ParallelRDPWrapper.");
-		return false;
-	}
+	ParallelRDPWrapper* const parallel_rdp = dynamic_cast<ParallelRDPWrapper*>(RDP::implementation.get());
+	assert(parallel_rdp);
 
-	vk_instance = rdp->GetVkInstance();
-	vk_physical_device = rdp->GetVkPhysicalDevice();
-	vk_device = rdp->GetVkDevice();
-	vk_queue_family = rdp->GetVkQueueFamily();
-	vk_queue = rdp->GetVkQueue();
-	vk_pipeline_cache = nullptr;
-	vk_descriptor_pool = nullptr;
-	vk_allocator = nullptr;
+	vk_instance = parallel_rdp->GetVkInstance();
+	vk_physical_device = parallel_rdp->GetVkPhysicalDevice();
+	vk_device = parallel_rdp->GetVkDevice();
+	vk_queue_family = parallel_rdp->GetVkQueueFamily();
+	vk_queue = parallel_rdp->GetVkQueue();
+	vk_pipeline_cache = {};
+	vk_descriptor_pool = {};
+	vk_allocator = {};
 	vk_min_image_count = 2;
 
 	VkResult vk_result;
@@ -191,8 +213,8 @@ bool Vulkan::InitForParallelRDP()
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-		pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-		pool_info.poolSizeCount = (u32)IM_ARRAYSIZE(pool_sizes);
+		pool_info.maxSets = 1000 * (u32)std::size(pool_sizes);
+		pool_info.poolSizeCount = (u32)std::size(pool_sizes);
 		pool_info.pPoolSizes = pool_sizes;
 		vk_result = vkCreateDescriptorPool(vk_device, &pool_info, vk_allocator, &vk_descriptor_pool);
 		CheckVkResult(vk_result);
@@ -237,9 +259,10 @@ bool Vulkan::InitForParallelRDP()
 	return true;
 }
 
+// Currently unused. To be used in the future if I ever write my own RDP implementation using vulkan
 bool Vulkan::InitGeneric(SDL_Window* sdl_window)
 {
-	/*
+#if 0
 	if (!sdl_window) {
 		std::cerr << "[vulkan] nullptr SDL_Window passed to Vulkan::InitGeneric\n";
 		return false;
@@ -383,30 +406,33 @@ bool Vulkan::InitGeneric(SDL_Window* sdl_window)
 	// Create SwapChain, RenderPass, Framebuffer, etc.
 	IM_ASSERT(vk_min_image_count >= 2);
 	ImGui_ImplVulkanH_CreateOrResizeWindow(vk_instance, vk_physical_device, vk_device, wd, vk_queue_family, vk_allocator, w, h, vk_min_image_count);
-	*/
+#endif
 
 	return true;
 }
 
-void Vulkan::SubmitRequestedVkCommandBuffer()
+void Vulkan::SubmitRequestedCommandBuffer()
 {
-	//wsi->get_device().submit(requested_command_buffer);
+	// wsi->get_device().submit(requested_command_buffer); TODO
 }
 
 void Vulkan::TearDown()
 {
-	/*
-	VkResult vk_result;
-	vk_result = vkDeviceWaitIdle(vk_device);
-	CheckVkResult(vk_result);
-	ImGui_ImplVulkan_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
-	ImGui_ImplVulkanH_DestroyWindow(vk_instance, vk_device, &vk_main_window_data, vk_allocator);
 	vkDestroyDescriptorPool(vk_device, vk_descriptor_pool, vk_allocator);
 	vkDestroyDevice(vk_device, vk_allocator);
 	vkDestroyInstance(vk_instance, vk_allocator);
-	SDL_DestroyWindow(sdl_window);
-	SDL_Quit();
-	*/
+
+	vk_allocator = {};
+	vk_command_buffer = {};
+	vk_descriptor_pool = {};
+	vk_device = {};
+	vk_format = {};
+	vk_instance = {};
+	vk_min_image_count = {};
+	vk_physical_device = {};
+	vk_pipeline_cache = {};
+	vk_queue = {};
+	vk_queue_family = {};
+	vk_render_pass = {};
+	vk_swap_chain_rebuild = {};
 }

@@ -30,7 +30,7 @@ namespace Cart
 	}
 
 
-	bool LoadRom(const std::string& rom_path)
+	bool LoadRom(const std::filesystem::path& rom_path)
 	{
 		std::optional<std::vector<u8>> optional_rom = ReadFileIntoVector(rom_path);
 		if (!optional_rom.has_value()) {
@@ -55,7 +55,7 @@ namespace Cart
 	}
 
 
-	bool LoadSram(const std::string& sram_path)
+	bool LoadSram(const std::filesystem::path& sram_path)
 	{
 		std::optional<std::vector<u8>> optional_sram = ReadFileIntoVector(sram_path);
 		if (!optional_sram.has_value()) {

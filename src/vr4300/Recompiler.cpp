@@ -1,3 +1,5 @@
+module;
+
 #ifdef _WIN64
 #include <windows.h>
 #else
@@ -81,6 +83,7 @@ namespace VR4300::Recompiler
 		buffer_pos = buffer;
 		blocks.clear();
 		current_block.reset();
+		return true;
 	}
 
 

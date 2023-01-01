@@ -41,7 +41,7 @@ namespace PIF
 	}
 
 
-	bool LoadIPL12(const std::string& path)
+	bool LoadIPL12(const std::filesystem::path& path)
 	{
 		std::optional<std::array<u8, memory_size>> optional_rom = ReadFileIntoArray<memory_size>(path);
 		if (!optional_rom.has_value()) {
@@ -84,18 +84,6 @@ namespace PIF
 		case N64::Control::Z: joypad_status.z = press; break;
 		default: std::unreachable();
 		}
-	}
-
-
-	void OnButtonDown(N64::Control control)
-	{
-		OnButtonAction<true>(control);
-	}
-
-
-	void OnButtonUp(N64::Control control)
-	{
-		OnButtonAction<false>(control);
 	}
 
 
@@ -213,7 +201,8 @@ namespace PIF
 		}
 	}
 
-
+	template void OnButtonAction<true>(N64::Control);
+	template void OnButtonAction<false>(N64::Control);
 	template s8 ReadMemory<s8>(u32);
 	template s16 ReadMemory<s16>(u32);
 	template s32 ReadMemory<s32>(u32);

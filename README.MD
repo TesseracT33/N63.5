@@ -3,10 +3,11 @@ An experimental, work-in-progress N64 emulator. It can boot one game so far: Nam
 ![namco](https://thumbs2.imgbox.com/e1/e7/jorsCBuA_t.png)
 
 # Running
-The path to the rom file used is supplied as the first command-line argument. It must be in big-endian format. Optionally, the path to the PIF boot room can be supplied as the second argument.
+Put SDL2.dll in the same directory as the executable (Windows). The path to the rom file used can be supplied as the first command-line argument. It must be in big-endian format. The path to the PIF boot room can also be supplied as the second argument.
 
 # Dependencies
 - [Dear ImGui](https://github.com/ocornut/imgui) (git submodule)
+- [Native File Dialog Extended](https://github.com/btzy/nativefiledialog-extended) (git submodule)
 - [parallel-rdp-standalone](https://github.com/Themaister/parallel-rdp-standalone) (git submodule)
 - [SDL2](https://github.com/libsdl-org/SDL) (static and shared library; last tested SDL2-2.0.22)
 

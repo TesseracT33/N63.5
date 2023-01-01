@@ -33,9 +33,10 @@ namespace VR4300
 		void CheckInterrupts();
 		void ClearInterruptPending(ExternalInterruptSource);
 		u64 GetElapsedCycles();
+		void InitRun(bool hle_pif);
 		void Reset();
 		u64 Run(u64 cpu_cycles_to_run);
-		void PowerOn(bool hle_pif);
+		void PowerOn();
 		void SetInterruptPending(ExternalInterruptSource);
 	}
 
@@ -53,7 +54,6 @@ namespace VR4300
 	template<Cop2Instruction> void ExecuteCop2Instruction();
 	void FetchDecodeExecuteInstruction();
 	void InitializeRegisters();
-	void HlePif();
 	void NotifyIllegalInstrCode(u32 instr_code);
 	void PrepareJump(u64 target_address);
 

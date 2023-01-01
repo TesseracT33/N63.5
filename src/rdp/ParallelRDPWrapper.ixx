@@ -15,6 +15,7 @@ import "SDL_vulkan.h";
 
 import <algorithm>;
 import <array>;
+import <cassert>;
 import <cstring>;
 import <format>;
 import <iostream>;
@@ -53,7 +54,7 @@ private:
 		u32                      get_surface_height() override;
 		u32                      get_surface_width() override;
 		void                     poll_input() override;
-		SDL_Window* sdl_window;
+		SDL_Window* const sdl_window;
 	};
 
 	friend struct SDLWSIPlatform;
@@ -170,26 +171,10 @@ private:
 		0x00010038
 	};
 
-	static constexpr RDP::ScanoutOptions scanout_opts = [] {
-		RDP::ScanoutOptions opts;
-		opts.persist_frame_on_invalid_input = true;
-		opts.vi.aa = true;
-		opts.vi.scale = true;
-		opts.vi.dither_filter = true;
-		opts.vi.divot_filter = true;
-		opts.vi.gamma_dither = true;
-		opts.downscale_steps = true;
-		opts.crop_overscan_pixels = true;
-		opts.persist_frame_on_invalid_input = true;
-		return opts;
-	}();
+	Vulkan::WSI wsi{};
 
-	Vulkan::Program* vk_program;
-	Vulkan::WSI wsi;
-	Vulkan::Device* wsi_device;
+	Vulkan::CommandBufferHandle requested_command_buffer{};
 
-	Vulkan::CommandBufferHandle requested_command_buffer;
-
-	std::unique_ptr<RDP::CommandProcessor> cmd_processor;
-	std::unique_ptr<SDLWSIPlatform> sdl_wsi_platform;
+	std::unique_ptr<RDP::CommandProcessor> cmd_processor{};
+	std::unique_ptr<SDLWSIPlatform> sdl_wsi_platform{};
 };

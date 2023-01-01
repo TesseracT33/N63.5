@@ -58,6 +58,7 @@ namespace Scheduler
 
 	void Initialize()
 	{
+		quit = false;
 		events.clear();
 		events.reserve(16);
 		VR4300::AddInitialEvents();
@@ -78,13 +79,21 @@ namespace Scheduler
 
 	void Run()
 	{
+		Initialize();
+
 		s64 cpu_cycle_overrun = 0, rsp_cycle_overrun = 0;
-		while (true) {
+		while (!quit) {
 			s64 cpu_step_dur = cpu_cycles_per_update - cpu_cycle_overrun;
 			s64 rsp_step_dur = cpu_cycles_per_update - rsp_cycle_overrun;
 			cpu_cycle_overrun = VR4300::Run(cpu_step_dur);
 			rsp_cycle_overrun = RSP::Run(rsp_step_dur);
 			CheckEvents(cpu_step_dur);
 		}
+	}
+
+
+	void Stop()
+	{
+		quit = true;
 	}
 }

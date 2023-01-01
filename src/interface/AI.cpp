@@ -12,28 +12,10 @@ namespace AI
 {
 	void Initialize()
 	{
-		static constexpr int num_audio_channels = 2;
-		static constexpr int sample_buffer_size_per_channel = 512;
-		static constexpr int sample_buffer_size = sample_buffer_size_per_channel * num_audio_channels;;
-		static constexpr int sample_rate = 44100;
-
-		SDL_AudioSpec desired_spec;
-		SDL_zero(desired_spec);
-		desired_spec.freq = sample_rate;
-		desired_spec.format = AUDIO_S16MSB;
-		desired_spec.channels = num_audio_channels;
-		desired_spec.samples = sample_buffer_size_per_channel;
-		desired_spec.callback = nullptr;
-
-		SDL_AudioSpec obtained_spec;
-		audio_device_id = SDL_OpenAudioDevice(nullptr, 0, &desired_spec, &obtained_spec, 0);
-		if (audio_device_id == 0) {
-			const char* error_msg = SDL_GetError();
-			UserMessage::Warning(std::format("Could not open audio device; {}", error_msg));
-		}
-		SDL_PauseAudioDevice(audio_device_id, 0);
-
+		ai = {};
+		dac = {};
 		ai.status = 1 << 20 | 1 << 24;
+		dma_address_buffer = dma_count = dma_length_buffer = 0;
 	}
 
 
@@ -72,7 +54,7 @@ namespace AI
 	void Sample()
 	{
 		if (dma_count != 0) {
-			s32 data = Memory::Read<s32>(ai.dram_addr);
+			[[maybe_unused]] s32 data = Memory::Read<s32>(ai.dram_addr);
 			// TODO output sample
 			ai.dram_addr += 4;
 			ai.len -= 4;

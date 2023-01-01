@@ -1,6 +1,3 @@
-#define SDL_MAIN_HANDLED
-#include "SDL.h"
-
 import Gui;
 import Logging;
 import N64;
@@ -13,33 +10,46 @@ import <string>;
 int main(int argc, char* argv[])
 {
 	/* CLI arguments (beyond executable path):
-	   1; path to rom (required)
+	   1; path to rom (optional)
 	   2; path to IPL boot rom (optional)
 	*/
-	if (argc <= 1) {
-		exit(0);
+	std::optional<std::string> rom_path, ipl_path;
+	if (argc > 1) {
+		rom_path = argv[1];
 	}
-
-	std::string rom_path = argv[1];
-	std::optional<std::string> ipl_path;
-	if (argc >= 3) {
-		ipl_path.emplace(argv[2]);
+	if (argc > 2) {
+		ipl_path = argv[2];
 	}
 
 	if (!InitializeLogging()) {
-		std::cerr << "Failed to initialize logging.\n";
+		std::cerr << "[warning] Failed to initialize logging.\n";
 	}
 
 	if (!Gui::Init()) {
-		std::cerr << "Failed to initialize GUI.\n";
+		std::cerr << "[fatal] Failed to initialize GUI.\n";
 		exit(1);
 	}
 
-	if (!N64::PowerOn()) {
-		std::cerr << "An error occured when starting the emulator.\n";
+	if (!N64::Init()) {
+		std::cerr << "[fatal] An error occured when starting the emulator.\n";
 		exit(1);
 	}
 
-	Gui::Run();
+	bool start_game_immediately = false;
+	if (rom_path.has_value()) {
+		if (N64::LoadGame(rom_path.value())) {
+			start_game_immediately = true;
+		}
+		else {
+			std::cerr << "[error] Failed to load rom at path " << rom_path.value() << '\n';
+		}
+	}
+
+	if (ipl_path.has_value() && !N64::LoadBios(ipl_path.value())) {
+		std::cerr << "[error] Failed to load bios at path " << ipl_path.value() << '\n';
+	}
+
+	Gui::Run(start_game_immediately);
+
 	Gui::TearDown();
 }

@@ -1,18 +1,18 @@
 module;
 
 #include "rdp_device.hpp"
-#include "wsi.hpp"
 #include "volk.h"
 #include "vulkan/vulkan.h"
 #include "vulkan_common.hpp"
+#include "wsi.hpp"
 
 module ParallelRDPWrapper;
 
-import Events;
 import Gui;
 import RDRAM;
 import UserMessage;
 import VI;
+import Vulkan;
 
 
 void ParallelRDPWrapper::EnqueueCommand(int cmd_len, u32* cmd_ptr)
@@ -67,26 +67,23 @@ VkQueue ParallelRDPWrapper::GetVkQueue()
 bool ParallelRDPWrapper::Initialize()
 {
 	if (!Vulkan::Context::init_loader(nullptr)) {
-		std::cerr << __FUNCTION__ << ": failed to initialize Vulkan loader.\n";
+		std::cerr << "[parallel-rdp] Failed to initialize Vulkan loader.\n";
 		return false;
 	}
 
 	SDL_Window* sdl_window = Gui::GetSdlWindow();
-	if (!sdl_window) {
-		std::cerr << __FUNCTION__ << ": retrieved SDL_Window is nullptr\n";
-		return false;
-	}
+	assert(sdl_window);
+	assert(SDL_GetWindowFlags(sdl_window) & SDL_WINDOW_VULKAN);
 
 	sdl_wsi_platform = std::make_unique<SDLWSIPlatform>(sdl_window);
-	wsi.set_backbuffer_srgb(false);
 	wsi.set_platform(sdl_wsi_platform.get());
+	wsi.set_backbuffer_srgb(false);
 	wsi.set_present_mode(Vulkan::PresentMode::UnlockedMaybeTear);
 	Vulkan::Context::SystemHandles handles{};
 	if (!wsi.init_simple(1, handles)) {
 		UserMessage::Error("Failed to init wsi.");
 		return false;
 	}
-	wsi_device = &wsi.get_device();
 
 	/* Construct command processor, which we later supply with RDP commands */
 	u8* rdram_ptr = RDRAM::GetPointerToMemory();
@@ -95,9 +92,14 @@ bool ParallelRDPWrapper::Initialize()
 	size_t hidden_rdram_size = rdram_size / 8;
 	RDP::CommandProcessorFlags flags{};
 	cmd_processor = std::make_unique<RDP::CommandProcessor>(
-		*wsi_device, rdram_ptr, rdram_offset, rdram_size, hidden_rdram_size, flags);
+		wsi.get_device(), rdram_ptr, rdram_offset, rdram_size, hidden_rdram_size, flags);
 	if (!cmd_processor->device_is_supported()) {
 		UserMessage::Error("Vulkan device not supported.");
+		return false;
+	}
+
+	if (!Vulkan::InitForParallelRDP()) {
+		UserMessage::Error("Failed to init Vulkan!");
 		return false;
 	}
 
@@ -142,8 +144,7 @@ void ParallelRDPWrapper::SubmitRequestedVkCommandBuffer()
 
 void ParallelRDPWrapper::TearDown()
 {
-	cmd_processor.reset();
-	wsi.teardown();
+
 }
 
 
@@ -151,27 +152,41 @@ void ParallelRDPWrapper::UpdateScreen()
 {
 	ReloadViRegisters();
 
+	Vulkan::Device& device = wsi.get_device();
+
 	wsi.begin_frame();
+
+	static constexpr RDP::ScanoutOptions scanout_opts = [] {
+		RDP::ScanoutOptions opts;
+		opts.persist_frame_on_invalid_input = true;
+		opts.vi.aa = true;
+		opts.vi.scale = true;
+		opts.vi.dither_filter = true;
+		opts.vi.divot_filter = true;
+		opts.vi.gamma_dither = true;
+		opts.downscale_steps = true;
+		opts.crop_overscan_pixels = true;
+		opts.persist_frame_on_invalid_input = true;
+		return opts;
+	}();
+
 	Vulkan::ImageHandle image = cmd_processor->scanout(scanout_opts);
 
 	// Normally reflection is automated.
 	Vulkan::ResourceLayout vertex_layout = {};
 	Vulkan::ResourceLayout fragment_layout = {};
-	fragment_layout.output_mask = 1 << 0;
-	fragment_layout.sets[0].sampled_image_mask = 1 << 0;
+	fragment_layout.output_mask = 1;
+	fragment_layout.sets[0].sampled_image_mask = 1;
 
 	// This request is cached.
-	auto* program = wsi_device->request_program(vertex_spirv, sizeof(vertex_spirv),
+	Vulkan::Program* program = device.request_program(vertex_spirv, sizeof(vertex_spirv),
 		fragment_spirv, sizeof(fragment_spirv), &vertex_layout, &fragment_layout);
 
 	// Blit image on screen.
-	auto cmd = wsi_device->request_command_buffer();
+	Vulkan::CommandBufferHandle cmd = device.request_command_buffer();
 	{
-		auto rp = wsi_device->get_swapchain_render_pass(Vulkan::SwapchainRenderPass::ColorOnly);
+		Vulkan::RenderPassInfo rp = device.get_swapchain_render_pass(Vulkan::SwapchainRenderPass::ColorOnly);
 		cmd->begin_render_pass(rp);
-
-		VkViewport vp = cmd->get_viewport();
-		// Adjust the viewport here for aspect ratio correction.
 
 		cmd->set_program(program);
 
@@ -183,15 +198,16 @@ void ParallelRDPWrapper::UpdateScreen()
 		// If we don't have an image, we just get a cleared screen in the render pass.
 		if (image) {
 			cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
-			cmd->set_viewport(vp);
 			// The vertices are constants in the shader.
 			// Draws fullscreen quad using oversized triangle.
 			cmd->draw(3);
 		}
 
+		Gui::Frame(GetVkCommandBuffer());
+
 		cmd->end_render_pass();
 	}
-	wsi_device->submit(cmd);
+	device.submit(cmd);
 	wsi.end_frame();
 }
 
@@ -200,13 +216,13 @@ ParallelRDPWrapper::SDLWSIPlatform::SDLWSIPlatform(SDL_Window* sdl_window)
 	: sdl_window(sdl_window) {}
 
 
-bool ParallelRDPWrapper::SDLWSIPlatform::alive(Vulkan::WSI& wsi)
+bool ParallelRDPWrapper::SDLWSIPlatform::alive([[maybe_unused]] Vulkan::WSI& wsi)
 {
 	return true;
 }
 
 
-VkSurfaceKHR ParallelRDPWrapper::SDLWSIPlatform::create_surface(VkInstance instance, VkPhysicalDevice gpu)
+VkSurfaceKHR ParallelRDPWrapper::SDLWSIPlatform::create_surface(VkInstance instance, [[maybe_unused]] VkPhysicalDevice gpu)
 {
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	if (!SDL_Vulkan_CreateSurface(sdl_window, instance, &vk_surface)) {
@@ -217,7 +233,7 @@ VkSurfaceKHR ParallelRDPWrapper::SDLWSIPlatform::create_surface(VkInstance insta
 }
 
 
-void ParallelRDPWrapper::SDLWSIPlatform::event_frame_tick(double frame, double elapsed)
+void ParallelRDPWrapper::SDLWSIPlatform::event_frame_tick([[maybe_unused]] double frame, [[maybe_unused]] double elapsed)
 {
 
 }
@@ -227,7 +243,8 @@ const VkApplicationInfo* ParallelRDPWrapper::SDLWSIPlatform::get_application_inf
 {
 	static constexpr VkApplicationInfo app_info = {
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-		.apiVersion = VK_API_VERSION_1_1
+		.pApplicationName = "N63.5",
+		.apiVersion = VK_API_VERSION_1_3
 	};
 	return &app_info;
 }
@@ -263,5 +280,5 @@ u32 ParallelRDPWrapper::SDLWSIPlatform::get_surface_height()
 
 void ParallelRDPWrapper::SDLWSIPlatform::poll_input()
 {
-	Events::Poll();
+	Gui::PollEvents();
 }

@@ -7,9 +7,9 @@ import <string>;
 
 namespace UserMessage
 {
-	SDL_Window* sdl_window; /* Must be set via 'Initialize' before any messages are shown. */
+	SDL_Window* sdl_window; /* Must be set via 'Init' before any messages are shown. */
 
-	export bool Initialize(SDL_Window* sdl_window)
+	export bool Init(SDL_Window* sdl_window)
 	{
 		if (sdl_window) {
 			UserMessage::sdl_window = sdl_window;

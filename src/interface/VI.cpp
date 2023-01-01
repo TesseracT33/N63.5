@@ -112,17 +112,14 @@ namespace VI
 		switch (offset) {
 		case Register::Ctrl:
 			vi.ctrl = data;
-			RDP::implementation->SetControl(vi.ctrl);
 			break;
 
 		case Register::Origin:
 			vi.origin = data & 0xFF'FFFF;
-			RDP::implementation->SetOrigin(vi.origin);
 			break;
 
 		case Register::Width:
 			vi.width = data & 0xFFF;
-			RDP::implementation->SetWidth(vi.width);
 			break;
 
 		case Register::VIntr:

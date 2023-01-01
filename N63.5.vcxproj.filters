@@ -36,8 +36,6 @@
     <ClCompile Include="src\interface\VI.cpp" />
     <ClCompile Include="src\rsp\RSP.ixx" />
     <ClCompile Include="src\common\Logging.ixx" />
-    <ClCompile Include="src\frontend\Events.ixx" />
-    <ClCompile Include="src\frontend\Events.cpp" />
     <ClCompile Include="src\memory\PIF.cpp" />
     <ClCompile Include="src\common\BuildOptions.ixx" />
     <ClCompile Include="src\interface\AI.ixx" />
@@ -68,8 +66,8 @@
     <ClCompile Include="external\EmuUtils\src\Util.ixx" />
     <ClCompile Include="src\common\Scheduler.ixx" />
     <ClCompile Include="src\common\Scheduler.cpp" />
-    <ClCompile Include="src\rdp\parallel-rdp-wrapper\ParallelRDPWrapper.cpp" />
-    <ClCompile Include="src\rdp\parallel-rdp-wrapper\ParallelRDPWrapper.ixx" />
+    <ClCompile Include="src\rdp\ParallelRDPWrapper.cpp" />
+    <ClCompile Include="src\rdp\ParallelRDPWrapper.ixx" />
     <ClCompile Include="src\rdp\RDPImplementation.ixx" />
     <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\command_ring.cpp" />
     <ClCompile Include="external\parallel-rdp-standalone\parallel-rdp\rdp_device.cpp" />
@@ -108,7 +106,6 @@
     <ClCompile Include="external\parallel-rdp-standalone\vulkan\wsi_timing.cpp" />
     <ClCompile Include="src\vr4300\Cache.ixx" />
     <ClCompile Include="src\vr4300\Cache.cpp" />
-    <ClCompile Include="src\rdp\FakeRDP.ixx" />
     <ClCompile Include="src\vr4300\COP2.ixx" />
     <ClCompile Include="src\vr4300\COP2.cpp" />
     <ClCompile Include="src\vr4300\Recompiler.ixx" />
@@ -134,7 +131,6 @@
     <ClCompile Include="src\vr4300\Recompiler.ixx" />
     <ClCompile Include="src\vr4300\VR4300.ixx" />
     <ClCompile Include="external\imgui\backends\imgui_impl_sdl.cpp" />
-    <ClCompile Include="external\imgui\backends\imgui_impl_sdlrenderer.cpp" />
     <ClCompile Include="external\imgui\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -144,8 +140,11 @@
     <ClCompile Include="src\frontend\Gui.cpp" />
     <ClCompile Include="src\frontend\Audio.ixx" />
     <ClCompile Include="src\frontend\Audio.cpp" />
-    <ClCompile Include="src\frontend\Vulkan.ixx" />
-    <ClCompile Include="src\frontend\Vulkan.cpp" />
+    <ClCompile Include="src\rdp\Vulkan.ixx" />
+    <ClCompile Include="src\rdp\Vulkan.cpp" />
+    <ClCompile Include="external\nativefiledialog-extended\src\nfd_win.cpp" />
+    <ClCompile Include="src\frontend\Input.ixx" />
+    <ClCompile Include="src\frontend\Input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\parallel-rdp-standalone\parallel-rdp\shaders\binning.h" />
@@ -259,14 +258,11 @@
     <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xlib.h" />
     <ClInclude Include="external\parallel-rdp-standalone\vulkan-headers\include\vulkan\vulkan_xlib_xrandr.h" />
     <ClInclude Include="external\imgui\backends\imgui_impl_sdl.h" />
-    <ClInclude Include="external\imgui\backends\imgui_impl_sdlrenderer.h" />
     <ClInclude Include="external\imgui\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="external\imgui\imconfig.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_internal.h" />
-    <ClInclude Include="external\imgui\imstb_rectpack.h" />
-    <ClInclude Include="external\imgui\imstb_textedit.h" />
-    <ClInclude Include="external\imgui\imstb_truetype.h" />
+    <ClInclude Include="external\nativefiledialog-extended\src\include\nfd.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.MD" />
@@ -275,7 +271,7 @@
     <None Include=".gitignore" />
     <None Include=".gitattributes" />
     <None Include=".editorconfig" />
-    <None Include="src\rdp\parallel-rdp-wrapper\shaders\fullscreen_quad.vert" />
-    <None Include="src\rdp\parallel-rdp-wrapper\shaders\fullscreen_quad.frag" />
+    <None Include="src\rdp\shaders\fullscreen_quad.vert" />
+    <None Include="src\rdp\shaders\fullscreen_quad.frag" />
   </ItemGroup>
 </Project>

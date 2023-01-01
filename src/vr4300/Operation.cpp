@@ -62,23 +62,6 @@ namespace VR4300
 	}
 
 
-	void HlePif()
-	{
-		/* https://github.com/Dillonb/n64-resources/blob/master/bootn64.html */
-		gpr.Set(20, 1);
-		gpr.Set(22, 0x3F);
-		gpr.Set(29, 0xA400'1FF0);
-		cop0.SetRaw(cop0_index_status, 0x3400'0000);
-		cop0.SetRaw(cop0_index_config, 0x7006'E463);
-		for (u64 i = 0; i < 0x1000; i += 4) {
-			u64 src_addr = 0xFFFF'FFFF'B000'0000 + i;
-			u64 dst_addr = 0xFFFF'FFFF'A400'0000 + i;
-			WriteVirtual<4>(dst_addr, ReadVirtual<s32>(src_addr));
-		}
-		pc = 0xFFFF'FFFF'A400'0040;
-	}
-
-
 	void InitializeRegisters()
 	{
 		std::memset(&gpr, 0, sizeof(gpr));
@@ -99,13 +82,36 @@ namespace VR4300
 	}
 
 
+	void InitRun(bool hle_pif)
+	{
+		if (hle_pif) {
+			/* https://github.com/Dillonb/n64-resources/blob/master/bootn64.html */
+			gpr.Set(20, 1);
+			gpr.Set(22, 0x3F);
+			gpr.Set(29, 0xA400'1FF0);
+			cop0.SetRaw(cop0_index_status, 0x3400'0000);
+			cop0.SetRaw(cop0_index_config, 0x7006'E463);
+			for (u64 i = 0; i < 0x1000; i += 4) {
+				u64 src_addr = 0xFFFF'FFFF'B000'0000 + i;
+				u64 dst_addr = 0xFFFF'FFFF'A400'0000 + i;
+				WriteVirtual<4>(dst_addr, ReadVirtual<s32>(src_addr));
+			}
+			pc = 0xFFFF'FFFF'A400'0040;
+		}
+		else {
+			SignalException<Exception::ColdReset>();
+			HandleException();
+		}
+	}
+
+
 	void NotifyIllegalInstrCode(u32 instr_code)
 	{
 		Log(std::format("Illegal CPU instruction code {:08X} encountered.\n", instr_code));
 	}
 
 
-	void PowerOn(bool hle_pif)
+	void PowerOn()
 	{
 		rdram_ptr = RDRAM::GetPointerToMemory();
 		exception_has_occurred = false;
@@ -114,14 +120,6 @@ namespace VR4300
 		InitializeRegisters();
 		InitializeFpu();
 		InitializeMMU();
-
-		if (hle_pif || skip_boot_rom) {
-			HlePif();
-		}
-		else {
-			SignalException<Exception::ColdReset>();
-			HandleException();
-		}
 
 		if constexpr (recompile_cpu) {
 			Recompiler::Initialize();

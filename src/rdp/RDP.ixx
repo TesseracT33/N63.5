@@ -13,11 +13,8 @@ namespace RDP
 {
 	export
 	{
-		enum class Implementation {
-			None, ParallelRDP
-		};
-
-		bool Initialize(Implementation rdp_implementation);
+		void Initialize();
+		bool MakeParallelRdp();
 		s32 ReadReg(u32 addr);
 		void WriteReg(u32 addr, s32 data);
 

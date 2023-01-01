@@ -2,8 +2,6 @@ export module AI; /* Audio Interface */
 
 import Util;
 
-import "SDL.h";
-
 import <cstring>;
 import <format>;
 import <string_view>;
@@ -32,9 +30,7 @@ namespace AI
 		u32 frequency, period, precision;
 	} dac;
 
-	u32 dma_length_buffer;
 	u32 dma_address_buffer;
-	uint dma_count;
-
-	SDL_AudioDeviceID audio_device_id;
+	u32 dma_count;
+	u32 dma_length_buffer;
 }
