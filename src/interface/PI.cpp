@@ -2,7 +2,7 @@ module PI;
 
 import Cart;
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import RDRAM;
 import Scheduler;
@@ -38,7 +38,7 @@ namespace PI
 				std::memcpy(rdram_ptr + num_bytes_first_block, cart_ptr + num_bytes_first_block, dma_len - num_bytes_first_block);
 			}
 			if constexpr (log_dma) {
-				LogDma(std::format("From cart ROM ${:X} to RDRAM ${:X}: ${:X} bytes",
+				Log::Dma(std::format("From cart ROM ${:X} to RDRAM ${:X}: ${:X} bytes",
 					pi.cart_addr, pi.dram_addr, dma_len));
 			}
 		}
@@ -51,7 +51,7 @@ namespace PI
 			//	LogDMA(std::format("From RDRAM ${:X} to cart ROM ${:X}: ${:X} bytes",
 			//		pi.dram_addr, pi.cart_addr, dma_len));
 			//}
-			Log("Attempted DMA from RDRAM to Cart, but this is unimplemented.");
+			Log::Warning("Attempted DMA from RDRAM to Cart, but this is unimplemented.");
 			OnDmaFinish();
 			return;
 		}
@@ -85,7 +85,7 @@ namespace PI
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&pi) + offset, 4);
 		if constexpr (log_io_ai) {
-			LogIoRead("PI", RegOffsetToStr(offset), ret);
+			Log::IoRead("PI", RegOffsetToStr(offset), ret);
 		}
 		return ret;
 	}
@@ -123,7 +123,7 @@ namespace PI
 		static_assert(sizeof(pi) >> 2 == 0x10);
 		u32 offset = addr >> 2 & 0xF;
 		if constexpr (log_io_ai) {
-			LogIoWrite("PI", RegOffsetToStr(offset), data);
+			Log::IoWrite("PI", RegOffsetToStr(offset), data);
 		}
 
 		switch (offset) {
@@ -171,7 +171,7 @@ namespace PI
 		case Register::BsdDom2Rls: pi.bsd_dom2_rls = data; break;
 
 		default:
-			Log(std::format("Unexpected write made to PI register at address ${:08X}", addr));
+			Log::Warning(std::format("Unexpected write made to PI register at address ${:08X}", addr));
 		}
 	}
 }

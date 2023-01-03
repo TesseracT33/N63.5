@@ -1,7 +1,7 @@
 module SI;
 
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import PIF;
 import RDRAM;
@@ -38,7 +38,7 @@ namespace SI
 			u8* pif_ptr = PIF::GetPointerToMemory(pif_addr);
 			std::memcpy(rdram_ptr, pif_ptr, dma_len);
 			if constexpr (log_dma) {
-				LogDma(std::format("From PIF ${:X} to RDRAM ${:X}: ${:X} bytes",
+				Log::Dma(std::format("From PIF ${:X} to RDRAM ${:X}: ${:X} bytes",
 					pif_addr, si.dram_addr, dma_len));
 			}
 		}
@@ -56,12 +56,12 @@ namespace SI
 					rdram_ptr += 4;
 				}
 				if constexpr (log_dma) {
-					LogDma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
+					Log::Dma(std::format("From RDRAM ${:X} to PIF ${:X}: ${:X} bytes",
 						si.dram_addr, pif_addr, dma_len - num_bytes_in_rom_area));
 				}
 			}
 			else {
-				LogDma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
+				Log::Dma(std::format("Attempted from RDRAM ${:X} to PIF ${:X}, but the target PIF memory area was entirely in the ROM region",
 					si.dram_addr, pif_addr));
 				OnDmaFinish();
 				return;
@@ -97,7 +97,7 @@ namespace SI
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&si) + offset, 4);
 		if constexpr (log_io_si) {
-			LogIoRead("SI", RegOffsetToStr(offset), ret);
+			Log::IoRead("SI", RegOffsetToStr(offset), ret);
 		}
 		return ret;
 	}
@@ -128,7 +128,7 @@ namespace SI
 		static_assert(sizeof(si) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
 		if constexpr (log_io_ai) {
-			LogIoWrite("SI", RegOffsetToStr(offset), data);
+			Log::IoWrite("SI", RegOffsetToStr(offset), data);
 		}
 
 		switch (offset) {
@@ -144,7 +144,7 @@ namespace SI
 		case Register::AddrWr4B:
 			si.pif_addr_wr4b = data;
 			/* TODO */
-			Log("Tried to start SI WR4B DMA, which is currently unimplemented.");
+			Log::Warning("Tried to start SI WR4B DMA, which is currently unimplemented.");
 			break;
 
 		case Register::AddrWr64B:
@@ -155,7 +155,7 @@ namespace SI
 		case Register::AddrRd4B:
 			si.pif_addr_rd4b = data;
 			/* TODO */
-			Log("Tried to start SI RD4B DMA, which is currently unimplemented.");
+			Log::Warning("Tried to start SI RD4B DMA, which is currently unimplemented.");
 			break;
 
 		case Register::Status:
@@ -167,7 +167,7 @@ namespace SI
 			break;
 
 		default:
-			Log(std::format("Unexpected write made to SI register at address ${:08X}", addr));
+			Log::Warning(std::format("Unexpected write made to SI register at address ${:08X}", addr));
 		}
 	}
 }

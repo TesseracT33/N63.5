@@ -8,7 +8,7 @@ import :MMU;
 import :Recompiler;
 
 import BuildOptions;
-import Logging;
+import Log;
 import RDRAM;
 
 namespace VR4300
@@ -107,7 +107,7 @@ namespace VR4300
 
 	void NotifyIllegalInstrCode(u32 instr_code)
 	{
-		Log(std::format("Illegal CPU instruction code {:08X} encountered.\n", instr_code));
+		Log::Error(std::format("Illegal CPU instruction code {:08X} encountered.\n", instr_code));
 	}
 
 

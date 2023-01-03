@@ -7,7 +7,7 @@ import :MMU;
 import :Operation;
 
 import BuildOptions;
-import Logging;
+import Log;
 import Memory;
 import RDRAM;
 
@@ -146,7 +146,7 @@ namespace VR4300
 		https://discord.com/channels/465585922579103744/600463718924681232/1034605516900544582 */
 		auto rdram_offset = phys_addr & ~(sizeof(cache_line.data) - 1);
 		if (rdram_offset >= RDRAM::GetSize()) {
-			Log(std::format("Attempted to fill cache line from p_addr {} (beyond RDRAM)", rdram_offset));
+			Log::Warning(std::format("Attempted to fill cache line from p_addr {} (beyond RDRAM)", rdram_offset));
 		}
 		std::memcpy(cache_line.data, rdram_ptr + rdram_offset, sizeof(cache_line.data));
 		cache_line.ptag = phys_addr & ~0xFFF;

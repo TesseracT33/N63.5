@@ -7,7 +7,7 @@ import :Operation;
 import :Recompiler;
 
 import BuildOptions;
-import Logging;
+import Log;
 
 namespace VR4300
 {
@@ -132,7 +132,7 @@ namespace VR4300
 	void HandleException()
 	{
 		if constexpr (log_cpu_exceptions) {
-			LogException(ExceptionToString(occurred_exception));
+			Log::CpuException(ExceptionToString(occurred_exception));
 		}
 
 		exception_has_occurred = false;

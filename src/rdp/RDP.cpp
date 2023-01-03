@@ -1,7 +1,7 @@
 module RDP;
 
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import ParallelRDPWrapper;
 import RDPImplementation;
@@ -106,7 +106,7 @@ namespace RDP
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&dp) + offset, 4);
 		if constexpr (log_io_rdp) {
-			LogIoRead("RDP", RegOffsetToStr(offset), ret);
+			Log::IoRead("RDP", RegOffsetToStr(offset), ret);
 		}
 		return ret;
 	}
@@ -139,7 +139,7 @@ namespace RDP
 		static_assert(sizeof(dp) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
 		if constexpr (log_io_rdp) {
-			LogIoWrite("RDP", RegOffsetToStr(offset), data);
+			Log::IoWrite("RDP", RegOffsetToStr(offset), data);
 		}
 
 		switch (offset) {

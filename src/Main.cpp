@@ -1,5 +1,5 @@
 import Gui;
-import Logging;
+import Log;
 import N64;
 import RDP;
 
@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 		ipl_path = argv[2];
 	}
 
-	if (!InitializeLogging()) {
+	if (!Log::Init()) {
 		std::cerr << "[warning] Failed to initialize logging.\n";
 	}
 

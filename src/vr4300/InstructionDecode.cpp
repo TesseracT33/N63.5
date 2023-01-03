@@ -11,7 +11,7 @@ import :Operation;
 import :Recompiler;
 
 import BuildOptions;
-import Logging;
+import Log;
 import Util;
 
 
@@ -37,7 +37,7 @@ import Util;
 
 #define LOG_INSTR(OUTPUT) { \
 	if constexpr (log_cpu_instructions) \
-		LogCpuInstruction(last_instr_fetch_phys_addr, OUTPUT); }
+		Log::CpuInstruction(last_instr_fetch_phys_addr, OUTPUT); }
 
 #define IMM16 (instr_code & 0xFFFF)
 #define IMM26 (instr_code & 0x3FF'FFFF)
@@ -534,7 +534,7 @@ namespace VR4300
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_cpu_instructions) {
-			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
+			Log::CpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
 		}
 	}
 
@@ -550,7 +550,7 @@ namespace VR4300
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_cpu_instructions) {
-			LogCpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
+			Log::CpuInstruction(last_instr_fetch_phys_addr, current_instr_log_output);
 		}
 	}
 }

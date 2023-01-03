@@ -35,7 +35,7 @@
     <ClCompile Include="src\interface\SI.cpp" />
     <ClCompile Include="src\interface\VI.cpp" />
     <ClCompile Include="src\rsp\RSP.ixx" />
-    <ClCompile Include="src\common\Logging.ixx" />
+    <ClCompile Include="src\common\Log.ixx" />
     <ClCompile Include="src\memory\PIF.cpp" />
     <ClCompile Include="src\common\BuildOptions.ixx" />
     <ClCompile Include="src\interface\AI.ixx" />

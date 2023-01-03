@@ -4,7 +4,7 @@ import :ScalarUnit;
 import :VectorUnit;
 
 import BuildOptions;
-import Logging;
+import Log;
 import Util;
 
 
@@ -273,7 +273,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_rsp_instructions) {
-			LogRspInstruction(current_instr_pc, current_instr_log_output);
+			Log::RspInstruction(current_instr_pc, current_instr_log_output);
 		}
 	}
 
@@ -305,7 +305,7 @@ namespace RSP
 			static_assert(AlwaysFalse<instr>);
 		}
 		if constexpr (log_rsp_instructions) {
-			LogRspInstruction(current_instr_pc, current_instr_log_output);
+			Log::RspInstruction(current_instr_pc, current_instr_log_output);
 		}
 	}
 }

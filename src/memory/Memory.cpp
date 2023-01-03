@@ -3,7 +3,7 @@ module Memory;
 import AI;
 import Cart;
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import PI;
 import PIF;
@@ -21,7 +21,7 @@ namespace Memory
 		return io::ReadReg(addr);                                              \
 	}                                                                          \
 	else {                                                                     \
-		Log(std::format(                                                       \
+		Log::Warning(std::format(                                              \
 			"Attempted to read IO region at address ${:08X} for sized int {}", \
 			addr, sizeof(INT)));                                               \
 		return INT{};                                                          \
@@ -33,7 +33,7 @@ namespace Memory
 		io::WriteReg(addr, data);                                               \
 	}                                                                           \
 	else {                                                                      \
-		Log(std::format(                                                        \
+		Log::Warning(std::format(                                               \
 			"Attempted to write IO region at address ${:08X} for sized int {}", \
 			addr, access_size));                                                \
 	}
@@ -57,7 +57,7 @@ namespace Memory
 				return READ_INTERFACE(RDP, Int, addr);
 
 			case 3: /* $0420'0000 - $042F'FFFF */
-				Log(std::format("Unexpected cpu read to address ${:08X}", addr));
+				Log::Warning(std::format("Unexpected cpu read to address ${:08X}", addr));
 				return Int{};
 
 			case 4: /* $0430'0000 - $043F'FFFF */
@@ -91,7 +91,7 @@ namespace Memory
 		if ((addr & 0xFFFF'F800) == 0x1FC0'0000) { /* $1FC0'0000 - $1FC0'07FF */
 			return PIF::ReadMemory<Int>(addr);
 		}
-		Log(std::format("Unexpected cpu read to address ${:08X}", addr));
+		Log::Warning(std::format("Unexpected cpu read to address ${:08X}", addr));
 		return Int{};
 	}
 
@@ -116,7 +116,7 @@ namespace Memory
 				WRITE_INTERFACE(RDP, access_size, addr, data); break;
 
 			case 3: /* $0420'0000 - $042F'FFFF */
-				Log(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
+				Log::Warning(std::format("Unexpected cpu write to address ${:08X}", addr)); break;
 
 			case 4: /* $0430'0000 - $043F'FFFF */
 				WRITE_INTERFACE(MI, access_size, addr, data); break;
@@ -150,7 +150,7 @@ namespace Memory
 			PIF::WriteMemory<access_size>(addr, data);
 		}
 		else {
-			Log(std::format("Unexpected cpu write to address ${:08X}", addr));
+			Log::Warning(std::format("Unexpected cpu write to address ${:08X}", addr));
 		}
 	}
 

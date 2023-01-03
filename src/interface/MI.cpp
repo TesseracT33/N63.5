@@ -1,7 +1,7 @@
 module MI;
 
 import BuildOptions;
-import Logging;
+import Log;
 import VR4300;
 
 namespace MI
@@ -38,7 +38,7 @@ namespace MI
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&mi) + offset, 4);
 		if constexpr (log_io_mi) {
-			LogIoRead("MI", RegOffsetToStr(offset), ret);
+			Log::IoRead("MI", RegOffsetToStr(offset), ret);
 		}
 		return ret;
 	}
@@ -68,7 +68,7 @@ namespace MI
 		static_assert(sizeof(mi) >> 2 == 4);
 		u32 offset = addr >> 2 & 3;
 		if constexpr (log_io_ai) {
-			LogIoWrite("MI", RegOffsetToStr(offset), data);
+			Log::IoWrite("MI", RegOffsetToStr(offset), data);
 		}
 
 		if (offset == Register::Mode) {

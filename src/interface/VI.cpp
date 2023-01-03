@@ -1,7 +1,7 @@
 module VI;
 
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import N64;
 import RDP;
@@ -71,7 +71,7 @@ namespace VI
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&vi) + offset, 4);
 		if constexpr (log_io_ai) {
-			LogIoRead("VI", RegOffsetToStr(offset), ret);
+			Log::IoRead("VI", RegOffsetToStr(offset), ret);
 		}
 		return ret;
 	}
@@ -106,7 +106,7 @@ namespace VI
 		static_assert(sizeof(vi) >> 2 == 0x10);
 		u32 offset = addr >> 2 & 0xF;
 		if constexpr (log_io_ai) {
-			LogIoWrite("VI", RegOffsetToStr(offset), data);
+			Log::IoWrite("VI", RegOffsetToStr(offset), data);
 		}
 
 		switch (offset) {

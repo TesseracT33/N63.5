@@ -3,7 +3,7 @@ module RSP:Interface;
 import :Operation;
 
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import RDRAM;
 import Scheduler;
@@ -139,7 +139,7 @@ namespace RSP
 			// TODO: return random number if !halted, else pc
 			//return halted ? pc : Int(Random<s32>(0, 0xFFF));
 			if constexpr (log_io_rsp) {
-				LogIoRead("RSP", "SP_PC", pc);
+				Log::IoRead("RSP", "SP_PC", pc);
 			}
 			return pc;
 		}
@@ -198,7 +198,7 @@ namespace RSP
 				}
 			}();
 			if constexpr (log_io_rsp) {
-				LogIoRead("RSP", RegOffsetToStr(offset), ret);
+				Log::IoRead("RSP", RegOffsetToStr(offset), ret);
 			}
 			return ret;
 		}
@@ -227,14 +227,14 @@ namespace RSP
 			pc = data & 0xFFC;
 			jump_is_pending = in_branch_delay_slot = false;
 			if constexpr (log_io_rsp) {
-				LogIoWrite("RSP", "SP_PC", data);
+				Log::IoWrite("RSP", "SP_PC", data);
 			}
 		}
 		else {
 			static_assert(sizeof(sp) >> 2 == 8);
 			u32 offset = addr >> 2 & 7;
 			if constexpr (log_io_rsp) {
-				LogIoWrite("RSP", RegOffsetToStr(offset), data);
+				Log::IoWrite("RSP", RegOffsetToStr(offset), data);
 			}
 
 			switch (offset) {

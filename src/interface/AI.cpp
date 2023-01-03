@@ -1,7 +1,7 @@
 module AI;
 
 import BuildOptions;
-import Logging;
+import Log;
 import MI;
 import Memory;
 import N64;
@@ -31,7 +31,7 @@ namespace AI
 		s32 ret;
 		std::memcpy(&ret, (s32*)(&ai) + offset, 4);
 		if constexpr (log_io_ai) {
-			LogIoRead("AI", RegOffsetToStr(offset), ret);
+			Log::IoRead("AI", RegOffsetToStr(offset), ret);
 		}
 		return ret;
 	}
@@ -75,7 +75,7 @@ namespace AI
 		static_assert(sizeof(ai) >> 2 == 8);
 		u32 offset = addr >> 2 & 7;
 		if constexpr (log_io_ai) {
-			LogIoWrite("AI", RegOffsetToStr(offset), data);
+			Log::IoWrite("AI", RegOffsetToStr(offset), data);
 		}
 
 		switch (offset) {
@@ -123,7 +123,7 @@ namespace AI
 			break;
 
 		default:
-			Log(std::format("Unexpected write made to AI register at address ${:08X}", addr));
+			Log::Warning(std::format("Unexpected write made to AI register at address ${:08X}", addr));
 		}
 	}
 }

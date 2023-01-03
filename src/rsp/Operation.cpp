@@ -3,7 +3,7 @@ module RSP:Operation;
 import :Interface;
 
 import BuildOptions;
-import Logging;
+import Log;
 
 namespace RSP
 {
@@ -80,7 +80,7 @@ namespace RSP
 			return ReadReg(addr);
 		}
 		else {
-			Log(std::format(
+			Log::Warning(std::format(
 				"Attempted to read RSP memory region at address ${:08X} for sized int {}",
 				addr, sizeof(Int)));
 			return {};
