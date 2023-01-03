@@ -244,7 +244,7 @@ const VkApplicationInfo* ParallelRDPWrapper::SDLWSIPlatform::get_application_inf
 	static constexpr VkApplicationInfo app_info = {
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName = "N63.5",
-		.apiVersion = VK_API_VERSION_1_3
+		.apiVersion = VK_API_VERSION_1_1
 	};
 	return &app_info;
 }
