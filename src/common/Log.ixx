@@ -7,6 +7,7 @@ import <concepts>;
 import <format>;
 import <fstream>;
 import <iostream>;
+import <source_location>;
 import <string>;
 import <string_view>;
 
@@ -19,7 +20,7 @@ namespace Log
 		void CpuWrite(u32 phys_addr, std::integral auto value);
 		void Dma(const auto& output);
 		void Error(const auto& output);
-		void Fatal(const auto& output);
+		void Fatal(const auto& output, std::source_location loc = std::source_location::current());
 		void Info(const auto& output);
 		bool Init();
 		void IoRead(std::string_view loc, std::string_view reg, std::integral auto value);
@@ -75,9 +76,10 @@ void Log::Error(const auto& output)
 	FileOut(shown_output);
 }
 
-void Log::Fatal(const auto& output)
+void Log::Fatal(const auto& output, std::source_location loc)
 {
-	std::string shown_output = std::string("[FATAL] ") + output;
+	std::string shown_output = std::format("[FATAL] {}({}:{}), function {}: {}",
+		loc.file_name(), loc.line(), loc.column(), loc.function_name(), output);
 	ConsoleOut(shown_output);
 	FileOut(shown_output);
 }
