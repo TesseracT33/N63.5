@@ -2,7 +2,6 @@ module;
 
 #include "rdp_device.hpp"
 #include "volk.h"
-#include "vulkan/vulkan.h"
 #include "wsi.hpp"
 
 export module ParallelRDPWrapper;

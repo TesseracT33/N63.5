@@ -2,8 +2,6 @@ module;
 
 #include "rdp_device.hpp"
 #include "volk.h"
-#include "vulkan/vulkan.h"
-#include "vulkan_common.hpp"
 #include "wsi.hpp"
 
 module ParallelRDPWrapper;
@@ -66,8 +64,8 @@ VkQueue ParallelRDPWrapper::GetVkQueue()
 
 bool ParallelRDPWrapper::Initialize()
 {
-	if (!Vulkan::Context::init_loader(nullptr)) {
-		std::cerr << "[parallel-rdp] Failed to initialize Vulkan loader.\n";
+	if (volkInitialize() != VK_SUCCESS) {
+		UserMessage::Error("[parallel-rdp] Failed to initialize volk.");
 		return false;
 	}
 
@@ -203,7 +201,7 @@ void ParallelRDPWrapper::UpdateScreen()
 			cmd->draw(3);
 		}
 
-		Gui::Frame(GetVkCommandBuffer());
+		Gui::Frame(cmd->get_command_buffer());
 
 		cmd->end_render_pass();
 	}

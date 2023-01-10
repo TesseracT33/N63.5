@@ -1,7 +1,7 @@
 module;
 
 #include "imgui_impl_vulkan.h"
-#include "vulkan/vulkan.h"
+#include "volk.h"
 
 module Vulkan;
 
@@ -189,6 +189,8 @@ bool Vulkan::InitForParallelRDP()
 	vk_device = parallel_rdp->GetVkDevice();
 	vk_queue_family = parallel_rdp->GetVkQueueFamily();
 	vk_queue = parallel_rdp->GetVkQueue();
+	vk_command_buffer = parallel_rdp->GetVkCommandBuffer();
+	vk_format = parallel_rdp->GetVkFormat();
 	vk_pipeline_cache = {};
 	vk_descriptor_pool = {};
 	vk_allocator = {};
@@ -197,7 +199,7 @@ bool Vulkan::InitForParallelRDP()
 	VkResult vk_result;
 
 	{ // Create Descriptor Pool
-		VkDescriptorPoolSize pool_sizes[] = {
+		static constexpr VkDescriptorPoolSize pool_sizes[] = {
 			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
 			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
@@ -413,7 +415,10 @@ bool Vulkan::InitGeneric(SDL_Window* sdl_window)
 
 void Vulkan::SubmitRequestedCommandBuffer()
 {
-	// wsi->get_device().submit(requested_command_buffer); TODO
+	// TODO: do not hardcode for parallel-rdp
+	ParallelRDPWrapper* const parallel_rdp = dynamic_cast<ParallelRDPWrapper*>(RDP::implementation.get());
+	assert(parallel_rdp);
+	parallel_rdp->SubmitRequestedVkCommandBuffer();
 }
 
 void Vulkan::TearDown()

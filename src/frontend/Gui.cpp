@@ -4,6 +4,7 @@ module;
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_vulkan.h"
 #include "nfd.h"
+#include "volk.h"
 
 module Gui;
 
@@ -383,6 +384,8 @@ bool Gui::InitImgui()
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui::StyleColorsDark();
 
+	ImGui_ImplVulkan_LoadFunctions([](const char* fn, void*) { return vkGetInstanceProcAddr(Vulkan::GetInstance(), fn); });
+
 	if (!ImGui_ImplSDL2_InitForVulkan(sdl_window)) {
 		UserMessage::Fatal("ImGui_ImplSDL2_InitForVulkan failed");
 		return false;
@@ -672,7 +675,7 @@ void Gui::Run(bool boot_game_immediately)
 		else {
 			while (!start_game) {
 				PollEvents();
-				Frame(Vulkan::GetCommandBuffer());
+				N64::UpdateScreen();
 			}
 		}
 	}
