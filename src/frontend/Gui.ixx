@@ -51,6 +51,7 @@ namespace Gui
 	bool InitImgui();
 	bool InitSdl();
 	bool NeedsDraw();
+	void OnGameSelected(size_t list_index);
 	void OnInputBindingsWindowResetAll();
 	void OnInputBindingsWindowSave();
 	void OnInputBindingsWindowUseControllerDefaults();
@@ -66,19 +67,21 @@ namespace Gui
 	void OnMenuQuit();
 	void OnMenuReset();
 	void OnMenuSaveState();
-	void OnMenuSetGameDirectory();
+	void OnMenuShowGameList();
 	void OnMenuStop();
 	void OnMenuWindowScale();
-	void OnNewGameDirectory();
 	void OnRdpWindowParallelRdpSelected();
 	void OnSdlQuit();
+	void OnSetGameDirectory();
 	void OnWindowResizeEvent(SDL_Event const& event);
 	bool ReadConfigFile();
+	void RefreshGameList();
 	void StartGame();
 	void StopGame();
-	void UpdateWindowTitleWithFps(float fps);
+	void UpdateWindowTitle();
 	void UseDefaultConfig();
 
+	bool filter_game_list_to_n64_files;
 	bool game_is_running;
 	bool menu_enable_audio;
 	bool menu_fullscreen;
@@ -93,7 +96,9 @@ namespace Gui
 	int frame_counter;
 	int window_height, window_width;
 
-	fs::path current_game_path;
+	float fps;
+
+	std::string current_game_title;
 	fs::path game_list_directory;
 
 	struct GameListEntry {

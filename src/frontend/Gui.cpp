@@ -17,6 +17,7 @@ import UserMessage;
 import Vulkan;
 
 namespace fs = std::filesystem;
+namespace rng = std::ranges;
 
 void Gui::Draw()
 {
@@ -37,24 +38,30 @@ void Gui::Draw()
 void Gui::DrawGameSelectionWindow()
 {
 	if (ImGui::Begin("Game selection", &show_game_selection_window)) {
+		if (ImGui::Button("Set game directory")) {
+			OnSetGameDirectory();
+		}
+		ImGui::SameLine();
+		if (ImGui::Checkbox("Filter to common n64 file types", &filter_game_list_to_n64_files)) {
+			RefreshGameList();
+		}
 		if (game_list_directory.empty()) {
-			ImGui::Text("No directory set");
+			ImGui::Text("No directory set!");
 		}
 		else {
 			// TODO: see if conversion to char* which ImGui requires can be done in a better way.
 			// On Windows: directories containing non-ASCII characters display incorrectly
 			ImGui::Text(game_list_directory.string().c_str());
 		}
-		ImGui::SameLine();
-		if (ImGui::Button("Select game directory...")) {
-			OnMenuSetGameDirectory();
-		}
-		if (ImGui::BeginListBox("")) {
+		if (ImGui::BeginListBox("Game selection")) {
 			static int item_current_idx = 0; // Here we store our selection data as an index.
 			for (size_t n = 0; n < game_list.size(); ++n) {
 				bool is_selected = item_current_idx == n;
-				if (ImGui::Selectable(game_list[n].name.c_str(), is_selected)) {
+				if (ImGui::Selectable(game_list[n].name.c_str(), is_selected, ImGuiSelectableFlags_AllowDoubleClick)) {
 					item_current_idx = n;
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+						OnGameSelected(size_t(n));
+					}
 				}
 				// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
 				if (is_selected) {
@@ -171,8 +178,8 @@ void Gui::DrawMenu()
 			if (ImGui::MenuItem("Open BIOS")) {
 				OnMenuOpenBios();
 			}
-			if (ImGui::MenuItem("Set game directory")) {
-				OnMenuSetGameDirectory();
+			if (ImGui::MenuItem(show_game_selection_window ? "Hide game list" : "Show game list")) {
+				OnMenuShowGameList();
 			}
 			if (ImGui::MenuItem("Load state", "Ctrl+L")) {
 				OnMenuLoadState();
@@ -303,8 +310,8 @@ void Gui::Frame(VkCommandBuffer vk_command_buffer)
 		static std::chrono::time_point time = std::chrono::steady_clock::now();
 		auto microsecs_to_render_60_frames = std::chrono::duration_cast<std::chrono::microseconds>(
 			std::chrono::steady_clock::now() - time).count();
-		float fps = 60.0f * 1'000'000.0f / float(microsecs_to_render_60_frames);
-		UpdateWindowTitleWithFps(fps);
+		fps = 60.0f * 1'000'000.0f / float(microsecs_to_render_60_frames);
+		UpdateWindowTitle();
 		frame_counter = 0;
 		time = std::chrono::steady_clock::now();
 	}
@@ -364,6 +371,7 @@ bool Gui::Init()
 	if (nfdresult_t result = NFD_Init(); result != NFD_OKAY) {
 		std::cerr << "[error] Failed to init nativefiledialog; NFD_Init returned " << std::to_underlying(result) << '\n';
 	}
+	UpdateWindowTitle();
 
 	return true;
 }
@@ -490,6 +498,18 @@ void Gui::OnCtrlKeyPress(SDL_Keycode keycode)
 	}
 }
 
+void Gui::OnGameSelected(size_t list_index)
+{
+	StopGame();
+	if (N64::LoadGame(game_list[list_index].path)) {
+		current_game_title = game_list[list_index].name;
+		start_game = true;
+	}
+	else {
+		UserMessage::Error("Failed to load game!");
+	}
+}
+
 void Gui::OnInputBindingsWindowResetAll()
 {
 	// TODO
@@ -545,6 +565,9 @@ void Gui::OnMenuOpen()
 				StopGame();
 			}
 			start_game = true;
+			current_game_title = path_val.filename().string();
+			game_list_directory = path_val.parent_path();
+			RefreshGameList();
 		}
 		else {
 			UserMessage::Error(std::format("Could not load rom at path \"{}\"", path_val.string()));
@@ -588,18 +611,14 @@ void Gui::OnMenuSaveState()
 	N64::SaveState();
 }
 
-void Gui::OnMenuSetGameDirectory()
+void Gui::OnMenuShowGameList()
 {
-	std::optional<fs::path> dir = FolderDialog();
-	if (dir.has_value()) {
-		game_list_directory = std::move(dir.value());
-		OnNewGameDirectory();
-	}
+	show_game_selection_window = !show_game_selection_window;
 }
 
 void Gui::OnMenuStop()
 {
-	N64::Stop();
+	StopGame();
 }
 
 void Gui::OnMenuWindowScale()
@@ -607,15 +626,12 @@ void Gui::OnMenuWindowScale()
 	// TODO
 }
 
-void Gui::OnNewGameDirectory()
+void Gui::OnSetGameDirectory()
 {
-	game_list.clear();
-	if (fs::exists(game_list_directory)) {
-		for (fs::directory_entry const& entry : fs::directory_iterator(game_list_directory)) {
-			if (entry.is_regular_file()) {
-				game_list.emplace_back(entry.path().filename(), entry.path().string());
-			}
-		}
+	std::optional<fs::path> dir = FolderDialog();
+	if (dir.has_value()) {
+		game_list_directory = std::move(dir.value());
+		RefreshGameList();
 	}
 }
 
@@ -663,6 +679,29 @@ bool Gui::ReadConfigFile()
 	return true; // TODO
 }
 
+void Gui::RefreshGameList()
+{
+	game_list.clear();
+	if (fs::exists(game_list_directory)) {
+		for (fs::directory_entry const& entry : fs::directory_iterator(game_list_directory)) {
+			if (entry.is_regular_file()) {
+				auto IsKnownExt = [](fs::path const& ext) {
+					static const std::array<fs::path, 8> n64_rom_exts = {
+						".n64", ".N64", ".v64", ".V64", ".z64", ".Z64", ".zip", ".7z"
+					};
+					return std::find_if(n64_rom_exts.begin(), n64_rom_exts.end(), [&ext](fs::path const& known_ext) {
+							return ext.compare(known_ext) == 0;
+						})
+					!= n64_rom_exts.end();
+				};
+				if (!filter_game_list_to_n64_files || IsKnownExt(entry.path().filename().extension())) {
+					game_list.emplace_back(entry.path(), entry.path().filename().string());
+				}
+			}
+		}
+	}
+}
+
 void Gui::Run(bool boot_game_immediately)
 {
 	if (boot_game_immediately) {
@@ -673,10 +712,8 @@ void Gui::Run(bool boot_game_immediately)
 			StartGame();
 		}
 		else {
-			while (!start_game) {
-				PollEvents();
-				N64::UpdateScreen();
-			}
+			PollEvents();
+			N64::UpdateScreen(); // Let the RDP rendering code do its thing (calls back to Gui::Draw())
 		}
 	}
 
@@ -687,13 +724,19 @@ void Gui::StartGame()
 {
 	game_is_running = true;
 	start_game = false;
+	show_game_selection_window = false;
+	UpdateWindowTitle();
+	N64::Reset();
 	N64::Run();
 }
 
 void Gui::StopGame()
 {
-	game_is_running = false;
 	N64::Stop();
+	game_is_running = false;
+	UpdateWindowTitle();
+	show_game_selection_window = true;
+	// TODO: show nice n64 background on window
 }
 
 void Gui::TearDown()
@@ -713,10 +756,15 @@ void Gui::TearDown()
 	SDL_Quit();
 }
 
-void Gui::UpdateWindowTitleWithFps(float fps)
+void Gui::UpdateWindowTitle()
 {
-	std::string title = std::format("N63.5 | FPS: {}", fps);
-	SDL_SetWindowTitle(sdl_window, title.c_str());
+	if (game_is_running) {
+		std::string title = std::format("N63.5 | {} | FPS: {}", current_game_title, fps);
+		SDL_SetWindowTitle(sdl_window, title.c_str());
+	}
+	else {
+		SDL_SetWindowTitle(sdl_window, "N63.5");
+	}
 }
 
 void Gui::UseDefaultConfig()
