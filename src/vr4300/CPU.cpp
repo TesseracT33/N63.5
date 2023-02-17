@@ -9,6 +9,15 @@ import :Recompiler;
 import BuildOptions;
 import Memory;
 
+#ifdef __has_builtin
+#if __has_builtin(__builtin_add_overflow)
+#define HAS_BUILTIN_ADD_OVERFLOW 1
+#endif
+#if __has_builtin(__builtin_sub_overflow)
+#define HAS_BUILTIN_SUB_OVERFLOW 1
+#endif
+#endif
+
 namespace VR4300
 {
 	s64 GPR::Get(size_t index) const
@@ -336,8 +345,15 @@ namespace VR4300
 			   32-bit result to register rt (sign-extends the result in the 64-bit mode).
 			   Generates an exception if a 2's complement integer overflow occurs.
 			   In that case, the contents of destination register rt are not modified */
-			s32 sum = s32(gpr[rs] + imm);
-			if ((gpr[rs] ^ sum) & (imm ^ sum) & 0x8000'0000) {
+			s32 sum;
+			bool overflow;
+#if HAS_BUILTIN_ADD_OVERFLOW
+			overflow = __builtin_add_overflow(s32(gpr[rs]), s32(imm), &sum);
+#else
+			sum = gpr[rs] + imm;
+			overflow = (gpr[rs] ^ sum) & (imm ^ sum) & 0x8000'0000;
+#endif
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -394,8 +410,15 @@ namespace VR4300
 			/* Doubleword Add Immediate;
 			   Sign-extends the 16-bit immediate to 64 bits, and adds it to register rs. Stores
 			   the 64-bit result to register rt. Generates an exception if an integer overflow occurs. */
-			s64 sum = gpr[rs] + imm;
-			if ((gpr[rs] ^ sum) & (imm ^ sum) & 0x8000'0000'0000'0000) {
+			s64 sum;
+			bool overflow;
+#if HAS_BUILTIN_ADD_OVERFLOW
+			overflow = __builtin_add_overflow(s64(gpr[rs]), s64(imm), &sum);
+#else
+			sum = gpr[rs] + imm;
+			overflow = (gpr[rs] ^ sum) & (imm ^ sum) & 0x8000'0000'0000'0000;
+#endif
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -428,8 +451,15 @@ namespace VR4300
 			   the 32-bit result to register rd. Generates an exception if an integer overflow occurs.
 			   In that case, the contents of the destination register rd are not modified.
 			   In 64-bit mode, the operands must be sign-extended, 32-bit values. */
-			s32 sum = s32(gpr[rs] + gpr[rt]);
-			if ((gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000) {
+			s32 sum;
+			bool overflow;
+#if HAS_BUILTIN_ADD_OVERFLOW
+			overflow = __builtin_add_overflow(s32(gpr[rs]), s32(gpr[rt]), &sum);
+#else
+			sum = gpr[rs] + gpr[rt];
+			overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000;
+#endif
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -446,8 +476,15 @@ namespace VR4300
 			/* Subtract;
 			   Subtracts the contents of register rs from register rt, and stores (sign-extends
 			   in the 64-bit mode) the result to register rd. Generates an exception if an integer overflow occurs. */
-			s32 sum = s32(gpr[rs] - gpr[rt]);
-			if ((gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000) {
+			s32 sum;
+			bool overflow;
+#if HAS_BUILTIN_SUB_OVERFLOW
+			overflow = __builtin_sub_overflow(s32(gpr[rs]), s32(gpr[rt]), &sum);
+#else
+			sum = gpr[rs] - gpr[rt];
+			overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000;
+#endif
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -499,8 +536,15 @@ namespace VR4300
 			/* Doubleword Add;
 			   Adds the contents of registers rs and rt, and stores the 64-bit result to register rd.
 			   Generates an exception if an integer overflow occurs. */
-			s64 sum = gpr[rs] + gpr[rt];
-			if ((gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000) {
+			s64 sum;
+			bool overflow;
+#if HAS_BUILTIN_ADD_OVERFLOW
+			overflow = __builtin_add_overflow(s64(gpr[rs]), s64(gpr[rt]), &sum);
+#else
+			sum = gpr[rs] + gpr[rt];
+			overflow = (gpr[rs] ^ sum) & (gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
+#endif
+			if (overflow) {
 				SignalException<Exception::IntegerOverflow>();
 			}
 			else {
@@ -517,13 +561,20 @@ namespace VR4300
 			/* Doubleword Subtract;
 			   Subtracts the contents of register rt from register rs, and stores the 64-bit
 			   result to register rd. Generates an exception if an integer overflow occurs. */
-			s64 sum = gpr[rs] - gpr[rt];
-			if ((gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000) {
-				SignalException<Exception::IntegerOverflow>();
-			}
-			else {
-				gpr.Set(rd, sum);
-			}
+			   s64 sum;
+			   bool overflow;
+#if HAS_BUILTIN_SUB_OVERFLOW
+			   overflow = __builtin_sub_overflow(s64(gpr[rs]), s64(gpr[rt]), &sum);
+#else
+			   sum = gpr[rs] - gpr[rt];
+			   overflow = (gpr[rs] ^ gpr[rt]) & ~(gpr[rt] ^ sum) & 0x8000'0000'0000'0000;
+#endif
+			   if (overflow) {
+				   SignalException<Exception::IntegerOverflow>();
+			   }
+			   else {
+				   gpr.Set(rd, sum);
+			   }
 		}
 		else if constexpr (instr == DSUBU) {
 			/* Doubleword Subtract Unsigned;
