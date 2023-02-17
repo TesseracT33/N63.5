@@ -845,6 +845,8 @@ namespace VR4300
 		}
 		else if constexpr (OneOf(instr, BLEZL, BGTZL, BEQL, BLTZL, BGEZL, BLTZALL, BGEZALL)) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. */
+			AdvancePipeline(2); // COUNT is increased for the branch delay instruction even if it is not executed
+			return;
 		}
 
 		AdvancePipeline(1);
@@ -867,6 +869,8 @@ namespace VR4300
 		}
 		else if constexpr (OneOf(instr, BEQL, BNEL)) {
 			pc += 4; /* The instruction in the branch delay slot is discarded. */
+			AdvancePipeline(2); // COUNT is increased for the branch delay instruction even if it is not executed
+			return;
 		}
 
 		AdvancePipeline(1);
