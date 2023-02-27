@@ -1,14 +1,13 @@
 module;
 
 #include "imgui_impl_vulkan.h"
+#include "SDL.h"
+#include "SDL_vulkan.h"
 #include "volk.h"
 
 export module Vulkan;
 
 import Util;
-
-import "SDL.h";
-import "SDL_vulkan.h";
 
 import <iostream>;
 import <utility>;

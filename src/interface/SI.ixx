@@ -39,7 +39,7 @@ namespace SI
 	void OnDmaFinish();
 	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
-	struct {
+	struct Si {
 		s32 dram_addr, pif_addr_rd64b, pif_addr_wr4b, dummy0,
 			pif_addr_wr64b, pif_addr_rd4b, status, dummy1;
 	} si;

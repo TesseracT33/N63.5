@@ -1,8 +1,10 @@
+module;
+
+#include "SDL.h"
+
 export module UserMessage;
 
 import Log;
-
-import "SDL.h";
 
 import <format>;
 import <iostream>;

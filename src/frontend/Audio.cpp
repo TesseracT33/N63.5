@@ -1,3 +1,7 @@
+module;
+
+#include "SDL.h"
+
 module Audio;
 
 import UserMessage;

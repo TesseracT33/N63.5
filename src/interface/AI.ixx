@@ -22,11 +22,11 @@ namespace AI
 	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 	void Sample();
 
-	struct {
+	struct Ai {
 		u32 dram_addr, len, control, status, dacrate, bitrate, dummy0, dummy1;
 	} ai;
 
-	struct {
+	struct Dac {
 		u32 frequency, period, precision;
 	} dac;
 

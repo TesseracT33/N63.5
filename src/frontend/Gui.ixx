@@ -1,13 +1,12 @@
 module;
 
 #include "imgui_impl_vulkan.h"
+#include "SDL.h"
 #include "volk.h"
 
 export module Gui;
 
 import Util;
-
-import "SDL.h";
 
 import <algorithm>;
 import <array>;

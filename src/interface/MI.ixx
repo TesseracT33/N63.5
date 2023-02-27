@@ -33,7 +33,7 @@ namespace MI
 	void CheckInterrupts();
 	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
-	struct {
+	struct Mi {
 		s32 mode, version, interrupt, mask;
 	} mi;
 }

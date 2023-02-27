@@ -1,6 +1,8 @@
-export module Audio;
+module;
 
-import "SDL.h";
+#include "SDL.h"
+
+export module Audio;
 
 import <format>;
 

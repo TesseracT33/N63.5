@@ -1,6 +1,8 @@
 module;
 
 #include "rdp_device.hpp"
+#include "SDL.h"
+#include "SDL_vulkan.h"
 #include "volk.h"
 #include "wsi.hpp"
 
@@ -8,9 +10,6 @@ export module ParallelRDPWrapper;
 
 import RDPImplementation;
 import Util;
-
-import "SDL.h";
-import "SDL_vulkan.h";
 
 import <algorithm>;
 import <array>;
@@ -27,38 +26,38 @@ import <vector>;
 export class ParallelRDPWrapper final : public RDPImplementation
 {
 public:
-	void EnqueueCommand(int cmd_len, u32* cmd_ptr) override;
-	bool Initialize() override;
-	void OnFullSync() override;
-	void TearDown() override;
-	void UpdateScreen() override;
+	void EnqueueCommand(int cmd_len, u32* cmd_ptr) override {};
+	bool Initialize() override { return true; };
+	void OnFullSync() override {};
+	void TearDown() override {};
+	void UpdateScreen() override {};
 
-	VkCommandBuffer GetVkCommandBuffer();
-	VkDevice GetVkDevice();
-	VkFormat GetVkFormat();
-	u32 GetVkQueueFamily();
-	VkInstance GetVkInstance();
-	VkPhysicalDevice GetVkPhysicalDevice();
-	VkQueue GetVkQueue();
-	void SubmitRequestedVkCommandBuffer();
+	VkCommandBuffer GetVkCommandBuffer() { return{}; };
+	VkDevice GetVkDevice() { return{}; };
+	VkFormat GetVkFormat() { return{}; };
+	u32 GetVkQueueFamily() { return{}; };
+	VkInstance GetVkInstance() { return{}; };
+	VkPhysicalDevice GetVkPhysicalDevice() { return{}; };
+	VkQueue GetVkQueue() { return{}; };
+	void SubmitRequestedVkCommandBuffer() {};
 
 private:
-	struct SDLWSIPlatform final : public Vulkan::WSIPlatform {
-		SDLWSIPlatform(SDL_Window* sdl_window);
-		bool                     alive(Vulkan::WSI& wsi) override;
-		VkSurfaceKHR             create_surface(VkInstance instance, VkPhysicalDevice gpu) override;
-		std::vector<const char*> get_instance_extensions() override;
-		void                     event_frame_tick(double frame, double elapsed) override;
-		const VkApplicationInfo* get_application_info() override;
-		u32                      get_surface_height() override;
-		u32                      get_surface_width() override;
-		void                     poll_input() override;
-		SDL_Window* const sdl_window;
-	};
+	//struct SDLWSIPlatform final : public Vulkan::WSIPlatform {
+	//	SDLWSIPlatform(SDL_Window* sdl_window);
+	//	bool                     alive(Vulkan::WSI& wsi) override;
+	//	VkSurfaceKHR             create_surface(VkInstance instance, VkPhysicalDevice gpu) override;
+	//	std::vector<const char*> get_instance_extensions() override;
+	//	void                     event_frame_tick(double frame, double elapsed) override;
+	//	const VkApplicationInfo* get_application_info() override;
+	//	u32                      get_surface_height() override;
+	//	u32                      get_surface_width() override;
+	//	void                     poll_input() override;
+	//	SDL_Window* const sdl_window;
+	//};
 
-	friend struct SDLWSIPlatform;
+	//friend struct SDLWSIPlatform;
 
-	void ReloadViRegisters();
+	void ReloadViRegisters() {};
 
 	static constexpr u32 vertex_spirv[] = {
 		0x07230203,0x00010000,0x000d000a,0x00000034,
@@ -170,10 +169,10 @@ private:
 		0x00010038
 	};
 
-	Vulkan::WSI wsi{};
+	//Vulkan::WSI wsi{};
 
-	Vulkan::CommandBufferHandle requested_command_buffer{};
+	//Vulkan::CommandBufferHandle requested_command_buffer{};
 
-	std::unique_ptr<RDP::CommandProcessor> cmd_processor{};
-	std::unique_ptr<SDLWSIPlatform> sdl_wsi_platform{};
+	//std::unique_ptr<RDP::CommandProcessor> cmd_processor{};
+	//std::unique_ptr<SDLWSIPlatform> sdl_wsi_platform{};
 };

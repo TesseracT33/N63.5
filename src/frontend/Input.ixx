@@ -1,9 +1,11 @@
+module;
+
+#include "SDL.h"
+
 export module Input;
 
 import N64;
 import Util;
-
-import "SDL.h";
 
 import <format>;
 import <iostream>;

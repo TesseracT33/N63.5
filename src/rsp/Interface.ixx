@@ -31,7 +31,7 @@ namespace RSP
 
 	constexpr std::string_view RegOffsetToStr(u32 reg_offset);
 
-	struct {
+	struct Sp {
 		u32 dma_spaddr, dma_ramaddr, dma_rdlen, dma_wrlen;
 		struct {
 			u32 halted : 1;

@@ -29,7 +29,7 @@ namespace RDP
 		StartReg, EndReg, CurrentReg, StatusReg, ClockReg, BufBusyReg, PipeBusyReg, TmemReg
 	};
 
-	struct {
+	struct Dp {
 		u32 start, end, current;
 		struct {
 			u32 cmd_source : 1;
